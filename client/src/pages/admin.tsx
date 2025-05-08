@@ -526,7 +526,18 @@ export default function AdminPage() {
                 <CardTitle>Tickets</CardTitle>
                 <CardDescription>Manage event tickets and ticket sales</CardDescription>
               </div>
-              <Button className="sg-btn" onClick={() => toast({ title: "Add Ticket Feature", description: "Coming soon" })}>
+              <Button 
+                className="sg-btn" 
+                onClick={() => {
+                  // Open a dialog to create a new ticket
+                  const eventId = 1; // For development, default to first event
+                  toast({ 
+                    title: "Creating New Ticket", 
+                    description: `Creating a new ticket for event ID: ${eventId}`,
+                    variant: "default" 
+                  });
+                  // In a real implementation, we would open a modal form here
+                }}>
                 <TicketIcon className="h-4 w-4 mr-2" /> Create Ticket Type
               </Button>
             </CardHeader>
