@@ -1,21 +1,51 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { API_ROUTES, PRODUCT_CATEGORIES, EXTERNAL_URLS } from "@/lib/constants";
 import { Product } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, AlertCircle } from "lucide-react";
 import ProductCard from "@/components/home/ProductCard";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Shop = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const { toast } = useToast();
+  const [fetchError, setFetchError] = useState<string | null>(null);
   
-  const { data: products, isLoading } = useQuery<Product[]>({
+  // Enhanced debugging query
+  const { 
+    data: products, 
+    isLoading, 
+    error, 
+    isError 
+  } = useQuery<Product[]>({
     queryKey: [API_ROUTES.PRODUCTS],
+    onError: (err: any) => {
+      console.error("Error fetching products:", err);
+      setFetchError(err.message || "Failed to load products");
+    }
   });
+  
+  // Added debugging useEffect
+  useEffect(() => {
+    console.log("Products data:", products);
+    
+    // Manual fetch for debugging
+    const fetchProductsDirectly = async () => {
+      try {
+        const res = await fetch(API_ROUTES.PRODUCTS);
+        const data = await res.json();
+        console.log("Direct fetch products:", data);
+      } catch (err) {
+        console.error("Direct fetch error:", err);
+      }
+    };
+    
+    fetchProductsDirectly();
+  }, [products]);
   
   const filteredProducts = products?.filter(
     (product) => selectedCategory === "all" || product.category === selectedCategory
@@ -113,6 +143,23 @@ const Shop = () => {
         </div>
       </div>
 
+      {/* Debug Info */}
+      {isError && (
+        <div className="bg-red-900 text-white p-4 rounded-lg mb-4">
+          <AlertCircle className="h-6 w-6 inline-block mr-2" />
+          <span className="font-semibold">Error loading products:</span>
+          <p className="mt-1">{fetchError || String(error)}</p>
+        </div>
+      )}
+      
+      {!isLoading && !isError && products && (
+        <div className="bg-blue-900 text-white p-4 rounded-lg mb-4">
+          <p className="font-semibold">Debug Info:</p>
+          <p>Total products: {products.length}</p>
+          <p>Categories: {products.map(p => p.category).join(', ')}</p>
+        </div>
+      )}
+      
       {/* Products Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
         {isLoading ? (
@@ -137,7 +184,10 @@ const Shop = () => {
             <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">No Products Found</h3>
             <p className="text-gray-400">
-              There are no products matching your filter. Try changing your selection.
+              {products && products.length > 0 
+                ? "There are no products matching your filter. Try changing your selection."
+                : "There are no products available. Products may not be loading from the database."
+              }
             </p>
           </div>
         )}

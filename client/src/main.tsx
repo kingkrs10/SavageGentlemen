@@ -4,6 +4,9 @@ import { queryClient } from "./lib/queryClient";
 import App from "./App";
 import "./index.css";
 
+// Add console log for debugging
+console.log("Application starting...");
+
 createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>
     <App />
