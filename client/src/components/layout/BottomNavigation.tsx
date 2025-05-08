@@ -1,18 +1,29 @@
 import { useState } from "react";
 import { useLocation, Link } from "wouter";
-import { Home, CalendarDays, ShoppingBag, Video, Users } from "lucide-react";
+import { Home, CalendarDays, ShoppingBag, Video, Users, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { User } from "@/lib/types";
 
-const BottomNavigation = () => {
+interface BottomNavigationProps {
+  user?: User | null;
+}
+
+const BottomNavigation = ({ user }: BottomNavigationProps) => {
   const [location] = useLocation();
 
-  const navItems = [
+  // Default navigation items
+  const standardNavItems = [
     { path: "/", label: "Home", icon: Home },
     { path: "/events", label: "Events", icon: CalendarDays },
     { path: "/shop", label: "Shop", icon: ShoppingBag },
     { path: "/live", label: "Live", icon: Video, hasNotification: true },
     { path: "/community", label: "Community", icon: Users },
   ];
+  
+  // Add admin item if user is admin
+  const navItems = user?.role === "admin" 
+    ? [...standardNavItems, { path: "/admin", label: "Admin", icon: LayoutDashboard }]
+    : standardNavItems;
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-black border-t border-white/10 z-40">
