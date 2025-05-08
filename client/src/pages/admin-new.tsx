@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Eye, EyeOff, Plus, Pencil, Trash, Trash2, Users, Tag, Calendar, Layers, Activity, BarChart } from "lucide-react";
+import { Plus, Pencil, Trash, Users, Tag, Layers, Activity, BarChart, Eye, EyeOff } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -47,11 +47,14 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Package,
+  Ticket,
   ShoppingCart,
   Lock,
   Radio,
   MoreHorizontal,
-  Edit
+  Trash2,
+  Edit,
+  Calendar
 } from "lucide-react";
 
 // Interface definitions for the admin dashboard
@@ -1193,7 +1196,7 @@ export default function AdminPage() {
                                     if (ticketsTab) ticketsTab.click();
                                   }}
                                 >
-                                  <TicketIcon className="h-4 w-4 text-green-500" />
+                                  <Ticket className="h-4 w-4 text-green-500" />
                                 </Button>
                                 <Button 
                                   variant="ghost" 

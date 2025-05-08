@@ -26,14 +26,22 @@ const SplashScreen = () => {
           {/* Background overlay with gradient */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60 z-10"></div>
           
-          {/* Video */}
+          {/* Video with improved mobile centering */}
           <video 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-center"
             autoPlay 
             muted 
             playsInline
             onEnded={() => setVideoEnded(true)}
             onError={() => setVideoEnded(true)}
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              minWidth: '100%',
+              minHeight: '100%',
+              transform: 'translate(-50%, -50%)'
+            }}
           >
             <source src={IntroVideo} type="video/mp4" />
           </video>

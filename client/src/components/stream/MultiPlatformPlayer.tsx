@@ -137,12 +137,20 @@ const MultiPlatformPlayer: React.FC<MultiPlatformPlayerProps> = ({
           // Is it a direct video URL?
           if (livestream.customStreamUrl.match(/\.(mp4|webm|ogg)$/i)) {
             return (
-              <div className="w-full aspect-video">
+              <div className="w-full aspect-video relative overflow-hidden">
                 <video 
                   src={livestream.customStreamUrl} 
                   controls 
                   autoPlay 
-                  className="w-full h-full" 
+                  className="w-full h-full object-cover object-center" 
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    minWidth: '100%',
+                    minHeight: '100%',
+                    transform: 'translate(-50%, -50%)'
+                  }}
                 />
               </div>
             );
