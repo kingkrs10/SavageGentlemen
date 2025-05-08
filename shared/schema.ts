@@ -14,6 +14,9 @@ export const users = pgTable("users", {
   stripeCustomerId: text("stripe_customer_id"),
   paypalCustomerId: text("paypal_customer_id"),
   email: text("email"),
+  firebaseId: text("firebase_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -24,6 +27,9 @@ export const insertUserSchema = createInsertSchema(users).pick({
   isGuest: true,
   role: true,
   email: true,
+  firebaseId: true,
+  stripeCustomerId: true,
+  paypalCustomerId: true,
 });
 
 // Events schema
@@ -254,6 +260,8 @@ export const orderItems = pgTable("order_items", {
   quantity: integer("quantity").notNull(),
   unitPrice: integer("unit_price").notNull(),
   subtotal: integer("subtotal").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertOrderItemSchema = createInsertSchema(orderItems).pick({
