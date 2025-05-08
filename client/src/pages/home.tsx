@@ -67,32 +67,23 @@ const Home = () => {
         ) : featuredEvents && featuredEvents.length > 0 ? (
           <div className="relative">
             <div className="h-64 relative">
-              {heroImgError ? (
-                <div className="h-64 w-full bg-gray-800 flex items-center justify-center">
-                  <img 
-                    src={SGFlyerLogoPng} 
-                    alt="Savage Gentlemen" 
-                    className="h-40 w-40 object-contain"
-                  />
-                </div>
-              ) : (
-                <img
-                  src={featuredEvents[0].imageUrl}
-                  alt={featuredEvents[0].title}
-                  className="h-64 w-full object-cover"
-                  onError={() => setHeroImgError(true)}
+              <div className="h-64 w-full bg-gray-800 flex items-center justify-center">
+                <img 
+                  src={SGFlyerLogoPng} 
+                  alt="Savage Gentlemen" 
+                  className="h-40 w-40 object-contain"
                 />
-              )}
+              </div>
               <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black bg-opacity-60"></div>
             </div>
             <div className="absolute bottom-0 left-0 p-4">
-              <h2 className="text-3xl font-heading text-white">{featuredEvents[0].title}</h2>
-              <p className="text-lg text-gray-200">Get your tickets now</p>
+              <h2 className="text-3xl font-heading text-white">Upcoming Events</h2>
+              <p className="text-lg text-gray-200">Stay tuned for tickets</p>
               <Button 
                 className="mt-2 bg-primary text-white hover:bg-red-800 transition"
-                onClick={() => handleGetTicket(featuredEvents[0].id)}
+                onClick={() => window.location.href = '/events'}
               >
-                Buy Tickets
+                View Events
               </Button>
             </div>
           </div>
@@ -120,16 +111,12 @@ const Home = () => {
               <Skeleton className="h-[300px] w-full rounded-xl" />
               <Skeleton className="h-[300px] w-full rounded-xl" />
             </>
-          ) : featuredEvents && featuredEvents.length > 0 ? (
-            featuredEvents.slice(0, 2).map((event) => (
-              <EventCard 
-                key={event.id} 
-                event={event} 
-                onGetTicket={handleGetTicket}
-              />
-            ))
           ) : (
-            <p className="text-gray-400 col-span-2 text-center py-8">No upcoming events found</p>
+            <div className="col-span-2 flex flex-col items-center justify-center py-8 bg-gray-800 rounded-xl">
+              <img src={SGFlyerLogoPng} alt="Savage Gentlemen" className="w-32 h-32 mb-4" />
+              <h3 className="text-xl font-bold text-white">Coming Soon</h3>
+              <p className="text-gray-400 mb-2">Events will be announced soon</p>
+            </div>
           )}
         </div>
       </section>
