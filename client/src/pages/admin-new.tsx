@@ -582,30 +582,46 @@ export default function AdminPage() {
     
     try {
       // Use the apiRequest function instead of fetch directly
-      const response = await apiRequest('DELETE', `/api/admin/users/${userId}`);
-      console.log("Delete user response:", response);
-
-      toast({
-        title: "User Deleted",
-        description: "User has been successfully deleted",
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: { 
+          'user-id': currentUser?.id.toString() || ''
+        },
+        credentials: 'include'
       });
-
-      // Refresh the users list
-      queryClient.invalidateQueries({queryKey: ["/api/admin/users"]});
+      
+      // Handle response based on status code
+      if (response.status === 204) {
+        console.log("User deleted successfully");
+        toast({
+          title: "User Deleted",
+          description: "User has been successfully deleted",
+        });
+        
+        // Refresh the users list
+        queryClient.invalidateQueries({queryKey: ["/api/admin/users"]});
+      } else {
+        // If it's not a 204, try to parse the error message
+        let errorData = { message: "Unknown error occurred" };
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          console.error("Error parsing error response:", e);
+        }
+        
+        toast({
+          title: "Error",
+          description: errorData.message || "Failed to delete user",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('Error deleting user:', error);
       
-      // More specific error message
-      let errorMessage = "Failed to delete user";
-      if (error instanceof Error && error.message.includes("Cannot delete yourself")) {
-        errorMessage = "You cannot delete your own account for security reasons.";
-      } else if (error instanceof Error && error.message.includes("User not found")) {
-        errorMessage = "User not found. They may have already been deleted.";
-      }
-      
+      // More specific error message for network errors
       toast({
         title: "Error",
-        description: errorMessage,
+        description: "Network error while trying to delete user. Please try again.",
         variant: "destructive",
       });
     }
