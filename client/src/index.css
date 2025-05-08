@@ -1,0 +1,116 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Dancing+Script:wght@600&family=Poppins:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 73% 27%; /* Savage Red */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 4% 16%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 4% 16%;
+  --muted-foreground: 240 5% 65%;
+  --accent: 39 100% 50%; /* Accent Orange */
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 4% 16%;
+  --input: 240 4% 16%;
+  --ring: 240 5% 65%;
+  --radius: 0.5rem;
+
+  --chart-1: 206 100% 50%;
+  --chart-2: 0 73% 27%;
+  --chart-3: 39 100% 50%;
+  --chart-4: 120 100% 25%;
+  --chart-5: 273 100% 50%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-wider;
+  }
+  
+  .font-accent {
+    font-family: 'Dancing Script', cursive;
+  }
+}
+
+@layer components {
+  .event-card {
+    @apply bg-gradient-to-br from-gray-900 to-gray-950 transition-transform hover:translate-y-[-5px] hover:shadow-xl;
+  }
+  
+  .bottom-nav-item.active {
+    @apply text-primary border-t-2 border-primary;
+  }
+  
+  .user-message {
+    @apply bg-primary rounded-[18px] rounded-br-none self-end;
+  }
+  
+  .other-message {
+    @apply bg-gray-800 rounded-[18px] rounded-bl-none self-start;
+  }
+
+  .chat-message {
+    @apply max-w-[80%] break-words;
+  }
+}
+
+@layer utilities {
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 1s ease-in-out;
+  }
+  
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+  
+  @keyframes slideUp {
+    0% {
+      transform: translateY(50px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}

@@ -1,0 +1,151 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { API_ROUTES, EVENT_CATEGORIES } from "@/lib/constants";
+import { Event } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Calendar, MapPin, Badge as BadgeIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import EventCard from "@/components/home/EventCard";
+import { useToast } from "@/hooks/use-toast";
+
+const Events = () => {
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const { toast } = useToast();
+  
+  const { data: events, isLoading } = useQuery<Event[]>({
+    queryKey: [API_ROUTES.EVENTS],
+  });
+  
+  const filteredEvents = events?.filter(
+    (event) => selectedCategory === "all" || event.category === selectedCategory
+  );
+  
+  const featuredEvent = events?.find((event) => event.featured);
+  
+  const handleGetTicket = (eventId: number) => {
+    toast({
+      title: "Redirecting to ticket provider",
+      description: "You'll be redirected to our ticketing partner's website to complete your purchase."
+    });
+    
+    // In a real app, this would redirect to a ticketing service
+    window.open("https://www.ticketmaster.com", "_blank");
+  };
+  
+  const handleCategorySelect = (category: string) => {
+    setSelectedCategory(category);
+  };
+  
+  return (
+    <div>
+      {/* Hero Event */}
+      <div className="relative rounded-xl overflow-hidden mb-6 shadow-lg">
+        {isLoading ? (
+          <Skeleton className="w-full h-64" />
+        ) : featuredEvent ? (
+          <>
+            <img 
+              src={featuredEvent.imageUrl} 
+              alt={featuredEvent.title} 
+              className="w-full h-64 object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
+            <div className="absolute bottom-0 left-0 p-6">
+              <Badge variant="secondary" className="bg-primary text-white text-sm px-3 py-1 rounded-full mb-2 inline-block">
+                Featured
+              </Badge>
+              <h2 className="text-3xl font-heading text-white">{featuredEvent.title}</h2>
+              <p className="text-lg text-gray-200 mb-2">{featuredEvent.description}</p>
+              <div className="flex items-center text-sm text-gray-300 mb-4">
+                <span className="flex items-center mr-4">
+                  <Calendar className="w-4 h-4 mr-1" /> 
+                  {new Date(featuredEvent.date).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                  })}
+                </span>
+                <span className="flex items-center">
+                  <MapPin className="w-4 h-4 mr-1" /> 
+                  {featuredEvent.location}
+                </span>
+              </div>
+              <Button 
+                className="bg-primary text-white hover:bg-red-800 transition"
+                onClick={() => handleGetTicket(featuredEvent.id)}
+              >
+                Get Tickets
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="bg-gray-900 h-64 flex items-center justify-center">
+            <p className="text-gray-400">No featured event available</p>
+          </div>
+        )}
+      </div>
+
+      {/* Event Filter */}
+      <div className="bg-gray-900 rounded-lg p-4 mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold">Find Events</h3>
+          <Button 
+            variant="link" 
+            className="text-sm text-primary p-0 h-auto"
+            onClick={() => setSelectedCategory("all")}
+          >
+            Reset
+          </Button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {EVENT_CATEGORIES.map((category) => (
+            <Button
+              key={category.id}
+              variant={selectedCategory === category.id ? "default" : "outline"}
+              className={
+                selectedCategory === category.id 
+                  ? "bg-primary text-white" 
+                  : "bg-gray-800 text-white hover:bg-gray-700"
+              }
+              size="sm"
+              onClick={() => handleCategorySelect(category.id)}
+            >
+              {category.label}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* Event List */}
+      <div className="space-y-4 mb-8">
+        {isLoading ? (
+          <>
+            <Skeleton className="w-full h-[180px]" />
+            <Skeleton className="w-full h-[180px]" />
+            <Skeleton className="w-full h-[180px]" />
+          </>
+        ) : filteredEvents && filteredEvents.length > 0 ? (
+          filteredEvents.map((event) => (
+            <EventCard 
+              key={event.id} 
+              event={event} 
+              variant="horizontal"
+              onGetTicket={handleGetTicket}
+            />
+          ))
+        ) : (
+          <div className="text-center py-8">
+            <BadgeIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold mb-2">No Events Found</h3>
+            <p className="text-gray-400">
+              There are no events matching your filter. Try changing your selection.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Events;
