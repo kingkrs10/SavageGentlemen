@@ -13,6 +13,8 @@ import Events from "@/pages/events";
 import Shop from "@/pages/shop";
 import Live from "@/pages/live";
 import Community from "@/pages/community";
+import Checkout from "@/pages/checkout";
+import PaymentSuccess from "@/pages/payment-success";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { User } from "@/lib/types";
@@ -25,6 +27,8 @@ function Router() {
       <Route path="/shop" component={Shop} />
       <Route path="/live" component={Live} />
       <Route path="/community" component={Community} />
+      <Route path="/checkout" component={Checkout} />
+      <Route path="/payment-success" component={PaymentSuccess} />
       <Route component={NotFound} />
     </Switch>
   );
