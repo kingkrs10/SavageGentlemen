@@ -150,6 +150,7 @@ export default function AdminPage() {
     status: 'on_sale'
   });
   const [activeTab, setActiveTab] = useState("essential");
+  const [eventDialogOpen, setEventDialogOpen] = useState(false);
   
   // User form state
   const [userForm, setUserForm] = useState({
@@ -158,6 +159,19 @@ export default function AdminPage() {
     email: '',
     password: '',
     role: 'user'
+  });
+  
+  // Event form state
+  const [eventForm, setEventForm] = useState({
+    title: '',
+    date: '',
+    time: '',
+    location: '',
+    price: 0,
+    description: '',
+    imageUrl: '',
+    category: 'party',
+    featured: false
   });
   
   React.useEffect(() => {
@@ -429,6 +443,87 @@ export default function AdminPage() {
     }
   };
 
+  // Event creation handler
+  const handleCreateEvent = async () => {
+    try {
+      // Validation
+      if (!eventForm.title || !eventForm.date || !eventForm.location) {
+        toast({
+          title: "Missing fields",
+          description: "Title, date, and location are required",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Convert form data to the format expected by the API
+      // Convert the price from dollars to cents for storage
+      const priceInCents = Math.round(eventForm.price * 100);
+      
+      // Combine date and time into a single Date object
+      const dateTimeString = `${eventForm.date}T${eventForm.time || '00:00:00'}`;
+      const eventDate = new Date(dateTimeString);
+      
+      // Prepare data for API
+      const eventData = {
+        title: eventForm.title,
+        date: eventDate,
+        location: eventForm.location,
+        price: priceInCents,
+        description: eventForm.description || null,
+        imageUrl: eventForm.imageUrl || null,
+        category: eventForm.category || 'party',
+        featured: eventForm.featured
+      };
+
+      // Make API call to create event
+      const response = await fetch('/api/admin/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(eventData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create event');
+      }
+
+      const result = await response.json();
+      
+      toast({
+        title: "Event Created",
+        description: `Event "${eventForm.title}" created successfully`,
+      });
+      
+      // Close the dialog
+      setEventDialogOpen(false);
+      
+      // Reset the form
+      setEventForm({
+        title: '',
+        date: '',
+        time: '',
+        location: '',
+        price: 0,
+        description: '',
+        imageUrl: '',
+        category: 'party',
+        featured: false
+      });
+      
+      // Invalidate the events query to refetch events and update the UI
+      queryClient.invalidateQueries({queryKey: ["/api/events"]});
+    } catch (error) {
+      console.error("Failed to create event:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create event. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleCreateTicket = async () => {
     try {
       // Prepare the complete ticket data for submission
@@ -643,7 +738,7 @@ export default function AdminPage() {
                 <CardTitle>Events</CardTitle>
                 <CardDescription>Manage events and performances</CardDescription>
               </div>
-              <Button className="sg-btn" onClick={() => toast({ title: "Add Event Feature", description: "Coming soon" })}>
+              <Button className="sg-btn" onClick={() => setEventDialogOpen(true)}>
                 <Calendar className="h-4 w-4 mr-2" /> Add Event
               </Button>
             </CardHeader>
@@ -734,7 +829,154 @@ export default function AdminPage() {
             </CardContent>
           </Card>
 
-          {/* Event Creation Form would go here */}
+          {/* Event Dialog */}
+          <Dialog open={eventDialogOpen} onOpenChange={setEventDialogOpen}>
+            <DialogContent className="sm:max-w-[450px] bg-[#141e2e] text-white">
+              <DialogHeader>
+                <DialogTitle className="text-white text-xl">Create new event</DialogTitle>
+                <DialogDescription className="text-slate-400">
+                  Add a new event to the system with appropriate details.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title" className="text-white">Event Title</Label>
+                  <Input
+                    id="title"
+                    placeholder="Enter event title"
+                    className="bg-slate-700 border border-slate-600 text-white"
+                    value={eventForm.title}
+                    onChange={(e) => setEventForm({...eventForm, title: e.target.value})}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="date" className="text-white">Date</Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      className="bg-slate-700 border border-slate-600 text-white"
+                      value={eventForm.date}
+                      onChange={(e) => setEventForm({...eventForm, date: e.target.value})}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="time" className="text-white">Time</Label>
+                    <Input
+                      id="time"
+                      type="time"
+                      className="bg-slate-700 border border-slate-600 text-white"
+                      value={eventForm.time}
+                      onChange={(e) => setEventForm({...eventForm, time: e.target.value})}
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="location" className="text-white">Location</Label>
+                  <Input
+                    id="location"
+                    placeholder="Enter event location"
+                    className="bg-slate-700 border border-slate-600 text-white"
+                    value={eventForm.location}
+                    onChange={(e) => setEventForm({...eventForm, location: e.target.value})}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="price" className="text-white">Base Price ($)</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="bg-slate-700 border border-slate-600 text-white"
+                    value={eventForm.price}
+                    onChange={(e) => setEventForm({...eventForm, price: parseFloat(e.target.value)})}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="category" className="text-white">Category</Label>
+                  <Select 
+                    value={eventForm.category} 
+                    onValueChange={(value) => setEventForm({...eventForm, category: value})}
+                  >
+                    <SelectTrigger className="bg-slate-700 border border-slate-600 text-white">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-700 text-white">
+                      <SelectItem value="party">Party</SelectItem>
+                      <SelectItem value="concert">Concert</SelectItem>
+                      <SelectItem value="festival">Festival</SelectItem>
+                      <SelectItem value="workshop">Workshop</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="text-white">Description</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Enter event description"
+                    className="bg-slate-700 border border-slate-600 text-white resize-none min-h-[100px]"
+                    value={eventForm.description}
+                    onChange={(e) => setEventForm({...eventForm, description: e.target.value})}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="imageUrl" className="text-white">Image URL</Label>
+                  <Input
+                    id="imageUrl"
+                    placeholder="Enter image URL for the event"
+                    className="bg-slate-700 border border-slate-600 text-white"
+                    value={eventForm.imageUrl}
+                    onChange={(e) => setEventForm({...eventForm, imageUrl: e.target.value})}
+                  />
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="featured" 
+                    checked={eventForm.featured}
+                    onCheckedChange={(checked) => 
+                      setEventForm({...eventForm, featured: checked === true})
+                    }
+                    className="data-[state=checked]:bg-red-500"
+                  />
+                  <label
+                    htmlFor="featured"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-white"
+                  >
+                    Feature this event on homepage
+                  </label>
+                </div>
+                
+              </div>
+              
+              <DialogFooter className="flex space-x-2 justify-end">
+                <Button
+                  onClick={() => setEventDialogOpen(false)}
+                  variant="outline"
+                  className="bg-transparent border-white text-white hover:bg-slate-700"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleCreateEvent} 
+                  className="sg-btn"
+                >
+                  Create Event
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
         
         {/* Users Tab */}
