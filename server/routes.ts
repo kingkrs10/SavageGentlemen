@@ -23,6 +23,7 @@ import Stripe from "stripe";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import crypto from "crypto";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
 import { sendEmail, sendTicketEmail, sendOrderConfirmation, sendAdminNotification, sendWelcomeEmail } from "./email";
 
@@ -323,6 +324,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (err) {
       return handleZodError(err, res);
+    }
+  });
+  
+  // Password Reset Routes
+  // Step 1: Request password reset - generates a token and sends an email
+  router.post("/auth/password-reset/request", async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        // Don't reveal if email exists for security
+        return res.status(200).json({ message: "If your email is registered, you will receive a reset link" });
+      }
+      
+      // Generate reset token (64 bytes = 128 hex characters)
+      const resetToken = crypto.randomBytes(64).toString('hex');
+      const resetExpiry = new Date(Date.now() + 3600000); // Token valid for 1 hour
+      
+      // Store the token in the database
+      await storage.storePasswordResetToken(user.id, resetToken, resetExpiry);
+      
+      // Create reset link
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://yourdomain.com' // Update this with your domain after deployment
+        : `${req.protocol}://${req.get('host')}`;
+      
+      const resetUrl = `${baseUrl}/password-reset?token=${resetToken}`;
+      
+      // Send reset email
+      const emailSent = await sendEmail({
+        to: email,
+        subject: "Reset Your Password - Savage Gentlemen",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #1E3A8A;">Reset Your Password</h2>
+            <p>Hello ${user.displayName || user.username},</p>
+            <p>We received a request to reset your password for your Savage Gentlemen account. If you didn't make this request, you can ignore this email.</p>
+            <p>To reset your password, click the button below:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" style="background-color: #1E3A8A; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Reset Password</a>
+            </div>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #4A5568;">${resetUrl}</p>
+            <p>This link will expire in 1 hour for security reasons.</p>
+            <p>Thanks,<br>Savage Gentlemen Team</p>
+          </div>
+        `,
+        from: "noreply@savagegentlemen.com"
+      });
+      
+      if (!emailSent) {
+        return res.status(500).json({ message: "Failed to send password reset email" });
+      }
+      
+      return res.status(200).json({ message: "Password reset link sent to your email" });
+    } catch (err) {
+      console.error("Password reset request error:", err);
+      return res.status(500).json({ message: "An error occurred while processing your request" });
+    }
+  });
+  
+  // Step 2: Verify and process password reset
+  router.post("/auth/password-reset/reset", async (req: Request, res: Response) => {
+    try {
+      const { token, password } = req.body;
+      
+      if (!token || !password) {
+        return res.status(400).json({ message: "Token and password are required" });
+      }
+      
+      if (password.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters long" });
+      }
+      
+      // Verify token
+      const resetRequest = await storage.getPasswordResetToken(token);
+      
+      if (!resetRequest || !resetRequest.userId) {
+        return res.status(400).json({ message: "Invalid or expired token" });
+      }
+      
+      // Check if token is expired
+      if (new Date() > new Date(resetRequest.expiresAt)) {
+        await storage.deletePasswordResetToken(token);
+        return res.status(400).json({ message: "Password reset token has expired" });
+      }
+      
+      // Update the user's password
+      await storage.updateUserPassword(resetRequest.userId, password);
+      
+      // Delete the used token
+      await storage.deletePasswordResetToken(token);
+      
+      // Log the password change
+      const user = await storage.getUser(resetRequest.userId);
+      await sendAdminNotification(
+        'Password Reset Completed',
+        `A user has successfully reset their password.`,
+        {
+          Username: user?.username || 'Unknown',
+          Email: user?.email || 'Unknown',
+          ResetTime: new Date().toLocaleString()
+        }
+      );
+      
+      return res.status(200).json({ message: "Password has been reset successfully" });
+    } catch (err) {
+      console.error("Password reset error:", err);
+      return res.status(500).json({ message: "An error occurred while resetting your password" });
     }
   });
 
