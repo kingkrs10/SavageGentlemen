@@ -601,10 +601,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Event management
   router.post("/admin/events", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
-      const eventData = insertEventSchema.parse(req.body);
+      // Manually convert date string to Date object before validation
+      const requestData = req.body;
+      if (requestData.date && typeof requestData.date === 'string') {
+        requestData.date = new Date(requestData.date);
+      }
+      
+      // Now parse with the schema
+      const eventData = insertEventSchema.parse(requestData);
       const event = await storage.createEvent(eventData);
       return res.status(201).json(event);
     } catch (err) {
+      console.error("Event creation error:", err);
       return handleZodError(err, res);
     }
   });
@@ -617,13 +625,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!event) {
         return res.status(404).json({ message: "Event not found" });
       }
+
+      // Manually convert date string to Date object if it exists
+      const requestData = req.body;
+      if (requestData.date && typeof requestData.date === 'string') {
+        requestData.date = new Date(requestData.date);
+      }
       
-      // Assuming updateEvent method exists in storage
-      const updatedEvent = await storage.updateEvent(id, req.body);
+      // Now update the event with the processed data
+      const updatedEvent = await storage.updateEvent(id, requestData);
       return res.status(200).json(updatedEvent);
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({ message: "Internal server error" });
+      console.error("Event update error:", err);
+      return res.status(500).json({ message: "Failed to update event" });
     }
   });
   
