@@ -13,13 +13,28 @@ import {
   InsertComment,
   ChatMessage,
   InsertChatMessage,
+  Ticket,
+  InsertTicket,
+  DiscountCode,
+  InsertDiscountCode,
+  Order,
+  InsertOrder,
+  OrderItem,
+  InsertOrderItem,
+  MediaUpload,
+  InsertMediaUpload,
   users,
   events,
   products,
   livestreams,
   posts,
   comments,
-  chatMessages
+  chatMessages,
+  tickets,
+  discountCodes,
+  orders,
+  orderItems,
+  mediaUploads
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, sql } from "drizzle-orm";
@@ -30,18 +45,24 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  getAllUsers(): Promise<User[]>;
+  updateUserRole(id: number, role: string): Promise<User | undefined>;
   
   // Event operations
   getEvent(id: number): Promise<Event | undefined>;
   getAllEvents(): Promise<Event[]>;
   getFeaturedEvents(): Promise<Event[]>;
   createEvent(event: InsertEvent): Promise<Event>;
+  updateEvent(id: number, eventData: Partial<InsertEvent>): Promise<Event | undefined>;
+  deleteEvent(id: number): Promise<boolean>;
   
   // Product operations
   getProduct(id: number): Promise<Product | undefined>;
   getAllProducts(): Promise<Product[]>;
   getFeaturedProducts(): Promise<Product[]>;
   createProduct(product: InsertProduct): Promise<Product>;
+  updateProduct(id: number, productData: Partial<InsertProduct>): Promise<Product | undefined>;
+  deleteProduct(id: number): Promise<boolean>;
   
   // Livestream operations
   getLivestream(id: number): Promise<Livestream | undefined>;
@@ -63,6 +84,27 @@ export interface IStorage {
   // Chat operations
   getChatMessagesByLivestreamId(livestreamId: number): Promise<ChatMessage[]>;
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  
+  // Ticket operations
+  createTicket(ticket: InsertTicket): Promise<Ticket>;
+  getTicketsByEventId(eventId: number): Promise<Ticket[]>;
+  
+  // Discount code operations
+  createDiscountCode(discountCode: InsertDiscountCode): Promise<DiscountCode>;
+  getDiscountCodeByCode(code: string): Promise<DiscountCode | undefined>;
+  
+  // Order operations
+  createOrder(order: InsertOrder): Promise<Order>;
+  getAllOrders(): Promise<Order[]>;
+  getOrderById(id: number): Promise<Order | undefined>;
+  
+  // Media upload operations
+  createMediaUpload(mediaUpload: InsertMediaUpload): Promise<MediaUpload>;
+  getMediaUploadsByRelatedEntity(relatedEntityType: string, relatedEntityId: number): Promise<MediaUpload[]>;
+  
+  // Stripe & PayPal customer operations
+  updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User>;
+  updatePaypalCustomerId(userId: number, paypalCustomerId: string): Promise<User>;
 }
 
 // In-memory storage implementation
@@ -74,6 +116,11 @@ export class MemStorage implements IStorage {
   private posts: Map<number, Post>;
   private comments: Map<number, Comment>;
   private chatMessages: Map<number, ChatMessage>;
+  private tickets: Map<number, Ticket>;
+  private discountCodes: Map<number, DiscountCode>;
+  private orders: Map<number, Order>;
+  private orderItems: Map<number, OrderItem>;
+  private mediaUploads: Map<number, MediaUpload>;
   
   private userCurrentId: number;
   private eventCurrentId: number;
@@ -82,6 +129,11 @@ export class MemStorage implements IStorage {
   private postCurrentId: number;
   private commentCurrentId: number;
   private chatMessageCurrentId: number;
+  private ticketCurrentId: number;
+  private discountCodeCurrentId: number;
+  private orderCurrentId: number;
+  private orderItemCurrentId: number;
+  private mediaUploadCurrentId: number;
 
   constructor() {
     this.users = new Map();

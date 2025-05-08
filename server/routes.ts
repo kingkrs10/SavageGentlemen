@@ -434,6 +434,250 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Failed to add product" });
     }
   });
+  
+  // Admin routes
+  // These routes require authentication and admin authorization
+  
+  // Get current admin user
+  router.get("/admin/me", authenticateUser, authorizeAdmin, (req: Request, res: Response) => {
+    const user = (req as any).user;
+    return res.status(200).json({
+      id: user.id,
+      username: user.username,
+      displayName: user.displayName,
+      avatar: user.avatar,
+      role: user.role,
+      email: user.email
+    });
+  });
+  
+  // Product management
+  router.post("/admin/products", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const productData = insertProductSchema.parse(req.body);
+      const product = await storage.createProduct(productData);
+      return res.status(201).json(product);
+    } catch (err) {
+      return handleZodError(err, res);
+    }
+  });
+  
+  router.put("/admin/products/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const product = await storage.getProduct(id);
+      
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      
+      // Assuming updateProduct method exists in storage
+      const updatedProduct = await storage.updateProduct(id, req.body);
+      return res.status(200).json(updatedProduct);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  router.delete("/admin/products/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      // Assuming deleteProduct method exists in storage
+      await storage.deleteProduct(id);
+      return res.status(204).send();
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Media uploads
+  router.post("/admin/uploads", authenticateUser, authorizeAdmin, upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      const file = req.file;
+      
+      if (!file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      
+      const userId = (req as any).user.id;
+      
+      // Create a relative URL to the file
+      const fileUrl = `/uploads/${file.filename}`;
+      
+      // Create a record in the database
+      const mediaUpload = await storage.createMediaUpload({
+        userId,
+        url: fileUrl,
+        fileName: file.originalname,
+        fileType: file.mimetype,
+        fileSize: file.size,
+        relatedEntityType: req.body.relatedEntityType,
+        relatedEntityId: req.body.relatedEntityId ? parseInt(req.body.relatedEntityId) : undefined
+      });
+      
+      return res.status(201).json({
+        message: "File uploaded successfully",
+        file: mediaUpload
+      });
+    } catch (err) {
+      console.error("Error uploading file:", err);
+      return res.status(500).json({ message: "Failed to upload file" });
+    }
+  });
+  
+  // Event management
+  router.post("/admin/events", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const eventData = insertEventSchema.parse(req.body);
+      const event = await storage.createEvent(eventData);
+      return res.status(201).json(event);
+    } catch (err) {
+      return handleZodError(err, res);
+    }
+  });
+  
+  router.put("/admin/events/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const event = await storage.getEvent(id);
+      
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      // Assuming updateEvent method exists in storage
+      const updatedEvent = await storage.updateEvent(id, req.body);
+      return res.status(200).json(updatedEvent);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  router.delete("/admin/events/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      // Assuming deleteEvent method exists in storage
+      await storage.deleteEvent(id);
+      return res.status(204).send();
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Ticket management
+  router.post("/admin/tickets", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const ticketData = insertTicketSchema.parse(req.body);
+      // Assuming createTicket method exists in storage
+      const ticket = await storage.createTicket(ticketData);
+      return res.status(201).json(ticket);
+    } catch (err) {
+      return handleZodError(err, res);
+    }
+  });
+  
+  router.get("/admin/tickets/event/:eventId", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const eventId = parseInt(req.params.eventId);
+      // Assuming getTicketsByEventId method exists in storage
+      const tickets = await storage.getTicketsByEventId(eventId);
+      return res.status(200).json(tickets);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Discount codes
+  router.post("/admin/discount-codes", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const discountData = insertDiscountCodeSchema.parse(req.body);
+      // Assuming createDiscountCode method exists in storage
+      const discountCode = await storage.createDiscountCode(discountData);
+      return res.status(201).json(discountCode);
+    } catch (err) {
+      return handleZodError(err, res);
+    }
+  });
+  
+  // Orders management
+  router.get("/admin/orders", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      // Assuming getAllOrders method exists in storage
+      const orders = await storage.getAllOrders();
+      return res.status(200).json(orders);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // User management
+  router.get("/admin/users", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      // Assuming getAllUsers method exists in storage
+      const users = await storage.getAllUsers();
+      return res.status(200).json(users);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  router.post("/admin/users", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      const existingUser = await storage.getUserByUsername(userData.username);
+      
+      if (existingUser) {
+        return res.status(409).json({ message: "Username already exists" });
+      }
+      
+      const user = await storage.createUser(userData);
+      return res.status(201).json({ 
+        id: user.id, 
+        username: user.username, 
+        displayName: user.displayName,
+        avatar: user.avatar,
+        role: user.role,
+        email: user.email
+      });
+    } catch (err) {
+      return handleZodError(err, res);
+    }
+  });
+  
+  router.put("/admin/users/:id/role", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { role } = req.body;
+      
+      if (!role || !['user', 'moderator', 'admin'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+      
+      // Assuming updateUserRole method exists in storage
+      const user = await storage.updateUserRole(id, role);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      return res.status(200).json({
+        id: user.id,
+        username: user.username,
+        displayName: user.displayName,
+        role: user.role
+      });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // Add product initialization for SGX Merch Etsy shop
   router.post("/products/init-etsy", async (req: Request, res: Response) => {
