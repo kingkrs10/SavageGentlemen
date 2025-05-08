@@ -149,6 +149,7 @@ export class MemStorage implements IStorage {
   private orderCurrentId: number;
   private orderItemCurrentId: number;
   private mediaUploadCurrentId: number;
+  private ticketScanCurrentId: number;
 
   constructor() {
     this.users = new Map();
@@ -163,6 +164,7 @@ export class MemStorage implements IStorage {
     this.orders = new Map();
     this.orderItems = new Map();
     this.mediaUploads = new Map();
+    this.ticketScans = new Map();
     
     this.userCurrentId = 1;
     this.eventCurrentId = 1;
@@ -176,6 +178,7 @@ export class MemStorage implements IStorage {
     this.orderCurrentId = 1;
     this.orderItemCurrentId = 1;
     this.mediaUploadCurrentId = 1;
+    this.ticketScanCurrentId = 1;
     
     // Initialize with sample data
     this.initializeSampleData();
@@ -560,6 +563,40 @@ export class MemStorage implements IStorage {
   async getTicketsByEventId(eventId: number): Promise<Ticket[]> {
     return Array.from(this.tickets.values())
       .filter(ticket => ticket.eventId === eventId);
+  }
+  
+  // Ticket scan operations
+  async createTicketScan(ticketScanData: InsertTicketScan): Promise<TicketScan> {
+    const id = this.ticketScanCurrentId++;
+    const createdAt = new Date();
+    const updatedAt = createdAt;
+    
+    const ticketScan: TicketScan = {
+      id,
+      ticketId: ticketScanData.ticketId,
+      orderId: ticketScanData.orderId,
+      scannedAt: ticketScanData.scannedAt || createdAt,
+      scannedBy: ticketScanData.scannedBy || null,
+      status: ticketScanData.status || 'valid',
+      notes: ticketScanData.notes || null,
+      createdAt,
+      updatedAt
+    };
+    
+    this.ticketScans.set(id, ticketScan);
+    return ticketScan;
+  }
+  
+  async getTicketScansByTicketId(ticketId: number): Promise<TicketScan[]> {
+    return Array.from(this.ticketScans.values())
+      .filter(scan => scan.ticketId === ticketId)
+      .sort((a, b) => new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime());
+  }
+  
+  async getTicketScansByOrderId(orderId: number): Promise<TicketScan[]> {
+    return Array.from(this.ticketScans.values())
+      .filter(scan => scan.orderId === orderId)
+      .sort((a, b) => new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime());
   }
   
   // Discount code operations
@@ -1376,6 +1413,41 @@ export class DatabaseStorage implements IStorage {
           eq(mediaUploads.relatedEntityId, relatedEntityId)
         )
       );
+  }
+  
+  // Ticket scan operations
+  async createTicketScan(ticketScanData: InsertTicketScan): Promise<TicketScan> {
+    const [ticketScan] = await db
+      .insert(ticketScans)
+      .values({
+        ticketId: ticketScanData.ticketId,
+        orderId: ticketScanData.orderId,
+        scannedAt: ticketScanData.scannedAt || new Date(),
+        scannedBy: ticketScanData.scannedBy || null,
+        status: ticketScanData.status || 'valid',
+        notes: ticketScanData.notes || null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    
+    return ticketScan;
+  }
+  
+  async getTicketScansByTicketId(ticketId: number): Promise<TicketScan[]> {
+    return await db
+      .select()
+      .from(ticketScans)
+      .where(eq(ticketScans.ticketId, ticketId))
+      .orderBy(desc(ticketScans.scannedAt));
+  }
+  
+  async getTicketScansByOrderId(orderId: number): Promise<TicketScan[]> {
+    return await db
+      .select()
+      .from(ticketScans)
+      .where(eq(ticketScans.orderId, orderId))
+      .orderBy(desc(ticketScans.scannedAt));
   }
 }
 
