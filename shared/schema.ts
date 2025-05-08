@@ -371,3 +371,25 @@ export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 
 export type MediaUpload = typeof mediaUploads.$inferSelect;
 export type InsertMediaUpload = z.infer<typeof insertMediaUploadSchema>;
+
+// Ticket Scans schema to track when tickets are scanned
+export const ticketScans = pgTable("ticket_scans", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").notNull(),
+  orderId: integer("order_id").notNull(),
+  scannedAt: timestamp("scanned_at").defaultNow(),
+  scannedBy: integer("scanned_by"), // User ID of admin who scanned the ticket
+  status: text("status").default("valid"), // valid, already_used, invalid
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertTicketScanSchema = createInsertSchema(ticketScans).omit({ 
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type TicketScan = typeof ticketScans.$inferSelect;
+export type InsertTicketScan = z.infer<typeof insertTicketScanSchema>;

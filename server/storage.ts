@@ -23,6 +23,8 @@ import {
   InsertOrderItem,
   MediaUpload,
   InsertMediaUpload,
+  TicketScan,
+  InsertTicketScan,
   users,
   events,
   products,
@@ -34,7 +36,8 @@ import {
   discountCodes,
   orders,
   orderItems,
-  mediaUploads
+  mediaUploads,
+  ticketScans
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, sql } from "drizzle-orm";
@@ -95,6 +98,11 @@ export interface IStorage {
   getTicketsByEventId(eventId: number): Promise<Ticket[]>;
   updateTicket(id: number, ticketData: Partial<InsertTicket>): Promise<Ticket | undefined>;
   
+  // Ticket scan operations
+  createTicketScan(ticketScan: InsertTicketScan): Promise<TicketScan>;
+  getTicketScansByTicketId(ticketId: number): Promise<TicketScan[]>;
+  getTicketScansByOrderId(orderId: number): Promise<TicketScan[]>;
+  
   // Discount code operations
   createDiscountCode(discountCode: InsertDiscountCode): Promise<DiscountCode>;
   getDiscountCodeByCode(code: string): Promise<DiscountCode | undefined>;
@@ -127,6 +135,7 @@ export class MemStorage implements IStorage {
   private orders: Map<number, Order>;
   private orderItems: Map<number, OrderItem>;
   private mediaUploads: Map<number, MediaUpload>;
+  private ticketScans: Map<number, TicketScan>;
   
   private userCurrentId: number;
   private eventCurrentId: number;
