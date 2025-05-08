@@ -48,8 +48,19 @@ export interface Livestream {
   streamDate: string | Date;
   thumbnailUrl: string;
   isLive: boolean;
-  streamUrl: string;
   hostName: string;
+  // Enhanced multi-platform support
+  platform: string; // youtube, twitch, instagram, facebook, tiktok, custom
+  youtubeUrl?: string;
+  twitchChannel?: string;
+  instagramUsername?: string;
+  facebookUrl?: string;
+  tiktokUsername?: string;
+  customStreamUrl?: string;
+  embedCode?: string;
+  // Legacy field
+  streamUrl?: string;
+  // UI-only properties
   viewerCount?: number;
 }
 
