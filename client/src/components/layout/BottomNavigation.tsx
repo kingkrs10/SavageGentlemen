@@ -16,13 +16,13 @@ const BottomNavigation = () => {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-black bg-opacity-95 backdrop-blur-sm shadow-lg z-40">
-      <div className="container mx-auto flex justify-between items-center">
+      <div className="w-full flex justify-between items-center px-1">
         {navItems.map((item) => (
           <Link 
             key={item.path} 
             href={item.path} 
             className={cn(
-              "bottom-nav-item flex-1 py-4 flex flex-col items-center text-xs",
+              "bottom-nav-item flex-1 py-3 flex flex-col items-center text-xs",
               location === item.path
                 ? "active text-primary"
                 : "text-gray-500"
@@ -34,7 +34,7 @@ const BottomNavigation = () => {
                 <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-600 rounded-full animate-pulse" />
               )}
             </div>
-            <span>{item.label}</span>
+            <span className="text-[10px] sm:text-xs">{item.label}</span>
           </Link>
         ))}
       </div>

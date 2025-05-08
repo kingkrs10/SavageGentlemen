@@ -94,7 +94,7 @@ function App() {
             onProfileClick={() => setShowAuthModal(true)}
             onLogout={handleLogout}
           />
-          <main className="flex-grow container mx-auto px-4 py-6 pb-20">
+          <main className="flex-grow container mx-auto px-3 py-4 pb-16">
             <Router />
           </main>
           <BottomNavigation />

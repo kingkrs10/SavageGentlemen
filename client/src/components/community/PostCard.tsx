@@ -64,54 +64,54 @@ const PostCard = ({ post, currentUser }: PostCardProps) => {
   };
   
   return (
-    <div className="bg-gray-900 rounded-xl overflow-hidden shadow-lg p-4">
+    <div className="bg-gray-900 rounded-xl overflow-hidden shadow-lg p-3">
       <div className="flex items-center mb-3">
-        <Avatar className="h-10 w-10">
+        <Avatar className="h-8 w-8">
           <AvatarImage src={post.user?.avatar} alt={post.user?.displayName} />
           <AvatarFallback>{post.user?.displayName?.charAt(0) || '?'}</AvatarFallback>
         </Avatar>
-        <div className="ml-3">
-          <p className="font-semibold">{post.user?.displayName || 'Anonymous'}</p>
-          <p className="text-xs text-gray-400">{formatTimeAgo(post.createdAt)}</p>
+        <div className="ml-2">
+          <p className="font-semibold text-sm">{post.user?.displayName || 'Anonymous'}</p>
+          <p className="text-[10px] text-gray-400">{formatTimeAgo(post.createdAt)}</p>
         </div>
       </div>
       
-      <p className="mb-3">{post.content}</p>
+      <p className="mb-3 text-sm">{post.content}</p>
       
       {post.mediaUrl && (
         <img 
           src={post.mediaUrl} 
           alt="Post media" 
-          className="w-full h-64 object-cover rounded-lg mb-3" 
+          className="w-full h-48 object-cover rounded-lg mb-3" 
         />
       )}
       
       <div className="flex justify-between">
-        <div className="flex space-x-4">
+        <div className="flex space-x-2">
           <Button 
             variant="ghost" 
             size="sm"
-            className="flex items-center text-sm text-gray-300 hover:text-primary"
+            className="flex items-center text-xs px-2 h-8 text-gray-300 hover:text-primary"
           >
-            <Heart className="w-4 h-4 mr-1" />
+            <Heart className="w-3 h-3 mr-1" />
             <span>{post.likes}</span>
           </Button>
           <Button 
             variant="ghost" 
             size="sm"
-            className="flex items-center text-sm text-gray-300 hover:text-primary"
+            className="flex items-center text-xs px-2 h-8 text-gray-300 hover:text-primary"
             onClick={toggleComments}
           >
-            <MessageSquare className="w-4 h-4 mr-1" />
+            <MessageSquare className="w-3 h-3 mr-1" />
             <span>{post.comments}</span>
           </Button>
         </div>
         <Button 
           variant="ghost" 
           size="sm"
-          className="flex items-center text-sm text-gray-300 hover:text-primary"
+          className="flex items-center text-xs px-2 h-8 text-gray-300 hover:text-primary"
         >
-          <Share className="w-4 h-4 mr-1" />
+          <Share className="w-3 h-3 mr-1" />
           <span>Share</span>
         </Button>
       </div>

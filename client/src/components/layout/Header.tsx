@@ -24,7 +24,7 @@ const Header = ({ user, onProfileClick, onLogout }: HeaderProps) => {
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <div className="flex items-center">
           <img src={LogoSvg} alt="Savage Gentlemen Logo" className="h-10 w-10" />
-          <h1 className="ml-2 text-2xl font-heading text-white">
+          <h1 className="ml-2 text-xl md:text-2xl font-heading text-white truncate max-w-[180px] sm:max-w-none">
             SAVAGE GENTLEMEN
           </h1>
         </div>
