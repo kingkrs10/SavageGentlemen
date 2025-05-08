@@ -7,6 +7,7 @@ import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { User } from "@/lib/types";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Dialog,
   DialogContent,
@@ -54,6 +55,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalProps) => {
   const [currentTab, setCurrentTab] = useState<"login" | "register">("login");
   const { toast } = useToast();
+  const { signInWithGoogle, signInWithFacebook, loading, error } = useAuth();
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -176,8 +178,12 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full" loading={loginMutation.isPending}>
-                  Login
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={loginMutation.isPending}
+                >
+                  {loginMutation.isPending ? "Loading..." : "Login"}
                 </Button>
               </form>
             </Form>
@@ -238,8 +244,12 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full" loading={registerMutation.isPending}>
-                  Register
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={registerMutation.isPending}
+                >
+                  {registerMutation.isPending ? "Loading..." : "Register"}
                 </Button>
               </form>
             </Form>
@@ -256,15 +266,57 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
         </div>
 
         <div className="space-y-3">
-          <Button variant="outline" className="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 border-0 text-white">
+          <Button 
+            variant="outline" 
+            className="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 border-0 text-white"
+            onClick={async () => {
+              try {
+                await signInWithFacebook();
+                toast({
+                  title: "Login Successful",
+                  description: "Welcome to Savage Gentlemen!",
+                });
+              } catch (error) {
+                toast({
+                  title: "Login Failed",
+                  description: error instanceof Error ? error.message : "Failed to login with Facebook",
+                  variant: "destructive",
+                });
+              }
+            }}
+            disabled={loading}
+          >
             <Facebook className="w-4 h-4 mr-2" />
             <span>Facebook</span>
           </Button>
-          <Button variant="outline" className="w-full flex items-center justify-center bg-white hover:bg-gray-100 text-black">
+          <Button 
+            variant="outline" 
+            className="w-full flex items-center justify-center bg-white hover:bg-gray-100 text-black"
+            onClick={async () => {
+              try {
+                await signInWithGoogle();
+                toast({
+                  title: "Login Successful",
+                  description: "Welcome to Savage Gentlemen!",
+                });
+              } catch (error) {
+                toast({
+                  title: "Login Failed",
+                  description: error instanceof Error ? error.message : "Failed to login with Google",
+                  variant: "destructive",
+                });
+              }
+            }}
+            disabled={loading}
+          >
             <FaGoogle className="w-4 h-4 mr-2" />
             <span>Google</span>
           </Button>
-          <Button variant="outline" className="w-full flex items-center justify-center bg-black hover:bg-gray-900 border-gray-700">
+          <Button 
+            variant="outline" 
+            className="w-full flex items-center justify-center bg-black hover:bg-gray-900 border-gray-700"
+            onClick={() => setCurrentTab("login")}
+          >
             <Mail className="w-4 h-4 mr-2" />
             <span>Email</span>
           </Button>

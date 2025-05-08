@@ -13,6 +13,18 @@ import {
   insertChatMessageSchema
 } from "@shared/schema";
 import { ZodError } from "zod";
+import admin from "firebase-admin";
+
+// Initialize Firebase Admin
+try {
+  // Initialize without credentials for now - we'll use token verification only
+  admin.initializeApp({
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+  });
+  console.log('Firebase Admin initialized');
+} catch (error) {
+  console.error('Firebase Admin initialization error:', error);
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API prefix for all routes
@@ -92,6 +104,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         displayName: user.displayName,
         isGuest: user.isGuest
       });
+    } catch (err) {
+      return handleZodError(err, res);
+    }
+  });
+  
+  // Firebase authentication endpoint
+  router.post("/auth/firebase", async (req: Request, res: Response) => {
+    try {
+      const { idToken } = req.body;
+      
+      if (!idToken) {
+        return res.status(400).json({ message: "ID token is required" });
+      }
+      
+      try {
+        // Verify the ID token
+        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        const firebaseUid = decodedToken.uid;
+        const email = decodedToken.email || '';
+        const displayName = decodedToken.name || email.split('@')[0];
+        const photoURL = decodedToken.picture || null;
+        
+        // Check if the user already exists in our database
+        const existingUsername = `firebase_${firebaseUid}`;
+        let user = await storage.getUserByUsername(existingUsername);
+        
+        if (!user) {
+          // If user doesn't exist, create a new one
+          user = await storage.createUser({
+            username: existingUsername,
+            password: `firebase_${Date.now()}`, // Random password since auth is handled by Firebase
+            displayName: displayName,
+            avatar: photoURL,
+            isGuest: false
+          });
+        }
+        
+        return res.status(200).json({
+          id: user.id,
+          username: user.username,
+          displayName: user.displayName,
+          avatar: user.avatar,
+          isGuest: user.isGuest
+        });
+      } catch (error) {
+        console.error('Error verifying Firebase ID token:', error);
+        return res.status(401).json({ message: "Invalid ID token" });
+      }
     } catch (err) {
       return handleZodError(err, res);
     }
