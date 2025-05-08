@@ -92,8 +92,18 @@ export const livestreams = pgTable("livestreams", {
   streamDate: timestamp("stream_date").notNull(),
   thumbnailUrl: text("thumbnail_url"),
   isLive: boolean("is_live").default(false),
-  streamUrl: text("stream_url"),
   hostName: text("host_name"),
+  // Enhanced multi-platform support
+  platform: text("platform").default("custom"), // youtube, twitch, instagram, facebook, tiktok, custom
+  youtubeUrl: text("youtube_url"),
+  twitchChannel: text("twitch_channel"),
+  instagramUsername: text("instagram_username"),
+  facebookUrl: text("facebook_url"),
+  tiktokUsername: text("tiktok_username"),
+  customStreamUrl: text("custom_stream_url"),
+  embedCode: text("embed_code"), // For custom embed codes
+  // Keep streamUrl for backward compatibility
+  streamUrl: text("stream_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -104,8 +114,16 @@ export const insertLivestreamSchema = createInsertSchema(livestreams).pick({
   streamDate: true,
   thumbnailUrl: true,
   isLive: true,
-  streamUrl: true,
   hostName: true,
+  platform: true,
+  youtubeUrl: true,
+  twitchChannel: true,
+  instagramUsername: true,
+  facebookUrl: true,
+  tiktokUsername: true,
+  customStreamUrl: true,
+  embedCode: true,
+  streamUrl: true,
 });
 
 // Posts schema
