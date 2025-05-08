@@ -24,7 +24,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
-import { sendTicketEmail, sendOrderConfirmation, sendAdminNotification, sendWelcomeEmail } from "./email";
+import { sendEmail, sendTicketEmail, sendOrderConfirmation, sendAdminNotification, sendWelcomeEmail } from "./email";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -937,22 +937,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid role" });
       }
       
-      // Assuming updateUserRole method exists in storage
-      const user = await storage.updateUserRole(id, role);
+      // Get the current user before updating
+      const currentUser = (req as any).user;
+      const userBeforeUpdate = await storage.getUser(id);
       
-      if (!user) {
+      if (!userBeforeUpdate) {
         return res.status(404).json({ message: "User not found" });
       }
       
+      // Don't allow changing your own role (to prevent locking yourself out)
+      if (currentUser.id === id) {
+        return res.status(403).json({ message: "You cannot change your own role" });
+      }
+      
+      // Only proceed if the role is actually changing
+      if (userBeforeUpdate.role === role) {
+        return res.status(200).json({ 
+          message: `User already has role: ${role}`,
+          user: userBeforeUpdate
+        });
+      }
+      
+      // Update the user's role
+      const updatedUser = await storage.updateUserRole(id, role);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "Failed to update user role" });
+      }
+      
+      // Send notification to admin about the role change
+      await sendAdminNotification(
+        'User Role Changed',
+        `A user's role has been updated from ${userBeforeUpdate.role || 'user'} to ${role}.`,
+        {
+          UserID: id,
+          Username: userBeforeUpdate.username,
+          PreviousRole: userBeforeUpdate.role || 'user',
+          NewRole: role,
+          ChangedBy: currentUser.username,
+          ChangeTime: new Date().toLocaleString()
+        }
+      );
+      
+      // If user has an email, notify them about the role change
+      if (userBeforeUpdate.email) {
+        try {
+          const subject = `Your account role has been updated`;
+          const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #c01c28;">Account Role Update</h2>
+              <p>Hello ${userBeforeUpdate.displayName || userBeforeUpdate.username},</p>
+              <p>Your account role on the Savage Gentlemen platform has been updated from <strong>${userBeforeUpdate.role || 'user'}</strong> to <strong>${role}</strong>.</p>
+              ${role === 'admin' ? `
+                <p>As an admin, you now have access to:</p>
+                <ul>
+                  <li>Admin dashboard</li>
+                  <li>User management</li>
+                  <li>Content management</li>
+                  <li>System settings</li>
+                </ul>
+              ` : ''}
+              ${role === 'moderator' ? `
+                <p>As a moderator, you now have access to:</p>
+                <ul>
+                  <li>Comment moderation</li>
+                  <li>Content moderation</li>
+                  <li>User reports</li>
+                </ul>
+              ` : ''}
+              <p>If you have any questions about this change, please contact support.</p>
+              <p>Thank you,<br>Savage Gentlemen Team</p>
+            </div>
+          `;
+          
+          await sendEmail({
+            to: userBeforeUpdate.email,
+            subject,
+            html
+          });
+        } catch (emailError) {
+          console.error('Failed to send role change notification email:', emailError);
+          // Continue with the role update even if email fails
+        }
+      }
+      
       return res.status(200).json({
-        id: user.id,
-        username: user.username,
-        displayName: user.displayName,
-        role: user.role
+        id: updatedUser.id,
+        username: updatedUser.username,
+        displayName: updatedUser.displayName,
+        role: updatedUser.role,
+        message: `User role updated to ${role}`
       });
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({ message: "Internal server error" });
+      console.error("Error updating user role:", err);
+      return res.status(500).json({ message: "Failed to update user role" });
     }
   });
   
@@ -967,12 +1045,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Prevent deletion of the current user
-      if (id === (req as any).user.id) {
+      const currentUser = (req as any).user;
+      if (id === currentUser.id) {
         return res.status(400).json({ message: "Cannot delete yourself" });
       }
       
-      // Assuming deleteUser method exists in storage
+      // Store user info before deletion for the notification
+      const deletedUserInfo = {
+        id: user.id,
+        username: user.username,
+        displayName: user.displayName || 'Not provided',
+        email: user.email || 'Not provided',
+        role: user.role || 'user'
+      };
+      
+      // Delete the user
       await storage.deleteUser(id);
+      
+      // Send notification to admin about the deletion
+      await sendAdminNotification(
+        'User Account Deleted',
+        `A user account has been deleted from the platform.`,
+        {
+          UserID: deletedUserInfo.id,
+          Username: deletedUserInfo.username,
+          DisplayName: deletedUserInfo.displayName,
+          Email: deletedUserInfo.email,
+          Role: deletedUserInfo.role,
+          DeletedBy: currentUser.username,
+          DeletionTime: new Date().toLocaleString()
+        }
+      );
       
       return res.status(204).send();
     } catch (err) {
