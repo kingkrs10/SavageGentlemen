@@ -23,13 +23,14 @@ import Stripe from "stripe";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2023-10-16",
+  apiVersion: "2023-10-16", // Will update when appropriate
 });
 
 // Multer storage configuration for file uploads
@@ -765,6 +766,165 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error initializing Etsy products:", err);
       return res.status(500).json({ message: "Failed to initialize Etsy products" });
     }
+  });
+
+  // PayPal payment routes
+  router.get("/payment/paypal-setup", async (req: Request, res: Response) => {
+    await loadPaypalDefault(req, res);
+  });
+  
+  router.post("/payment/paypal-order", async (req: Request, res: Response) => {
+    await createPaypalOrder(req, res);
+  });
+  
+  router.post("/payment/paypal-order/:orderID/capture", async (req: Request, res: Response) => {
+    await capturePaypalOrder(req, res);
+  });
+  
+  // Stripe payment routes  
+  router.post("/payment/create-intent", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const { items, amount, currency = "usd" } = req.body;
+      
+      if (!amount) {
+        return res.status(400).json({ message: "Amount is required" });
+      }
+      
+      // Create a PaymentIntent with the order amount and currency
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency,
+        automatic_payment_methods: {
+          enabled: true,
+        },
+        metadata: {
+          items: JSON.stringify(items || []),
+        },
+      });
+      
+      return res.status(200).json({
+        clientSecret: paymentIntent.client_secret,
+      });
+    } catch (error: any) {
+      console.error("Error creating payment intent:", error);
+      return res.status(500).json({ 
+        message: error.message || "Error creating payment intent" 
+      });
+    }
+  });
+  
+  // Get or create a customer's subscription
+  router.post("/payment/get-or-create-subscription", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      
+      // Check if the user already has a subscription
+      if (user.stripeSubscriptionId) {
+        try {
+          const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+          
+          return res.status(200).json({
+            subscriptionId: subscription.id,
+            clientSecret: subscription.latest_invoice?.payment_intent?.client_secret,
+            status: subscription.status,
+          });
+        } catch (error) {
+          console.log("Previous subscription not found, creating a new one");
+        }
+      }
+      
+      // Create or get the customer
+      let customerId = user.stripeCustomerId;
+      
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email || undefined,
+          name: user.displayName || user.username,
+          metadata: {
+            userId: user.id.toString(),
+          },
+        });
+        
+        customerId = customer.id;
+        await storage.updateStripeCustomerId(user.id, customerId);
+      }
+      
+      // Define the subscription price ID (must be created in the Stripe dashboard)
+      const priceId = process.env.STRIPE_PRICE_ID;
+      
+      if (!priceId) {
+        return res.status(400).json({ message: "Stripe price ID not configured" });
+      }
+      
+      // Create the subscription
+      const subscription = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [{
+          price: priceId,
+        }],
+        payment_behavior: 'default_incomplete',
+        payment_settings: { save_default_payment_method: 'on_subscription' },
+        expand: ['latest_invoice.payment_intent'],
+      });
+      
+      // Store the subscription ID on the user
+      // Note: you would typically also update the user with stripe subscription ID
+      
+      return res.status(200).json({
+        subscriptionId: subscription.id,
+        clientSecret: (subscription.latest_invoice as any)?.payment_intent?.client_secret,
+      });
+    } catch (error: any) {
+      console.error("Error creating subscription:", error);
+      return res.status(500).json({ 
+        message: error.message || "Error creating subscription" 
+      });
+    }
+  });
+  
+  // Webhook to handle Stripe events (payment success, subscription updates, etc.)
+  router.post("/payment/stripe-webhook", express.raw({ type: 'application/json' }), async (req: Request, res: Response) => {
+    const sig = req.headers['stripe-signature'] as string;
+    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    
+    if (!endpointSecret) {
+      return res.status(400).send('Webhook secret not configured');
+    }
+    
+    let event;
+    
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    } catch (err: any) {
+      console.error(`Webhook Error: ${err.message}`);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+    
+    // Handle the event
+    switch (event.type) {
+      case 'payment_intent.succeeded':
+        const paymentIntent = event.data.object;
+        console.log(`PaymentIntent for ${paymentIntent.amount} was successful!`);
+        // Update order status
+        break;
+        
+      case 'invoice.payment_succeeded':
+        const invoice = event.data.object;
+        // Update subscription status
+        break;
+        
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted':
+        const subscription = event.data.object;
+        // Update subscription status in your database
+        break;
+        
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+    
+    // Return a 200 response to acknowledge receipt of the event
+    return res.status(200).json({ received: true });
   });
 
   // Create HTTP server
