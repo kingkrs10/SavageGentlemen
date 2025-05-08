@@ -49,7 +49,23 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    // Add user-id header if available in localStorage
+    let headers: Record<string, string> = {};
+    
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        if (user && user.id) {
+          headers["user-id"] = user.id.toString();
+        }
+      }
+    } catch (error) {
+      console.error("Error parsing stored user:", error);
+    }
+    
     const res = await fetch(queryKey[0] as string, {
+      headers,
       credentials: "include",
     });
 
