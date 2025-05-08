@@ -220,6 +220,12 @@ export default function AdminPage() {
   const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
   const [currentTicket, setCurrentTicket] = useState<Ticket | null>(null);
   
+  // Filtered users for search functionality
+  const [filteredUsers, setFilteredUsers] = useState<User[] | null>(null);
+  
+  // Password visibility state
+  const [showPassword, setShowPassword] = useState(false);
+  
   // Load current user from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -1657,25 +1663,49 @@ export default function AdminPage() {
           <TabsContent value="users">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle>Users</CardTitle>
-                <Button 
-                  size="sm" 
-                  className="sg-btn"
-                  onClick={() => {
-                    setUserForm({
-                      username: "",
-                      password: "",
-                      displayName: "",
-                      email: "",
-                      role: "user",
-                      avatar: ""
-                    });
-                    setUserDialogOpen(true);
-                  }}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add User
-                </Button>
+                <div>
+                  <CardTitle>Users</CardTitle>
+                  <CardDescription>Manage user accounts and permissions</CardDescription>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Input 
+                    placeholder="Search users..." 
+                    className="w-[200px]"
+                    onChange={(e) => {
+                      // Filter users locally based on search term
+                      const searchTerm = e.target.value.toLowerCase();
+                      if (searchTerm && users) {
+                        setFilteredUsers(
+                          users.filter(user => 
+                            user.username.toLowerCase().includes(searchTerm) || 
+                            (user.displayName && user.displayName.toLowerCase().includes(searchTerm)) ||
+                            (user.email && user.email.toLowerCase().includes(searchTerm))
+                          )
+                        );
+                      } else {
+                        setFilteredUsers(null);
+                      }
+                    }}
+                  />
+                  <Button 
+                    size="sm" 
+                    className="sg-btn"
+                    onClick={() => {
+                      setUserForm({
+                        username: "",
+                        password: "",
+                        displayName: "",
+                        email: "",
+                        role: "user",
+                        avatar: ""
+                      });
+                      setUserDialogOpen(true);
+                    }}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add User
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {usersLoading ? (
@@ -1687,8 +1717,15 @@ export default function AdminPage() {
                   <div className="py-10 text-center text-red-500">
                     <h3 className="text-lg font-medium">Error loading users</h3>
                     <p className="text-sm">Please try again later</p>
+                    <Button 
+                      onClick={() => queryClient.invalidateQueries({queryKey: ["/api/admin/users"]})}
+                      variant="outline" 
+                      className="mt-4"
+                    >
+                      Retry
+                    </Button>
                   </div>
-                ) : users.length > 0 ? (
+                ) : (filteredUsers || users).length > 0 ? (
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
@@ -1697,12 +1734,13 @@ export default function AdminPage() {
                           <TableHead>Display Name</TableHead>
                           <TableHead>Email</TableHead>
                           <TableHead>Role</TableHead>
+                          <TableHead>Auth Provider</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {users.map((user) => (
-                          <TableRow key={user.id}>
+                        {(filteredUsers || users).map((user) => (
+                          <TableRow key={user.id} className={user.isGuest ? "bg-slate-50 dark:bg-slate-900/30" : ""}>
                             <TableCell className="font-medium">
                               <div className="flex items-center space-x-2">
                                 <Avatar className="h-8 w-8">
@@ -1717,6 +1755,9 @@ export default function AdminPage() {
                                   )}
                                 </Avatar>
                                 <span>{user.username}</span>
+                                {user.isGuest && (
+                                  <Badge variant="outline" className="ml-1">Guest</Badge>
+                                )}
                               </div>
                             </TableCell>
                             <TableCell>{user.displayName || "-"}</TableCell>
@@ -1731,10 +1772,26 @@ export default function AdminPage() {
                               </Badge>
                             </TableCell>
                             <TableCell>
+                              {user.username.startsWith('firebase_') ? (
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                  Google
+                                </Badge>
+                              ) : user.username.startsWith('guest-') ? (
+                                <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+                                  Guest
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                  Email
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
                               <div className="flex items-center space-x-2">
                                 <Select 
                                   defaultValue={user.role} 
                                   onValueChange={(value) => handleChangeUserRole(user.id, value)}
+                                  disabled={currentUser && user.id === currentUser.id}
                                 >
                                   <SelectTrigger className="h-8 w-[100px]">
                                     <SelectValue placeholder="Role" />
@@ -1749,6 +1806,8 @@ export default function AdminPage() {
                                   variant="ghost" 
                                   size="sm"
                                   onClick={() => handleDeleteUser(user.id)}
+                                  disabled={currentUser && user.id === currentUser.id}
+                                  title={currentUser && user.id === currentUser.id ? "Cannot delete your own account" : "Delete user"}
                                 >
                                   <Trash2 className="h-4 w-4 text-red-500" />
                                 </Button>
