@@ -218,11 +218,11 @@ export default function AdminPage() {
     enabled: !!currentUser,
   });
   
-  // Fetch tickets
+  // Fetch all tickets
   const {
-    data: tickets,
-    isLoading: ticketsLoading,
-    error: ticketsError
+    data: allTickets,
+    isLoading: allTicketsLoading,
+    error: allTicketsError
   } = useQuery<Ticket[]>({
     queryKey: ["/api/admin/tickets"],
     enabled: !!currentUser,
@@ -239,8 +239,42 @@ export default function AdminPage() {
   });
   
   // Handle ticket form submission
-  // State to track the current ticket being edited
+  // State for tickets management
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
+  const [ticketsError, setTicketsError] = useState<Error | null>(null);
   const [currentTicket, setCurrentTicket] = useState<Ticket | null>(null);
+  
+  // Function to fetch tickets for a selected event
+  const fetchTicketsForEvent = async (eventId: number) => {
+    if (!eventId) return;
+    
+    setTicketsLoading(true);
+    setTicketsError(null);
+    
+    try {
+      const response = await fetch(`/api/admin/tickets/event/${eventId}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch tickets: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      setTickets(data);
+    } catch (error) {
+      console.error('Error fetching tickets:', error);
+      setTicketsError(error instanceof Error ? error : new Error('Failed to fetch tickets'));
+    } finally {
+      setTicketsLoading(false);
+    }
+  };
+  
+  // Fetch tickets when an event is selected
+  useEffect(() => {
+    if (selectedEventId) {
+      fetchTicketsForEvent(selectedEventId);
+    }
+  }, [selectedEventId]);
   
   const handleEditTicket = (ticket: Ticket) => {
     // Set the current ticket being edited
