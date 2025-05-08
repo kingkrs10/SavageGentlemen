@@ -1,7 +1,74 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { User, Product } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+
+// Define types for the admin dashboard
+interface User {
+  id: number;
+  username: string;
+  displayName: string | null;
+  avatar: string | null;
+  email: string | null;
+  role: string;
+  isGuest: boolean;
+}
+
+interface Product {
+  id: number;
+  title: string;
+  price: number;
+  description: string | null;
+  imageUrl: string | null;
+  category: string | null;
+  featured: boolean;
+  sizes?: string[];
+  etsyUrl?: string | null;
+}
+
+interface Event {
+  id: number;
+  title: string;
+  date: Date | string;
+  location: string;
+  price: number;
+  description: string | null;
+  imageUrl: string | null;
+  category: string | null;
+  featured?: boolean;
+}
+
+interface Ticket {
+  id: number;
+  name: string;
+  price: number;
+  eventId: number;
+  quantity: number;
+  remainingQuantity: number;
+  isActive: boolean;
+  maxPerPurchase?: number;
+}
+
+interface Order {
+  id: number;
+  status: string;
+  createdAt: Date | string;
+  userId: number;
+  totalAmount: number;
+  paymentMethod: string | null;
+  paymentId: string | null;
+  items?: OrderItem[];
+}
+
+interface OrderItem {
+  id: number;
+  orderId: number;
+  productId?: number | null;
+  ticketId?: number | null;
+  quantity: number;
+  price: number;
+  product?: Product;
+  ticket?: Ticket;
+}
 import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -67,29 +134,69 @@ export default function AdminPage() {
   } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
+  
+  // Fetch events
+  const {
+    data: events,
+    isLoading: eventsLoading,
+    error: eventsError
+  } = useQuery<Event[]>({
+    queryKey: ["/api/events"],
+  });
+  
+  // Fetch users
+  const {
+    data: users,
+    isLoading: usersLoading,
+    error: usersError
+  } = useQuery<User[]>({
+    queryKey: ["/api/admin/users"],
+    enabled: !!currentUser,
+  });
+  
+  // Fetch tickets
+  const {
+    data: tickets,
+    isLoading: ticketsLoading,
+    error: ticketsError
+  } = useQuery<Ticket[]>({
+    queryKey: ["/api/admin/tickets"],
+    enabled: !!currentUser,
+  });
+  
+  // Fetch orders
+  const {
+    data: orders,
+    isLoading: ordersLoading,
+    error: ordersError
+  } = useQuery<Order[]>({
+    queryKey: ["/api/admin/orders"],
+    enabled: !!currentUser,
+  });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-          <p className="text-muted-foreground">
-            Manage your products, events, users, and more.
-          </p>
-        </div>
-        {currentUser && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm">Logged in as: <span className="font-medium">{currentUser.username}</span></span>
-            <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-white text-xs">
-              A
-            </div>
+    <div className="container mx-auto py-6 px-4 md:px-6">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+            <p className="text-muted-foreground">
+              Manage your products, events, users, and more.
+            </p>
           </div>
-        )}
-      </div>
-      <Separator />
+          {currentUser && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm hidden md:inline">Logged in as: <span className="font-medium">{currentUser.username}</span></span>
+              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white text-sm">
+                {currentUser.username.charAt(0).toUpperCase()}
+              </div>
+            </div>
+          )}
+        </div>
+        <Separator />
       
-      <Tabs defaultValue="products" className="w-full">
-        <TabsList className="grid grid-cols-5 mb-8">
+        <Tabs defaultValue="products" className="w-full">
+          <TabsList className="grid grid-cols-5 mb-8">
           <TabsTrigger value="products" className="flex items-center gap-2">
             <PackageOpen className="h-4 w-4" /> Products
           </TabsTrigger>
@@ -176,51 +283,421 @@ export default function AdminPage() {
           </Card>
         </TabsContent>
         
-        {/* Other tabs would go here */}
-        <TabsContent value="events">
+        {/* Events Tab */}
+        <TabsContent value="events" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Events Management</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Events</CardTitle>
+                <CardDescription>Manage events and performances</CardDescription>
+              </div>
+              <Button className="sg-btn" onClick={() => toast({ title: "Add Event Feature", description: "Coming soon" })}>
+                <Calendar className="h-4 w-4 mr-2" /> Add Event
+              </Button>
             </CardHeader>
             <CardContent>
-              <p>Event management features will be available soon.</p>
+              {eventsLoading ? (
+                <div className="py-10 text-center">Loading events...</div>
+              ) : eventsError ? (
+                <div className="py-10 text-center text-red-500">
+                  Error loading events. Please try again.
+                </div>
+              ) : events && events.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[100px]">Image</TableHead>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {events.map((event) => (
+                        <TableRow key={event.id}>
+                          <TableCell>
+                            <div className="h-12 w-12 overflow-hidden rounded border">
+                              {event.imageUrl ? (
+                                <img 
+                                  src={event.imageUrl} 
+                                  alt={event.title} 
+                                  className="h-full w-full object-cover" 
+                                />
+                              ) : (
+                                <div className="h-full w-full bg-gray-100 flex items-center justify-center">
+                                  <Calendar className="h-6 w-6 text-gray-400" />
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-medium">{event.title}</TableCell>
+                          <TableCell>
+                            {typeof event.date === 'string' 
+                              ? new Date(event.date).toLocaleDateString() 
+                              : event.date.toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>{event.location}</TableCell>
+                          <TableCell>${(event.price / 100).toFixed(2)}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => toast({
+                                  title: "Edit Event",
+                                  description: "Coming soon"
+                                })}
+                              >
+                                Edit
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => toast({
+                                  title: "Manage Tickets",
+                                  description: "Coming soon"
+                                })}
+                              >
+                                Tickets
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="py-10 text-center">
+                  <Calendar className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium">No events found</h3>
+                  <p className="text-sm text-gray-500">
+                    Create your first event by clicking the "Add Event" button above.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Event Creation Form would go here */}
+        </TabsContent>
+        
+        {/* Users Tab */}
+        <TabsContent value="users" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Users</CardTitle>
+                <CardDescription>Manage user accounts and permissions</CardDescription>
+              </div>
+              <Button className="sg-btn" onClick={() => toast({ title: "Add User Feature", description: "Coming soon" })}>
+                <Users className="h-4 w-4 mr-2" /> Add User
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {usersLoading ? (
+                <div className="py-10 text-center">Loading users...</div>
+              ) : usersError ? (
+                <div className="py-10 text-center text-red-500">
+                  Error loading users. Please try again.
+                </div>
+              ) : users && users.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[50px]">Avatar</TableHead>
+                        <TableHead>Username</TableHead>
+                        <TableHead>Display Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell>
+                            <div className="h-8 w-8 overflow-hidden rounded-full border">
+                              {user.avatar ? (
+                                <img 
+                                  src={user.avatar} 
+                                  alt={user.username} 
+                                  className="h-full w-full object-cover" 
+                                />
+                              ) : (
+                                <div className="h-full w-full bg-primary flex items-center justify-center text-white text-xs">
+                                  {user.username.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-medium">{user.username}</TableCell>
+                          <TableCell>{user.displayName || "—"}</TableCell>
+                          <TableCell>{user.email || "—"}</TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              user.role === "admin" 
+                                ? "bg-red-100 text-red-700" 
+                                : user.role === "moderator"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-gray-100 text-gray-700"
+                            }`}>
+                              {user.role}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => toast({
+                                  title: "Edit User",
+                                  description: "Coming soon"
+                                })}
+                              >
+                                Edit
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => toast({
+                                  title: "Change Role",
+                                  description: "Coming soon"
+                                })}
+                              >
+                                Role
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="py-10 text-center">
+                  <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium">No users found</h3>
+                  <p className="text-sm text-gray-500">
+                    Add your first user by clicking the "Add User" button above.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* User Creation Form would go here */}
+        </TabsContent>
+        
+        {/* Tickets Tab */}
+        <TabsContent value="tickets" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Tickets</CardTitle>
+                <CardDescription>Manage event tickets and ticket sales</CardDescription>
+              </div>
+              <Button className="sg-btn" onClick={() => toast({ title: "Add Ticket Feature", description: "Coming soon" })}>
+                <TicketIcon className="h-4 w-4 mr-2" /> Create Ticket Type
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {ticketsLoading ? (
+                <div className="py-10 text-center">Loading tickets...</div>
+              ) : ticketsError ? (
+                <div className="py-10 text-center text-red-500">
+                  Error loading tickets. Please try again.
+                </div>
+              ) : tickets && tickets.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Event</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Sold</TableHead>
+                        <TableHead>Remaining</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {tickets.map((ticket) => {
+                        const soldTickets = ticket.quantity - ticket.remainingQuantity;
+                        const percentSold = Math.round((soldTickets / ticket.quantity) * 100);
+                        
+                        return (
+                          <TableRow key={ticket.id}>
+                            <TableCell className="font-medium">{ticket.name}</TableCell>
+                            <TableCell>{`Event #${ticket.eventId}`}</TableCell>
+                            <TableCell>${(ticket.price / 100).toFixed(2)}</TableCell>
+                            <TableCell>{soldTickets} / {ticket.quantity}</TableCell>
+                            <TableCell>{ticket.remainingQuantity}</TableCell>
+                            <TableCell>
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                ticket.isActive 
+                                  ? "bg-green-100 text-green-700" 
+                                  : "bg-gray-100 text-gray-700"
+                              }`}>
+                                {ticket.isActive ? "Active" : "Inactive"}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => toast({
+                                    title: "Edit Ticket",
+                                    description: "Coming soon"
+                                  })}
+                                >
+                                  Edit
+                                </Button>
+                                <Button 
+                                  variant={ticket.isActive ? "destructive" : "outline"}
+                                  size="sm"
+                                  onClick={() => toast({
+                                    title: ticket.isActive ? "Deactivate Ticket" : "Activate Ticket",
+                                    description: "Coming soon"
+                                  })}
+                                >
+                                  {ticket.isActive ? "Deactivate" : "Activate"}
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="py-10 text-center">
+                  <TicketIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium">No tickets found</h3>
+                  <p className="text-sm text-gray-500">
+                    Create your first ticket type by clicking the "Create Ticket Type" button above.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
         
-        <TabsContent value="users">
+        {/* Orders Tab */}
+        <TabsContent value="orders" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>User Management</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Orders</CardTitle>
+                <CardDescription>Manage customer orders and payments</CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => toast({ title: "Export Orders", description: "Coming soon" })}>
+                  Export
+                </Button>
+                <Button className="sg-btn" onClick={() => toast({ title: "View Reports", description: "Coming soon" })}>
+                  <ShoppingCart className="h-4 w-4 mr-2" /> Reports
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <p>User management features will be available soon.</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="tickets">
-          <Card>
-            <CardHeader>
-              <CardTitle>Ticket Management</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>Ticket management features will be available soon.</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="orders">
-          <Card>
-            <CardHeader>
-              <CardTitle>Order Management</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>Order management features will be available soon.</p>
+              {ordersLoading ? (
+                <div className="py-10 text-center">Loading orders...</div>
+              ) : ordersError ? (
+                <div className="py-10 text-center text-red-500">
+                  Error loading orders. Please try again.
+                </div>
+              ) : orders && orders.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Order ID</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Total</TableHead>
+                        <TableHead>Payment Method</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {orders.map((order) => (
+                        <TableRow key={order.id}>
+                          <TableCell className="font-medium">#{order.id}</TableCell>
+                          <TableCell>
+                            {typeof order.createdAt === 'string' 
+                              ? new Date(order.createdAt).toLocaleDateString() 
+                              : order.createdAt.toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>{`User #${order.userId}`}</TableCell>
+                          <TableCell>${(order.totalAmount / 100).toFixed(2)}</TableCell>
+                          <TableCell>{order.paymentMethod || "N/A"}</TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              order.status === "completed" 
+                                ? "bg-green-100 text-green-700" 
+                                : order.status === "processing"
+                                ? "bg-blue-100 text-blue-700"
+                                : order.status === "cancelled"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-gray-100 text-gray-700"
+                            }`}>
+                              {order.status}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => toast({
+                                  title: "View Order Details",
+                                  description: "Coming soon"
+                                })}
+                              >
+                                View
+                              </Button>
+                              {order.status !== "completed" && order.status !== "cancelled" && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => toast({
+                                    title: "Update Order Status",
+                                    description: "Coming soon"
+                                  })}
+                                >
+                                  Update
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="py-10 text-center">
+                  <ShoppingCart className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium">No orders found</h3>
+                  <p className="text-sm text-gray-500">
+                    Customer orders will appear here once they make purchases.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }
