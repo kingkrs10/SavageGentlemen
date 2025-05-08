@@ -585,30 +585,22 @@ export default function AdminPage() {
   
   // User deletion handler
   const handleDeleteUser = async (userId: number) => {
+    // Check if user is trying to delete themselves
+    if (currentUser && userId === currentUser.id) {
+      toast({
+        title: "Cannot Delete Own Account",
+        description: "You cannot delete your own account for security reasons.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Confirm before deletion
     if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
       return;
     }
     
     try {
-      console.log("Current user from state:", currentUser);
-      console.log("Current user from localStorage:", JSON.parse(localStorage.getItem("user") || "{}"));
-      
-      // Ensure the current user is set as admin before attempting delete
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        if (!user.role || user.role !== "admin") {
-          // Force update the user to admin role
-          const adminUser = {
-            ...user,
-            role: "admin"
-          };
-          localStorage.setItem("user", JSON.stringify(adminUser));
-          console.log("User upgraded to admin for delete operation:", adminUser);
-        }
-      }
-      
       // Use the apiRequest function instead of fetch directly
       const response = await apiRequest('DELETE', `/api/admin/users/${userId}`);
       console.log("Delete user response:", response);
@@ -622,9 +614,18 @@ export default function AdminPage() {
       queryClient.invalidateQueries({queryKey: ["/api/admin/users"]});
     } catch (error) {
       console.error('Error deleting user:', error);
+      
+      // More specific error message
+      let errorMessage = "Failed to delete user";
+      if (error instanceof Error && error.message.includes("Cannot delete yourself")) {
+        errorMessage = "You cannot delete your own account for security reasons.";
+      } else if (error instanceof Error && error.message.includes("User not found")) {
+        errorMessage = "User not found. They may have already been deleted.";
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to delete user",
+        description: errorMessage,
         variant: "destructive",
       });
     }
