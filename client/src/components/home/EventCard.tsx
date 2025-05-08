@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Event } from "@/lib/types";
 import SGFlyerLogoPng from "@assets/SGFLYERLOGO.png";
+import AddToCalendarButton from "@/components/events/AddToCalendarButton";
 
 interface EventCardProps {
   event: Event;
@@ -57,16 +58,26 @@ const EventCard = ({
             </div>
             <p className="text-sm mt-3">{description}</p>
           </div>
-          <div className="flex justify-between items-center mt-4">
-            <Badge variant="secondary" className="bg-green-900 text-green-300 px-2 py-1 rounded">
-              <span className="mr-1">🎟️</span> Tickets available
-            </Badge>
-            <Button 
-              className="bg-primary text-white hover:bg-red-800 transition"
-              onClick={() => onGetTicket && onGetTicket(id)}
-            >
-              Get Ticket
-            </Button>
+          <div className="flex flex-col space-y-3 mt-4">
+            <div className="flex justify-between items-center">
+              <Badge variant="secondary" className="bg-green-900 text-green-300 px-2 py-1 rounded">
+                <span className="mr-1">🎟️</span> Tickets available
+              </Badge>
+              <Button 
+                className="bg-primary text-white hover:bg-red-800 transition"
+                onClick={() => onGetTicket && onGetTicket(id)}
+              >
+                Get Ticket
+              </Button>
+            </div>
+            <div className="flex justify-end">
+              <AddToCalendarButton 
+                event={event} 
+                variant="ghost" 
+                size="sm" 
+                className="text-white/70 hover:text-white" 
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -102,17 +113,25 @@ const EventCard = ({
           </Badge>
         </div>
         <p className="text-sm mt-2">{description}</p>
-        <div className="flex justify-between items-center mt-4">
+        <div className="flex items-center mt-4">
           <span className="text-xs flex items-center">
             <MapPin className="w-3 h-3 mr-1" /> {location}
           </span>
-          <Button 
-            className="bg-primary text-white hover:bg-red-800 transition"
-            size="sm"
-            onClick={() => onGetTicket && onGetTicket(id)}
-          >
-            Get Ticket
-          </Button>
+          <div className="flex ml-auto space-x-2">
+            <AddToCalendarButton 
+              event={event} 
+              variant="ghost" 
+              size="sm" 
+              className="text-white/70 hover:text-white" 
+            />
+            <Button 
+              className="bg-primary text-white hover:bg-red-800 transition"
+              size="sm"
+              onClick={() => onGetTicket && onGetTicket(id)}
+            >
+              Get Ticket
+            </Button>
+          </div>
         </div>
       </div>
     </div>
