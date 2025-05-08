@@ -1,6 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Define types for the admin dashboard
 interface User {
@@ -772,7 +779,24 @@ export default function AdminPage() {
                 <CardTitle>Tickets</CardTitle>
                 <CardDescription>Manage event tickets and ticket sales</CardDescription>
               </div>
-              <Dialog open={ticketDialogOpen} onOpenChange={setTicketDialogOpen}>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={selectedEventId?.toString() || ""}
+                  onValueChange={(value) => setSelectedEventId(Number(value))}
+                >
+                  <SelectTrigger className="w-[200px] bg-slate-700 border-slate-600 text-white">
+                    <SelectValue placeholder="Select an event" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-600 text-white">
+                    {events && events.map((event) => (
+                      <SelectItem key={event.id} value={event.id.toString()} className="text-white focus:bg-slate-700">
+                        {event.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Dialog open={ticketDialogOpen} onOpenChange={setTicketDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="sg-btn" onClick={() => {
                     // Set the default values for the form when opening
@@ -1228,6 +1252,7 @@ export default function AdminPage() {
                   </div>
                 </DialogContent>
               </Dialog>
+              </div>
             </CardHeader>
             <CardContent>
               {ticketsLoading ? (
@@ -1252,16 +1277,20 @@ export default function AdminPage() {
                     </TableHeader>
                     <TableBody>
                       {tickets.map((ticket) => {
-                        const soldTickets = ticket.quantity - ticket.remainingQuantity;
+                        const soldTickets = ticket.quantity - (ticket.remainingQuantity || 0);
                         const percentSold = Math.round((soldTickets / ticket.quantity) * 100);
+                        
+                        // Find the event name instead of just showing the ID
+                        const event = events?.find(e => e.id === ticket.eventId);
+                        const eventName = event ? event.title : `Event #${ticket.eventId}`;
                         
                         return (
                           <TableRow key={ticket.id}>
                             <TableCell className="font-medium">{ticket.name}</TableCell>
-                            <TableCell>{`Event #${ticket.eventId}`}</TableCell>
+                            <TableCell>{eventName}</TableCell>
                             <TableCell>${(ticket.price / 100).toFixed(2)}</TableCell>
                             <TableCell>{soldTickets} / {ticket.quantity}</TableCell>
-                            <TableCell>{ticket.remainingQuantity}</TableCell>
+                            <TableCell>{ticket.remainingQuantity || ticket.quantity}</TableCell>
                             <TableCell>
                               <span className={`px-2 py-1 rounded text-xs font-medium ${
                                 ticket.isActive 
