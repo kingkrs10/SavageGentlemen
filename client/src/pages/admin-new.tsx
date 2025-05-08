@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { Trash } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -1967,6 +1968,14 @@ export default function AdminPage() {
                                   onClick={() => handleToggleLivestreamStatus(livestream)}
                                 >
                                   {livestream.isLive ? 'End Stream' : 'Go Live'}
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="border-red-200 hover:bg-red-100 hover:text-red-600"
+                                  onClick={() => handleDeleteLivestream(livestream.id)}
+                                >
+                                  <Trash className="h-4 w-4" />
                                 </Button>
                               </div>
                             </TableCell>
