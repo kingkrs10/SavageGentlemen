@@ -47,16 +47,27 @@ export const events = pgTable("events", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const insertEventSchema = createInsertSchema(events).pick({
-  title: true,
-  description: true,
-  date: true,
-  location: true,
-  price: true,
-  imageUrl: true,
-  category: true,
-  featured: true,
-});
+export const insertEventSchema = createInsertSchema(events)
+  .pick({
+    title: true,
+    description: true,
+    date: true,
+    location: true,
+    price: true,
+    imageUrl: true,
+    category: true,
+    featured: true,
+  })
+  .transform((data) => {
+    // If date is provided as a string, convert it to a Date object
+    if (typeof data.date === 'string') {
+      return {
+        ...data,
+        date: new Date(data.date),
+      };
+    }
+    return data;
+  });
 
 // Products schema
 export const products = pgTable("products", {

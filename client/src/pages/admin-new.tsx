@@ -600,12 +600,12 @@ export default function AdminPage() {
       // Combine date and time
       const dateTimeString = `${eventForm.date}T${eventForm.time || '19:00'}:00`;
       
-      // Create payload
+      // Create payload with date as a string for proper serialization
       const eventData = {
         id: currentEvent.id,
         title: eventForm.title,
         description: eventForm.description,
-        date: new Date(dateTimeString),
+        date: dateTimeString, // Use ISO string format to avoid serialization issues
         location: eventForm.location,
         price: eventForm.price,
         imageUrl: eventForm.imageUrl,
