@@ -148,10 +148,8 @@ const Home = () => {
           </div>
           
           <div className="mt-8 text-center">
-            <Link href="/events">
-              <a className="text-white hover:text-primary uppercase tracking-widest text-sm font-semibold inline-flex items-center">
-                View All Events <ChevronRight className="h-4 w-4 ml-1" />
-              </a>
+            <Link href="/events" className="text-white hover:text-primary uppercase tracking-widest text-sm font-semibold inline-flex items-center">
+              View All Events <ChevronRight className="h-4 w-4 ml-1" />
             </Link>
           </div>
         </section>
@@ -186,10 +184,8 @@ const Home = () => {
           </div>
           
           <div className="mt-8 text-center">
-            <Link href="/shop">
-              <a className="text-white hover:text-primary uppercase tracking-widest text-sm font-semibold inline-flex items-center">
-                View All Products <ChevronRight className="h-4 w-4 ml-1" />
-              </a>
+            <Link href="/shop" className="text-white hover:text-primary uppercase tracking-widest text-sm font-semibold inline-flex items-center">
+              View All Products <ChevronRight className="h-4 w-4 ml-1" />
             </Link>
           </div>
         </section>
@@ -237,11 +233,9 @@ const Home = () => {
                     {currentLivestream.viewerCount || 0} watching
                   </p>
                   <Link href="/live">
-                    <a>
-                      <Button className="bg-primary hover:bg-primary/80 text-white px-6 uppercase tracking-widest text-sm">
-                        Watch Now
-                      </Button>
-                    </a>
+                    <Button className="bg-primary hover:bg-primary/80 text-white px-6 uppercase tracking-widest text-sm">
+                      Watch Now
+                    </Button>
                   </Link>
                 </div>
               </div>
@@ -250,20 +244,16 @@ const Home = () => {
             <div className="border border-white/10 p-16 text-center">
               <p className="text-white/60 uppercase tracking-widest mb-6">No streams currently live</p>
               <Link href="/live">
-                <a>
-                  <Button className="border-white text-white hover:bg-white/10 uppercase tracking-widest">
-                    Check Upcoming Streams
-                  </Button>
-                </a>
+                <Button className="border-white text-white hover:bg-white/10 uppercase tracking-widest">
+                  Check Upcoming Streams
+                </Button>
               </Link>
             </div>
           )}
           
           <div className="mt-8 text-center">
-            <Link href="/live">
-              <a className="text-white hover:text-primary uppercase tracking-widest text-sm font-semibold inline-flex items-center">
-                View All Broadcasts <ChevronRight className="h-4 w-4 ml-1" />
-              </a>
+            <Link href="/live" className="text-white hover:text-primary uppercase tracking-widest text-sm font-semibold inline-flex items-center">
+              View All Broadcasts <ChevronRight className="h-4 w-4 ml-1" />
             </Link>
           </div>
         </section>
