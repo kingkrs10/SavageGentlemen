@@ -121,6 +121,7 @@ export default function AdminPage() {
   const [, navigate] = useLocation();
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
+  const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<number>(1); // Default to first event for development
   const [ticketForm, setTicketForm] = useState({
     name: '',
@@ -148,6 +149,15 @@ export default function AdminPage() {
     status: 'on_sale'
   });
   const [activeTab, setActiveTab] = useState("essential");
+  
+  // User form state
+  const [userForm, setUserForm] = useState({
+    username: '',
+    displayName: '',
+    email: '',
+    password: '',
+    role: 'user'
+  });
   
   React.useEffect(() => {
     // Check if user is logged in and is admin
@@ -355,6 +365,69 @@ export default function AdminPage() {
     }
   };
   
+  // User creation handler
+  const handleCreateUser = async () => {
+    try {
+      // Validation
+      if (!userForm.username || !userForm.password || !userForm.email) {
+        toast({
+          title: "Missing fields",
+          description: "Username, password, and email are required",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Prepare data for API
+      const userData = {
+        ...userForm,
+        isGuest: false
+      };
+
+      // Make API call to create user
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create user');
+      }
+
+      const result = await response.json();
+      
+      toast({
+        title: "User Created",
+        description: `User "${userForm.username}" created successfully`,
+      });
+      
+      // Close the dialog
+      setUserDialogOpen(false);
+      
+      // Reset the form
+      setUserForm({
+        username: '',
+        displayName: '',
+        email: '',
+        password: '',
+        role: 'user'
+      });
+      
+      // Invalidate the users query to refetch users and update the UI
+      queryClient.invalidateQueries({queryKey: ["/api/admin/users"]});
+    } catch (error) {
+      console.error("Failed to create user:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create user. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleCreateTicket = async () => {
     try {
       // Prepare the complete ticket data for submission
@@ -671,7 +744,7 @@ export default function AdminPage() {
                 <CardTitle>Users</CardTitle>
                 <CardDescription>Manage user accounts and permissions</CardDescription>
               </div>
-              <Button className="sg-btn" onClick={() => toast({ title: "Add User Feature", description: "Coming soon" })}>
+              <Button className="sg-btn" onClick={() => setUserDialogOpen(true)}>
                 <Users className="h-4 w-4 mr-2" /> Add User
               </Button>
             </CardHeader>
@@ -768,7 +841,91 @@ export default function AdminPage() {
             </CardContent>
           </Card>
 
-          {/* User Creation Form would go here */}
+          {/* User Dialog */}
+          <Dialog open={userDialogOpen} onOpenChange={setUserDialogOpen}>
+            <DialogContent className="sm:max-w-[450px] bg-[#141e2e] text-white">
+              <DialogHeader>
+                <DialogTitle className="text-white text-xl">Create new user</DialogTitle>
+                <DialogDescription className="text-slate-400">
+                  Add a new user to the system with appropriate permissions.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="text-white">Username</Label>
+                  <Input
+                    id="username"
+                    placeholder="Enter username"
+                    className="bg-slate-700 border border-slate-600 text-white"
+                    value={userForm.username}
+                    onChange={(e) => setUserForm({...userForm, username: e.target.value})}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="displayName" className="text-white">Display Name</Label>
+                  <Input
+                    id="displayName"
+                    placeholder="Enter display name"
+                    className="bg-slate-700 border border-slate-600 text-white"
+                    value={userForm.displayName}
+                    onChange={(e) => setUserForm({...userForm, displayName: e.target.value})}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-white">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter email address"
+                    className="bg-slate-700 border border-slate-600 text-white"
+                    value={userForm.email}
+                    onChange={(e) => setUserForm({...userForm, email: e.target.value})}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-white">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter password"
+                    className="bg-slate-700 border border-slate-600 text-white"
+                    value={userForm.password}
+                    onChange={(e) => setUserForm({...userForm, password: e.target.value})}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="role" className="text-white">Role</Label>
+                  <Select
+                    value={userForm.role}
+                    onValueChange={(value) => setUserForm({...userForm, role: value})}
+                  >
+                    <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-white">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-600 text-white">
+                      <SelectItem value="user" className="text-white focus:bg-slate-700">User</SelectItem>
+                      <SelectItem value="moderator" className="text-white focus:bg-slate-700">Moderator</SelectItem>
+                      <SelectItem value="admin" className="text-white focus:bg-slate-700">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <DialogFooter className="bg-[#141e2e]">
+                <Button type="button" variant="outline" onClick={() => setUserDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button className="sg-btn" onClick={handleCreateUser}>
+                  Create User
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
         
         {/* Tickets Tab */}
