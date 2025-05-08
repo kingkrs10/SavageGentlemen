@@ -659,7 +659,7 @@ export default function AdminPage() {
                     <TicketIcon className="h-4 w-4 mr-2" /> Create Ticket Type
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[550px] bg-slate-800 text-white">
+                <DialogContent className="sm:max-w-[550px] bg-[#141e2e] text-white">
                   <DialogHeader>
                     <DialogTitle className="text-white text-xl">Create new ticket type</DialogTitle>
                   </DialogHeader>
@@ -668,7 +668,7 @@ export default function AdminPage() {
                   <div className="mb-4">
                     <select
                       id="event"
-                      className="w-full rounded-md border border-slate-700 bg-slate-700 px-3 py-2 text-sm text-white"
+                      className="w-full rounded-md border border-slate-600 bg-slate-700 px-3 py-2 text-sm text-white"
                       value={selectedEventId}
                       onChange={(e) => setSelectedEventId(Number(e.target.value))}
                     >
@@ -684,13 +684,13 @@ export default function AdminPage() {
                   <div className="mb-6">
                     <div className="flex w-full rounded-md overflow-hidden">
                       <button 
-                        className={`flex-1 py-3 px-4 text-center ${activeTab === "essential" ? "bg-slate-700" : "bg-slate-800"}`}
+                        className={`flex-1 py-3 px-4 text-center ${activeTab === "essential" ? "bg-slate-700" : "bg-[#141e2e]"}`}
                         onClick={() => setActiveTab("essential")}
                       >
                         Essential
                       </button>
                       <button 
-                        className={`flex-1 py-3 px-4 text-center ${activeTab === "advanced" ? "bg-slate-700" : "bg-slate-800"}`}
+                        className={`flex-1 py-3 px-4 text-center ${activeTab === "advanced" ? "bg-slate-700" : "bg-[#141e2e]"}`}
                         onClick={() => setActiveTab("advanced")}
                       >
                         Advanced
@@ -708,7 +708,7 @@ export default function AdminPage() {
                         <Input
                           id="name"
                           placeholder="e.g. General admission, Adult, Kid, VIP, Press"
-                          className="bg-slate-700 border-none text-white"
+                          className="bg-slate-700 border border-slate-600 text-white"
                           value={ticketForm.name}
                           onChange={(e) => setTicketForm({...ticketForm, name: e.target.value})}
                         />
@@ -724,7 +724,7 @@ export default function AdminPage() {
                           <Input
                             id="quantity"
                             type="number"
-                            className="bg-slate-700 border-none text-white"
+                            className="bg-slate-700 border border-slate-600 text-white"
                             value={ticketForm.quantity}
                             onChange={(e) => setTicketForm({...ticketForm, quantity: Number(e.target.value)})}
                           />
@@ -773,15 +773,17 @@ export default function AdminPage() {
                           <Label htmlFor="priceType" className="text-white">Price type</Label>
                         </div>
                         <p className="text-xs text-slate-400">Add a visual cue for non-standard prices</p>
-                        <select
-                          id="priceType"
-                          className="w-full rounded-md border-none bg-slate-700 px-3 py-2 text-sm text-white"
-                          value={ticketForm.priceType}
-                          onChange={(e) => setTicketForm({...ticketForm, priceType: e.target.value})}
-                        >
-                          <option value="standard">Standard</option>
-                          <option value="pay_what_you_can">Pay What You Can</option>
-                        </select>
+                        <div className="bg-slate-700 rounded-md">
+                          <select
+                            id="priceType"
+                            className="w-full rounded-md border-none bg-slate-700 px-3 py-2 text-sm text-white appearance-none"
+                            value={ticketForm.priceType}
+                            onChange={(e) => setTicketForm({...ticketForm, priceType: e.target.value})}
+                          >
+                            <option value="standard">Standard</option>
+                            <option value="pay_what_you_can">Pay What You Can</option>
+                          </select>
+                        </div>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-4">
@@ -822,14 +824,16 @@ export default function AdminPage() {
                           <Label className="text-white">Display remaining quantity</Label>
                         </div>
                         <p className="text-xs text-slate-400">Inform your customers about the remaining ticket availability</p>
-                        <select
-                          className="w-full rounded-md border-none bg-slate-700 px-3 py-2 text-sm text-white"
-                          value={ticketForm.displayRemainingQuantity ? "visible" : "hidden"}
-                          onChange={(e) => setTicketForm({...ticketForm, displayRemainingQuantity: e.target.value === "visible"})}
-                        >
-                          <option value="visible">Make the remaining quantity visible</option>
-                          <option value="hidden">Hide the remaining quantity</option>
-                        </select>
+                        <div className="bg-slate-700 rounded-md">
+                          <select
+                            className="w-full rounded-md border-none bg-slate-700 px-3 py-2 text-sm text-white appearance-none"
+                            value={ticketForm.displayRemainingQuantity ? "visible" : "hidden"}
+                            onChange={(e) => setTicketForm({...ticketForm, displayRemainingQuantity: e.target.value === "visible"})}
+                          >
+                            <option value="visible">Make the remaining quantity visible</option>
+                            <option value="hidden">Hide the remaining quantity</option>
+                          </select>
+                        </div>
                       </div>
                       
                       <div className="space-y-2">
@@ -845,7 +849,7 @@ export default function AdminPage() {
                               id="status-on_sale"
                               checked={ticketForm.status === "on_sale"}
                               onChange={() => setTicketForm({...ticketForm, status: "on_sale"})}
-                              className="h-4 w-4"
+                              className="h-4 w-4 accent-slate-400"
                             />
                             <label htmlFor="status-on_sale">
                               <div className="text-white">On sale</div>
@@ -922,27 +926,45 @@ export default function AdminPage() {
                         
                         <div className="space-y-1">
                           <Label htmlFor="salesStartDate" className="text-white text-xs">Sales start date</Label>
-                          <Input
-                            id="salesStartDate"
-                            type="date"
-                            className="bg-slate-700 border-none text-white"
-                            value={ticketForm.salesStartDate}
-                            onChange={(e) => setTicketForm({...ticketForm, salesStartDate: e.target.value})}
-                          />
+                          <div className="relative">
+                            <Input
+                              id="salesStartDate"
+                              placeholder="mm/dd/yyyy"
+                              className="bg-slate-700 border-none text-white pl-3 pr-8"
+                              value={ticketForm.salesStartDate}
+                              onChange={(e) => setTicketForm({...ticketForm, salesStartDate: e.target.value})}
+                            />
+                            <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                              </svg>
+                            </span>
+                          </div>
                         </div>
                         
                         <div className="space-y-1">
                           <Label htmlFor="salesStartTime" className="text-white text-xs">Sales start time</Label>
-                          <Input
-                            id="salesStartTime"
-                            type="time"
-                            className="bg-slate-700 border-none text-white"
-                            value={ticketForm.salesStartTime}
-                            onChange={(e) => setTicketForm({...ticketForm, salesStartTime: e.target.value})}
-                          />
+                          <div className="relative">
+                            <Input
+                              id="salesStartTime"
+                              placeholder="--:-- --"
+                              className="bg-slate-700 border-none text-white pl-3 pr-8"
+                              value={ticketForm.salesStartTime}
+                              onChange={(e) => setTicketForm({...ticketForm, salesStartTime: e.target.value})}
+                            />
+                            <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                              </svg>
+                            </span>
+                          </div>
                         </div>
                         
-                        <div className="flex items-center col-span-2">
+                        <div className="flex items-center col-span-2 text-slate-300">
                           <input
                             type="checkbox"
                             id="hideBeforeSalesStart"
@@ -950,32 +972,50 @@ export default function AdminPage() {
                             onChange={(e) => setTicketForm({...ticketForm, hideBeforeSalesStart: e.target.checked})}
                             className="h-4 w-4 mr-2"
                           />
-                          <label htmlFor="hideBeforeSalesStart" className="text-white text-xs">Hide before sales start</label>
+                          <label htmlFor="hideBeforeSalesStart" className="text-slate-300 text-xs">Hide before sales start</label>
                         </div>
                         
                         <div className="space-y-1">
                           <Label htmlFor="salesEndDate" className="text-white text-xs">Sales end date</Label>
-                          <Input
-                            id="salesEndDate"
-                            type="date"
-                            className="bg-slate-700 border-none text-white"
-                            value={ticketForm.salesEndDate}
-                            onChange={(e) => setTicketForm({...ticketForm, salesEndDate: e.target.value})}
-                          />
+                          <div className="relative">
+                            <Input
+                              id="salesEndDate"
+                              placeholder="mm/dd/yyyy"
+                              className="bg-slate-700 border-none text-white pl-3 pr-8"
+                              value={ticketForm.salesEndDate}
+                              onChange={(e) => setTicketForm({...ticketForm, salesEndDate: e.target.value})}
+                            />
+                            <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                              </svg>
+                            </span>
+                          </div>
                         </div>
                         
                         <div className="space-y-1">
                           <Label htmlFor="salesEndTime" className="text-white text-xs">Sales end time</Label>
-                          <Input
-                            id="salesEndTime"
-                            type="time"
-                            className="bg-slate-700 border-none text-white"
-                            value={ticketForm.salesEndTime}
-                            onChange={(e) => setTicketForm({...ticketForm, salesEndTime: e.target.value})}
-                          />
+                          <div className="relative">
+                            <Input
+                              id="salesEndTime"
+                              placeholder="--:-- --"
+                              className="bg-slate-700 border-none text-white pl-3 pr-8"
+                              value={ticketForm.salesEndTime}
+                              onChange={(e) => setTicketForm({...ticketForm, salesEndTime: e.target.value})}
+                            />
+                            <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                              </svg>
+                            </span>
+                          </div>
                         </div>
                         
-                        <div className="flex items-center col-span-2">
+                        <div className="flex items-center col-span-2 text-slate-300">
                           <input
                             type="checkbox"
                             id="hideAfterSalesEnd"
@@ -983,7 +1023,7 @@ export default function AdminPage() {
                             onChange={(e) => setTicketForm({...ticketForm, hideAfterSalesEnd: e.target.checked})}
                             className="h-4 w-4 mr-2"
                           />
-                          <label htmlFor="hideAfterSalesEnd" className="text-white text-xs">Hide after sales end</label>
+                          <label htmlFor="hideAfterSalesEnd" className="text-slate-300 text-xs">Hide after sales end</label>
                         </div>
                       </div>
                       
