@@ -606,17 +606,8 @@ export default function AdminPage() {
   // Role change handler
   const handleChangeUserRole = async (userId: number, newRole: string) => {
     try {
-      const response = await fetch(`/api/admin/users/${userId}/role`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ role: newRole }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update user role');
-      }
+      // Use the apiRequest function instead of fetch directly
+      await apiRequest('PUT', `/api/admin/users/${userId}/role`, { role: newRole });
 
       toast({
         title: "Role Updated",
@@ -643,16 +634,8 @@ export default function AdminPage() {
     }
     
     try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete user');
-      }
+      // Use the apiRequest function instead of fetch directly
+      await apiRequest('DELETE', `/api/admin/users/${userId}`);
 
       toast({
         title: "User Deleted",
