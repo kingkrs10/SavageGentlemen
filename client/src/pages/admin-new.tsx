@@ -1146,6 +1146,18 @@ export default function AdminPage() {
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
+                                  onClick={() => {
+                                    setSelectedEventId(event.id.toString());
+                                    // Switch to tickets tab
+                                    const ticketsTab = document.querySelector('[value="tickets"]') as HTMLElement;
+                                    if (ticketsTab) ticketsTab.click();
+                                  }}
+                                >
+                                  <TicketIcon className="h-4 w-4 text-green-500" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
                                   onClick={() => handleDeleteEvent(event.id)}
                                 >
                                   <Trash2 className="h-4 w-4 text-red-500" />
