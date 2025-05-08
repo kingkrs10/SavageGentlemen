@@ -46,7 +46,7 @@ export default function PayPalButton({
   };
 
   const captureOrder = async (orderId: string) => {
-    const response = await fetch(`/api/payment/paypal-order/${orderId}/capture`, {
+    const response = await fetch(`/order/${orderId}/capture`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -92,10 +92,9 @@ export default function PayPalButton({
 
     loadPayPalSDK();
   }, []);
-  
   const initPayPal = async () => {
     try {
-      const clientToken: string = await fetch("/api/payment/paypal-setup")
+      const clientToken: string = await fetch("/setup")
         .then((res) => res.json())
         .then((data) => {
           return data.clientToken;

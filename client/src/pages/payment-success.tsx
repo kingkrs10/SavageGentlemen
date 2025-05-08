@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
 
 export default function PaymentSuccess() {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const [paymentDetails, setPaymentDetails] = useState<any>(null);
   
   useEffect(() => {
@@ -79,10 +79,10 @@ export default function PaymentSuccess() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
-          <Button className="w-full" onClick={() => navigate('/events')}>
+          <Button className="w-full" onClick={() => setLocation('/events')}>
             Browse More Events
           </Button>
-          <Button variant="outline" className="w-full" onClick={() => navigate('/')}>
+          <Button variant="outline" className="w-full" onClick={() => setLocation('/')}>
             Return to Home
           </Button>
         </CardFooter>

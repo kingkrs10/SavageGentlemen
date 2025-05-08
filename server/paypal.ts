@@ -20,15 +20,15 @@ import { Request, Response } from "express";
 const { PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET } = process.env;
 
 if (!PAYPAL_CLIENT_ID) {
-  console.warn("Missing PAYPAL_CLIENT_ID");
+  throw new Error("Missing PAYPAL_CLIENT_ID");
 }
 if (!PAYPAL_CLIENT_SECRET) {
-  console.warn("Missing PAYPAL_CLIENT_SECRET");
+  throw new Error("Missing PAYPAL_CLIENT_SECRET");
 }
 const client = new Client({
   clientCredentialsAuthCredentials: {
-    oAuthClientId: PAYPAL_CLIENT_ID || '',
-    oAuthClientSecret: PAYPAL_CLIENT_SECRET || '',
+    oAuthClientId: PAYPAL_CLIENT_ID,
+    oAuthClientSecret: PAYPAL_CLIENT_SECRET,
   },
   timeout: 0,
   environment:
@@ -51,10 +51,6 @@ const oAuthAuthorizationController = new OAuthAuthorizationController(client);
 /* Token generation helpers */
 
 export async function getClientToken() {
-  if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
-    throw new Error("Missing PayPal credentials");
-  }
-  
   const auth = Buffer.from(
     `${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`,
   ).toString("base64");
@@ -145,14 +141,9 @@ export async function capturePaypalOrder(req: Request, res: Response) {
 }
 
 export async function loadPaypalDefault(req: Request, res: Response) {
-  try {
-    const clientToken = await getClientToken();
-    res.json({
-      clientToken,
-    });
-  } catch (error) {
-    console.error("Failed to load PayPal token:", error);
-    res.status(500).json({ error: "Failed to load PayPal configuration" });
-  }
+  const clientToken = await getClientToken();
+  res.json({
+    clientToken,
+  });
 }
 // <END_EXACT_CODE>
