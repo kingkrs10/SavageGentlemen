@@ -22,8 +22,19 @@ const Header = ({ user, onProfileClick, onLogout }: HeaderProps) => {
   return (
     <header className="sticky top-0 z-50 bg-black border-b border-white/10">
       <div className="container mx-auto px-4 flex flex-col">
-        {/* Top Navigation Bar */}
-        <div className="py-3 flex justify-between items-center">
+        {/* Desktop Menu Above Logo - Hidden on Mobile */}
+        <div className="hidden md:flex justify-center py-4 text-sm">
+          <nav className="flex space-x-8">
+            <a href="/" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Home</a>
+            <a href="/events" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Events</a>
+            <a href="/shop" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Shop</a>
+            <a href="/live" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Live</a>
+            <a href="/community" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Community</a>
+          </nav>
+        </div>
+        
+        {/* Logo and User Controls */}
+        <div className="py-3 flex justify-between items-center border-t border-white/10">
           <div className="flex items-center">
             <img src={LogoSvg} alt="Savage Gentlemen Logo" className="h-10 w-10" />
             <h1 className="ml-2 text-xl md:text-2xl font-heading text-white tracking-widest truncate max-w-[180px] sm:max-w-none">
@@ -91,17 +102,6 @@ const Header = ({ user, onProfileClick, onLogout }: HeaderProps) => {
               </Button>
             )}
           </div>
-        </div>
-        
-        {/* Desktop Menu - Hidden on Mobile */}
-        <div className="hidden md:flex justify-center border-t border-white/10 py-4 text-sm">
-          <nav className="flex space-x-8">
-            <a href="/" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Home</a>
-            <a href="/events" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Events</a>
-            <a href="/shop" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Shop</a>
-            <a href="/live" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Live</a>
-            <a href="/community" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Community</a>
-          </nav>
         </div>
       </div>
     </header>

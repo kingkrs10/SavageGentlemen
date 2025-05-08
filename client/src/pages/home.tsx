@@ -80,38 +80,40 @@ const Home = () => {
               </video>
               
               {/* Overlay and Logo */}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black z-10 flex items-center justify-center">
+              <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black z-10 flex flex-col items-center justify-center">
                 <img 
                   src={SGFlyerLogoPng} 
                   alt="Savage Gentlemen" 
-                  className="h-60 w-60 object-contain opacity-90 animate-pulse"
+                  className="h-60 w-60 object-contain opacity-90 animate-pulse mb-12"
                 />
+                
+                {/* Action Buttons below Logo */}
+                <div className="flex flex-col gap-4 max-w-md w-full px-6">
+                  <Button 
+                    className="bg-primary hover:bg-primary/80 text-white px-8 py-6 uppercase tracking-widest text-lg font-semibold shadow-xl w-full"
+                    onClick={() => window.location.href = '/events'}
+                  >
+                    VIEW EVENTS
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="border-white text-white hover:bg-white/20 px-8 py-6 uppercase tracking-widest text-lg font-semibold backdrop-blur-sm shadow-xl w-full"
+                    onClick={() => window.location.href = '/shop'}
+                  >
+                    SHOP COLLECTION
+                  </Button>
+                </div>
               </div>
             </div>
             
-            {/* Hero Content - Centered */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 z-20">
+            {/* Hero Content - Hidden */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 z-10 opacity-0">
               <h1 className="text-5xl md:text-7xl font-heading text-white uppercase tracking-wide mb-6 [text-shadow:_0_2px_5px_rgba(0,0,0,0.7)]">
                 Savage Gentlemen
               </h1>
               <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto mb-8 uppercase tracking-widest [text-shadow:_0_1px_3px_rgba(0,0,0,0.9)]">
                 Events · Merchandise · Live Stream · Community
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  className="bg-primary hover:bg-primary/80 text-white px-8 py-6 uppercase tracking-widest text-sm font-semibold shadow-xl"
-                  onClick={() => window.location.href = '/events'}
-                >
-                  View Events
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="border-white text-white hover:bg-white/20 px-8 py-6 uppercase tracking-widest text-sm font-semibold backdrop-blur-sm shadow-xl"
-                  onClick={() => window.location.href = '/shop'}
-                >
-                  Shop Collection
-                </Button>
-              </div>
             </div>
           </div>
         )}
