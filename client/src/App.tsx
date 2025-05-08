@@ -7,6 +7,8 @@ import SplashScreen from "@/components/SplashScreen";
 import Header from "@/components/layout/Header";
 import BottomNavigation from "@/components/layout/BottomNavigation";
 import AuthModal from "@/components/auth/AuthModal";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import SEOHead from "@/components/SEOHead";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Events from "@/pages/events";
@@ -93,28 +95,36 @@ function App() {
   }
 
   return (
-    <ThemeProvider attribute="class" forcedTheme="dark">
-      <TooltipProvider>
-        <div className="min-h-screen flex flex-col bg-background">
-          <Header
-            user={user}
-            onProfileClick={() => setShowAuthModal(true)}
-            onLogout={handleLogout}
-          />
-          <main className="flex-grow container mx-auto px-3 py-4 pb-16">
-            <Router />
-          </main>
-          <BottomNavigation user={user} />
-          <AuthModal
-            isOpen={showAuthModal}
-            onClose={() => setShowAuthModal(false)}
-            onLogin={handleLogin}
-            onContinueAsGuest={handleContinueAsGuest}
-          />
-          <Toaster />
-        </div>
-      </TooltipProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <SEOHead 
+        title="Home"
+        description="Savage Gentlemen - Caribbean-American lifestyle brand featuring events, merchandise, livestreams, and community connection. Shop tickets, apparel, and more."
+      />
+      <ThemeProvider attribute="class" forcedTheme="dark">
+        <TooltipProvider>
+          <div className="min-h-screen flex flex-col bg-background">
+            <Header
+              user={user}
+              onProfileClick={() => setShowAuthModal(true)}
+              onLogout={handleLogout}
+            />
+            <main className="flex-grow container mx-auto px-3 py-4 pb-16">
+              <ErrorBoundary>
+                <Router />
+              </ErrorBoundary>
+            </main>
+            <BottomNavigation user={user} />
+            <AuthModal
+              isOpen={showAuthModal}
+              onClose={() => setShowAuthModal(false)}
+              onLogin={handleLogin}
+              onContinueAsGuest={handleContinueAsGuest}
+            />
+            <Toaster />
+          </div>
+        </TooltipProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

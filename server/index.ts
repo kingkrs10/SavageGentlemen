@@ -1,8 +1,28 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import cors from 'cors';
 
 const app = express();
+
+// Configure CORS - In development, we're more permissive
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? [
+        // Production domains
+        'https://sgxmedia.com',
+        'https://www.sgxmedia.com',
+        /\.sgxmedia\.com$/,
+        /\.replit\.app$/
+      ] 
+    : true, // Allow all origins in development
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'user-id']
+};
+
+app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
