@@ -12,8 +12,17 @@ import {
   Comment,
   InsertComment,
   ChatMessage,
-  InsertChatMessage
+  InsertChatMessage,
+  users,
+  events,
+  products,
+  livestreams,
+  posts,
+  comments,
+  chatMessages
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, and, gt, sql } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
@@ -556,4 +565,321 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Database storage implementation
+export class DatabaseStorage implements IStorage {
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(userData: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values({
+        ...userData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return user;
+  }
+
+  // Event operations
+  async getEvent(id: number): Promise<Event | undefined> {
+    const [event] = await db
+      .select()
+      .from(events)
+      .where(eq(events.id, id));
+    return event;
+  }
+
+  async getAllEvents(): Promise<Event[]> {
+    return await db
+      .select()
+      .from(events);
+  }
+
+  async getFeaturedEvents(): Promise<Event[]> {
+    return await db
+      .select()
+      .from(events)
+      .where(eq(events.featured, true));
+  }
+
+  async createEvent(eventData: InsertEvent): Promise<Event> {
+    const [event] = await db
+      .insert(events)
+      .values({
+        ...eventData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return event;
+  }
+
+  // Product operations
+  async getProduct(id: number): Promise<Product | undefined> {
+    const [product] = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, id));
+    return product;
+  }
+
+  async getAllProducts(): Promise<Product[]> {
+    return await db
+      .select()
+      .from(products);
+  }
+
+  async getFeaturedProducts(): Promise<Product[]> {
+    return await db
+      .select()
+      .from(products)
+      .where(eq(products.featured, true));
+  }
+
+  async createProduct(productData: InsertProduct): Promise<Product> {
+    const [product] = await db
+      .insert(products)
+      .values({
+        ...productData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return product;
+  }
+
+  // Livestream operations
+  async getLivestream(id: number): Promise<Livestream | undefined> {
+    const [livestream] = await db
+      .select()
+      .from(livestreams)
+      .where(eq(livestreams.id, id));
+    return livestream;
+  }
+
+  async getAllLivestreams(): Promise<Livestream[]> {
+    return await db
+      .select()
+      .from(livestreams);
+  }
+
+  async getCurrentLivestream(): Promise<Livestream | undefined> {
+    const [livestream] = await db
+      .select()
+      .from(livestreams)
+      .where(eq(livestreams.isLive, true))
+      .limit(1);
+    return livestream;
+  }
+
+  async getUpcomingLivestreams(): Promise<Livestream[]> {
+    const now = new Date();
+    return await db
+      .select()
+      .from(livestreams)
+      .where(
+        and(
+          eq(livestreams.isLive, false),
+          gt(livestreams.streamDate, now)
+        )
+      );
+  }
+
+  async createLivestream(livestreamData: InsertLivestream): Promise<Livestream> {
+    const [livestream] = await db
+      .insert(livestreams)
+      .values({
+        ...livestreamData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return livestream;
+  }
+
+  // Post operations
+  async getPost(id: number): Promise<Post | undefined> {
+    const [post] = await db
+      .select({
+        ...posts,
+        user: {
+          id: users.id,
+          displayName: users.displayName,
+          avatar: users.avatar
+        }
+      })
+      .from(posts)
+      .where(eq(posts.id, id))
+      .leftJoin(users, eq(posts.userId, users.id));
+    return post;
+  }
+
+  async getAllPosts(): Promise<Post[]> {
+    return await db
+      .select({
+        ...posts,
+        user: {
+          id: users.id,
+          displayName: users.displayName,
+          avatar: users.avatar
+        }
+      })
+      .from(posts)
+      .leftJoin(users, eq(posts.userId, users.id))
+      .orderBy(desc(posts.createdAt));
+  }
+
+  async createPost(postData: InsertPost): Promise<Post> {
+    const [post] = await db
+      .insert(posts)
+      .values({
+        ...postData,
+        likes: 0,
+        comments: 0,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+
+    // Get user data for the post
+    const user = await this.getUser(post.userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return {
+      ...post,
+      user: {
+        id: user.id,
+        displayName: user.displayName,
+        avatar: user.avatar
+      }
+    };
+  }
+
+  // Comment operations
+  async getComment(id: number): Promise<Comment | undefined> {
+    const [comment] = await db
+      .select({
+        ...comments,
+        user: {
+          id: users.id,
+          displayName: users.displayName,
+          avatar: users.avatar
+        }
+      })
+      .from(comments)
+      .where(eq(comments.id, id))
+      .leftJoin(users, eq(comments.userId, users.id));
+    return comment;
+  }
+
+  async getCommentsByPostId(postId: number): Promise<Comment[]> {
+    return await db
+      .select({
+        ...comments,
+        user: {
+          id: users.id,
+          displayName: users.displayName,
+          avatar: users.avatar
+        }
+      })
+      .from(comments)
+      .where(eq(comments.postId, postId))
+      .leftJoin(users, eq(comments.userId, users.id))
+      .orderBy(comments.createdAt);
+  }
+
+  async createComment(commentData: InsertComment): Promise<Comment> {
+    const [comment] = await db
+      .insert(comments)
+      .values({
+        ...commentData,
+        createdAt: new Date()
+      })
+      .returning();
+
+    // Get user data for the comment
+    const user = await this.getUser(comment.userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Update comment count on post
+    await db
+      .update(posts)
+      .set({
+        comments: sql`${posts.comments} + 1`
+      })
+      .where(eq(posts.id, comment.postId));
+
+    return {
+      ...comment,
+      user: {
+        id: user.id,
+        displayName: user.displayName,
+        avatar: user.avatar
+      }
+    };
+  }
+
+  // Chat operations
+  async getChatMessagesByLivestreamId(livestreamId: number): Promise<ChatMessage[]> {
+    return await db
+      .select({
+        ...chatMessages,
+        user: {
+          id: users.id,
+          displayName: users.displayName,
+          avatar: users.avatar
+        }
+      })
+      .from(chatMessages)
+      .where(eq(chatMessages.livestreamId, livestreamId))
+      .leftJoin(users, eq(chatMessages.userId, users.id))
+      .orderBy(chatMessages.createdAt);
+  }
+
+  async createChatMessage(messageData: InsertChatMessage): Promise<ChatMessage> {
+    const [message] = await db
+      .insert(chatMessages)
+      .values({
+        ...messageData,
+        createdAt: new Date()
+      })
+      .returning();
+
+    // Get user data for the chat message
+    const user = await this.getUser(message.userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return {
+      ...message,
+      user: {
+        id: user.id,
+        displayName: user.displayName,
+        avatar: user.avatar
+      }
+    };
+  }
+}
+
+export const storage = new DatabaseStorage();
