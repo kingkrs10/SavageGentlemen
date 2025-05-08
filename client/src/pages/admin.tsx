@@ -742,7 +742,7 @@ export default function AdminPage() {
                               id="price"
                               type="number"
                               placeholder="0.00"
-                              className="bg-slate-700 border-none text-white pl-7"
+                              className="bg-slate-700 border border-slate-600 text-white pl-7"
                               value={ticketForm.price}
                               onChange={(e) => setTicketForm({...ticketForm, price: Number(e.target.value)})}
                             />
@@ -759,7 +759,7 @@ export default function AdminPage() {
                         <textarea
                           id="description"
                           rows={4}
-                          className="w-full rounded-md bg-slate-700 border-none text-white p-3"
+                          className="w-full rounded-md bg-slate-700 border border-slate-600 text-white p-3"
                           value={ticketForm.description}
                           onChange={(e) => setTicketForm({...ticketForm, description: e.target.value})}
                         ></textarea>
@@ -796,7 +796,7 @@ export default function AdminPage() {
                           <Input
                             id="minPerOrder"
                             type="number"
-                            className="bg-slate-700 border-none text-white"
+                            className="bg-slate-700 border border-slate-600 text-white"
                             value={ticketForm.minPerOrder}
                             onChange={(e) => setTicketForm({...ticketForm, minPerOrder: Number(e.target.value)})}
                           />
@@ -811,7 +811,7 @@ export default function AdminPage() {
                           <Input
                             id="maxPerPurchase"
                             type="number"
-                            className="bg-slate-700 border-none text-white"
+                            className="bg-slate-700 border border-slate-600 text-white"
                             value={ticketForm.maxPerPurchase}
                             onChange={(e) => setTicketForm({...ticketForm, maxPerPurchase: Number(e.target.value)})}
                           />
@@ -910,7 +910,7 @@ export default function AdminPage() {
                         <Input
                           id="secretCode"
                           placeholder="Enter secret code"
-                          className="bg-slate-700 border-none text-white"
+                          className="bg-slate-700 border border-slate-600 text-white"
                           value={ticketForm.secretCode}
                           onChange={(e) => setTicketForm({...ticketForm, secretCode: e.target.value})}
                         />
@@ -930,7 +930,7 @@ export default function AdminPage() {
                             <Input
                               id="salesStartDate"
                               placeholder="mm/dd/yyyy"
-                              className="bg-slate-700 border-none text-white pl-3 pr-8"
+                              className="bg-slate-700 border border-slate-600 text-white pl-3 pr-8"
                               value={ticketForm.salesStartDate}
                               onChange={(e) => setTicketForm({...ticketForm, salesStartDate: e.target.value})}
                             />
@@ -951,7 +951,7 @@ export default function AdminPage() {
                             <Input
                               id="salesStartTime"
                               placeholder="--:-- --"
-                              className="bg-slate-700 border-none text-white pl-3 pr-8"
+                              className="bg-slate-700 border border-slate-600 text-white pl-3 pr-8"
                               value={ticketForm.salesStartTime}
                               onChange={(e) => setTicketForm({...ticketForm, salesStartTime: e.target.value})}
                             />
@@ -981,7 +981,7 @@ export default function AdminPage() {
                             <Input
                               id="salesEndDate"
                               placeholder="mm/dd/yyyy"
-                              className="bg-slate-700 border-none text-white pl-3 pr-8"
+                              className="bg-slate-700 border border-slate-600 text-white pl-3 pr-8"
                               value={ticketForm.salesEndDate}
                               onChange={(e) => setTicketForm({...ticketForm, salesEndDate: e.target.value})}
                             />
@@ -1002,7 +1002,7 @@ export default function AdminPage() {
                             <Input
                               id="salesEndTime"
                               placeholder="--:-- --"
-                              className="bg-slate-700 border-none text-white pl-3 pr-8"
+                              className="bg-slate-700 border border-slate-600 text-white pl-3 pr-8"
                               value={ticketForm.salesEndTime}
                               onChange={(e) => setTicketForm({...ticketForm, salesEndTime: e.target.value})}
                             />
