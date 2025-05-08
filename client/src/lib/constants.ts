@@ -16,7 +16,7 @@ export const API_ROUTES = {
 
 // External URLs
 export const EXTERNAL_URLS = {
-  ETSY_SHOP: "https://www.etsy.com/shop/savagegentlemen",
+  ETSY_SHOP: "https://sgxmerch.etsy.com",
   FACEBOOK: "https://www.facebook.com/savagegentlemen",
   INSTAGRAM: "https://www.instagram.com/savagegentlemen",
   TWITTER: "https://www.twitter.com/savagegentlemen",

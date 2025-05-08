@@ -212,11 +212,13 @@ const Home = () => {
           <div className="flex-1">
             <h3 className="text-xl font-heading text-white">Summer Collection</h3>
             <p className="text-sm text-gray-200 mb-3">Exclusive drops for Savage Gentlemen members</p>
-            <a href={EXTERNAL_URLS.ETSY_SHOP} target="_blank" rel="noopener noreferrer">
-              <Button variant="secondary" className="bg-white text-primary hover:bg-gray-100 transition">
-                Shop Now
-              </Button>
-            </a>
+            <Button 
+              variant="secondary" 
+              className="bg-white text-primary hover:bg-gray-100 transition"
+              onClick={() => window.open(EXTERNAL_URLS.ETSY_SHOP, '_blank', 'noopener,noreferrer')}
+            >
+              Shop Now
+            </Button>
           </div>
           <img 
             src="https://images.unsplash.com/photo-1489987707025-afc232f7ea0f" 
