@@ -634,6 +634,42 @@ export default function AdminPage() {
       });
     }
   };
+  
+  // User deletion handler
+  const handleDeleteUser = async (userId: number) => {
+    // Confirm before deletion
+    if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete user');
+      }
+
+      toast({
+        title: "User Deleted",
+        description: "User has been successfully deleted",
+      });
+
+      // Refresh the users list
+      queryClient.invalidateQueries({queryKey: ["/api/admin/users"]});
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete user",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Render main component
   return (
@@ -773,9 +809,7 @@ export default function AdminPage() {
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
-                                  onClick={() => {
-                                    // Delete user - to be implemented
-                                  }}
+                                  onClick={() => handleDeleteUser(user.id)}
                                 >
                                   <Trash2 className="h-4 w-4 text-red-500" />
                                 </Button>
