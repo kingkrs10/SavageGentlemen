@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, MapPin, Badge as BadgeIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import EventCard from "@/components/home/EventCard";
+import BrandLoader from "@/components/ui/BrandLoader";
 import { useToast } from "@/hooks/use-toast";
 
 const Events = () => {
@@ -42,7 +43,9 @@ const Events = () => {
       {/* Hero Event */}
       <div className="relative rounded-xl overflow-hidden mb-6 shadow-lg">
         {isLoading ? (
-          <Skeleton className="w-full h-64" />
+          <div className="w-full h-64 bg-gray-900 flex items-center justify-center">
+            <BrandLoader size="md" message="Loading featured event" />
+          </div>
         ) : featuredEvent ? (
           <>
             <img 
@@ -120,11 +123,9 @@ const Events = () => {
       {/* Event List */}
       <div className="space-y-4 mb-8">
         {isLoading ? (
-          <>
-            <Skeleton className="w-full h-[180px]" />
-            <Skeleton className="w-full h-[180px]" />
-            <Skeleton className="w-full h-[180px]" />
-          </>
+          <div className="w-full h-[400px] flex items-center justify-center bg-gray-900/50 rounded-xl">
+            <BrandLoader size="lg" message="Loading events..." />
+          </div>
         ) : filteredEvents && filteredEvents.length > 0 ? (
           filteredEvents.map((event) => (
             <EventCard 
