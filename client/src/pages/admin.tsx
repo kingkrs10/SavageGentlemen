@@ -239,6 +239,81 @@ export default function AdminPage() {
   });
   
   // Handle ticket form submission
+  // State to track the current ticket being edited
+  const [currentTicket, setCurrentTicket] = useState<Ticket | null>(null);
+  
+  const handleEditTicket = (ticket: Ticket) => {
+    // Set the current ticket being edited
+    setCurrentTicket(ticket);
+    
+    // Populate the form with the ticket's data
+    setTicketForm({
+      name: ticket.name,
+      price: ticket.price,
+      quantity: ticket.quantity,
+      description: ticket.description || '',
+      // Essential tab fields
+      maxPerPurchase: ticket.maxPerPurchase || 4,
+      isActive: ticket.isActive !== null ? ticket.isActive : true,
+      // Advanced tab fields - populate with defaults or existing values
+      priceType: 'standard',
+      minPerOrder: 1,
+      displayRemainingQuantity: true,
+      hideIfSoldOut: false,
+      hidePriceIfSoldOut: false,
+      secretCode: '',
+      salesStartDate: '',
+      salesStartTime: '',
+      salesEndDate: '',
+      salesEndTime: '',
+      hideBeforeSalesStart: false,
+      hideAfterSalesEnd: false,
+      lockMinQuantity: null,
+      lockTicketTypeId: null,
+    });
+    
+    // Open the ticket dialog
+    setTicketDialogOpen(true);
+  };
+  
+  const handleToggleTicketStatus = async (ticket: Ticket) => {
+    try {
+      // Toggle the status
+      const newStatus = !ticket.isActive;
+      
+      // Make API call to update the ticket's status
+      const response = await fetch(`/api/admin/tickets/${ticket.id}/toggle-status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update ticket status');
+      }
+      
+      const result = await response.json();
+      
+      toast({
+        title: `Ticket ${newStatus ? 'Activated' : 'Deactivated'}`,
+        description: `The ticket "${ticket.name}" is now ${newStatus ? 'active' : 'inactive'}`,
+      });
+      
+      // Refresh the tickets list
+      if (selectedEventId) {
+        fetchTicketsForEvent(selectedEventId);
+      }
+    } catch (error) {
+      console.error('Error updating ticket status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update ticket status",
+        variant: "destructive",
+      });
+    }
+  };
+  
   const handleCreateTicket = async () => {
     try {
       // Prepare the complete ticket data for submission
@@ -252,24 +327,47 @@ export default function AdminPage() {
         remainingQuantity: ticketForm.quantity
       };
       
-      // In a real implementation, this would be an API call:
-      // const response = await fetch('/api/admin/tickets', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(ticketData),
-      // });
+      let url = '/api/admin/tickets';
+      let method = 'POST';
+      let successMessage = `New ticket "${ticketForm.name}" for event #${selectedEventId} created successfully`;
       
-      // const result = await response.json();
+      // If editing an existing ticket, update instead of create
+      if (currentTicket) {
+        url = `/api/admin/tickets/${currentTicket.id}`;
+        method = 'PUT';
+        successMessage = `Ticket "${ticketForm.name}" updated successfully`;
+      }
+      
+      // Make API call to create or update the ticket
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(ticketData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save ticket');
+      }
+      
+      const result = await response.json();
       
       toast({
-        title: "Ticket Created",
-        description: `New ticket "${ticketForm.name}" for event #${selectedEventId} created successfully`,
+        title: currentTicket ? "Ticket Updated" : "Ticket Created",
+        description: successMessage,
       });
       
       // Close the dialog
       setTicketDialogOpen(false);
+      
+      // Reset the ticket being edited
+      setCurrentTicket(null);
+      
+      // Refresh the tickets list
+      if (selectedEventId) {
+        fetchTicketsForEvent(selectedEventId);
+      }
       
       // Reset the form to defaults
       setTicketForm({
