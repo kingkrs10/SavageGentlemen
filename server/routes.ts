@@ -273,47 +273,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Events routes
   router.get("/events", async (req: Request, res: Response) => {
     try {
-      // For development purposes, return mock event data
-      const mockEvents = [
-        {
-          id: 1,
-          title: "Summer Soca Fest 2025",
-          date: new Date("2025-07-15T18:00:00Z"),
-          location: "Miami Beach, FL",
-          price: 4500,
-          description: "Annual summer celebration featuring top Soca artists and DJs. Join us for a night of Caribbean music, dance, and culture.",
-          imageUrl: "https://i.etsystatic.com/17162514/r/il/d48c3e/5876583399/il_794xN.5876583399_5zzi.jpg",
-          category: "festival",
-          featured: true
-        },
-        {
-          id: 2,
-          title: "Savage Gentlemen Yacht Party",
-          date: new Date("2025-06-20T16:00:00Z"),
-          location: "Miami Marina",
-          price: 12000,
-          description: "Exclusive yacht party featuring premium open bar, gourmet Caribbean cuisine, and the hottest Soca DJs on the water.",
-          imageUrl: "https://i.etsystatic.com/17162514/r/il/6a3c83/5894452402/il_794xN.5894452402_rbtu.jpg",
-          category: "party",
-          featured: true
-        },
-        {
-          id: 3,
-          title: "Caribbean Culture Workshop",
-          date: new Date("2025-05-25T10:00:00Z"),
-          location: "Community Center, Miami",
-          price: 1500,
-          description: "Learn about Caribbean culture, music, and dance in this interactive workshop suitable for all ages.",
-          imageUrl: "https://i.etsystatic.com/17162514/r/il/bb60fa/5877683809/il_794xN.5877683809_acyp.jpg",
-          category: "workshop",
-          featured: false
-        }
-      ];
-      return res.status(200).json(mockEvents);
-      
-      // Production code would use:
-      // const events = await storage.getAllEvents();
-      // return res.status(200).json(events);
+      // Use real data from database
+      const events = await storage.getAllEvents();
+      return res.status(200).json(events);
     } catch (err) {
       console.error(err);
       return res.status(500).json({ message: "Internal server error" });
@@ -632,40 +594,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all tickets in the admin dashboard
   router.get("/admin/tickets", async (req: Request, res: Response) => {
     try {
-      // For development purposes, return mock ticket data
-      const mockTickets = [
-        {
-          id: 1,
-          name: "General Admission",
-          price: 2500,
-          eventId: 1,
-          quantity: 100,
-          remainingQuantity: 73,
-          isActive: true,
-          maxPerPurchase: 4
-        },
-        {
-          id: 2,
-          name: "VIP Package",
-          price: 7500,
-          eventId: 1,
-          quantity: 25,
-          remainingQuantity: 18,
-          isActive: true,
-          maxPerPurchase: 2
-        },
-        {
-          id: 3,
-          name: "Early Bird Special",
-          price: 1999,
-          eventId: 2,
-          quantity: 50,
-          remainingQuantity: 0,
-          isActive: false,
-          maxPerPurchase: 4
-        }
-      ];
-      return res.status(200).json(mockTickets);
+      // Use real data from database
+      const tickets = await storage.getAllTickets();
+      return res.status(200).json(tickets);
     } catch (err) {
       console.error(err);
       return res.status(500).json({ message: "Internal server error" });
@@ -735,50 +666,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Orders management
   router.get("/admin/orders", async (req: Request, res: Response) => {
     try {
-      // For development purposes, return mock order data
-      const mockOrders = [
-        {
-          id: 1,
-          status: "completed",
-          createdAt: new Date("2025-05-01T10:30:00Z"),
-          userId: 2,
-          totalAmount: 4999,
-          paymentMethod: "Stripe",
-          paymentId: "pi_12345"
-        },
-        {
-          id: 2,
-          status: "processing",
-          createdAt: new Date("2025-05-03T14:15:00Z"),
-          userId: 3,
-          totalAmount: 7500,
-          paymentMethod: "PayPal",
-          paymentId: "PAY-67890"
-        },
-        {
-          id: 3,
-          status: "cancelled",
-          createdAt: new Date("2025-05-02T09:45:00Z"),
-          userId: 1,
-          totalAmount: 3499,
-          paymentMethod: "Stripe",
-          paymentId: "pi_54321"
-        },
-        {
-          id: 4,
-          status: "completed",
-          createdAt: new Date("2025-05-04T16:20:00Z"),
-          userId: 4,
-          totalAmount: 8998,
-          paymentMethod: "PayPal",
-          paymentId: "PAY-24680"
-        }
-      ];
-      return res.status(200).json(mockOrders);
-
-      // Production code would use:
-      // const orders = await storage.getAllOrders();
-      // return res.status(200).json(orders);
+      // Use real data from database
+      const orders = await storage.getAllOrders();
+      return res.status(200).json(orders);
     } catch (err) {
       console.error(err);
       return res.status(500).json({ message: "Internal server error" });
@@ -788,50 +678,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User management
   router.get("/admin/users", async (req: Request, res: Response) => {
     try {
-      // For development purposes, return mock user data
-      const mockUsers = [
-        {
-          id: 1,
-          username: "admin",
-          displayName: "Admin User",
-          email: "admin@savagegentlemen.com",
-          role: "admin",
-          avatar: null,
-          isGuest: false
-        },
-        {
-          id: 2,
-          username: "moderator1",
-          displayName: "Community Mod",
-          email: "mod@savagegentlemen.com",
-          role: "moderator",
-          avatar: null,
-          isGuest: false
-        },
-        {
-          id: 3,
-          username: "user1",
-          displayName: "John Doe",
-          email: "john@example.com",
-          role: "user",
-          avatar: null,
-          isGuest: false
-        },
-        {
-          id: 4,
-          username: "guest123",
-          displayName: "Guest User",
-          email: null,
-          role: "user",
-          avatar: null,
-          isGuest: true
-        }
-      ];
-      return res.status(200).json(mockUsers);
-      
-      // Production code would use:
-      // const users = await storage.getAllUsers();
-      // return res.status(200).json(users);
+      // Use real data from database
+      const users = await storage.getAllUsers();
+      return res.status(200).json(users);
     } catch (err) {
       console.error(err);
       return res.status(500).json({ message: "Internal server error" });
