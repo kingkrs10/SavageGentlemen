@@ -462,6 +462,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
+  // Livestream management
+  router.post("/admin/livestreams", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const livestreamData = insertLivestreamSchema.parse(req.body);
+      const livestream = await storage.createLivestream(livestreamData);
+      return res.status(201).json(livestream);
+    } catch (err) {
+      console.error("Error creating livestream:", err);
+      return handleZodError(err, res);
+    }
+  });
+  
+  router.put("/admin/livestreams/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const livestream = await storage.getLivestream(id);
+      
+      if (!livestream) {
+        return res.status(404).json({ message: "Livestream not found" });
+      }
+      
+      const updatedLivestream = await storage.updateLivestream(id, req.body);
+      return res.status(200).json(updatedLivestream);
+    } catch (err) {
+      console.error("Error updating livestream:", err);
+      return handleZodError(err, res);
+    }
+  });
+  
+  router.put("/admin/livestreams/:id/toggle-status", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const livestream = await storage.getLivestream(id);
+      
+      if (!livestream) {
+        return res.status(404).json({ message: "Livestream not found" });
+      }
+      
+      const updatedLivestream = await storage.updateLivestream(id, {
+        isLive: !livestream.isLive
+      });
+      
+      return res.status(200).json(updatedLivestream);
+    } catch (err) {
+      console.error("Error toggling livestream status:", err);
+      return res.status(500).json({ message: "Failed to update livestream status" });
+    }
+  });
+  
+  router.delete("/admin/livestreams/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteLivestream(id);
+      return res.status(204).send();
+    } catch (err) {
+      console.error("Error deleting livestream:", err);
+      return res.status(500).json({ message: "Failed to delete livestream" });
+    }
+  });
+  
   // Product management
   router.post("/admin/products", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
