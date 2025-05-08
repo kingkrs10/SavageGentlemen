@@ -66,24 +66,25 @@ const Home = () => {
           <Skeleton className="h-64 w-full" />
         ) : featuredEvents && featuredEvents.length > 0 ? (
           <div className="relative">
-            {heroImgError ? (
-              <div className="h-64 bg-gray-800 flex items-center justify-center">
-                <img 
-                  src={SGFlyerLogoPng} 
-                  alt="Savage Gentlemen" 
-                  className="h-40 w-40 object-contain"
+            <div className="h-64 relative">
+              {heroImgError ? (
+                <div className="h-64 w-full bg-gray-800 flex items-center justify-center">
+                  <img 
+                    src={SGFlyerLogoPng} 
+                    alt="Savage Gentlemen" 
+                    className="h-40 w-40 object-contain"
+                  />
+                </div>
+              ) : (
+                <img
+                  src={featuredEvents[0].imageUrl}
+                  alt={featuredEvents[0].title}
+                  className="h-64 w-full object-cover"
+                  onError={() => setHeroImgError(true)}
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black bg-opacity-60"></div>
-              </div>
-            ) : (
-              <div 
-                className="h-64 bg-cover bg-center" 
-                style={{ backgroundImage: `url(${featuredEvents[0].imageUrl})` }}
-                onError={() => setHeroImgError(true)}
-              >
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black bg-opacity-60"></div>
-              </div>
-            )}
+              )}
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black bg-opacity-60"></div>
+            </div>
             <div className="absolute bottom-0 left-0 p-4">
               <h2 className="text-3xl font-heading text-white">{featuredEvents[0].title}</h2>
               <p className="text-lg text-gray-200">Get your tickets now</p>
