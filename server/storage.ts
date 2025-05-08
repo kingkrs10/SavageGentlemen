@@ -467,6 +467,25 @@ export class MemStorage implements IStorage {
   }
   
   // Ticket operations
+  async getTicket(id: number): Promise<Ticket | undefined> {
+    return this.tickets.get(id);
+  }
+  
+  async updateTicket(id: number, ticketData: Partial<InsertTicket>): Promise<Ticket | undefined> {
+    const ticket = await this.getTicket(id);
+    if (!ticket) {
+      return undefined;
+    }
+    
+    const updatedTicket: Ticket = {
+      ...ticket,
+      ...ticketData
+    };
+    
+    this.tickets.set(id, updatedTicket);
+    return updatedTicket;
+  }
+  
   async createTicket(ticketData: InsertTicket): Promise<Ticket> {
     const id = this.ticketCurrentId++;
     const createdAt = new Date();
@@ -1203,6 +1222,28 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Ticket operations
+  async getTicket(id: number): Promise<Ticket | undefined> {
+    const [ticket] = await db
+      .select()
+      .from(tickets)
+      .where(eq(tickets.id, id));
+    
+    return ticket || undefined;
+  }
+  
+  async updateTicket(id: number, ticketData: Partial<InsertTicket>): Promise<Ticket | undefined> {
+    const [updatedTicket] = await db
+      .update(tickets)
+      .set({
+        ...ticketData,
+        updatedAt: new Date()
+      })
+      .where(eq(tickets.id, id))
+      .returning();
+    
+    return updatedTicket || undefined;
+  }
+  
   async createTicket(ticketData: InsertTicket): Promise<Ticket> {
     const [ticket] = await db
       .insert(tickets)
