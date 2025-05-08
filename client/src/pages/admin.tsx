@@ -119,9 +119,28 @@ export default function AdminPage() {
     name: '',
     price: 0,
     quantity: 0,
+    description: '',
+    // Essential tab fields
     maxPerPurchase: 4,
-    isActive: true
+    isActive: true,
+    // Advanced tab fields
+    priceType: 'standard',
+    minPerOrder: 1,
+    displayRemainingQuantity: true,
+    hideIfSoldOut: false,
+    hidePriceIfSoldOut: false,
+    secretCode: '',
+    salesStartDate: '',
+    salesStartTime: '',
+    salesEndDate: '',
+    salesEndTime: '',
+    hideBeforeSalesStart: false,
+    hideAfterSalesEnd: false,
+    lockMinQuantity: null,
+    lockTicketTypeId: null,
+    status: 'on_sale'
   });
+  const [activeTab, setActiveTab] = useState("essential");
   
   React.useEffect(() => {
     // Check if user is logged in and is admin
@@ -222,7 +241,28 @@ export default function AdminPage() {
   // Handle ticket form submission
   const handleCreateTicket = async () => {
     try {
-      // This would be an actual API call in production
+      // Prepare the complete ticket data for submission
+      const ticketData = {
+        eventId: selectedEventId,
+        ...ticketForm,
+        // Convert date strings to timestamps if needed
+        salesStartDate: ticketForm.salesStartDate ? new Date(ticketForm.salesStartDate) : null,
+        salesEndDate: ticketForm.salesEndDate ? new Date(ticketForm.salesEndDate) : null,
+        // Ensure remainingQuantity starts equal to quantity
+        remainingQuantity: ticketForm.quantity
+      };
+      
+      // In a real implementation, this would be an API call:
+      // const response = await fetch('/api/admin/tickets', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify(ticketData),
+      // });
+      
+      // const result = await response.json();
+      
       toast({
         title: "Ticket Created",
         description: `New ticket "${ticketForm.name}" for event #${selectedEventId} created successfully`,
@@ -231,14 +271,35 @@ export default function AdminPage() {
       // Close the dialog
       setTicketDialogOpen(false);
       
-      // Reset the form
+      // Reset the form to defaults
       setTicketForm({
         name: '',
         price: 0,
         quantity: 0,
+        description: '',
+        // Essential tab fields
         maxPerPurchase: 4,
-        isActive: true
+        isActive: true,
+        // Advanced tab fields
+        priceType: 'standard',
+        minPerOrder: 1,
+        displayRemainingQuantity: true,
+        hideIfSoldOut: false,
+        hidePriceIfSoldOut: false,
+        secretCode: '',
+        salesStartDate: '',
+        salesStartTime: '',
+        salesEndDate: '',
+        salesEndTime: '',
+        hideBeforeSalesStart: false,
+        hideAfterSalesEnd: false,
+        lockMinQuantity: null,
+        lockTicketTypeId: null,
+        status: 'on_sale'
       });
+      
+      // Reset to Essential tab
+      setActiveTab("essential");
       
       // In a production implementation, we would invalidate the tickets query to refetch tickets
       // queryClient.invalidateQueries(["/api/admin/tickets"]);
@@ -598,108 +659,380 @@ export default function AdminPage() {
                     <TicketIcon className="h-4 w-4 mr-2" /> Create Ticket Type
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent className="sm:max-w-[550px] bg-slate-800 text-white">
                   <DialogHeader>
-                    <DialogTitle>Create New Ticket</DialogTitle>
-                    <DialogDescription>
-                      Add a new ticket type for an event. Click save when you're done.
-                    </DialogDescription>
+                    <DialogTitle className="text-white text-xl">Create new ticket type</DialogTitle>
                   </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="event" className="text-right">
-                        Event
-                      </Label>
-                      <select
-                        id="event"
-                        className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        value={selectedEventId}
-                        onChange={(e) => setSelectedEventId(Number(e.target.value))}
+                  
+                  {/* Event Selection */}
+                  <div className="mb-4">
+                    <select
+                      id="event"
+                      className="w-full rounded-md border border-slate-700 bg-slate-700 px-3 py-2 text-sm text-white"
+                      value={selectedEventId}
+                      onChange={(e) => setSelectedEventId(Number(e.target.value))}
+                    >
+                      {events?.map((event) => (
+                        <option key={event.id} value={event.id}>
+                          {event.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {/* Essential/Advanced Tabs */}
+                  <div className="mb-6">
+                    <div className="flex w-full rounded-md overflow-hidden">
+                      <button 
+                        className={`flex-1 py-3 px-4 text-center ${activeTab === "essential" ? "bg-slate-700" : "bg-slate-800"}`}
+                        onClick={() => setActiveTab("essential")}
                       >
-                        {events?.map((event) => (
-                          <option key={event.id} value={event.id}>
-                            {event.title}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="name" className="text-right">
-                        Name
-                      </Label>
-                      <Input
-                        id="name"
-                        placeholder="e.g. VIP, General Admission"
-                        className="col-span-3"
-                        value={ticketForm.name}
-                        onChange={(e) => setTicketForm({...ticketForm, name: e.target.value})}
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="price" className="text-right">
-                        Price ($)
-                      </Label>
-                      <Input
-                        id="price"
-                        type="number"
-                        className="col-span-3"
-                        value={ticketForm.price}
-                        onChange={(e) => setTicketForm({...ticketForm, price: Number(e.target.value)})}
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="quantity" className="text-right">
-                        Quantity
-                      </Label>
-                      <Input
-                        id="quantity"
-                        type="number"
-                        className="col-span-3"
-                        value={ticketForm.quantity}
-                        onChange={(e) => setTicketForm({...ticketForm, quantity: Number(e.target.value)})}
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="maxPerPurchase" className="text-right">
-                        Max per purchase
-                      </Label>
-                      <Input
-                        id="maxPerPurchase"
-                        type="number"
-                        className="col-span-3"
-                        value={ticketForm.maxPerPurchase}
-                        onChange={(e) => setTicketForm({...ticketForm, maxPerPurchase: Number(e.target.value)})}
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="isActive" className="text-right">
-                        Active
-                      </Label>
-                      <div className="flex items-center space-x-2 col-span-3">
-                        <input
-                          type="checkbox"
-                          id="isActive"
-                          checked={ticketForm.isActive}
-                          onChange={(e) => setTicketForm({...ticketForm, isActive: e.target.checked})}
-                          className="h-4 w-4"
-                        />
-                        <label htmlFor="isActive" className="text-sm">Available for purchase</label>
-                      </div>
+                        Essential
+                      </button>
+                      <button 
+                        className={`flex-1 py-3 px-4 text-center ${activeTab === "advanced" ? "bg-slate-700" : "bg-slate-800"}`}
+                        onClick={() => setActiveTab("advanced")}
+                      >
+                        Advanced
+                      </button>
                     </div>
                   </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setTicketDialogOpen(false)}>
-                      Cancel
-                    </Button>
+                  
+                  {activeTab === "essential" ? (
+                    <div className="space-y-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center mb-1">
+                          <span className="bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded mr-2">REQ</span>
+                          <Label htmlFor="name" className="text-white">Name</Label>
+                        </div>
+                        <Input
+                          id="name"
+                          placeholder="e.g. General admission, Adult, Kid, VIP, Press"
+                          className="bg-slate-700 border-none text-white"
+                          value={ticketForm.name}
+                          onChange={(e) => setTicketForm({...ticketForm, name: e.target.value})}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center mb-1">
+                            <span className="bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded mr-2">REQ</span>
+                            <Label htmlFor="quantity" className="text-white">Quantity</Label>
+                          </div>
+                          <p className="text-xs text-slate-400">Availability for each date of the event</p>
+                          <Input
+                            id="quantity"
+                            type="number"
+                            className="bg-slate-700 border-none text-white"
+                            value={ticketForm.quantity}
+                            onChange={(e) => setTicketForm({...ticketForm, quantity: Number(e.target.value)})}
+                          />
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <div className="flex items-center mb-1">
+                            <span className="bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded mr-2">REQ</span>
+                            <Label htmlFor="price" className="text-white">Price</Label>
+                          </div>
+                          <p className="text-xs text-slate-400">The price per unit</p>
+                          <div className="relative">
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-white">$</span>
+                            <Input
+                              id="price"
+                              type="number"
+                              placeholder="0.00"
+                              className="bg-slate-700 border-none text-white pl-7"
+                              value={ticketForm.price}
+                              onChange={(e) => setTicketForm({...ticketForm, price: Number(e.target.value)})}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <div className="flex items-center mb-1">
+                          <span className="bg-gray-500 text-white text-xs font-semibold px-2 py-0.5 rounded mr-2">OPT</span>
+                          <Label htmlFor="description" className="text-white">Description</Label>
+                        </div>
+                        <p className="text-xs text-slate-400">Provide more information about this ticket type</p>
+                        <textarea
+                          id="description"
+                          rows={4}
+                          className="w-full rounded-md bg-slate-700 border-none text-white p-3"
+                          value={ticketForm.description}
+                          onChange={(e) => setTicketForm({...ticketForm, description: e.target.value})}
+                        ></textarea>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center mb-1">
+                          <span className="bg-gray-500 text-white text-xs font-semibold px-2 py-0.5 rounded mr-2">OPT</span>
+                          <Label htmlFor="priceType" className="text-white">Price type</Label>
+                        </div>
+                        <p className="text-xs text-slate-400">Add a visual cue for non-standard prices</p>
+                        <select
+                          id="priceType"
+                          className="w-full rounded-md border-none bg-slate-700 px-3 py-2 text-sm text-white"
+                          value={ticketForm.priceType}
+                          onChange={(e) => setTicketForm({...ticketForm, priceType: e.target.value})}
+                        >
+                          <option value="standard">Standard</option>
+                          <option value="pay_what_you_can">Pay What You Can</option>
+                        </select>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center mb-1">
+                            <span className="bg-gray-500 text-white text-xs font-semibold px-2 py-0.5 rounded mr-2">OPT</span>
+                            <Label htmlFor="minPerOrder" className="text-white">Min quantity per order</Label>
+                          </div>
+                          <p className="text-xs text-slate-400">Minimum purchase quantity per order</p>
+                          <Input
+                            id="minPerOrder"
+                            type="number"
+                            className="bg-slate-700 border-none text-white"
+                            value={ticketForm.minPerOrder}
+                            onChange={(e) => setTicketForm({...ticketForm, minPerOrder: Number(e.target.value)})}
+                          />
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <div className="flex items-center mb-1">
+                            <span className="bg-gray-500 text-white text-xs font-semibold px-2 py-0.5 rounded mr-2">OPT</span>
+                            <Label htmlFor="maxPerPurchase" className="text-white">Max quantity per order</Label>
+                          </div>
+                          <p className="text-xs text-slate-400">Maximum purchase quantity per order</p>
+                          <Input
+                            id="maxPerPurchase"
+                            type="number"
+                            className="bg-slate-700 border-none text-white"
+                            value={ticketForm.maxPerPurchase}
+                            onChange={(e) => setTicketForm({...ticketForm, maxPerPurchase: Number(e.target.value)})}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center mb-1">
+                          <span className="bg-gray-500 text-white text-xs font-semibold px-2 py-0.5 rounded mr-2">OPT</span>
+                          <Label className="text-white">Display remaining quantity</Label>
+                        </div>
+                        <p className="text-xs text-slate-400">Inform your customers about the remaining ticket availability</p>
+                        <select
+                          className="w-full rounded-md border-none bg-slate-700 px-3 py-2 text-sm text-white"
+                          value={ticketForm.displayRemainingQuantity ? "visible" : "hidden"}
+                          onChange={(e) => setTicketForm({...ticketForm, displayRemainingQuantity: e.target.value === "visible"})}
+                        >
+                          <option value="visible">Make the remaining quantity visible</option>
+                          <option value="hidden">Hide the remaining quantity</option>
+                        </select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center mb-1">
+                          <span className="bg-gray-500 text-white text-xs font-semibold px-2 py-0.5 rounded mr-2">OPT</span>
+                          <Label className="text-white">Status</Label>
+                        </div>
+                        <p className="text-xs text-slate-400">Manually change the ticket type status</p>
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              id="status-on_sale"
+                              checked={ticketForm.status === "on_sale"}
+                              onChange={() => setTicketForm({...ticketForm, status: "on_sale"})}
+                              className="h-4 w-4"
+                            />
+                            <label htmlFor="status-on_sale">
+                              <div className="text-white">On sale</div>
+                              <div className="text-xs text-slate-400">The ticket type is available for purchase</div>
+                            </label>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              id="status-off_sale"
+                              checked={ticketForm.status === "off_sale"}
+                              onChange={() => setTicketForm({...ticketForm, status: "off_sale"})}
+                              className="h-4 w-4"
+                            />
+                            <label htmlFor="status-off_sale">
+                              <div className="text-white">Off sale</div>
+                              <div className="text-xs text-slate-400">The ticket type won't show up in the booking process</div>
+                            </label>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              id="status-sold_out"
+                              checked={ticketForm.status === "sold_out"}
+                              onChange={() => setTicketForm({...ticketForm, status: "sold_out"})}
+                              className="h-4 w-4"
+                            />
+                            <label htmlFor="status-sold_out">
+                              <div className="text-white">Sold out</div>
+                              <div className="text-xs text-slate-400">The ticket will be forced to be sold out</div>
+                            </label>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              id="status-staff_only"
+                              checked={ticketForm.status === "staff_only"}
+                              onChange={() => setTicketForm({...ticketForm, status: "staff_only"})}
+                              className="h-4 w-4"
+                            />
+                            <label htmlFor="status-staff_only">
+                              <div className="text-white">Staff only</div>
+                              <div className="text-xs text-slate-400">The ticket will show up only if logged as owner, admin or event manager</div>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center mb-1">
+                          <span className="bg-gray-500 text-white text-xs font-semibold px-2 py-0.5 rounded mr-2">OPT</span>
+                          <Label htmlFor="secretCode" className="text-white">Secret code</Label>
+                        </div>
+                        <p className="text-xs text-slate-400">Show this ticket type only to those who enter this code</p>
+                        <Input
+                          id="secretCode"
+                          placeholder="Enter secret code"
+                          className="bg-slate-700 border-none text-white"
+                          value={ticketForm.secretCode}
+                          onChange={(e) => setTicketForm({...ticketForm, secretCode: e.target.value})}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1 col-span-2">
+                          <div className="flex items-center mb-1">
+                            <span className="bg-gray-500 text-white text-xs font-semibold px-2 py-0.5 rounded mr-2">OPT</span>
+                            <Label className="text-white">Sales time frame</Label>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <Label htmlFor="salesStartDate" className="text-white text-xs">Sales start date</Label>
+                          <Input
+                            id="salesStartDate"
+                            type="date"
+                            className="bg-slate-700 border-none text-white"
+                            value={ticketForm.salesStartDate}
+                            onChange={(e) => setTicketForm({...ticketForm, salesStartDate: e.target.value})}
+                          />
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <Label htmlFor="salesStartTime" className="text-white text-xs">Sales start time</Label>
+                          <Input
+                            id="salesStartTime"
+                            type="time"
+                            className="bg-slate-700 border-none text-white"
+                            value={ticketForm.salesStartTime}
+                            onChange={(e) => setTicketForm({...ticketForm, salesStartTime: e.target.value})}
+                          />
+                        </div>
+                        
+                        <div className="flex items-center col-span-2">
+                          <input
+                            type="checkbox"
+                            id="hideBeforeSalesStart"
+                            checked={ticketForm.hideBeforeSalesStart}
+                            onChange={(e) => setTicketForm({...ticketForm, hideBeforeSalesStart: e.target.checked})}
+                            className="h-4 w-4 mr-2"
+                          />
+                          <label htmlFor="hideBeforeSalesStart" className="text-white text-xs">Hide before sales start</label>
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <Label htmlFor="salesEndDate" className="text-white text-xs">Sales end date</Label>
+                          <Input
+                            id="salesEndDate"
+                            type="date"
+                            className="bg-slate-700 border-none text-white"
+                            value={ticketForm.salesEndDate}
+                            onChange={(e) => setTicketForm({...ticketForm, salesEndDate: e.target.value})}
+                          />
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <Label htmlFor="salesEndTime" className="text-white text-xs">Sales end time</Label>
+                          <Input
+                            id="salesEndTime"
+                            type="time"
+                            className="bg-slate-700 border-none text-white"
+                            value={ticketForm.salesEndTime}
+                            onChange={(e) => setTicketForm({...ticketForm, salesEndTime: e.target.value})}
+                          />
+                        </div>
+                        
+                        <div className="flex items-center col-span-2">
+                          <input
+                            type="checkbox"
+                            id="hideAfterSalesEnd"
+                            checked={ticketForm.hideAfterSalesEnd}
+                            onChange={(e) => setTicketForm({...ticketForm, hideAfterSalesEnd: e.target.checked})}
+                            className="h-4 w-4 mr-2"
+                          />
+                          <label htmlFor="hideAfterSalesEnd" className="text-white text-xs">Hide after sales end</label>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center mb-1">
+                          <span className="bg-gray-500 text-white text-xs font-semibold px-2 py-0.5 rounded mr-2">OPT</span>
+                          <Label className="text-white">Hide if sold out</Label>
+                        </div>
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            id="hideIfSoldOut"
+                            checked={ticketForm.hideIfSoldOut}
+                            onChange={(e) => setTicketForm({...ticketForm, hideIfSoldOut: e.target.checked})}
+                            className="h-4 w-4 mr-2"
+                          />
+                          <label htmlFor="hideIfSoldOut" className="text-white text-xs">Hide the ticket type when the available quantity is 0</label>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center mb-1">
+                          <span className="bg-gray-500 text-white text-xs font-semibold px-2 py-0.5 rounded mr-2">OPT</span>
+                          <Label className="text-white">Hide the price if sold out</Label>
+                        </div>
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            id="hidePriceIfSoldOut"
+                            checked={ticketForm.hidePriceIfSoldOut}
+                            onChange={(e) => setTicketForm({...ticketForm, hidePriceIfSoldOut: e.target.checked})}
+                            className="h-4 w-4 mr-2"
+                          />
+                          <label htmlFor="hidePriceIfSoldOut" className="text-white text-xs">Hide the ticket type price when the available quantity is 0</label>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-end mt-6">
                     <Button 
                       type="submit" 
-                      className="sg-btn" 
+                      className="bg-teal-500 hover:bg-teal-600 text-white font-medium rounded-md border-none"
                       onClick={handleCreateTicket}
                       disabled={!ticketForm.name || ticketForm.price <= 0 || ticketForm.quantity <= 0}
                     >
-                      Create Ticket
+                      SAVE
                     </Button>
-                  </DialogFooter>
+                  </div>
                 </DialogContent>
               </Dialog>
             </CardHeader>

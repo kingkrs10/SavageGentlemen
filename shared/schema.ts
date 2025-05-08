@@ -189,7 +189,23 @@ export const tickets = pgTable("tickets", {
   quantity: integer("quantity").notNull(),
   remainingQuantity: integer("remaining_quantity"),
   isActive: boolean("is_active").default(true),
+  status: text("status").default("on_sale"), // on_sale, off_sale, sold_out, staff_only
+  priceType: text("price_type").default("standard"), // standard, pay_what_you_can
+  minPerOrder: integer("min_per_order").default(1),
   maxPerPurchase: integer("max_per_purchase").default(10),
+  displayRemainingQuantity: boolean("display_remaining_quantity").default(true),
+  hideIfSoldOut: boolean("hide_if_sold_out").default(false),
+  hidePriceIfSoldOut: boolean("hide_price_if_sold_out").default(false),
+  secretCode: text("secret_code"), // Access code to see/purchase this ticket
+  salesStartDate: timestamp("sales_start_date"),
+  salesStartTime: text("sales_start_time"),
+  salesEndDate: timestamp("sales_end_date"),
+  salesEndTime: text("sales_end_time"),
+  hideBeforeSalesStart: boolean("hide_before_sales_start").default(false),
+  hideAfterSalesEnd: boolean("hide_after_sales_end").default(false),
+  // Lock condition: Requires another ticket to be in cart before this can be purchased
+  lockMinQuantity: integer("lock_min_quantity"),
+  lockTicketTypeId: integer("lock_ticket_type_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -202,7 +218,22 @@ export const insertTicketSchema = createInsertSchema(tickets).pick({
   quantity: true,
   remainingQuantity: true,
   isActive: true,
+  status: true,
+  priceType: true,
+  minPerOrder: true,
   maxPerPurchase: true,
+  displayRemainingQuantity: true,
+  hideIfSoldOut: true,
+  hidePriceIfSoldOut: true,
+  secretCode: true,
+  salesStartDate: true,
+  salesStartTime: true,
+  salesEndDate: true,
+  salesEndTime: true,
+  hideBeforeSalesStart: true,
+  hideAfterSalesEnd: true,
+  lockMinQuantity: true,
+  lockTicketTypeId: true,
 });
 
 // Discount Codes schema
