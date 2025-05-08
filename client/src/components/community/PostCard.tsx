@@ -67,11 +67,11 @@ const PostCard = ({ post, currentUser }: PostCardProps) => {
     <div className="bg-gray-900 rounded-xl overflow-hidden shadow-lg p-4">
       <div className="flex items-center mb-3">
         <Avatar className="h-10 w-10">
-          <AvatarImage src={post.user.avatar} alt={post.user.displayName} />
-          <AvatarFallback>{post.user.displayName.charAt(0)}</AvatarFallback>
+          <AvatarImage src={post.user?.avatar} alt={post.user?.displayName} />
+          <AvatarFallback>{post.user?.displayName?.charAt(0) || '?'}</AvatarFallback>
         </Avatar>
         <div className="ml-3">
-          <p className="font-semibold">{post.user.displayName}</p>
+          <p className="font-semibold">{post.user?.displayName || 'Anonymous'}</p>
           <p className="text-xs text-gray-400">{formatTimeAgo(post.createdAt)}</p>
         </div>
       </div>
@@ -123,11 +123,11 @@ const PostCard = ({ post, currentUser }: PostCardProps) => {
             {comments.map((comment) => (
               <div key={comment.id} className="flex items-start gap-2">
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src={comment.user.avatar} alt={comment.user.displayName} />
-                  <AvatarFallback>{comment.user.displayName.charAt(0)}</AvatarFallback>
+                  <AvatarImage src={comment.user?.avatar} alt={comment.user?.displayName} />
+                  <AvatarFallback>{comment.user?.displayName?.charAt(0) || '?'}</AvatarFallback>
                 </Avatar>
                 <div className="bg-gray-800 rounded-lg p-2 flex-1">
-                  <p className="text-xs font-semibold">{comment.user.displayName}</p>
+                  <p className="text-xs font-semibold">{comment.user?.displayName || 'Anonymous'}</p>
                   <p className="text-sm">{comment.content}</p>
                 </div>
               </div>
@@ -137,8 +137,8 @@ const PostCard = ({ post, currentUser }: PostCardProps) => {
           {currentUser && (
             <form onSubmit={handleSubmitComment} className="flex items-center mt-3 gap-2">
               <Avatar className="w-8 h-8">
-                <AvatarImage src={currentUser.avatar} alt={currentUser.displayName} />
-                <AvatarFallback>{currentUser.displayName.charAt(0)}</AvatarFallback>
+                <AvatarImage src={currentUser?.avatar} alt={currentUser?.displayName} />
+                <AvatarFallback>{currentUser?.displayName?.charAt(0) || '?'}</AvatarFallback>
               </Avatar>
               <Input
                 type="text"

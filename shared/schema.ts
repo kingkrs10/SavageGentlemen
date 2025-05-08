@@ -129,6 +129,8 @@ export const chatMessages = pgTable("chat_messages", {
   livestreamId: integer("livestream_id"),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+  // Virtual relation to user (not stored in DB but used in the app)
+  user: jsonb("user").notNull().default({}),
 });
 
 export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({
