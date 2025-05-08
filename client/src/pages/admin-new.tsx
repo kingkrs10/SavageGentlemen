@@ -48,13 +48,16 @@ import {
   Package,
   Calendar, 
   Users, 
-  Ticket as TicketIcon, 
+  Ticket,
   ShoppingCart,
   Lock,
   Radio,
   MoreHorizontal,
   Plus,
-  Trash2
+  Trash2,
+  Edit,
+  Eye,
+  EyeOff
 } from "lucide-react";
 
 // Interface definitions for the admin dashboard

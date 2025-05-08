@@ -5,11 +5,12 @@ import { Livestream, User } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Play, Expand, Share, Send } from "lucide-react";
+import { Expand, Share, Send } from "lucide-react";
 import ChatMessage from "@/components/community/ChatMessage";
 import { useChat } from "@/hooks/use-chat";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import MultiPlatformPlayer from "@/components/stream/MultiPlatformPlayer";
 
 const Live = () => {
   const [chatMessage, setChatMessage] = useState("");
@@ -89,26 +90,11 @@ const Live = () => {
           <Skeleton className="w-full h-56" />
         ) : currentLivestream ? (
           <div className="relative">
-            {/* Video player - in a real app, this would be an iframe or video component */}
+            {/* Multi-platform video player */}
             <div className="relative">
-              <img 
-                src={currentLivestream.thumbnailUrl} 
-                alt={currentLivestream.title} 
-                className="w-full h-56 object-cover"
-              />
-              <div className="absolute inset-0 flex flex-col justify-center items-center">
-                <div className="bg-black bg-opacity-50 px-4 py-2 rounded-full flex items-center mb-3">
-                  <span className="animate-pulse inline-block w-3 h-3 bg-red-600 rounded-full mr-2"></span>
-                  <span className="text-white font-semibold">LIVE</span>
-                </div>
-                <Button 
-                  size="icon"
-                  className="bg-primary text-white rounded-full w-16 h-16 flex items-center justify-center"
-                >
-                  <Play className="h-8 w-8" />
-                </Button>
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
+              <MultiPlatformPlayer livestream={currentLivestream} />
+              
+              <div className="bg-gradient-to-t from-black to-transparent p-4 relative -mt-16">
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className="text-white text-xl font-bold">{currentLivestream.title}</h3>
