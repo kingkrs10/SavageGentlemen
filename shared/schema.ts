@@ -10,6 +10,10 @@ export const users = pgTable("users", {
   displayName: text("display_name"),
   avatar: text("avatar"),
   isGuest: boolean("is_guest").default(false),
+  role: text("role").default("user"), // Add role field: user, admin, moderator
+  stripeCustomerId: text("stripe_customer_id"),
+  paypalCustomerId: text("paypal_customer_id"),
+  email: text("email"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -18,6 +22,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
   displayName: true,
   avatar: true,
   isGuest: true,
+  role: true,
+  email: true,
 });
 
 // Events schema
@@ -160,3 +166,129 @@ export type InsertComment = z.infer<typeof insertCommentSchema>;
 
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+
+// Tickets schema
+export const tickets = pgTable("tickets", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").notNull(),
+  name: text("name").notNull(), // e.g., "VIP", "General Admission", "Bottle Service"
+  description: text("description"),
+  price: integer("price").notNull(),
+  quantity: integer("quantity").notNull(),
+  remainingQuantity: integer("remaining_quantity"),
+  isActive: boolean("is_active").default(true),
+  maxPerPurchase: integer("max_per_purchase").default(10),
+});
+
+export const insertTicketSchema = createInsertSchema(tickets).pick({
+  eventId: true,
+  name: true,
+  description: true,
+  price: true,
+  quantity: true,
+  remainingQuantity: true,
+  isActive: true,
+  maxPerPurchase: true,
+});
+
+// Discount Codes schema
+export const discountCodes = pgTable("discount_codes", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  discountType: text("discount_type").notNull(), // "percentage", "fixed"
+  discountValue: integer("discount_value").notNull(), // Amount in cents or percentage
+  expiresAt: timestamp("expires_at"),
+  maxUses: integer("max_uses"),
+  currentUses: integer("current_uses").default(0),
+  eventId: integer("event_id"), // Optional - can be for specific event or all events
+  isActive: boolean("is_active").default(true),
+});
+
+export const insertDiscountCodeSchema = createInsertSchema(discountCodes).pick({
+  code: true,
+  discountType: true,
+  discountValue: true,
+  expiresAt: true,
+  maxUses: true,
+  eventId: true,
+  isActive: true,
+});
+
+// Orders schema
+export const orders = pgTable("orders", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  totalAmount: integer("total_amount").notNull(),
+  status: text("status").notNull().default("pending"), // pending, completed, failed, refunded
+  paymentMethod: text("payment_method"), // stripe, paypal, bitcoin
+  paymentId: text("payment_id"), // ID from payment provider
+  discountCodeId: integer("discount_code_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertOrderSchema = createInsertSchema(orders).pick({
+  userId: true,
+  totalAmount: true,
+  status: true,
+  paymentMethod: true,
+  paymentId: true,
+  discountCodeId: true,
+});
+
+// Order Items schema
+export const orderItems = pgTable("order_items", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull(),
+  ticketId: integer("ticket_id").notNull(),
+  quantity: integer("quantity").notNull(),
+  unitPrice: integer("unit_price").notNull(),
+  subtotal: integer("subtotal").notNull(),
+});
+
+export const insertOrderItemSchema = createInsertSchema(orderItems).pick({
+  orderId: true,
+  ticketId: true,
+  quantity: true,
+  unitPrice: true,
+  subtotal: true,
+});
+
+// Media Upload schema for product images
+export const mediaUploads = pgTable("media_uploads", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  url: text("url").notNull(),
+  fileName: text("file_name").notNull(),
+  fileType: text("file_type").notNull(),
+  fileSize: integer("file_size").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  relatedEntityType: text("related_entity_type"), // product, event, post, etc.
+  relatedEntityId: integer("related_entity_id"),
+});
+
+export const insertMediaUploadSchema = createInsertSchema(mediaUploads).pick({
+  userId: true,
+  url: true,
+  fileName: true,
+  fileType: true,
+  fileSize: true,
+  relatedEntityType: true,
+  relatedEntityId: true,
+});
+
+// Export additional types
+export type Ticket = typeof tickets.$inferSelect;
+export type InsertTicket = z.infer<typeof insertTicketSchema>;
+
+export type DiscountCode = typeof discountCodes.$inferSelect;
+export type InsertDiscountCode = z.infer<typeof insertDiscountCodeSchema>;
+
+export type Order = typeof orders.$inferSelect;
+export type InsertOrder = z.infer<typeof insertOrderSchema>;
+
+export type OrderItem = typeof orderItems.$inferSelect;
+export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
+
+export type MediaUpload = typeof mediaUploads.$inferSelect;
+export type InsertMediaUpload = z.infer<typeof insertMediaUploadSchema>;

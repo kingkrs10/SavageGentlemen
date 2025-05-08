@@ -1,4 +1,4 @@
-import express, { type Express, Request, Response } from "express";
+import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import WebSocket from "ws";
@@ -10,10 +10,57 @@ import {
   insertLivestreamSchema, 
   insertPostSchema, 
   insertCommentSchema,
-  insertChatMessageSchema
+  insertChatMessageSchema,
+  insertMediaUploadSchema,
+  insertTicketSchema,
+  insertDiscountCodeSchema,
+  insertOrderSchema,
+  insertOrderItemSchema
 } from "@shared/schema";
 import { ZodError } from "zod";
 import admin from "firebase-admin";
+import Stripe from "stripe";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+// Initialize Stripe
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+}
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2023-10-16",
+});
+
+// Multer storage configuration for file uploads
+const storage_config = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(process.cwd(), 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({ 
+  storage: storage_config,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Accept images only
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+      return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true);
+  }
+});
 
 // Initialize Firebase Admin
 try {
@@ -30,6 +77,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API prefix for all routes
   const router = express.Router();
   app.use("/api", router);
+  
+  // Create uploads directory for media files if it doesn't exist
+  const uploadsDir = path.join(process.cwd(), 'uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  
+  // Serve uploaded files
+  app.use('/uploads', express.static(uploadsDir));
+  
+  // Authentication middleware
+  const authenticateUser = async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.headers['user-id'];
+    
+    if (!userId) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    try {
+      const id = parseInt(userId as string);
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
+      // Add user to request object
+      (req as any).user = user;
+      next();
+    } catch (error) {
+      console.error("Authentication error:", error);
+      return res.status(500).json({ message: "Authentication error" });
+    }
+  };
+  
+  // Admin authorization middleware
+  const authorizeAdmin = (req: Request, res: Response, next: NextFunction) => {
+    const user = (req as any).user;
+    
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    
+    next();
+  };
+  
+  // Moderator authorization middleware
+  const authorizeModerator = (req: Request, res: Response, next: NextFunction) => {
+    const user = (req as any).user;
+    
+    if (!user || (user.role !== 'admin' && user.role !== 'moderator')) {
+      return res.status(403).json({ message: "Moderator access required" });
+    }
+    
+    next();
+  };
 
   // Error handling middleware for validation errors
   const handleZodError = (err: unknown, res: Response) => {
