@@ -117,33 +117,35 @@ const PostCard = ({ post, currentUser }: PostCardProps) => {
       </div>
       
       {showComments && (
-        <div className="mt-4 pt-3 border-t border-gray-800">
-          <h4 className="text-sm font-semibold mb-2">Comments</h4>
-          <div className="space-y-3">
-            {comments.map((comment) => (
+        <div className="mt-3 pt-2 border-t border-gray-800">
+          <h4 className="text-xs font-semibold mb-2">Comments</h4>
+          <div className="space-y-2">
+            {comments.length > 0 ? comments.map((comment) => (
               <div key={comment.id} className="flex items-start gap-2">
-                <Avatar className="w-8 h-8">
+                <Avatar className="w-6 h-6 mt-1">
                   <AvatarImage src={comment.user?.avatar} alt={comment.user?.displayName} />
                   <AvatarFallback>{comment.user?.displayName?.charAt(0) || '?'}</AvatarFallback>
                 </Avatar>
                 <div className="bg-gray-800 rounded-lg p-2 flex-1">
-                  <p className="text-xs font-semibold">{comment.user?.displayName || 'Anonymous'}</p>
-                  <p className="text-sm">{comment.content}</p>
+                  <p className="text-[10px] font-semibold">{comment.user?.displayName || 'Anonymous'}</p>
+                  <p className="text-xs">{comment.content}</p>
                 </div>
               </div>
-            ))}
+            )) : (
+              <p className="text-xs text-gray-400 py-1">No comments yet</p>
+            )}
           </div>
           
           {currentUser && (
-            <form onSubmit={handleSubmitComment} className="flex items-center mt-3 gap-2">
-              <Avatar className="w-8 h-8">
+            <form onSubmit={handleSubmitComment} className="flex items-center mt-2 gap-1">
+              <Avatar className="w-6 h-6">
                 <AvatarImage src={currentUser?.avatar} alt={currentUser?.displayName} />
                 <AvatarFallback>{currentUser?.displayName?.charAt(0) || '?'}</AvatarFallback>
               </Avatar>
               <Input
                 type="text"
                 placeholder="Add a comment..."
-                className="flex-1 bg-gray-800 text-white rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                className="flex-1 bg-gray-800 text-white rounded-lg px-2 py-1 text-xs h-7 min-h-0 focus:outline-none focus:ring-1 focus:ring-primary"
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
               />
@@ -151,10 +153,10 @@ const PostCard = ({ post, currentUser }: PostCardProps) => {
                 type="submit" 
                 variant="ghost" 
                 size="icon"
-                className="text-primary hover:text-red-400"
+                className="text-primary hover:text-red-400 h-7 w-7 p-0"
                 disabled={commentMutation.isPending || !commentText.trim()}
               >
-                <Share className="w-4 h-4 rotate-90" />
+                <Share className="w-3 h-3 rotate-90" />
               </Button>
             </form>
           )}

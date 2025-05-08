@@ -83,77 +83,90 @@ const Community = () => {
       <div className="mb-6">
         <Card className="bg-gray-900">
           <CardContent className="p-4">
-            <div className="flex gap-3 items-center">
-              <Avatar className="w-10 h-10">
-                {currentUser?.avatar ? (
-                  <AvatarImage src={currentUser.avatar} alt={currentUser.displayName} />
-                ) : (
-                  <AvatarFallback>{currentUser?.displayName?.charAt(0) || "G"}</AvatarFallback>
-                )}
-              </Avatar>
-              <form className="flex-1" onSubmit={handleSubmitPost}>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-3">
+                <Avatar className="w-8 h-8">
+                  {currentUser?.avatar ? (
+                    <AvatarImage src={currentUser.avatar} alt={currentUser.displayName} />
+                  ) : (
+                    <AvatarFallback>{currentUser?.displayName?.charAt(0) || "G"}</AvatarFallback>
+                  )}
+                </Avatar>
+                <div className="text-sm font-medium">
+                  {currentUser ? currentUser.displayName : "Guest User"}
+                </div>
+              </div>
+              
+              <form onSubmit={handleSubmitPost}>
                 <Textarea
                   placeholder={currentUser ? "Share your carnival vibes..." : "Login to share your thoughts..."}
-                  className="w-full bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary resize-none h-20 text-sm"
                   value={postContent}
                   onChange={(e) => setPostContent(e.target.value)}
                   disabled={!currentUser || postMutation.isPending}
                 />
-                <div className="flex justify-between mt-4">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="flex items-center text-sm text-gray-300 hover:text-primary"
-                    onClick={() => handleMedia("photo")}
-                  >
-                    <Image className="w-4 h-4 mr-1" /> Photo
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="flex items-center text-sm text-gray-300 hover:text-primary"
-                    onClick={() => handleMedia("video")}
-                  >
-                    <Video className="w-4 h-4 mr-1" /> Video
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="flex items-center text-sm text-gray-300 hover:text-primary"
-                    onClick={() => handleMedia("poll")}
-                  >
-                    <BarChart4 className="w-4 h-4 mr-1" /> Poll
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="flex items-center text-sm text-gray-300 hover:text-primary"
-                    onClick={() => handleMedia("location")}
-                  >
-                    <MapPin className="w-4 h-4 mr-1" /> Check In
-                  </Button>
-                </div>
-                {postContent.trim() && (
-                  <div className="mt-3 flex justify-end">
+                
+                <div className="flex justify-between items-center mt-3">
+                  <div className="flex space-x-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="rounded-full h-8 w-8 p-0 flex items-center justify-center text-gray-300"
+                      onClick={() => handleMedia("photo")}
+                    >
+                      <Image className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="rounded-full h-8 w-8 p-0 flex items-center justify-center text-gray-300"
+                      onClick={() => handleMedia("video")}
+                    >
+                      <Video className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="rounded-full h-8 w-8 p-0 flex items-center justify-center text-gray-300"
+                      onClick={() => handleMedia("poll")}
+                    >
+                      <BarChart4 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="rounded-full h-8 w-8 p-0 flex items-center justify-center text-gray-300"
+                      onClick={() => handleMedia("location")}
+                    >
+                      <MapPin className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="rounded-full h-8 w-8 p-0 flex items-center justify-center text-gray-300 bg-primary text-white"
+                      onClick={() => handleMedia("camera")}
+                    >
+                      <Camera className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  
+                  {postContent.trim() && (
                     <Button
                       type="submit"
-                      className="bg-primary text-white hover:bg-red-800"
+                      size="sm"
+                      className="bg-primary text-white hover:bg-red-800 px-3 h-8 text-xs"
                       disabled={postMutation.isPending}
                     >
                       {postMutation.isPending ? "Posting..." : "Post"}
                     </Button>
-                  </div>
-                )}
+                  )}
+                </div>
               </form>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="bg-primary text-white p-2 rounded-full hover:bg-red-800 transition"
-                onClick={() => handleMedia("camera")}
-              >
-                <Camera className="w-4 h-4" />
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -171,14 +184,16 @@ const Community = () => {
             <PostCard key={post.id} post={post} currentUser={currentUser} />
           ))
         ) : (
-          <div className="text-center py-12 bg-gray-900 rounded-xl">
-            <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No Posts Yet</h3>
-            <p className="text-gray-400 mb-4">
+          <div className="text-center py-8 bg-gray-900 rounded-xl">
+            <Camera className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+            <h3 className="text-lg font-semibold mb-1">No Posts Yet</h3>
+            <p className="text-gray-400 text-sm mb-3 px-4">
               Be the first to share your Savage Gentlemen experience!
             </p>
             {!currentUser && (
               <Button 
+                size="sm"
+                className="bg-primary text-white hover:bg-red-800"
                 onClick={() => toast({
                   title: "Login Required",
                   description: "Please login to create posts",
