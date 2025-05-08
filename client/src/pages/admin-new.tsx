@@ -533,11 +533,11 @@ export default function AdminPage() {
       // Combine date and time
       const dateTimeString = `${eventForm.date}T${eventForm.time || '19:00'}:00`;
       
-      // Create payload with date as a proper Date object
+      // Create payload with date as an ISO string that will be parsed properly on the server
       const eventData = {
         title: eventForm.title,
         description: eventForm.description,
-        date: new Date(dateTimeString),
+        date: dateTimeString, // This will be parsed on the server side
         location: eventForm.location,
         price: eventForm.price,
         imageUrl: eventForm.imageUrl,
