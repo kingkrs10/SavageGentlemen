@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Trash } from "lucide-react";
+import { Eye, EyeOff, Plus, Pencil, Trash, Trash2, Users, Tag, Calendar, Layers, Activity, BarChart } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -47,18 +47,11 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Package,
-  Calendar, 
-  Users, 
-  Ticket,
   ShoppingCart,
   Lock,
   Radio,
   MoreHorizontal,
-  Plus,
-  Trash2,
-  Edit,
-  Eye,
-  EyeOff
+  Edit
 } from "lucide-react";
 
 // Interface definitions for the admin dashboard
@@ -1835,7 +1828,7 @@ export default function AdminPage() {
                 <DialogHeader>
                   <DialogTitle>Add New User</DialogTitle>
                   <DialogDescription>
-                    Fill in the details to create a new user.
+                    Fill in the details to create a new user. Username and password are required.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -1848,7 +1841,11 @@ export default function AdminPage() {
                       onChange={(e) => 
                         setUserForm({ ...userForm, username: e.target.value })
                       }
+                      autoComplete="off"
                     />
+                    <p className="text-xs text-gray-500">
+                      Username must be unique and cannot be changed later
+                    </p>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="displayName">Display Name</Label>
@@ -1860,6 +1857,9 @@ export default function AdminPage() {
                         setUserForm({ ...userForm, displayName: e.target.value })
                       }
                     />
+                    <p className="text-xs text-gray-500">
+                      Name that will be visible to other users
+                    </p>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="email">Email</Label>
@@ -1871,19 +1871,54 @@ export default function AdminPage() {
                       onChange={(e) => 
                         setUserForm({ ...userForm, email: e.target.value })
                       }
+                      autoComplete="email"
                     />
+                    <p className="text-xs text-gray-500">
+                      Used for password recovery and notifications
+                    </p>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Enter password"
-                      value={userForm.password}
-                      onChange={(e) => 
-                        setUserForm({ ...userForm, password: e.target.value })
-                      }
-                    />
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter password"
+                        value={userForm.password}
+                        onChange={(e) => 
+                          setUserForm({ ...userForm, password: e.target.value })
+                        }
+                        className="pr-10"
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 flex items-center px-3"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4 text-gray-500" /> : <Eye className="h-4 w-4 text-gray-500" />}
+                      </button>
+                    </div>
+                    {userForm.password && (
+                      <div className="mt-2">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <div className={`h-1 flex-1 rounded-full ${userForm.password.length >= 8 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                            <div className={`h-1 flex-1 rounded-full ${/[A-Z]/.test(userForm.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                            <div className={`h-1 flex-1 rounded-full ${/[a-z]/.test(userForm.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                            <div className={`h-1 flex-1 rounded-full ${/[0-9]/.test(userForm.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                            <div className={`h-1 flex-1 rounded-full ${/[^A-Za-z0-9]/.test(userForm.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                          </div>
+                          <ul className="text-xs text-gray-500 space-y-1 pl-4 list-disc">
+                            <li className={userForm.password.length >= 8 ? 'text-green-500' : ''}>At least 8 characters</li>
+                            <li className={/[A-Z]/.test(userForm.password) ? 'text-green-500' : ''}>At least one uppercase letter</li>
+                            <li className={/[a-z]/.test(userForm.password) ? 'text-green-500' : ''}>At least one lowercase letter</li>
+                            <li className={/[0-9]/.test(userForm.password) ? 'text-green-500' : ''}>At least one number</li>
+                            <li className={/[^A-Za-z0-9]/.test(userForm.password) ? 'text-green-500' : ''}>At least one special character</li>
+                          </ul>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="role">Role</Label>
@@ -1900,6 +1935,37 @@ export default function AdminPage() {
                         <SelectItem value="admin">Admin</SelectItem>
                       </SelectContent>
                     </Select>
+                    <div className="mt-2">
+                      <div className="text-xs text-gray-500">
+                        <strong>Permissions:</strong>
+                        <ul className="pl-4 list-disc mt-1">
+                          {userForm.role === 'admin' && (
+                            <>
+                              <li>Full access to all features</li>
+                              <li>Can create other admin accounts</li>
+                              <li>Can manage all content and users</li>
+                              <li>Can access payment/financial data</li>
+                            </>
+                          )}
+                          {userForm.role === 'moderator' && (
+                            <>
+                              <li>Can moderate community content</li>
+                              <li>Can validate tickets at events</li>
+                              <li>Limited admin dashboard access</li>
+                              <li>Cannot access payment/financial data</li>
+                            </>
+                          )}
+                          {userForm.role === 'user' && (
+                            <>
+                              <li>Standard user permissions</li>
+                              <li>Can purchase tickets and products</li>
+                              <li>Can participate in community</li>
+                              <li>No admin access</li>
+                            </>
+                          )}
+                        </ul>
+                      </div>
+                    </div>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="avatar">Avatar URL</Label>
@@ -1911,6 +1977,19 @@ export default function AdminPage() {
                         setUserForm({ ...userForm, avatar: e.target.value })
                       }
                     />
+                    {userForm.avatar && (
+                      <div className="mt-2 flex justify-center">
+                        <Avatar className="h-20 w-20">
+                          <AvatarFallback>
+                            {userForm.displayName
+                              ? userForm.displayName.split(" ").map(n => n[0]).join("").toUpperCase()
+                              : userForm.username.slice(0, 2).toUpperCase()
+                            }
+                          </AvatarFallback>
+                          <AvatarImage src={userForm.avatar} alt="Avatar preview" />
+                        </Avatar>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <DialogFooter>
@@ -1920,6 +1999,7 @@ export default function AdminPage() {
                   <Button 
                     className="sg-btn" 
                     onClick={handleCreateUser}
+                    disabled={!userForm.username || !userForm.password}
                   >
                     Create User
                   </Button>
