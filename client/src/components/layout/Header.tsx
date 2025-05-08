@@ -20,58 +20,75 @@ interface HeaderProps {
 
 const Header = ({ user, onProfileClick, onLogout }: HeaderProps) => {
   return (
-    <header className="sticky top-0 z-50 bg-black bg-opacity-90 backdrop-blur-sm shadow-md">
-      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <div className="flex items-center">
-          <img src={LogoSvg} alt="Savage Gentlemen Logo" className="h-10 w-10" />
-          <h1 className="ml-2 text-xl md:text-2xl font-heading text-white truncate max-w-[180px] sm:max-w-none">
-            SAVAGE GENTLEMEN
-          </h1>
-        </div>
-        <div className="flex items-center space-x-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-primary rounded-full transition"
-          >
-            <Search className="h-5 w-5" />
-          </Button>
-
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full"
-                >
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.avatar} alt={user.displayName} />
-                    <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>
-                  {user.displayName} {user.isGuest && "(Guest)"}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={onLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Logout</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
+    <header className="sticky top-0 z-50 bg-black border-b border-white/10">
+      <div className="container mx-auto px-4 flex flex-col">
+        {/* Top Navigation Bar */}
+        <div className="py-3 flex justify-between items-center">
+          <div className="flex items-center">
+            <img src={LogoSvg} alt="Savage Gentlemen Logo" className="h-10 w-10" />
+            <h1 className="ml-2 text-xl md:text-2xl font-heading text-white tracking-widest truncate max-w-[180px] sm:max-w-none">
+              SAVAGE GENTLEMEN
+            </h1>
+          </div>
+          <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
               size="icon"
-              className="text-white hover:bg-primary rounded-full transition"
-              onClick={onProfileClick}
+              className="text-white hover:text-primary transition"
             >
-              <User className="h-5 w-5" />
+              <Search className="h-5 w-5" />
             </Button>
-          )}
+
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-none hover:bg-transparent hover:text-primary"
+                  >
+                    <Avatar className="h-8 w-8 ring-1 ring-white/20">
+                      <AvatarImage src={user.avatar} alt={user.displayName} />
+                      <AvatarFallback>{user.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-black border border-white/10">
+                  <DropdownMenuLabel className="uppercase text-xs tracking-widest">
+                    {user.displayName} {user.isGuest && "(Guest)"}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-white/10" />
+                  <DropdownMenuItem 
+                    onClick={onLogout}
+                    className="hover:bg-white/5 focus:bg-white/5"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span className="uppercase text-xs tracking-widest">Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                variant="ghost"
+                className="text-white hover:text-primary hover:bg-transparent uppercase text-xs tracking-widest px-4 py-2"
+                onClick={onProfileClick}
+              >
+                <User className="h-5 w-5 mr-2" />
+                Sign In
+              </Button>
+            )}
+          </div>
+        </div>
+        
+        {/* Desktop Menu - Hidden on Mobile */}
+        <div className="hidden md:flex justify-center border-t border-white/10 py-4 text-sm">
+          <nav className="flex space-x-8">
+            <a href="/" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Home</a>
+            <a href="/events" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Events</a>
+            <a href="/shop" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Shop</a>
+            <a href="/live" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Live</a>
+            <a href="/community" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Community</a>
+          </nav>
         </div>
       </div>
     </header>

@@ -59,200 +59,231 @@ const Home = () => {
   const [livestreamImgError, setLivestreamImgError] = useState(false);
   
   return (
-    <div>
-      {/* Hero Banner */}
-      <div className="relative rounded-xl overflow-hidden mb-6 shadow-lg">
+    <div className="mx-auto">
+      {/* Full Width Hero Banner */}
+      <div className="relative w-full h-[90vh] mb-16 overflow-hidden -mx-3">
         {eventsLoading ? (
-          <Skeleton className="h-64 w-full" />
-        ) : featuredEvents && featuredEvents.length > 0 ? (
-          <div className="relative">
-            <div className="h-64 relative">
-              <div className="h-64 w-full bg-gray-800 flex items-center justify-center">
-                <img 
-                  src={SGFlyerLogoPng} 
-                  alt="Savage Gentlemen" 
-                  className="h-40 w-40 object-contain"
-                />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black bg-opacity-60"></div>
-            </div>
-            <div className="absolute bottom-0 left-0 p-4">
-              <h2 className="text-3xl font-heading text-white">Upcoming Events</h2>
-              <p className="text-lg text-gray-200">Stay tuned for tickets</p>
-              <Button 
-                className="mt-2 bg-primary text-white hover:bg-red-800 transition"
-                onClick={() => window.location.href = '/events'}
-              >
-                View Events
-              </Button>
-            </div>
-          </div>
+          <Skeleton className="h-full w-full" />
         ) : (
-          <div className="h-64 flex items-center justify-center bg-gray-900">
-            <p className="text-gray-400">No featured events available</p>
+          <div className="relative h-full">
+            {/* Hero Background */}
+            <div className="h-full w-full bg-black flex items-center justify-center">
+              <img 
+                src={SGFlyerLogoPng} 
+                alt="Savage Gentlemen" 
+                className="h-80 w-80 object-contain opacity-70"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/50 to-black"></div>
+            </div>
+            
+            {/* Hero Content - Centered */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
+              <h1 className="text-5xl md:text-7xl font-heading text-white uppercase tracking-wide mb-6">
+                Savage Gentlemen
+              </h1>
+              <p className="text-xl md:text-2xl text-white/80 max-w-2xl mx-auto mb-8 uppercase tracking-widest">
+                Events · Merchandise · Live Stream · Community
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button 
+                  className="bg-primary hover:bg-primary/80 text-white px-8 py-6 uppercase tracking-widest text-sm font-semibold"
+                  onClick={() => window.location.href = '/events'}
+                >
+                  View Events
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="border-white text-white hover:bg-white/10 px-8 py-6 uppercase tracking-widest text-sm font-semibold"
+                  onClick={() => window.location.href = '/shop'}
+                >
+                  Shop Collection
+                </Button>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Featured Events */}
-      <section className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-heading">Upcoming Events</h2>
-          <Link href="/events">
-            <a className="text-primary font-semibold flex items-center">
-              View All <ChevronRight className="h-4 w-4 ml-1" />
-            </a>
-          </Link>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {eventsLoading ? (
-            <>
-              <Skeleton className="h-[300px] w-full rounded-xl" />
-              <Skeleton className="h-[300px] w-full rounded-xl" />
-            </>
-          ) : (
-            <div className="col-span-2 flex flex-col items-center justify-center py-8 bg-gray-800 rounded-xl">
-              <img src={SGFlyerLogoPng} alt="Savage Gentlemen" className="w-32 h-32 mb-4" />
-              <h3 className="text-xl font-bold text-white">Coming Soon</h3>
-              <p className="text-gray-400 mb-2">Events will be announced soon</p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Featured Merchandise */}
-      <section className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-heading">Shop Merchandise</h2>
-          <Link href="/shop">
-            <a className="text-primary font-semibold flex items-center">
-              View All <ChevronRight className="h-4 w-4 ml-1" />
-            </a>
-          </Link>
-        </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {productsLoading ? (
-            <>
-              <Skeleton className="h-[200px] w-full rounded-lg" />
-              <Skeleton className="h-[200px] w-full rounded-lg" />
-              <Skeleton className="h-[200px] w-full rounded-lg" />
-            </>
-          ) : featuredProducts && featuredProducts.length > 0 ? (
-            featuredProducts.slice(0, 3).map((product) => (
-              <ProductCard 
-                key={product.id} 
-                product={product}
-                onAddToCart={handleAddToCart}
-              />
-            ))
-          ) : (
-            <p className="text-gray-400 col-span-3 text-center py-8">No merchandise found</p>
-          )}
-        </div>
-      </section>
-
-      {/* Live Now */}
-      <section className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-heading">Live Now</h2>
-          <Link href="/live">
-            <a className="text-primary font-semibold flex items-center">
-              See All <ChevronRight className="h-4 w-4 ml-1" />
-            </a>
-          </Link>
-        </div>
-        
-        {livestreamLoading ? (
-          <Skeleton className="h-[250px] w-full rounded-xl" />
-        ) : currentLivestream ? (
-          <div className="bg-gray-900 rounded-xl overflow-hidden shadow-lg">
-            <div className="relative">
-              {livestreamImgError ? (
-                <div className="w-full h-56 bg-gray-800 flex items-center justify-center">
-                  <img 
-                    src={SGFlyerLogoPng} 
-                    alt={currentLivestream.title}
-                    className="h-32 w-32 object-contain"
-                  />
-                </div>
-              ) : (
-                <img 
-                  src={currentLivestream.thumbnailUrl} 
-                  alt={currentLivestream.title} 
-                  className="w-full h-56 object-cover"
-                  onError={() => setLivestreamImgError(true)}
-                />
-              )}
-              <div className="absolute inset-0 flex justify-center items-center">
-                <div className="bg-black bg-opacity-50 px-4 py-2 rounded-full flex items-center">
-                  <span className="animate-pulse inline-block w-3 h-3 bg-red-600 rounded-full mr-2"></span>
-                  <span className="text-white font-semibold">LIVE</span>
-                </div>
-              </div>
-              <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
-                <div>
-                  <h3 className="text-white text-xl font-bold">{currentLivestream.title}</h3>
-                  <p className="text-sm text-gray-200">
-                    {currentLivestream.viewerCount || 0} watching
-                  </p>
-                </div>
-                <Link href="/live">
-                  <a>
-                    <Button className="bg-primary text-white hover:bg-red-800 transition">
-                      Join Live
-                    </Button>
-                  </a>
-                </Link>
-              </div>
-            </div>
+      {/* Content Sections with Full-Width Dividers */}
+      <div className="space-y-20">
+        {/* Featured Events Section */}
+        <section>
+          <div className="mb-10 text-center">
+            <h2 className="text-3xl md:text-4xl font-heading uppercase tracking-wider mb-4">Upcoming Events</h2>
+            <div className="w-20 h-1 bg-primary mx-auto"></div>
           </div>
-        ) : (
-          <div className="bg-gray-900 rounded-xl overflow-hidden shadow-lg p-8 text-center">
-            <p className="text-gray-400 mb-4">No streams currently live</p>
-            <Link href="/live">
-              <a>
-                <Button variant="outline">
-                  Check Upcoming Streams
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {eventsLoading ? (
+              <>
+                <Skeleton className="h-[400px] w-full" />
+                <Skeleton className="h-[400px] w-full" />
+              </>
+            ) : (
+              <div className="col-span-1 md:col-span-2 flex flex-col items-center justify-center py-16 border border-white/10">
+                <img src={SGFlyerLogoPng} alt="Savage Gentlemen" className="w-40 h-40 mb-6 opacity-70" />
+                <h3 className="text-2xl font-bold text-white uppercase tracking-widest mb-2">Coming Soon</h3>
+                <p className="text-white/60 uppercase tracking-widest text-sm mb-6">Events will be announced soon</p>
+                <Button 
+                  className="bg-primary hover:bg-primary/80 text-white uppercase tracking-widest px-6"
+                  onClick={() => window.location.href = '/events'}
+                >
+                  Stay Updated
                 </Button>
+              </div>
+            )}
+          </div>
+          
+          <div className="mt-8 text-center">
+            <Link href="/events">
+              <a className="text-white hover:text-primary uppercase tracking-widest text-sm font-semibold inline-flex items-center">
+                View All Events <ChevronRight className="h-4 w-4 ml-1" />
               </a>
             </Link>
           </div>
-        )}
-      </section>
+        </section>
 
-      {/* Ad Banner */}
-      <div className="relative rounded-xl overflow-hidden mb-8 shadow-lg bg-gradient-to-r from-primary to-black p-4">
-        <div className="flex items-center">
-          <div className="flex-1">
-            <h3 className="text-xl font-heading text-white">Summer Collection</h3>
-            <p className="text-sm text-gray-200 mb-3">Exclusive drops for Savage Gentlemen members</p>
-            <Button 
-              variant="secondary" 
-              className="bg-white text-primary hover:bg-gray-100 transition"
-              onClick={() => window.open(EXTERNAL_URLS.ETSY_SHOP, '_blank', 'noopener,noreferrer')}
-            >
-              Shop Now
-            </Button>
+        {/* Featured Merchandise Section */}
+        <section>
+          <div className="mb-10 text-center">
+            <h2 className="text-3xl md:text-4xl font-heading uppercase tracking-wider mb-4">Shop Merchandise</h2>
+            <div className="w-20 h-1 bg-primary mx-auto"></div>
           </div>
-          {adImgError ? (
-            <div className="w-24 h-24 rounded-lg bg-gray-800 flex items-center justify-center">
-              <img 
-                src={SGFlyerLogoPng} 
-                alt="Savage Gentlemen Collection" 
-                className="h-16 w-16 object-contain"
-              />
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {productsLoading ? (
+              <>
+                <Skeleton className="h-[300px] w-full" />
+                <Skeleton className="h-[300px] w-full" />
+                <Skeleton className="h-[300px] w-full" />
+              </>
+            ) : featuredProducts && featuredProducts.length > 0 ? (
+              featuredProducts.slice(0, 3).map((product) => (
+                <ProductCard 
+                  key={product.id} 
+                  product={product}
+                  onAddToCart={handleAddToCart}
+                />
+              ))
+            ) : (
+              <div className="col-span-1 md:col-span-3 text-center py-16 border border-white/10">
+                <p className="text-white/60 uppercase tracking-widest">No merchandise found</p>
+              </div>
+            )}
+          </div>
+          
+          <div className="mt-8 text-center">
+            <Link href="/shop">
+              <a className="text-white hover:text-primary uppercase tracking-widest text-sm font-semibold inline-flex items-center">
+                View All Products <ChevronRight className="h-4 w-4 ml-1" />
+              </a>
+            </Link>
+          </div>
+        </section>
+
+        {/* Live Stream Section */}
+        <section>
+          <div className="mb-10 text-center">
+            <h2 className="text-3xl md:text-4xl font-heading uppercase tracking-wider mb-4">Live Broadcast</h2>
+            <div className="w-20 h-1 bg-primary mx-auto"></div>
+          </div>
+          
+          {livestreamLoading ? (
+            <Skeleton className="h-[350px] w-full" />
+          ) : currentLivestream ? (
+            <div className="border border-white/10 overflow-hidden">
+              <div className="relative">
+                {livestreamImgError ? (
+                  <div className="w-full h-80 bg-black flex items-center justify-center">
+                    <img 
+                      src={SGFlyerLogoPng} 
+                      alt={currentLivestream.title}
+                      className="h-40 w-40 object-contain opacity-70"
+                    />
+                  </div>
+                ) : (
+                  <img 
+                    src={currentLivestream.thumbnailUrl} 
+                    alt={currentLivestream.title} 
+                    className="w-full h-80 object-cover"
+                    onError={() => setLivestreamImgError(true)}
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black"></div>
+                
+                <div className="absolute top-4 left-4">
+                  <div className="px-4 py-2 flex items-center bg-primary">
+                    <span className="animate-pulse inline-block w-2 h-2 bg-white rounded-full mr-2"></span>
+                    <span className="text-white text-xs uppercase tracking-widest font-semibold">Live Now</span>
+                  </div>
+                </div>
+                
+                <div className="absolute bottom-0 left-0 right-0 p-6">
+                  <h3 className="text-2xl font-heading text-white uppercase tracking-widest mb-2">{currentLivestream.title}</h3>
+                  <p className="text-white/70 mb-6 uppercase tracking-widest text-xs">
+                    {currentLivestream.viewerCount || 0} watching
+                  </p>
+                  <Link href="/live">
+                    <a>
+                      <Button className="bg-primary hover:bg-primary/80 text-white px-6 uppercase tracking-widest text-sm">
+                        Watch Now
+                      </Button>
+                    </a>
+                  </Link>
+                </div>
+              </div>
             </div>
           ) : (
-            <img 
-              src="https://images.unsplash.com/photo-1489987707025-afc232f7ea0f" 
-              alt="Summer Collection" 
-              className="w-24 h-24 rounded-lg object-cover"
-              onError={() => setAdImgError(true)}
-            />
+            <div className="border border-white/10 p-16 text-center">
+              <p className="text-white/60 uppercase tracking-widest mb-6">No streams currently live</p>
+              <Link href="/live">
+                <a>
+                  <Button className="border-white text-white hover:bg-white/10 uppercase tracking-widest">
+                    Check Upcoming Streams
+                  </Button>
+                </a>
+              </Link>
+            </div>
           )}
-        </div>
+          
+          <div className="mt-8 text-center">
+            <Link href="/live">
+              <a className="text-white hover:text-primary uppercase tracking-widest text-sm font-semibold inline-flex items-center">
+                View All Broadcasts <ChevronRight className="h-4 w-4 ml-1" />
+              </a>
+            </Link>
+          </div>
+        </section>
+
+        {/* Shop Banner */}
+        <section className="py-16 mb-8 border-y border-white/10">
+          <div className="flex flex-col md:flex-row items-center md:items-stretch">
+            <div className="text-center md:text-left md:w-2/3 flex flex-col justify-center mb-6 md:mb-0 md:pr-10">
+              <h3 className="text-3xl font-heading uppercase tracking-wider mb-4">Limited Edition</h3>
+              <p className="text-white/70 uppercase tracking-widest mb-8 text-sm">
+                Exclusive collection for Savage Gentlemen members.<br />
+                Limited quantities available.
+              </p>
+              <div>
+                <Button 
+                  className="bg-primary hover:bg-primary/80 text-white px-8 uppercase tracking-widest"
+                  onClick={() => window.open(EXTERNAL_URLS.ETSY_SHOP, '_blank', 'noopener,noreferrer')}
+                >
+                  Shop Now
+                </Button>
+              </div>
+            </div>
+            <div className="md:w-1/3 flex justify-center md:justify-end">
+              <div className="w-60 h-60 border border-white/10 flex items-center justify-center">
+                <img 
+                  src={SGFlyerLogoPng} 
+                  alt="Savage Gentlemen Collection" 
+                  className="h-40 w-40 object-contain opacity-70"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

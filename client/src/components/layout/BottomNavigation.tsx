@@ -15,8 +15,8 @@ const BottomNavigation = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-black bg-opacity-95 backdrop-blur-sm shadow-lg z-40">
-      <div className="w-full flex justify-between items-center px-1">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-black border-t border-white/10 z-40">
+      <div className="w-full flex justify-between items-center">
         {navItems.map((item) => (
           <Link 
             key={item.path} 
@@ -24,17 +24,20 @@ const BottomNavigation = () => {
             className={cn(
               "bottom-nav-item flex-1 py-3 flex flex-col items-center text-xs",
               location === item.path
-                ? "active text-primary"
-                : "text-gray-500"
+                ? "text-white border-t-2 border-primary"
+                : "text-white/50"
             )}
           >
             <div className="relative">
-              <item.icon className="w-5 h-5 mb-1" />
+              <item.icon className={cn(
+                "w-5 h-5 mb-1",
+                location === item.path ? "text-primary" : "text-white/50"
+              )} />
               {item.hasNotification && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-600 rounded-full animate-pulse" />
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-none animate-pulse" />
               )}
             </div>
-            <span className="text-[10px] sm:text-xs">{item.label}</span>
+            <span className="text-[10px] tracking-widest uppercase">{item.label}</span>
           </Link>
         ))}
       </div>
