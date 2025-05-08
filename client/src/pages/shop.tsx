@@ -13,25 +13,15 @@ const SimpleProductCard = ({ product, onAddToCart }: {
   product: Product; 
   onAddToCart: (id: number) => void;
 }) => {
-  const [imgError, setImgError] = useState(false);
-  
+  // Always use SG Flyer Logo for now to avoid CORS issues
   return (
     <div className="bg-gray-900 rounded-lg overflow-hidden shadow-lg border border-gray-800">
       <div className="relative h-48 bg-gray-800 flex items-center justify-center">
-        {imgError ? (
-          <img 
-            src={SGFlyerLogoPng} 
-            alt={product.title} 
-            className="h-32 w-32 object-contain"
-          />
-        ) : (
-          <img 
-            src={product.imageUrl} 
-            alt={product.title} 
-            className="w-full h-48 object-cover" 
-            onError={() => setImgError(true)}
-          />
-        )}
+        <img 
+          src={SGFlyerLogoPng} 
+          alt={product.title} 
+          className="h-32 w-32 object-contain"
+        />
       </div>
       <div className="p-4">
         <h3 className="font-semibold text-white">{product.title}</h3>
