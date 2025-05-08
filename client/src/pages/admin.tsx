@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import {
   Select,
   SelectContent,
@@ -76,6 +76,27 @@ interface OrderItem {
   price: number;
   product?: Product;
   ticket?: Ticket;
+}
+
+interface Livestream {
+  id: number;
+  title: string;
+  description: string | null;
+  streamDate: Date | string;
+  thumbnailUrl: string | null;
+  isLive: boolean;
+  hostName: string | null;
+  // Enhanced multi-platform support
+  platform: string; // youtube, twitch, instagram, facebook, tiktok, custom
+  youtubeUrl?: string | null;
+  twitchChannel?: string | null;
+  instagramUsername?: string | null;
+  facebookUrl?: string | null;
+  tiktokUsername?: string | null;
+  customStreamUrl?: string | null;
+  embedCode?: string | null;
+  // Legacy field
+  streamUrl?: string | null;
 }
 import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -153,6 +174,8 @@ export default function AdminPage() {
   });
   const [activeTab, setActiveTab] = useState("essential");
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
+  const [livestreamDialogOpen, setLivestreamDialogOpen] = useState(false);
+  const [currentLivestream, setCurrentLivestream] = useState<Livestream | null>(null);
   
   // User form state
   const [userForm, setUserForm] = useState({
@@ -161,6 +184,25 @@ export default function AdminPage() {
     email: '',
     password: '',
     role: 'user'
+  });
+  
+  // Livestream form state
+  const [livestreamForm, setLivestreamForm] = useState({
+    title: '',
+    description: '',
+    streamDate: '',
+    streamTime: '',
+    thumbnailUrl: '',
+    isLive: false,
+    hostName: '',
+    platform: 'custom', // youtube, twitch, instagram, facebook, tiktok, custom
+    youtubeUrl: '',
+    twitchChannel: '',
+    instagramUsername: '',
+    facebookUrl: '',
+    tiktokUsername: '',
+    customStreamUrl: '',
+    embedCode: ''
   });
   
   // Event form state
@@ -272,6 +314,16 @@ export default function AdminPage() {
     enabled: !!currentUser,
   });
   
+  // Fetch livestreams
+  const {
+    data: livestreams,
+    isLoading: livestreamsLoading,
+    error: livestreamsError
+  } = useQuery<Livestream[]>({
+    queryKey: ["/api/livestreams"],
+    enabled: !!currentUser,
+  });
+  
   // Handle ticket form submission
   // State for tickets management
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -344,6 +396,74 @@ export default function AdminPage() {
     setTicketDialogOpen(true);
   };
   
+  const handleEditLivestream = (livestream: Livestream) => {
+    // Set the current livestream being edited
+    setCurrentLivestream(livestream);
+    
+    // Convert date to format expected by the form
+    const streamDate = new Date(livestream.streamDate);
+    const formattedDate = streamDate.toISOString().split('T')[0];
+    const formattedTime = streamDate.toISOString().split('T')[1].substring(0, 5);
+    
+    // Populate the form with the livestream's data
+    setLivestreamForm({
+      title: livestream.title,
+      description: livestream.description || '',
+      streamDate: formattedDate,
+      streamTime: formattedTime,
+      thumbnailUrl: livestream.thumbnailUrl || '',
+      isLive: livestream.isLive,
+      hostName: livestream.hostName || '',
+      platform: livestream.platform || 'custom',
+      youtubeUrl: livestream.youtubeUrl || '',
+      twitchChannel: livestream.twitchChannel || '',
+      instagramUsername: livestream.instagramUsername || '',
+      facebookUrl: livestream.facebookUrl || '',
+      tiktokUsername: livestream.tiktokUsername || '',
+      customStreamUrl: livestream.customStreamUrl || '',
+      embedCode: livestream.embedCode || ''
+    });
+    
+    // Open the livestream dialog
+    setLivestreamDialogOpen(true);
+  };
+
+  const handleToggleLivestreamStatus = async (livestream: Livestream) => {
+    try {
+      // Toggle the isLive status
+      const newStatus = !livestream.isLive;
+      
+      // Make API call to update the livestream's status
+      const response = await fetch(`/api/admin/livestreams/${livestream.id}/toggle-status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update livestream status');
+      }
+      
+      const result = await response.json();
+      
+      toast({
+        title: newStatus ? 'Stream Set to Live' : 'Stream Set to Offline',
+        description: `The livestream "${livestream.title}" is now ${newStatus ? 'live' : 'offline'}`,
+      });
+      
+      // Refresh the livestreams list
+      queryClient.invalidateQueries({queryKey: ["/api/livestreams"]});
+    } catch (error) {
+      console.error('Error updating livestream status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update livestream status",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleToggleTicketStatus = async (ticket: Ticket) => {
     try {
       // Toggle the status
@@ -526,6 +646,120 @@ export default function AdminPage() {
     }
   };
 
+  // Livestream creation handler
+  const handleCreateLivestream = async () => {
+    try {
+      // Validation
+      if (!livestreamForm.title || !livestreamForm.streamDate) {
+        toast({
+          title: "Missing fields",
+          description: "Title and stream date are required",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Combine date and time into a single Date object
+      const dateTimeString = `${livestreamForm.streamDate}T${livestreamForm.streamTime || '00:00:00'}`;
+      const streamDate = new Date(dateTimeString);
+      
+      // Prepare data based on selected platform
+      let streamData: any = {
+        title: livestreamForm.title,
+        description: livestreamForm.description || null,
+        streamDate: streamDate,
+        thumbnailUrl: livestreamForm.thumbnailUrl || null,
+        isLive: livestreamForm.isLive,
+        hostName: livestreamForm.hostName || null,
+        platform: livestreamForm.platform
+      };
+      
+      // Add platform-specific fields
+      switch (livestreamForm.platform) {
+        case 'youtube':
+          streamData.youtubeUrl = livestreamForm.youtubeUrl;
+          break;
+        case 'twitch':
+          streamData.twitchChannel = livestreamForm.twitchChannel;
+          break;
+        case 'instagram':
+          streamData.instagramUsername = livestreamForm.instagramUsername;
+          break;
+        case 'facebook':
+          streamData.facebookUrl = livestreamForm.facebookUrl;
+          break;
+        case 'tiktok':
+          streamData.tiktokUsername = livestreamForm.tiktokUsername;
+          break;
+        case 'custom':
+          streamData.customStreamUrl = livestreamForm.customStreamUrl;
+          streamData.embedCode = livestreamForm.embedCode;
+          break;
+      }
+
+      // Make API call to create livestream
+      const url = currentLivestream 
+        ? `/api/admin/livestreams/${currentLivestream.id}` 
+        : '/api/admin/livestreams';
+      
+      const method = currentLivestream ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(streamData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save livestream');
+      }
+
+      const result = await response.json();
+      
+      toast({
+        title: currentLivestream ? "Livestream Updated" : "Livestream Created",
+        description: `Livestream "${livestreamForm.title}" ${currentLivestream ? 'updated' : 'created'} successfully`,
+      });
+      
+      // Close the dialog
+      setLivestreamDialogOpen(false);
+      
+      // Reset the current livestream
+      setCurrentLivestream(null);
+      
+      // Reset the form
+      setLivestreamForm({
+        title: '',
+        description: '',
+        streamDate: '',
+        streamTime: '',
+        thumbnailUrl: '',
+        isLive: false,
+        hostName: '',
+        platform: 'custom',
+        youtubeUrl: '',
+        twitchChannel: '',
+        instagramUsername: '',
+        facebookUrl: '',
+        tiktokUsername: '',
+        customStreamUrl: '',
+        embedCode: ''
+      });
+      
+      // Invalidate the livestreams query to refetch livestreams and update the UI
+      queryClient.invalidateQueries({queryKey: ["/api/livestreams"]});
+    } catch (error) {
+      console.error("Failed to save livestream:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save livestream. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleCreateTicket = async () => {
     try {
       // Prepare the complete ticket data for submission
@@ -645,7 +879,7 @@ export default function AdminPage() {
         <Separator />
       
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid grid-cols-5 mb-8">
+          <TabsList className="grid grid-cols-6 mb-8">
           <TabsTrigger value="products" className="flex items-center gap-2">
             <PackageOpen className="h-4 w-4" /> Products
           </TabsTrigger>
@@ -660,6 +894,9 @@ export default function AdminPage() {
           </TabsTrigger>
           <TabsTrigger value="orders" className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4" /> Orders
+          </TabsTrigger>
+          <TabsTrigger value="livestreams" className="flex items-center gap-2">
+            <Radio className="h-4 w-4" /> Livestreams
           </TabsTrigger>
         </TabsList>
         
