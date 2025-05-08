@@ -482,6 +482,10 @@ export class MemStorage implements IStorage {
     return this.tickets.get(id);
   }
   
+  async getAllTickets(): Promise<Ticket[]> {
+    return Array.from(this.tickets.values());
+  }
+  
   async updateTicket(id: number, ticketData: Partial<InsertTicket>): Promise<Ticket | undefined> {
     const ticket = await this.getTicket(id);
     if (!ticket) {
@@ -1192,6 +1196,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(tickets.id, id));
     
     return ticket || undefined;
+  }
+  
+  async getAllTickets(): Promise<Ticket[]> {
+    return await db
+      .select()
+      .from(tickets);
   }
   
   async updateTicket(id: number, ticketData: Partial<InsertTicket>): Promise<Ticket | undefined> {
