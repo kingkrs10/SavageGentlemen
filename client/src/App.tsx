@@ -53,10 +53,11 @@ function App() {
   });
 
   useEffect(() => {
-    // Hide splash screen after 8 seconds to allow video to play
+    // Hide splash screen after 3 seconds to allow video to play (reduced for testing)
     const timer = setTimeout(() => {
+      console.log("Splash screen timer completed, moving to main app");
       setShowSplash(false);
-    }, 8000);
+    }, 3000);
 
     // Check if user is logged in
     const storedUser = localStorage.getItem("user");

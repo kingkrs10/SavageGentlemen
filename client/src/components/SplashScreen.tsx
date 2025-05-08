@@ -4,6 +4,9 @@ import SGLogo from "@/assets/sg-logo.png";
 import SGFlyerLogoPng from "@/assets/SGFLYERLOGO.png";
 import IntroVideo from "@/assets/videos/intro.mp4";
 
+// Debug helper
+console.log("Loading SplashScreen component");
+
 const SplashScreen = () => {
   const [videoEnded, setVideoEnded] = useState(false);
   
