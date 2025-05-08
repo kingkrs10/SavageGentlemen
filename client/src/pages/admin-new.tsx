@@ -324,19 +324,8 @@ export default function AdminPage() {
         embedCode: livestreamForm.platform === 'custom' ? livestreamForm.embedCode : null
       };
       
-      // Make API call to create livestream
-      const response = await fetch('/api/admin/livestreams', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(livestreamData),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create livestream');
-      }
-      
+      // Use apiRequest instead of direct fetch
+      const response = await apiRequest('POST', '/api/admin/livestreams', livestreamData);
       const result = await response.json();
       
       toast({
@@ -418,19 +407,8 @@ export default function AdminPage() {
         embedCode: livestreamForm.platform === 'custom' ? livestreamForm.embedCode : null
       };
       
-      // Make API call to update livestream
-      const response = await fetch(`/api/admin/livestreams/${currentLivestream.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(livestreamData),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to update livestream');
-      }
-      
+      // Use apiRequest instead of direct fetch
+      const response = await apiRequest('PUT', `/api/admin/livestreams/${currentLivestream.id}`, livestreamData);
       const result = await response.json();
       
       toast({
@@ -476,18 +454,8 @@ export default function AdminPage() {
       // Toggle the isLive status
       const newStatus = !livestream.isLive;
       
-      // Make API call to update the livestream's status
-      const response = await fetch(`/api/admin/livestreams/${livestream.id}/toggle-status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to update livestream status');
-      }
-      
+      // Use apiRequest instead of direct fetch
+      const response = await apiRequest('PUT', `/api/admin/livestreams/${livestream.id}/toggle-status`);
       const result = await response.json();
       
       toast({
@@ -558,19 +526,8 @@ export default function AdminPage() {
         isGuest: false
       };
 
-      // Make API call to create user
-      const response = await fetch('/api/admin/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create user');
-      }
-
+      // Use apiRequest instead of direct fetch
+      const response = await apiRequest('POST', '/api/admin/users', userData);
       const result = await response.json();
       
       toast({
