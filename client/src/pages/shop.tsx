@@ -14,6 +14,7 @@ const Shop = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const { toast } = useToast();
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [productsState, setProductsState] = useState<Product[]>([]);
   
   // Enhanced debugging query
   const { 
@@ -29,32 +30,41 @@ const Shop = () => {
     }
   });
   
-  // Added debugging useEffect
+  // Added debugging useEffect and set products in state
   useEffect(() => {
-    console.log("Products data:", products);
-    
-    // Manual fetch for debugging
-    const fetchProductsDirectly = async () => {
-      try {
-        const res = await fetch(API_ROUTES.PRODUCTS);
-        const data = await res.json();
-        console.log("Direct fetch products:", data);
-      } catch (err) {
-        console.error("Direct fetch error:", err);
-      }
-    };
-    
-    fetchProductsDirectly();
+    if (products && products.length > 0) {
+      console.log("Products data from React Query:", products);
+      setProductsState(products);
+    } else {
+      // Fallback direct fetch if React Query is not working
+      const fetchProductsDirectly = async () => {
+        try {
+          const res = await fetch(API_ROUTES.PRODUCTS);
+          const data = await res.json();
+          console.log("Direct fetch products:", data);
+          
+          if (data && Array.isArray(data) && data.length > 0) {
+            setProductsState(data);
+          }
+        } catch (err) {
+          console.error("Direct fetch error:", err);
+          setFetchError(`Direct fetch error: ${err}`);
+        }
+      };
+      
+      fetchProductsDirectly();
+    }
   }, [products]);
   
-  const filteredProducts = products?.filter(
+  // Use productsState instead of products from React Query
+  const filteredProducts = productsState.filter(
     (product) => selectedCategory === "all" || product.category === selectedCategory
   );
   
-  const featuredProduct = products?.find((product) => product.featured);
+  const featuredProduct = productsState.find((product) => product.featured);
   
   const handleAddToCart = (productId: number) => {
-    const product = products?.find(p => p.id === productId);
+    const product = productsState.find(p => p.id === productId);
     if (product) {
       toast({
         title: "Added to cart",
@@ -152,11 +162,11 @@ const Shop = () => {
         </div>
       )}
       
-      {!isLoading && !isError && products && (
+      {productsState.length > 0 && (
         <div className="bg-blue-900 text-white p-4 rounded-lg mb-4">
           <p className="font-semibold">Debug Info:</p>
-          <p>Total products: {products.length}</p>
-          <p>Categories: {products.map(p => p.category).join(', ')}</p>
+          <p>Total products in local state: {productsState.length}</p>
+          <p>Categories: {productsState.map(p => p.category).join(', ')}</p>
         </div>
       )}
       
@@ -184,7 +194,7 @@ const Shop = () => {
             <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">No Products Found</h3>
             <p className="text-gray-400">
-              {products && products.length > 0 
+              {productsState.length > 0 
                 ? "There are no products matching your filter. Try changing your selection."
                 : "There are no products available. Products may not be loading from the database."
               }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ShoppingCart, Heart, ImageOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
@@ -12,11 +12,9 @@ interface ProductCardProps {
   onAddToWishlist?: (productId: number) => void;
 }
 
-// Map of category to fallback image
-const fallbackImages = {
-  hats: "https://images.unsplash.com/photo-1576063945564-e8a1380e7148",
-  hoodies: "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633",
-  "t-shirts": "https://images.unsplash.com/photo-1618354691373-d851c5c3a990",
+// Direct local imports of product images
+const localImages = {
+  "SGFlyerLogo": SGFlyerLogoPng,
 };
 
 const ProductCard = ({ 
@@ -27,12 +25,35 @@ const ProductCard = ({
 }: ProductCardProps) => {
   const { id, title, price, imageUrl, sizes, category } = product;
   const [imgError, setImgError] = useState(false);
+  const [imgSrc, setImgSrc] = useState<string>(imageUrl);
   
-  // Get fallback image based on category
-  const getFallbackImage = () => {
-    return fallbackImages[category as keyof typeof fallbackImages] || SGFlyerLogoPng;
-  };
-
+  // Log product info for debugging
+  useEffect(() => {
+    console.log("Product rendering:", title, "Image URL:", imageUrl);
+  }, [title, imageUrl]);
+  
+  useEffect(() => {
+    // Try to load the image initially
+    const img = new Image();
+    img.onload = () => {
+      console.log("Image loaded successfully:", imageUrl);
+      setImgSrc(imageUrl);
+      setImgError(false);
+    };
+    img.onerror = () => {
+      console.log("Image failed to load:", imageUrl);
+      setImgError(true);
+      // Use SG Flyer Logo as fallback
+      setImgSrc(SGFlyerLogoPng);
+    };
+    img.src = imageUrl;
+    
+    return () => {
+      img.onload = null;
+      img.onerror = null;
+    };
+  }, [imageUrl]);
+  
   if (variant === "large") {
     return (
       <div className="bg-gray-900 rounded-lg overflow-hidden shadow-lg">
@@ -40,15 +61,14 @@ const ProductCard = ({
           {imgError ? (
             <div className="w-full h-48 bg-gray-800 flex items-center justify-center">
               <img 
-                src={getFallbackImage()} 
+                src={SGFlyerLogoPng} 
                 alt={title} 
-                className="w-full h-48 object-cover"
-                onError={() => console.log("Even fallback image failed to load")}
+                className="h-32 object-contain"
               />
             </div>
           ) : (
             <img 
-              src={imageUrl} 
+              src={imgSrc} 
               alt={title} 
               className="w-full h-48 object-cover" 
               onError={() => setImgError(true)}
@@ -89,15 +109,14 @@ const ProductCard = ({
       {imgError ? (
         <div className="w-full h-40 bg-gray-800 flex items-center justify-center">
           <img 
-            src={getFallbackImage()} 
+            src={SGFlyerLogoPng} 
             alt={title} 
-            className="w-full h-40 object-cover"
-            onError={() => console.log("Even fallback image failed to load")}
+            className="h-24 object-contain"
           />
         </div>
       ) : (
         <img 
-          src={imageUrl} 
+          src={imgSrc} 
           alt={title} 
           className="w-full h-40 object-cover"
           onError={() => setImgError(true)}
