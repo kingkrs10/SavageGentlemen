@@ -24,6 +24,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
+import { sendTicketEmail, sendOrderConfirmation, sendAdminNotification, sendWelcomeEmail } from "./email";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -189,6 +190,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const user = await storage.createUser(userData);
+      
+      // Send welcome email if email is provided
+      if (userData.email) {
+        try {
+          await sendWelcomeEmail(
+            user.displayName || user.username, 
+            userData.email
+          );
+          
+          // Notify admin about new registration
+          await sendAdminNotification(
+            'New User Registration',
+            `A new user has registered on the platform.`,
+            {
+              Username: user.username,
+              Email: userData.email,
+              DisplayName: user.displayName || 'Not provided',
+              RegistrationTime: new Date().toLocaleString()
+            }
+          );
+        } catch (emailError) {
+          console.error('Failed to send welcome email:', emailError);
+          // Continue with the registration process even if email fails
+        }
+      }
+      
       return res.status(201).json({ 
         id: user.id, 
         username: user.username, 
@@ -242,6 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Check if the user already exists in our database
         const existingUsername = `firebase_${firebaseUid}`;
         let user = await storage.getUserByUsername(existingUsername);
+        let isNewUser = false;
         
         if (!user) {
           // If user doesn't exist, create a new one
@@ -250,8 +278,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
             password: `firebase_${Date.now()}`, // Random password since auth is handled by Firebase
             displayName: displayName,
             avatar: photoURL,
-            isGuest: false
+            isGuest: false,
+            email: email
           });
+          isNewUser = true;
+        }
+        
+        // Send welcome email if this is a new user and we have their email
+        if (isNewUser && email) {
+          try {
+            await sendWelcomeEmail(
+              user.displayName || user.username, 
+              email
+            );
+            
+            // Notify admin about new registration
+            await sendAdminNotification(
+              'New User Registration (Firebase)',
+              `A new user has registered via Firebase.`,
+              {
+                Username: user.username,
+                Email: email,
+                DisplayName: user.displayName || 'Not provided',
+                FirebaseUID: firebaseUid,
+                RegistrationTime: new Date().toLocaleString()
+              }
+            );
+          } catch (emailError) {
+            console.error('Failed to send welcome email for Firebase user:', emailError);
+            // Continue with the auth process even if email fails
+          }
         }
         
         return res.status(200).json({
@@ -1029,48 +1085,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint to email ticket QR code to customer
   router.post("/tickets/email", async (req: Request, res: Response) => {
     try {
-      const { ticketId, orderId, email, eventName, ticketName, holderName } = req.body;
+      const { 
+        ticketId, 
+        orderId, 
+        email, 
+        eventName, 
+        eventDate,
+        eventLocation,
+        ticketName, 
+        ticketPrice,
+        holderName,
+        qrCodeDataUrl
+      } = req.body;
       
-      if (!ticketId || !orderId || !email) {
-        return res.status(400).json({ message: "Missing required fields" });
+      if (!ticketId || !orderId || !email || !eventName || !qrCodeDataUrl) {
+        return res.status(400).json({ 
+          message: "Missing required fields", 
+          required: "ticketId, orderId, email, eventName, qrCodeDataUrl" 
+        });
       }
       
-      // In a production app, we would generate the QR code on the server
-      // and attach it to the email. For now, we'll just simulate success
-      // since this would require additional email sending setup like SendGrid
+      console.log(`Processing ticket email for ticketId ${ticketId}, orderId ${orderId} to ${email}`);
       
-      console.log(`Ticket email request for ticketId ${ticketId}, orderId ${orderId} to ${email}`);
-      
-      // Placeholder for actual email sending logic
-      // Example of how this would be implemented with SendGrid:
-      /*
-      const msg = {
-        to: email,
-        from: 'tickets@savagegentlemen.com',
-        subject: `Your Ticket for ${eventName}`,
-        text: `Thank you for purchasing a ticket to ${eventName}. Your ticket is attached.`,
-        html: `
-          <div>
-            <h1>Your Ticket for ${eventName}</h1>
-            <p>Thank you for your purchase!</p>
-            <p>Event: ${eventName}</p>
-            <p>Ticket: ${ticketName}</p>
-            <p>Holder: ${holderName}</p>
-            <p>Ticket #${ticketId}</p>
-            <p>Order #${orderId}</p>
-            <p>[QR Code would be attached here]</p>
-          </div>
-        `,
-        // attachments would include the QR code image
+      // Format the ticket info for the email
+      const ticketInfo = {
+        eventName,
+        eventDate: eventDate ? new Date(eventDate) : new Date(),
+        eventLocation: eventLocation || "Venue to be announced",
+        ticketId,
+        ticketType: ticketName || "General Admission",
+        ticketPrice: ticketPrice || 0,
+        purchaseDate: new Date(),
+        qrCodeDataUrl
       };
-      await sgMail.send(msg);
-      */
       
-      // Return success for now
-      return res.status(200).json({ 
-        success: true,
-        message: `Ticket email would be sent to ${email}`
-      });
+      // Send the ticket email using our email service
+      const emailSent = await sendTicketEmail(ticketInfo, email);
+      
+      if (emailSent) {
+        // Also notify admin about the ticket purchase
+        await sendAdminNotification(
+          "New Ticket Purchase", 
+          `A new ticket has been purchased and the confirmation email was sent to ${email}`,
+          {
+            TicketID: ticketId,
+            OrderID: orderId,
+            Event: eventName,
+            Purchaser: email,
+            HolderName: holderName,
+            PurchaseTime: new Date().toLocaleString()
+          }
+        );
+        
+        return res.status(200).json({ 
+          success: true,
+          message: `Ticket confirmation sent to ${email}`
+        });
+      } else {
+        throw new Error("Failed to send email");
+      }
     } catch (err) {
       console.error("Error sending ticket email:", err);
       return res.status(500).json({ message: "Failed to send ticket email" });
@@ -1218,18 +1291,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
       case 'payment_intent.succeeded':
         const paymentIntent = event.data.object;
         console.log(`PaymentIntent for ${paymentIntent.amount} was successful!`);
-        // Update order status
+        
+        try {
+          // In a full implementation, we would:
+          // 1. Find the order in the database using paymentIntent.metadata
+          // 2. Update the order status to 'paid'
+          // 3. Send a confirmation email to the customer
+          
+          // Get customer email from payment intent
+          const customerId = paymentIntent.customer;
+          if (customerId) {
+            const customer = await stripe.customers.retrieve(customerId as string);
+            if (customer && !customer.deleted) {
+              const items = paymentIntent.metadata?.items ? JSON.parse(paymentIntent.metadata.items) : [];
+              const email = customer.email;
+              
+              if (email) {
+                // Send order confirmation email
+                await sendOrderConfirmation({
+                  orderId: paymentIntent.id,
+                  orderDate: new Date(paymentIntent.created * 1000),
+                  items: items.map((item: any) => ({
+                    name: item.name || 'Product',
+                    quantity: item.quantity || 1,
+                    price: item.price || (paymentIntent.amount / 100)
+                  })),
+                  totalAmount: paymentIntent.amount / 100
+                }, email);
+                
+                // Notify admins about the successful payment
+                await sendAdminNotification(
+                  'New Successful Payment',
+                  `Payment for order ${paymentIntent.id} was successful.`,
+                  {
+                    Amount: `$${(paymentIntent.amount / 100).toFixed(2)}`,
+                    Customer: email,
+                    PaymentId: paymentIntent.id,
+                    PaymentMethod: paymentIntent.payment_method_types?.[0] || 'card'
+                  }
+                );
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error handling payment success webhook:', error);
+        }
         break;
         
       case 'invoice.payment_succeeded':
         const invoice = event.data.object;
-        // Update subscription status
+        // Update subscription status and send confirmation email
+        try {
+          const subscription = invoice.subscription;
+          const customerId = invoice.customer;
+          
+          if (customerId) {
+            const customer = await stripe.customers.retrieve(customerId as string);
+            if (customer && !customer.deleted && customer.email) {
+              // Send subscription confirmation email
+              // This would use a subscription-specific email template
+              await sendAdminNotification(
+                'New Subscription Payment',
+                `Subscription ${subscription} payment was successful.`,
+                {
+                  Customer: customer.email,
+                  Amount: `$${(invoice.total / 100).toFixed(2)}`,
+                  SubscriptionId: subscription
+                }
+              );
+            }
+          }
+        } catch (error) {
+          console.error('Error handling subscription payment success webhook:', error);
+        }
         break;
         
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted':
         const subscription = event.data.object;
-        // Update subscription status in your database
+        
+        try {
+          const customerId = subscription.customer;
+          const status = subscription.status;
+          
+          if (customerId) {
+            const customer = await stripe.customers.retrieve(customerId as string);
+            if (customer && !customer.deleted && customer.email) {
+              // Notify admin about subscription status change
+              await sendAdminNotification(
+                `Subscription ${event.type === 'customer.subscription.deleted' ? 'Cancelled' : 'Updated'}`,
+                `Subscription ${subscription.id} status changed to ${status}.`,
+                {
+                  Customer: customer.email,
+                  Status: status,
+                  SubscriptionId: subscription.id
+                }
+              );
+            }
+          }
+        } catch (error) {
+          console.error('Error handling subscription update webhook:', error);
+        }
         break;
         
       default:
