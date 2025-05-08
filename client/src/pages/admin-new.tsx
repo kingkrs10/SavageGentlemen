@@ -180,12 +180,41 @@ export default function AdminPage() {
     embedCode: ''
   });
   
+  // State for event form
+  const [eventForm, setEventForm] = useState({
+    title: '',
+    description: '',
+    date: '',
+    time: '',
+    location: '',
+    price: 0,
+    imageUrl: '',
+    category: 'concert',
+    featured: false
+  });
+  
+  // State for ticket form
+  const [ticketForm, setTicketForm] = useState({
+    name: '',
+    description: '',
+    price: 0,
+    eventId: 0,
+    quantity: 100,
+    remainingQuantity: 100,
+    maxPerPurchase: 4,
+    isActive: true
+  });
+  
   // Dialog states
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [livestreamDialogOpen, setLivestreamDialogOpen] = useState(false);
+  const [eventDialogOpen, setEventDialogOpen] = useState(false);
+  const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
   
   // Current item being edited states
   const [currentLivestream, setCurrentLivestream] = useState<Livestream | null>(null);
+  const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
+  const [currentTicket, setCurrentTicket] = useState<Ticket | null>(null);
   
   // Load current user from localStorage
   useEffect(() => {
@@ -485,6 +514,358 @@ export default function AdminPage() {
     setLivestreamDialogOpen(true);
   };
   
+  // Event handlers
+  const handleCreateEvent = async () => {
+    try {
+      // Validation
+      if (!eventForm.title || !eventForm.date || !eventForm.location) {
+        toast({
+          title: "Missing fields",
+          description: "Title, date, and location are required",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Combine date and time
+      const dateTimeString = `${eventForm.date}T${eventForm.time || '19:00'}:00`;
+      
+      // Create payload with date as a proper Date object
+      const eventData = {
+        title: eventForm.title,
+        description: eventForm.description,
+        date: new Date(dateTimeString),
+        location: eventForm.location,
+        price: eventForm.price,
+        imageUrl: eventForm.imageUrl,
+        category: eventForm.category,
+        featured: eventForm.featured
+      };
+      
+      // Use apiRequest instead of direct fetch
+      const response = await apiRequest('POST', '/api/admin/events', eventData);
+      const result = await response.json();
+      
+      toast({
+        title: "Event Created",
+        description: `Event "${eventForm.title}" created successfully`,
+      });
+      
+      // Close dialog and reset form
+      setEventDialogOpen(false);
+      setEventForm({
+        title: '',
+        description: '',
+        date: '',
+        time: '',
+        location: '',
+        price: 0,
+        imageUrl: '',
+        category: 'concert',
+        featured: false
+      });
+      
+      // Refresh events list
+      queryClient.invalidateQueries({queryKey: ["/api/events"]});
+    } catch (error) {
+      console.error("Failed to create event:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create event. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleUpdateEvent = async () => {
+    if (!currentEvent) {
+      console.error("No event selected for update");
+      return;
+    }
+    
+    try {
+      // Validation
+      if (!eventForm.title || !eventForm.date || !eventForm.location) {
+        toast({
+          title: "Missing fields",
+          description: "Title, date, and location are required",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Combine date and time
+      const dateTimeString = `${eventForm.date}T${eventForm.time || '19:00'}:00`;
+      
+      // Create payload
+      const eventData = {
+        id: currentEvent.id,
+        title: eventForm.title,
+        description: eventForm.description,
+        date: new Date(dateTimeString),
+        location: eventForm.location,
+        price: eventForm.price,
+        imageUrl: eventForm.imageUrl,
+        category: eventForm.category,
+        featured: eventForm.featured
+      };
+      
+      // Use apiRequest instead of direct fetch
+      const response = await apiRequest('PUT', `/api/admin/events/${currentEvent.id}`, eventData);
+      const result = await response.json();
+      
+      toast({
+        title: "Event Updated",
+        description: `Event "${eventForm.title}" updated successfully`,
+      });
+      
+      // Close dialog and reset
+      setEventDialogOpen(false);
+      setCurrentEvent(null);
+      setEventForm({
+        title: '',
+        description: '',
+        date: '',
+        time: '',
+        location: '',
+        price: 0,
+        imageUrl: '',
+        category: 'concert',
+        featured: false
+      });
+      
+      // Refresh events list
+      queryClient.invalidateQueries({queryKey: ["/api/events"]});
+    } catch (error) {
+      console.error("Failed to update event:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update event. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleDeleteEvent = async (eventId: number) => {
+    // Confirm before deletion
+    if (!confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
+      return;
+    }
+    
+    try {
+      // Use apiRequest instead of direct fetch
+      const response = await apiRequest('DELETE', `/api/admin/events/${eventId}`);
+      
+      toast({
+        title: "Event Deleted",
+        description: "Event has been successfully deleted",
+      });
+      
+      // Refresh events list
+      queryClient.invalidateQueries({queryKey: ["/api/events"]});
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete event. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleEditEvent = (event: Event) => {
+    // Set the current event being edited
+    setCurrentEvent(event);
+    
+    // Convert date to format expected by the form
+    const eventDate = new Date(event.date);
+    const formattedDate = eventDate.toISOString().split('T')[0];
+    const formattedTime = eventDate.toISOString().split('T')[1].substring(0, 5);
+    
+    // Populate the form with the event's data
+    setEventForm({
+      title: event.title,
+      description: event.description || '',
+      date: formattedDate,
+      time: formattedTime,
+      location: event.location,
+      price: event.price,
+      imageUrl: event.imageUrl || '',
+      category: event.category || 'concert',
+      featured: event.featured || false
+    });
+    
+    // Open the event dialog
+    setEventDialogOpen(true);
+  };
+  
+  // Ticket handlers
+  const handleCreateTicket = async () => {
+    try {
+      // Validation
+      if (!ticketForm.name || !ticketForm.price || !ticketForm.eventId) {
+        toast({
+          title: "Missing fields",
+          description: "Name, price, and event are required",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Create ticket data
+      const ticketData = {
+        name: ticketForm.name,
+        description: ticketForm.description,
+        price: ticketForm.price,
+        eventId: ticketForm.eventId,
+        quantity: ticketForm.quantity,
+        remainingQuantity: ticketForm.remainingQuantity,
+        maxPerPurchase: ticketForm.maxPerPurchase,
+        isActive: ticketForm.isActive
+      };
+      
+      // Use apiRequest instead of direct fetch
+      const response = await apiRequest('POST', '/api/admin/tickets', ticketData);
+      const result = await response.json();
+      
+      toast({
+        title: "Ticket Created",
+        description: `Ticket "${ticketForm.name}" created successfully`,
+      });
+      
+      // Close dialog and reset form
+      setTicketDialogOpen(false);
+      setTicketForm({
+        name: '',
+        description: '',
+        price: 0,
+        eventId: 0,
+        quantity: 100,
+        remainingQuantity: 100,
+        maxPerPurchase: 4,
+        isActive: true
+      });
+      
+      // Refresh tickets list
+      queryClient.invalidateQueries({queryKey: ["/api/admin/tickets"]});
+    } catch (error) {
+      console.error("Failed to create ticket:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create ticket. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleUpdateTicket = async () => {
+    if (!currentTicket) {
+      console.error("No ticket selected for update");
+      return;
+    }
+    
+    try {
+      // Validation
+      if (!ticketForm.name || !ticketForm.price || !ticketForm.eventId) {
+        toast({
+          title: "Missing fields",
+          description: "Name, price, and event are required",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Create ticket data
+      const ticketData = {
+        id: currentTicket.id,
+        name: ticketForm.name,
+        description: ticketForm.description,
+        price: ticketForm.price,
+        eventId: ticketForm.eventId,
+        quantity: ticketForm.quantity,
+        remainingQuantity: ticketForm.remainingQuantity,
+        maxPerPurchase: ticketForm.maxPerPurchase,
+        isActive: ticketForm.isActive
+      };
+      
+      // Use apiRequest instead of direct fetch
+      const response = await apiRequest('PUT', `/api/admin/tickets/${currentTicket.id}`, ticketData);
+      const result = await response.json();
+      
+      toast({
+        title: "Ticket Updated",
+        description: `Ticket "${ticketForm.name}" updated successfully`,
+      });
+      
+      // Close dialog and reset
+      setTicketDialogOpen(false);
+      setCurrentTicket(null);
+      setTicketForm({
+        name: '',
+        description: '',
+        price: 0,
+        eventId: 0,
+        quantity: 100,
+        remainingQuantity: 100,
+        maxPerPurchase: 4,
+        isActive: true
+      });
+      
+      // Refresh tickets list
+      queryClient.invalidateQueries({queryKey: ["/api/admin/tickets"]});
+    } catch (error) {
+      console.error("Failed to update ticket:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update ticket. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleToggleTicketStatus = async (ticketId: number) => {
+    try {
+      // Use apiRequest instead of direct fetch
+      const response = await apiRequest('PUT', `/api/admin/tickets/${ticketId}/toggle-status`);
+      const result = await response.json();
+      
+      toast({
+        title: "Ticket Status Updated",
+        description: "Ticket status has been successfully updated",
+      });
+      
+      // Refresh tickets list
+      queryClient.invalidateQueries({queryKey: ["/api/admin/tickets"]});
+    } catch (error) {
+      console.error('Error updating ticket status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update ticket status",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleEditTicket = (ticket: Ticket) => {
+    // Set the current ticket being edited
+    setCurrentTicket(ticket);
+    
+    // Populate the form with the ticket's data
+    setTicketForm({
+      name: ticket.name,
+      description: '',
+      price: ticket.price,
+      eventId: ticket.eventId,
+      quantity: ticket.quantity,
+      remainingQuantity: ticket.remainingQuantity,
+      maxPerPurchase: ticket.maxPerPurchase || 4,
+      isActive: ticket.isActive
+    });
+    
+    // Open the ticket dialog
+    setTicketDialogOpen(true);
+  };
+  
   // User creation handler
   const handleCreateUser = async () => {
     try {
@@ -663,11 +1044,562 @@ export default function AdminPage() {
           )}
         </div>
 
-        <Tabs defaultValue="users" className="space-y-6">
+        <Tabs defaultValue="events" className="space-y-6">
           <TabsList>
+            <TabsTrigger value="events">Events</TabsTrigger>
+            <TabsTrigger value="tickets">Tickets</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="livestreams">Livestreams</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="events">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle>Events</CardTitle>
+                <Button 
+                  size="sm" 
+                  className="sg-btn"
+                  onClick={() => {
+                    setCurrentEvent(null);
+                    setEventForm({
+                      title: '',
+                      description: '',
+                      date: '',
+                      time: '',
+                      location: '',
+                      price: 0,
+                      imageUrl: '',
+                      category: 'concert',
+                      featured: false
+                    });
+                    setEventDialogOpen(true);
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Event
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {eventsLoading ? (
+                  <div className="py-10 text-center">
+                    <div className="animate-spin h-12 w-12 mx-auto border-4 border-primary border-t-transparent rounded-full mb-4"></div>
+                    <h3 className="text-lg font-medium">Loading events...</h3>
+                  </div>
+                ) : eventsError ? (
+                  <div className="py-10 text-center text-red-500">
+                    <h3 className="text-lg font-medium">Error loading events</h3>
+                    <p className="text-sm">Please try again later</p>
+                  </div>
+                ) : events.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Location</TableHead>
+                          <TableHead>Price</TableHead>
+                          <TableHead>Featured</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {events.map((event) => (
+                          <TableRow key={event.id}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center space-x-2">
+                                <div className="h-10 w-10 rounded bg-gray-200 flex items-center justify-center overflow-hidden">
+                                  {event.imageUrl ? (
+                                    <img 
+                                      src={event.imageUrl} 
+                                      alt={event.title} 
+                                      className="h-full w-full object-cover"
+                                    />
+                                  ) : (
+                                    <Calendar className="h-5 w-5 text-gray-500" />
+                                  )}
+                                </div>
+                                <span>{event.title}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {new Date(event.date).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>{event.location}</TableCell>
+                            <TableCell>${event.price.toFixed(2)}</TableCell>
+                            <TableCell>
+                              {event.featured ? (
+                                <Badge>Featured</Badge>
+                              ) : (
+                                <Badge variant="outline">Not Featured</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-2">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleEditEvent(event)}
+                                >
+                                  <Edit className="h-4 w-4 text-blue-500" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleDeleteEvent(event.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="py-10 text-center">
+                    <Calendar className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium">No events found</h3>
+                    <p className="text-sm text-gray-500">
+                      Create your first event by clicking the "Add Event" button above.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Dialog open={eventDialogOpen} onOpenChange={setEventDialogOpen}>
+              <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>{currentEvent ? "Edit Event" : "Add New Event"}</DialogTitle>
+                  <DialogDescription>
+                    {currentEvent 
+                      ? "Update the details of your event." 
+                      : "Fill in the details to create a new event."}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="title">Title</Label>
+                    <Input
+                      id="title"
+                      placeholder="Enter event title"
+                      value={eventForm.title}
+                      onChange={(e) => 
+                        setEventForm({ ...eventForm, title: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      placeholder="Enter event description"
+                      value={eventForm.description}
+                      onChange={(e) => 
+                        setEventForm({ ...eventForm, description: e.target.value })
+                      }
+                      rows={3}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="date">Date</Label>
+                      <Input
+                        id="date"
+                        type="date"
+                        value={eventForm.date}
+                        onChange={(e) => 
+                          setEventForm({ ...eventForm, date: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="time">Time</Label>
+                      <Input
+                        id="time"
+                        type="time"
+                        value={eventForm.time}
+                        onChange={(e) => 
+                          setEventForm({ ...eventForm, time: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      placeholder="Enter event location"
+                      value={eventForm.location}
+                      onChange={(e) => 
+                        setEventForm({ ...eventForm, location: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="price">Price</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Enter event price"
+                      value={eventForm.price}
+                      onChange={(e) => 
+                        setEventForm({ ...eventForm, price: parseFloat(e.target.value) || 0 })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="imageUrl">Image URL</Label>
+                    <Input
+                      id="imageUrl"
+                      placeholder="Enter image URL (optional)"
+                      value={eventForm.imageUrl}
+                      onChange={(e) => 
+                        setEventForm({ ...eventForm, imageUrl: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="category">Category</Label>
+                    <Select 
+                      value={eventForm.category} 
+                      onValueChange={(value) => setEventForm({...eventForm, category: value})}
+                    >
+                      <SelectTrigger id="category">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="concert">Concert</SelectItem>
+                        <SelectItem value="festival">Festival</SelectItem>
+                        <SelectItem value="party">Party</SelectItem>
+                        <SelectItem value="workshop">Workshop</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="featured" 
+                      checked={eventForm.featured}
+                      onCheckedChange={(checked) => 
+                        setEventForm({ ...eventForm, featured: !!checked })
+                      }
+                    />
+                    <Label htmlFor="featured" className="font-normal cursor-pointer">
+                      Feature this event on the homepage
+                    </Label>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setEventDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    className="sg-btn" 
+                    onClick={currentEvent ? handleUpdateEvent : handleCreateEvent}
+                  >
+                    {currentEvent ? "Update Event" : "Create Event"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </TabsContent>
+          
+          <TabsContent value="tickets">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle>Tickets</CardTitle>
+                <div className="flex items-center space-x-2">
+                  {events.length > 0 && (
+                    <Select 
+                      value={selectedEventId}
+                      onValueChange={setSelectedEventId}
+                    >
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Filter by event" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">All Events</SelectItem>
+                        {events.map((event) => (
+                          <SelectItem key={event.id} value={event.id.toString()}>
+                            {event.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <Button 
+                    size="sm" 
+                    className="sg-btn"
+                    onClick={() => {
+                      if (events.length === 0) {
+                        toast({
+                          title: "No Events Available",
+                          description: "You need to create at least one event before creating tickets.",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+                      
+                      setCurrentTicket(null);
+                      setTicketForm({
+                        name: '',
+                        description: '',
+                        price: 0,
+                        eventId: events[0]?.id || 0,
+                        quantity: 100,
+                        remainingQuantity: 100,
+                        maxPerPurchase: 4,
+                        isActive: true
+                      });
+                      setTicketDialogOpen(true);
+                    }}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Ticket
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {ticketsLoading ? (
+                  <div className="py-10 text-center">
+                    <div className="animate-spin h-12 w-12 mx-auto border-4 border-primary border-t-transparent rounded-full mb-4"></div>
+                    <h3 className="text-lg font-medium">Loading tickets...</h3>
+                  </div>
+                ) : ticketsError ? (
+                  <div className="py-10 text-center text-red-500">
+                    <h3 className="text-lg font-medium">Error loading tickets</h3>
+                    <p className="text-sm">Please try again later</p>
+                  </div>
+                ) : displayedTickets.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Event</TableHead>
+                          <TableHead>Price</TableHead>
+                          <TableHead>Quantity</TableHead>
+                          <TableHead>Remaining</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {displayedTickets.map((ticket) => {
+                          const event = events.find(e => e.id === ticket.eventId);
+                          return (
+                            <TableRow key={ticket.id}>
+                              <TableCell className="font-medium">{ticket.name}</TableCell>
+                              <TableCell>{event?.title || 'Unknown Event'}</TableCell>
+                              <TableCell>${ticket.price.toFixed(2)}</TableCell>
+                              <TableCell>{ticket.quantity}</TableCell>
+                              <TableCell>{ticket.remainingQuantity}</TableCell>
+                              <TableCell>
+                                {ticket.isActive ? (
+                                  <Badge variant="success">Active</Badge>
+                                ) : (
+                                  <Badge variant="secondary">Inactive</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center space-x-2">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleEditTicket(ticket)}
+                                  >
+                                    <Edit className="h-4 w-4 text-blue-500" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleToggleTicketStatus(ticket.id)}
+                                  >
+                                    {ticket.isActive ? (
+                                      <EyeOff className="h-4 w-4 text-amber-500" />
+                                    ) : (
+                                      <Eye className="h-4 w-4 text-green-500" />
+                                    )}
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="py-10 text-center">
+                    <Ticket className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium">No tickets found</h3>
+                    {events.length > 0 ? (
+                      <p className="text-sm text-gray-500">
+                        Create your first ticket by clicking the "Add Ticket" button above.
+                      </p>
+                    ) : (
+                      <p className="text-sm text-gray-500">
+                        You need to create an event before you can add tickets.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Dialog open={ticketDialogOpen} onOpenChange={setTicketDialogOpen}>
+              <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>{currentTicket ? "Edit Ticket" : "Add New Ticket"}</DialogTitle>
+                  <DialogDescription>
+                    {currentTicket 
+                      ? "Update the details of your ticket." 
+                      : "Fill in the details to create a new ticket."}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">Name</Label>
+                    <Input
+                      id="name"
+                      placeholder="Enter ticket name"
+                      value={ticketForm.name}
+                      onChange={(e) => 
+                        setTicketForm({ ...ticketForm, name: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="ticketDescription">Description</Label>
+                    <Textarea
+                      id="ticketDescription"
+                      placeholder="Enter ticket description"
+                      value={ticketForm.description}
+                      onChange={(e) => 
+                        setTicketForm({ ...ticketForm, description: e.target.value })
+                      }
+                      rows={2}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="eventId">Event</Label>
+                    <Select 
+                      value={ticketForm.eventId.toString()} 
+                      onValueChange={(value) => setTicketForm({...ticketForm, eventId: parseInt(value)})}
+                    >
+                      <SelectTrigger id="eventId">
+                        <SelectValue placeholder="Select event" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {events.map((event) => (
+                          <SelectItem key={event.id} value={event.id.toString()}>
+                            {event.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="price">Price</Label>
+                      <Input
+                        id="price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="Enter ticket price"
+                        value={ticketForm.price}
+                        onChange={(e) => 
+                          setTicketForm({ ...ticketForm, price: parseFloat(e.target.value) || 0 })
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="quantity">Total Quantity</Label>
+                      <Input
+                        id="quantity"
+                        type="number"
+                        min="1"
+                        placeholder="Enter total quantity"
+                        value={ticketForm.quantity}
+                        onChange={(e) => {
+                          const qty = parseInt(e.target.value) || 0;
+                          setTicketForm({ 
+                            ...ticketForm, 
+                            quantity: qty,
+                            remainingQuantity: currentTicket ? ticketForm.remainingQuantity : qty
+                          });
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="remainingQuantity">Remaining Quantity</Label>
+                      <Input
+                        id="remainingQuantity"
+                        type="number"
+                        min="0"
+                        max={ticketForm.quantity}
+                        placeholder="Enter remaining quantity"
+                        value={ticketForm.remainingQuantity}
+                        onChange={(e) => {
+                          const remainingQty = parseInt(e.target.value) || 0;
+                          const qty = Math.max(remainingQty, ticketForm.quantity);
+                          setTicketForm({ 
+                            ...ticketForm, 
+                            remainingQuantity: remainingQty,
+                            quantity: qty
+                          });
+                        }}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="maxPerPurchase">Max Per Purchase</Label>
+                      <Input
+                        id="maxPerPurchase"
+                        type="number"
+                        min="1"
+                        placeholder="Enter max tickets per purchase"
+                        value={ticketForm.maxPerPurchase}
+                        onChange={(e) => 
+                          setTicketForm({ ...ticketForm, maxPerPurchase: parseInt(e.target.value) || 1 })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="isActive" 
+                      checked={ticketForm.isActive}
+                      onCheckedChange={(checked) => 
+                        setTicketForm({ ...ticketForm, isActive: !!checked })
+                      }
+                    />
+                    <Label htmlFor="isActive" className="font-normal cursor-pointer">
+                      Make this ticket available for purchase
+                    </Label>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setTicketDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    className="sg-btn" 
+                    onClick={currentTicket ? handleUpdateTicket : handleCreateTicket}
+                  >
+                    {currentTicket ? "Update Ticket" : "Create Ticket"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </TabsContent>
           
           <TabsContent value="users">
             <Card>
