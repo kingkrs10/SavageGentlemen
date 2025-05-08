@@ -305,6 +305,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add single product
+  router.post("/products/add-product", async (req: Request, res: Response) => {
+    try {
+      // Black Roses Unisex Flannel Shirt
+      const product = {
+        title: "Black Roses Unisex Flannel Shirt",
+        description: "Stylish Black Roses Unisex Flannel Shirt, perfect for any casual occasion.",
+        price: 4999, // $49.99
+        imageUrl: "https://i.etsystatic.com/17162514/r/il/fb40bd/5763089644/il_794xN.5763089644_lxgy.jpg",
+        category: "shirts",
+        sizes: ["S", "M", "L", "XL", "2XL"],
+        featured: true,
+        etsyUrl: "https://www.etsy.com/listing/1805910132/black-roses-unisex-flannel-shirt"
+      };
+      
+      const savedProduct = await storage.createProduct(product);
+      
+      return res.status(201).json({
+        message: "Added new product to the database",
+        product: savedProduct
+      });
+    } catch (err) {
+      console.error("Error adding product:", err);
+      return res.status(500).json({ message: "Failed to add product" });
+    }
+  });
+
   // Add product initialization for SGX Merch Etsy shop
   router.post("/products/init-etsy", async (req: Request, res: Response) => {
     try {
@@ -349,6 +376,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sizes: ["S", "M", "L", "XL", "2XL"],
           featured: true,
           etsyUrl: "https://www.etsy.com/listing/4316161947/soca-sg-music-hoodie"
+        },
+        {
+          title: "Black Roses Unisex Flannel Shirt",
+          description: "Stylish Black Roses Unisex Flannel Shirt, perfect for any casual occasion.",
+          price: 4999, // $49.99
+          imageUrl: "https://i.etsystatic.com/17162514/r/il/fb40bd/5763089644/il_794xN.5763089644_lxgy.jpg",
+          category: "shirts",
+          sizes: ["S", "M", "L", "XL", "2XL"],
+          featured: true,
+          etsyUrl: "https://www.etsy.com/listing/1805910132/black-roses-unisex-flannel-shirt"
         },
         {
           title: "SG Logo Dad Hat",
