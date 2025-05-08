@@ -453,6 +453,16 @@ export class MemStorage implements IStorage {
         etsyUrl: "https://www.etsy.com/shop/savagegentlemen"
       },
       {
+        title: "Soca SG Music Denim Hat",
+        description: "Custom embroidered denim hat featuring Soca SG Music design.",
+        price: 3499, // $34.99
+        imageUrl: "https://i.etsystatic.com/17162514/r/il/d48c3e/5876583399/il_794xN.5876583399_5zzi.jpg",
+        category: "hats",
+        sizes: ["One Size"],
+        featured: true,
+        etsyUrl: "https://www.etsy.com/listing/4298475457/soca-sg-music-custom-embroidered-denim"
+      },
+      {
         title: "Summer Tank Top",
         description: "Perfect for those hot summer days and Caribbean festivals.",
         price: 1999, // $19.99
