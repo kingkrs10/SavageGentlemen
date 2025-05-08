@@ -575,69 +575,8 @@ export class MemStorage implements IStorage {
       isGuest: false
     });
 
-    // Create events
-    const eventData: InsertEvent[] = [
-      {
-        title: "Beach Vibes Party",
-        description: "Join us for the hottest beach party with live DJs and Caribbean vibes.",
-        date: new Date("2023-08-12T20:00:00"),
-        location: "Miami Beach",
-        price: 4500, // $45.00
-        imageUrl: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7",
-        category: "party",
-        featured: true
-      },
-      {
-        title: "Carnival Warmup",
-        description: "Get ready for carnival season with our special pre-event celebration.",
-        date: new Date("2023-09-05T21:00:00"),
-        location: "Fort Lauderdale",
-        price: 3500, // $35.00
-        imageUrl: "https://images.unsplash.com/photo-1535083783855-76ae62b2914e",
-        category: "festival",
-        featured: true
-      },
-      {
-        title: "Summer Beach Party",
-        description: "Join us for a day of sun, sand, and soca beats at our annual beach party!",
-        date: new Date("2023-08-20T15:00:00"),
-        location: "South Beach, Miami",
-        price: 5000, // $50.00
-        imageUrl: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3",
-        category: "party",
-        featured: false
-      },
-      {
-        title: "Island Vibes",
-        description: "Experience the best of Caribbean music with our special guest DJs!",
-        date: new Date("2023-09-05T22:00:00"),
-        location: "Club Azul, Orlando",
-        price: 3500, // $35.00
-        imageUrl: "https://pixabay.com/get/g92cd5469507e9b4d7a2b7f93bd80674d2e4e17493ea314d421c81acf2f56b47a6ce6dbc0c00455622f8518ad01eb4446de59c38c97a1513f393f27406257b74f_1280.jpg",
-        category: "party",
-        featured: false
-      },
-      {
-        title: "Caribbean Culture Festival",
-        description: "A full day celebration of Caribbean culture with food, music, and performances!",
-        date: new Date("2023-10-15T12:00:00"),
-        location: "City Park, Fort Lauderdale",
-        price: 7500, // $75.00
-        imageUrl: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819",
-        category: "festival",
-        featured: true
-      },
-      {
-        title: "Caribbean Festival 2023",
-        description: "The biggest celebration of Caribbean culture",
-        date: new Date("2023-10-15T14:00:00"),
-        location: "Miami Beach",
-        price: 8000, // $80.00
-        imageUrl: "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec",
-        category: "festival",
-        featured: true
-      }
-    ];
+    // No mock events will be created - real events will be added through the admin interface
+    const eventData: InsertEvent[] = [];
 
     eventData.forEach(event => this.createEvent(event));
 
