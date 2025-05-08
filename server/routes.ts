@@ -725,6 +725,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Ticket validation endpoint for QR code scanner
+  router.post("/admin/tickets/validate", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const { ticketId, orderId } = req.body;
+      
+      if (!ticketId || !orderId) {
+        return res.status(400).json({ message: "Ticket ID and Order ID are required" });
+      }
+      
+      // Check if ticket exists
+      const ticket = await storage.getTicket(ticketId);
+      if (!ticket) {
+        return res.status(404).json({ 
+          isValid: false,
+          status: "invalid",
+          message: "Ticket not found" 
+        });
+      }
+      
+      // Get event information
+      const event = await storage.getEvent(ticket.eventId);
+      if (!event) {
+        return res.status(404).json({ 
+          isValid: false,
+          status: "invalid",
+          message: "Event not found" 
+        });
+      }
+      
+      // Get order information
+      const order = await storage.getOrderById(orderId);
+      if (!order) {
+        return res.status(404).json({ 
+          isValid: false,
+          status: "invalid",
+          message: "Order not found" 
+        });
+      }
+      
+      // Check if the ticket has been scanned before
+      const previousScans = await storage.getTicketScansByTicketId(ticketId);
+      
+      if (previousScans.length > 0) {
+        // Ticket has been scanned before
+        return res.status(200).json({
+          ticketId,
+          orderId,
+          eventName: event.title,
+          ticketName: ticket.name,
+          holderName: "Attendee", // This would ideally come from the order information
+          isValid: false,
+          status: "already_used",
+          scannedAt: previousScans[0].scannedAt
+        });
+      }
+      
+      // If we get here, the ticket is valid and hasn't been scanned before
+      // Create a new ticket scan record
+      const adminId = (req as any).user?.id || null;
+      
+      const ticketScan = await storage.createTicketScan({
+        ticketId,
+        orderId,
+        scannedBy: adminId,
+        status: "valid",
+        scannedAt: new Date()
+      });
+      
+      return res.status(200).json({
+        ticketId,
+        orderId,
+        eventName: event.title,
+        ticketName: ticket.name,
+        holderName: "Attendee", // This would ideally come from the order information
+        isValid: true,
+        status: "valid",
+        scannedAt: ticketScan.scannedAt
+      });
+    } catch (err) {
+      console.error("Error validating ticket:", err);
+      return res.status(500).json({ 
+        isValid: false,
+        status: "error",
+        message: "Failed to validate ticket" 
+      });
+    }
+  });
+  
   // Discount codes
   router.post("/admin/discount-codes", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
@@ -936,6 +1024,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   router.post("/payment/paypal-order/:orderID/capture", async (req: Request, res: Response) => {
     await capturePaypalOrder(req, res);
+  });
+  
+  // Endpoint to email ticket QR code to customer
+  router.post("/tickets/email", async (req: Request, res: Response) => {
+    try {
+      const { ticketId, orderId, email, eventName, ticketName, holderName } = req.body;
+      
+      if (!ticketId || !orderId || !email) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      // In a production app, we would generate the QR code on the server
+      // and attach it to the email. For now, we'll just simulate success
+      // since this would require additional email sending setup like SendGrid
+      
+      console.log(`Ticket email request for ticketId ${ticketId}, orderId ${orderId} to ${email}`);
+      
+      // Placeholder for actual email sending logic
+      // Example of how this would be implemented with SendGrid:
+      /*
+      const msg = {
+        to: email,
+        from: 'tickets@savagegentlemen.com',
+        subject: `Your Ticket for ${eventName}`,
+        text: `Thank you for purchasing a ticket to ${eventName}. Your ticket is attached.`,
+        html: `
+          <div>
+            <h1>Your Ticket for ${eventName}</h1>
+            <p>Thank you for your purchase!</p>
+            <p>Event: ${eventName}</p>
+            <p>Ticket: ${ticketName}</p>
+            <p>Holder: ${holderName}</p>
+            <p>Ticket #${ticketId}</p>
+            <p>Order #${orderId}</p>
+            <p>[QR Code would be attached here]</p>
+          </div>
+        `,
+        // attachments would include the QR code image
+      };
+      await sgMail.send(msg);
+      */
+      
+      // Return success for now
+      return res.status(200).json({ 
+        success: true,
+        message: `Ticket email would be sent to ${email}`
+      });
+    } catch (err) {
+      console.error("Error sending ticket email:", err);
+      return res.status(500).json({ message: "Failed to send ticket email" });
+    }
   });
   
   // Endpoint to get PayPal order details for the payment success page
