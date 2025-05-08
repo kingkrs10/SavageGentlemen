@@ -89,6 +89,7 @@ export interface IStorage {
   // Ticket operations
   getTicket(id: number): Promise<Ticket | undefined>;
   createTicket(ticket: InsertTicket): Promise<Ticket>;
+  getAllTickets(): Promise<Ticket[]>;
   getTicketsByEventId(eventId: number): Promise<Ticket[]>;
   updateTicket(id: number, ticketData: Partial<InsertTicket>): Promise<Ticket | undefined>;
   
