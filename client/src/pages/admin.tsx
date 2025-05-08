@@ -648,8 +648,26 @@ export default function AdminPage() {
                       name: '',
                       price: 0,
                       quantity: 100,
+                      description: '',
+                      // Essential tab fields
                       maxPerPurchase: 4,
-                      isActive: true
+                      isActive: true,
+                      // Advanced tab fields
+                      priceType: 'standard',
+                      minPerOrder: 1,
+                      displayRemainingQuantity: true,
+                      status: 'on_sale',
+                      hideIfSoldOut: false,
+                      hidePriceIfSoldOut: false,
+                      secretCode: '',
+                      salesStartDate: '',
+                      salesStartTime: '',
+                      salesEndDate: '',
+                      salesEndTime: '',
+                      hideBeforeSalesStart: false,
+                      hideAfterSalesEnd: false,
+                      lockMinQuantity: null,
+                      lockTicketTypeId: null
                     });
                     // Default to the first event if available
                     if (events && events.length > 0) {
@@ -662,6 +680,9 @@ export default function AdminPage() {
                 <DialogContent className="sm:max-w-[550px] bg-[#141e2e] text-white">
                   <DialogHeader>
                     <DialogTitle className="text-white text-xl">Create new ticket type</DialogTitle>
+                    <DialogDescription className="text-slate-400">
+                      Configure the ticket details including pricing, availability, and sales settings.
+                    </DialogDescription>
                   </DialogHeader>
                   
                   {/* Event Selection */}
