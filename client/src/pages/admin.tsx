@@ -137,7 +137,9 @@ import {
   Users, 
   Ticket as TicketIcon, 
   ShoppingCart,
-  Lock
+  Lock,
+  Radio,
+  MoreHorizontal
 } from "lucide-react";
 
 export default function AdminPage() {
@@ -758,6 +760,22 @@ export default function AdminPage() {
         variant: "destructive"
       });
     }
+  };
+
+  // Livestream update handler
+  const handleUpdateLivestream = async () => {
+    // This uses the same logic as handleCreateLivestream but ensures currentLivestream is defined
+    if (!currentLivestream) {
+      toast({
+        title: "Error",
+        description: "No livestream selected for update",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Use the same create function since it already handles updates
+    await handleCreateLivestream();
   };
 
   const handleCreateTicket = async () => {
@@ -2082,8 +2100,346 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        
+        {/* Livestreams Tab */}
+        <TabsContent value="livestreams" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Livestreams</CardTitle>
+                <CardDescription>Manage live streaming content</CardDescription>
+              </div>
+              <Button className="sg-btn" onClick={() => setLivestreamDialogOpen(true)}>
+                <Radio className="h-4 w-4 mr-2" /> Add Livestream
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {livestreamsLoading ? (
+                <div className="py-10 text-center">Loading livestreams...</div>
+              ) : livestreamsError ? (
+                <div className="py-10 text-center text-red-500">
+                  Error loading livestreams. Please try again.
+                </div>
+              ) : livestreams && livestreams.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[100px]">Thumbnail</TableHead>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Host</TableHead>
+                        <TableHead>Platform</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {livestreams.map((livestream) => (
+                        <TableRow key={livestream.id}>
+                          <TableCell>
+                            <div className="h-12 w-12 overflow-hidden rounded border">
+                              {livestream.thumbnailUrl ? (
+                                <img 
+                                  src={livestream.thumbnailUrl} 
+                                  alt={livestream.title} 
+                                  className="h-full w-full object-cover" 
+                                />
+                              ) : (
+                                <div className="h-full w-full bg-gray-100 flex items-center justify-center">
+                                  <Radio className="h-6 w-6 text-gray-400" />
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-medium">{livestream.title}</TableCell>
+                          <TableCell>
+                            {typeof livestream.streamDate === 'string' 
+                              ? new Date(livestream.streamDate).toLocaleDateString() 
+                              : livestream.streamDate.toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>{livestream.hostName || 'N/A'}</TableCell>
+                          <TableCell>
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-700 capitalize">
+                              {livestream.platform || 'custom'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              livestream.isLive
+                                ? "bg-green-100 text-green-700" 
+                                : "bg-gray-100 text-gray-700"
+                            }`}>
+                              {livestream.isLive ? 'Live' : 'Upcoming'}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEditLivestream(livestream)}
+                              >
+                                Edit
+                              </Button>
+                              <Button 
+                                variant={livestream.isLive ? "destructive" : "default"} 
+                                size="sm"
+                                onClick={() => handleToggleLivestreamStatus(livestream)}
+                              >
+                                {livestream.isLive ? 'End Stream' : 'Go Live'}
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="py-10 text-center">
+                  <Radio className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium">No livestreams found</h3>
+                  <p className="text-sm text-gray-500">
+                    Create your first livestream by clicking the "Add Livestream" button above.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
       </div>
     </div>
+
+    {/* Livestream Dialog */}
+    <Dialog open={livestreamDialogOpen} onOpenChange={setLivestreamDialogOpen}>
+      <DialogContent className="sm:max-w-md md:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>
+            {currentLivestream ? "Edit Livestream" : "Add New Livestream"}
+          </DialogTitle>
+          <DialogDescription>
+            {currentLivestream 
+              ? "Update the livestream details below." 
+              : "Fill in the details to create a new livestream."}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              placeholder="Enter livestream title"
+              value={livestreamForm.title}
+              onChange={(e) => 
+                setLivestreamForm({ ...livestreamForm, title: e.target.value })
+              }
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="streamDate">Date</Label>
+              <Input
+                id="streamDate"
+                type="date"
+                value={livestreamForm.streamDate}
+                onChange={(e) =>
+                  setLivestreamForm({ ...livestreamForm, streamDate: e.target.value })
+                }
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="streamTime">Time</Label>
+              <Input
+                id="streamTime"
+                type="time"
+                value={livestreamForm.streamTime}
+                onChange={(e) =>
+                  setLivestreamForm({ ...livestreamForm, streamTime: e.target.value })
+                }
+              />
+            </div>
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              placeholder="Describe the livestream"
+              value={livestreamForm.description}
+              onChange={(e) =>
+                setLivestreamForm({ ...livestreamForm, description: e.target.value })
+              }
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="thumbnailUrl">Thumbnail URL</Label>
+            <Input
+              id="thumbnailUrl"
+              placeholder="Enter thumbnail image URL"
+              value={livestreamForm.thumbnailUrl}
+              onChange={(e) =>
+                setLivestreamForm({ ...livestreamForm, thumbnailUrl: e.target.value })
+              }
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="hostName">Host Name</Label>
+            <Input
+              id="hostName"
+              placeholder="Enter host name"
+              value={livestreamForm.hostName}
+              onChange={(e) =>
+                setLivestreamForm({ ...livestreamForm, hostName: e.target.value })
+              }
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="platform">Platform</Label>
+            <Select 
+              value={livestreamForm.platform} 
+              onValueChange={(value) => setLivestreamForm({...livestreamForm, platform: value})}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select platform" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="youtube">YouTube</SelectItem>
+                <SelectItem value="twitch">Twitch</SelectItem>
+                <SelectItem value="instagram">Instagram</SelectItem>
+                <SelectItem value="facebook">Facebook</SelectItem>
+                <SelectItem value="tiktok">TikTok</SelectItem>
+                <SelectItem value="custom">Custom</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Platform-specific fields */}
+          {livestreamForm.platform === 'youtube' && (
+            <div className="grid gap-2">
+              <Label htmlFor="youtubeUrl">YouTube URL</Label>
+              <Input
+                id="youtubeUrl"
+                placeholder="Enter YouTube video URL"
+                value={livestreamForm.youtubeUrl}
+                onChange={(e) =>
+                  setLivestreamForm({ ...livestreamForm, youtubeUrl: e.target.value })
+                }
+              />
+            </div>
+          )}
+          
+          {livestreamForm.platform === 'twitch' && (
+            <div className="grid gap-2">
+              <Label htmlFor="twitchChannel">Twitch Channel</Label>
+              <Input
+                id="twitchChannel"
+                placeholder="Enter Twitch channel name"
+                value={livestreamForm.twitchChannel}
+                onChange={(e) =>
+                  setLivestreamForm({ ...livestreamForm, twitchChannel: e.target.value })
+                }
+              />
+            </div>
+          )}
+          
+          {livestreamForm.platform === 'instagram' && (
+            <div className="grid gap-2">
+              <Label htmlFor="instagramUsername">Instagram Username</Label>
+              <Input
+                id="instagramUsername"
+                placeholder="Enter Instagram username"
+                value={livestreamForm.instagramUsername}
+                onChange={(e) =>
+                  setLivestreamForm({ ...livestreamForm, instagramUsername: e.target.value })
+                }
+              />
+            </div>
+          )}
+          
+          {livestreamForm.platform === 'facebook' && (
+            <div className="grid gap-2">
+              <Label htmlFor="facebookUrl">Facebook Video URL</Label>
+              <Input
+                id="facebookUrl"
+                placeholder="Enter Facebook video URL"
+                value={livestreamForm.facebookUrl}
+                onChange={(e) =>
+                  setLivestreamForm({ ...livestreamForm, facebookUrl: e.target.value })
+                }
+              />
+            </div>
+          )}
+          
+          {livestreamForm.platform === 'tiktok' && (
+            <div className="grid gap-2">
+              <Label htmlFor="tiktokUsername">TikTok Username</Label>
+              <Input
+                id="tiktokUsername"
+                placeholder="Enter TikTok username"
+                value={livestreamForm.tiktokUsername}
+                onChange={(e) =>
+                  setLivestreamForm({ ...livestreamForm, tiktokUsername: e.target.value })
+                }
+              />
+            </div>
+          )}
+          
+          {livestreamForm.platform === 'custom' && (
+            <>
+              <div className="grid gap-2">
+                <Label htmlFor="customStreamUrl">Custom Stream URL</Label>
+                <Input
+                  id="customStreamUrl"
+                  placeholder="Enter custom stream URL"
+                  value={livestreamForm.customStreamUrl}
+                  onChange={(e) =>
+                    setLivestreamForm({ ...livestreamForm, customStreamUrl: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="embedCode">Embed Code (optional)</Label>
+                <Textarea
+                  id="embedCode"
+                  placeholder="Enter embed code for the custom stream"
+                  value={livestreamForm.embedCode}
+                  onChange={(e) =>
+                    setLivestreamForm({ ...livestreamForm, embedCode: e.target.value })
+                  }
+                />
+              </div>
+            </>
+          )}
+          
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="isLive" 
+              checked={livestreamForm.isLive}
+              onCheckedChange={(checked) => 
+                setLivestreamForm({ ...livestreamForm, isLive: checked as boolean })
+              }
+            />
+            <Label htmlFor="isLive">Stream is currently live</Label>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setLivestreamDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button 
+            className="sg-btn" 
+            onClick={currentLivestream ? handleUpdateLivestream : handleCreateLivestream}
+          >
+            {currentLivestream ? "Update Livestream" : "Create Livestream"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
