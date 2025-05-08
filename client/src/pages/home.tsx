@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import EventCard from "@/components/home/EventCard";
@@ -9,7 +9,8 @@ import ProductCard from "@/components/home/ProductCard";
 import { API_ROUTES, EXTERNAL_URLS } from "@/lib/constants";
 import { Event, Product, Livestream } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import SGFlyerLogoPng from "@assets/SGFLYERLOGO.png";
+import SGFlyerLogoPng from "@/assets/SGFLYERLOGO.png";
+import IntroVideo from "@/assets/videos/intro.mp4";
 
 const Home = () => {
   const [, navigate] = useLocation();
@@ -60,40 +61,52 @@ const Home = () => {
   
   return (
     <div className="mx-auto">
-      {/* Full Width Hero Banner */}
+      {/* Full Width Hero Banner with Video */}
       <div className="relative w-full h-[90vh] mb-16 overflow-hidden -mx-3">
         {eventsLoading ? (
           <Skeleton className="h-full w-full" />
         ) : (
           <div className="relative h-full">
-            {/* Hero Background */}
-            <div className="h-full w-full bg-black flex items-center justify-center">
-              <img 
-                src={SGFlyerLogoPng} 
-                alt="Savage Gentlemen" 
-                className="h-80 w-80 object-contain opacity-70"
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/50 to-black"></div>
+            {/* Hero Background with Video */}
+            <div className="h-full w-full bg-black">
+              <video 
+                className="w-full h-full object-cover absolute inset-0 opacity-80"
+                autoPlay 
+                muted 
+                loop
+                playsInline
+              >
+                <source src={IntroVideo} type="video/mp4" />
+              </video>
+              
+              {/* Overlay and Logo */}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black z-10 flex items-center justify-center">
+                <img 
+                  src={SGFlyerLogoPng} 
+                  alt="Savage Gentlemen" 
+                  className="h-60 w-60 object-contain opacity-90 animate-pulse"
+                />
+              </div>
             </div>
             
             {/* Hero Content - Centered */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
-              <h1 className="text-5xl md:text-7xl font-heading text-white uppercase tracking-wide mb-6">
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 z-20">
+              <h1 className="text-5xl md:text-7xl font-heading text-white uppercase tracking-wide mb-6 [text-shadow:_0_2px_5px_rgba(0,0,0,0.7)]">
                 Savage Gentlemen
               </h1>
-              <p className="text-xl md:text-2xl text-white/80 max-w-2xl mx-auto mb-8 uppercase tracking-widest">
+              <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto mb-8 uppercase tracking-widest [text-shadow:_0_1px_3px_rgba(0,0,0,0.9)]">
                 Events · Merchandise · Live Stream · Community
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button 
-                  className="bg-primary hover:bg-primary/80 text-white px-8 py-6 uppercase tracking-widest text-sm font-semibold"
+                  className="bg-primary hover:bg-primary/80 text-white px-8 py-6 uppercase tracking-widest text-sm font-semibold shadow-xl"
                   onClick={() => window.location.href = '/events'}
                 >
                   View Events
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="border-white text-white hover:bg-white/10 px-8 py-6 uppercase tracking-widest text-sm font-semibold"
+                  className="border-white text-white hover:bg-white/20 px-8 py-6 uppercase tracking-widest text-sm font-semibold backdrop-blur-sm shadow-xl"
                   onClick={() => window.location.href = '/shop'}
                 >
                   Shop Collection
