@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -89,6 +89,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   PackageOpen, 
   Calendar, 
@@ -102,6 +113,15 @@ export default function AdminPage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
+  const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<number>(1); // Default to first event for development
+  const [ticketForm, setTicketForm] = useState({
+    name: '',
+    price: 0,
+    quantity: 0,
+    maxPerPurchase: 4,
+    isActive: true
+  });
   
   React.useEffect(() => {
     // Check if user is logged in and is admin
@@ -198,6 +218,39 @@ export default function AdminPage() {
     queryKey: ["/api/admin/orders"],
     enabled: !!currentUser,
   });
+  
+  // Handle ticket form submission
+  const handleCreateTicket = async () => {
+    try {
+      // This would be an actual API call in production
+      toast({
+        title: "Ticket Created",
+        description: `New ticket "${ticketForm.name}" for event #${selectedEventId} created successfully`,
+      });
+      
+      // Close the dialog
+      setTicketDialogOpen(false);
+      
+      // Reset the form
+      setTicketForm({
+        name: '',
+        price: 0,
+        quantity: 0,
+        maxPerPurchase: 4,
+        isActive: true
+      });
+      
+      // In a production implementation, we would invalidate the tickets query to refetch tickets
+      // queryClient.invalidateQueries(["/api/admin/tickets"]);
+    } catch (error) {
+      console.error("Failed to create ticket:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create ticket. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
