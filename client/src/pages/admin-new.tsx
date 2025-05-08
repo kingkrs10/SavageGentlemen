@@ -485,6 +485,33 @@ export default function AdminPage() {
     }
   };
   
+  const handleDeleteLivestream = async (livestreamId: number) => {
+    // Confirm before deletion
+    if (!confirm("Are you sure you want to delete this livestream? This action cannot be undone.")) {
+      return;
+    }
+    
+    try {
+      // Use apiRequest instead of direct fetch
+      const response = await apiRequest('DELETE', `/api/admin/livestreams/${livestreamId}`);
+      
+      toast({
+        title: "Livestream Deleted",
+        description: "Livestream has been successfully deleted",
+      });
+      
+      // Refresh the livestreams list
+      queryClient.invalidateQueries({queryKey: ["/api/livestreams"]});
+    } catch (error) {
+      console.error('Error deleting livestream:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete livestream. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  
   const handleEditLivestream = (livestream: Livestream) => {
     // Set the current livestream being edited
     setCurrentLivestream(livestream);

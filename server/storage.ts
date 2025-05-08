@@ -71,6 +71,8 @@ export interface IStorage {
   getCurrentLivestream(): Promise<Livestream | undefined>;
   getUpcomingLivestreams(): Promise<Livestream[]>;
   createLivestream(livestream: InsertLivestream): Promise<Livestream>;
+  updateLivestream(id: number, livestreamData: Partial<Livestream>): Promise<Livestream | undefined>;
+  deleteLivestream(id: number): Promise<boolean>;
   
   // Post operations
   getPost(id: number): Promise<Post | undefined>;
