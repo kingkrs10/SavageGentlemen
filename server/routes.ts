@@ -305,23 +305,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add product initialization for SGX Merch Etsy shop
+  router.post("/products/init-etsy", async (req: Request, res: Response) => {
+    try {
+      // SGX Merch Etsy shop items
+      const etsyProducts = [
+        {
+          title: "Soca SG Music Denim Hat",
+          description: "Custom embroidered denim hat featuring Soca SG Music design.",
+          price: 3499, // $34.99
+          imageUrl: "https://i.etsystatic.com/17162514/r/il/d48c3e/5876583399/il_794xN.5876583399_5zzi.jpg",
+          category: "hats",
+          sizes: ["One Size"],
+          featured: true,
+          etsyUrl: "https://www.etsy.com/listing/4298475457/soca-sg-music-custom-embroidered-denim"
+        },
+        {
+          title: "SG Fly Sweatshirt",
+          description: "Unisex SG Fly Sweatshirt in Black",
+          price: 4999, // $49.99
+          imageUrl: "https://i.etsystatic.com/17162514/r/il/6a3c83/5894452402/il_794xN.5894452402_rbtu.jpg",
+          category: "hoodies",
+          sizes: ["S", "M", "L", "XL", "2XL"],
+          featured: true,
+          etsyUrl: "https://www.etsy.com/listing/4316150547/sg-fly-sweatshirt"
+        },
+        {
+          title: "SG X Maracas Crop Hoodie",
+          description: "Women's SG X Maracas Crop Hoodie in Black",
+          price: 4499, // $44.99
+          imageUrl: "https://i.etsystatic.com/17162514/r/il/bb60fa/5877683809/il_794xN.5877683809_acyp.jpg",
+          category: "hoodies",
+          sizes: ["S", "M", "L", "XL"],
+          featured: true,
+          etsyUrl: "https://www.etsy.com/listing/4298499741/sg-x-maracas-crop-hoodie"
+        },
+        {
+          title: "Soca SG Music Hoodie",
+          description: "Soca SG Music Hoodie in Black",
+          price: 4999, // $49.99
+          imageUrl: "https://i.etsystatic.com/17162514/r/il/5a8dbd/5846190986/il_794xN.5846190986_1uqp.jpg",
+          category: "hoodies",
+          sizes: ["S", "M", "L", "XL", "2XL"],
+          featured: true,
+          etsyUrl: "https://www.etsy.com/listing/4316161947/soca-sg-music-hoodie"
+        },
+        {
+          title: "SG Logo Dad Hat",
+          description: "SG Logo Dad Hat in Black",
+          price: 2999, // $29.99
+          imageUrl: "https://i.etsystatic.com/17162514/r/il/27dda1/5877695073/il_794xN.5877695073_bvmq.jpg",
+          category: "hats",
+          sizes: ["One Size"],
+          featured: false,
+          etsyUrl: "https://www.etsy.com/listing/4281853037/sg-logo-dad-hat"
+        }
+      ];
+
+      // Store each product
+      const savedProducts = [];
+      for (const product of etsyProducts) {
+        try {
+          const savedProduct = await storage.createProduct(product);
+          savedProducts.push(savedProduct);
+        } catch (error) {
+          console.error(`Error saving product ${product.title}:`, error);
+        }
+      }
+
+      return res.status(201).json({
+        message: `Initialized ${savedProducts.length} products from SGX Merch Etsy shop`,
+        products: savedProducts
+      });
+    } catch (err) {
+      console.error("Error initializing Etsy products:", err);
+      return res.status(500).json({ message: "Failed to initialize Etsy products" });
+    }
+  });
+
+  // Create HTTP server
   const httpServer = createServer(app);
-
-  // Setup WebSocket server for chat
+  
+  // Setup WebSocket Server on the same HTTP server
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-
+  
+  // WebSocket connection event handler
   wss.on('connection', (ws) => {
     console.log('Client connected to WebSocket');
-
-    ws.on('message', async (data) => {
+    
+    ws.on('message', async (message) => {
       try {
-        const parsedData = JSON.parse(data.toString());
+        const data = JSON.parse(message.toString());
+        console.log('Received message:', data);
         
-        if (parsedData.type === 'chat-message') {
+        if (data.type === 'chat-message') {
           const messageData = {
-            userId: parsedData.userId,
-            livestreamId: parsedData.livestreamId,
-            content: parsedData.content
+            userId: data.userId,
+            livestreamId: data.livestreamId,
+            content: data.content
           };
           
           const chatMessage = await storage.createChatMessage(messageData);
@@ -336,11 +417,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           });
         }
-      } catch (err) {
-        console.error('WebSocket message error:', err);
+      } catch (error) {
+        console.error('Error processing message:', error);
       }
     });
-
+    
     ws.on('close', () => {
       console.log('Client disconnected from WebSocket');
     });
