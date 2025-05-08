@@ -579,20 +579,129 @@ export default function AdminPage() {
                 <CardTitle>Tickets</CardTitle>
                 <CardDescription>Manage event tickets and ticket sales</CardDescription>
               </div>
-              <Button 
-                className="sg-btn" 
-                onClick={() => {
-                  // Open a dialog to create a new ticket
-                  const eventId = 1; // For development, default to first event
-                  toast({ 
-                    title: "Creating New Ticket", 
-                    description: `Creating a new ticket for event ID: ${eventId}`,
-                    variant: "default" 
-                  });
-                  // In a real implementation, we would open a modal form here
-                }}>
-                <TicketIcon className="h-4 w-4 mr-2" /> Create Ticket Type
-              </Button>
+              <Dialog open={ticketDialogOpen} onOpenChange={setTicketDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="sg-btn" onClick={() => {
+                    // Set the default values for the form when opening
+                    setTicketForm({
+                      name: '',
+                      price: 0,
+                      quantity: 100,
+                      maxPerPurchase: 4,
+                      isActive: true
+                    });
+                    // Default to the first event if available
+                    if (events && events.length > 0) {
+                      setSelectedEventId(events[0].id);
+                    }
+                  }}>
+                    <TicketIcon className="h-4 w-4 mr-2" /> Create Ticket Type
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Create New Ticket</DialogTitle>
+                    <DialogDescription>
+                      Add a new ticket type for an event. Click save when you're done.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="event" className="text-right">
+                        Event
+                      </Label>
+                      <select
+                        id="event"
+                        className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={selectedEventId}
+                        onChange={(e) => setSelectedEventId(Number(e.target.value))}
+                      >
+                        {events?.map((event) => (
+                          <option key={event.id} value={event.id}>
+                            {event.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="name" className="text-right">
+                        Name
+                      </Label>
+                      <Input
+                        id="name"
+                        placeholder="e.g. VIP, General Admission"
+                        className="col-span-3"
+                        value={ticketForm.name}
+                        onChange={(e) => setTicketForm({...ticketForm, name: e.target.value})}
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="price" className="text-right">
+                        Price ($)
+                      </Label>
+                      <Input
+                        id="price"
+                        type="number"
+                        className="col-span-3"
+                        value={ticketForm.price}
+                        onChange={(e) => setTicketForm({...ticketForm, price: Number(e.target.value)})}
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="quantity" className="text-right">
+                        Quantity
+                      </Label>
+                      <Input
+                        id="quantity"
+                        type="number"
+                        className="col-span-3"
+                        value={ticketForm.quantity}
+                        onChange={(e) => setTicketForm({...ticketForm, quantity: Number(e.target.value)})}
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="maxPerPurchase" className="text-right">
+                        Max per purchase
+                      </Label>
+                      <Input
+                        id="maxPerPurchase"
+                        type="number"
+                        className="col-span-3"
+                        value={ticketForm.maxPerPurchase}
+                        onChange={(e) => setTicketForm({...ticketForm, maxPerPurchase: Number(e.target.value)})}
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="isActive" className="text-right">
+                        Active
+                      </Label>
+                      <div className="flex items-center space-x-2 col-span-3">
+                        <input
+                          type="checkbox"
+                          id="isActive"
+                          checked={ticketForm.isActive}
+                          onChange={(e) => setTicketForm({...ticketForm, isActive: e.target.checked})}
+                          className="h-4 w-4"
+                        />
+                        <label htmlFor="isActive" className="text-sm">Available for purchase</label>
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setTicketDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      className="sg-btn" 
+                      onClick={handleCreateTicket}
+                      disabled={!ticketForm.name || ticketForm.price <= 0 || ticketForm.quantity <= 0}
+                    >
+                      Create Ticket
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardHeader>
             <CardContent>
               {ticketsLoading ? (
