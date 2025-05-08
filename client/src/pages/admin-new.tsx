@@ -362,16 +362,15 @@ export default function AdminPage() {
         return;
       }
       
-      // Combine date and time
+      // Combine date and time and create a proper Date object
       const dateTimeString = `${livestreamForm.streamDate}T${livestreamForm.streamTime || '00:00'}:00`;
-      const streamDate = new Date(dateTimeString);
       
-      // Create payload
+      // Create payload with streamDate as a proper Date object
       const livestreamData = {
         id: currentLivestream.id,
         title: livestreamForm.title,
         description: livestreamForm.description,
-        streamDate,
+        streamDate: new Date(dateTimeString),
         thumbnailUrl: livestreamForm.thumbnailUrl,
         isLive: livestreamForm.isLive,
         hostName: livestreamForm.hostName,

@@ -375,6 +375,7 @@ export class MemStorage implements IStorage {
 
   async createLivestream(livestreamData: InsertLivestream): Promise<Livestream> {
     const id = this.livestreamCurrentId++;
+    const now = new Date();
     const livestream: Livestream = {
       id,
       title: livestreamData.title,
@@ -382,11 +383,42 @@ export class MemStorage implements IStorage {
       description: livestreamData.description || null,
       thumbnailUrl: livestreamData.thumbnailUrl || null,
       isLive: livestreamData.isLive || false,
+      hostName: livestreamData.hostName || null,
+      platform: livestreamData.platform || 'custom',
+      youtubeUrl: livestreamData.youtubeUrl || null,
+      twitchChannel: livestreamData.twitchChannel || null,
+      instagramUsername: livestreamData.instagramUsername || null,
+      facebookUrl: livestreamData.facebookUrl || null,
+      tiktokUsername: livestreamData.tiktokUsername || null,
+      customStreamUrl: livestreamData.customStreamUrl || null,
+      embedCode: livestreamData.embedCode || null,
       streamUrl: livestreamData.streamUrl || null,
-      hostName: livestreamData.hostName || null
+      createdAt: now,
+      updatedAt: now
     };
     this.livestreams.set(id, livestream);
     return livestream;
+  }
+  
+  async updateLivestream(id: number, updates: Partial<Livestream>): Promise<Livestream | null> {
+    const existingLivestream = await this.getLivestream(id);
+    
+    if (!existingLivestream) {
+      return null;
+    }
+    
+    const updatedLivestream: Livestream = {
+      ...existingLivestream,
+      ...updates,
+      updatedAt: new Date()
+    };
+    
+    this.livestreams.set(id, updatedLivestream);
+    return updatedLivestream;
+  }
+  
+  async deleteLivestream(id: number): Promise<boolean> {
+    return this.livestreams.delete(id);
   }
 
   // Post operations
