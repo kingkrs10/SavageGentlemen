@@ -47,6 +47,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
   updateUserRole(id: number, role: string): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>;
   
   // Event operations
   getEvent(id: number): Promise<Event | undefined>;
@@ -210,6 +211,15 @@ export class MemStorage implements IStorage {
     user.role = role;
     this.users.set(id, user);
     return user;
+  }
+  
+  async deleteUser(id: number): Promise<boolean> {
+    const user = await this.getUser(id);
+    if (!user) {
+      return false;
+    }
+    
+    return this.users.delete(id);
   }
   
   async updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User> {
@@ -835,6 +845,19 @@ export class DatabaseStorage implements IStorage {
     }
     
     return user;
+  }
+  
+  async deleteUser(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(users)
+        .where(eq(users.id, id));
+      
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error(`Error deleting user with ID ${id}:`, error);
+      return false;
+    }
   }
 
   // Event operations

@@ -879,6 +879,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Internal server error" });
     }
   });
+  
+  router.delete("/admin/users/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Check if user exists
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Prevent deletion of the current user
+      if (id === (req as any).user.id) {
+        return res.status(400).json({ message: "Cannot delete yourself" });
+      }
+      
+      // Assuming deleteUser method exists in storage
+      await storage.deleteUser(id);
+      
+      return res.status(204).send();
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      return res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
 
   // Add product initialization for SGX Merch Etsy shop
   router.post("/products/init-etsy", async (req: Request, res: Response) => {
