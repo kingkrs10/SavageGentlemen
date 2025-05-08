@@ -1,4 +1,4 @@
-import { Search, User, LogOut } from "lucide-react";
+import { Search, User, LogOut, LayoutDashboard } from "lucide-react";
 import { User as UserType } from "@/lib/types";
 import {
   DropdownMenu,
@@ -56,8 +56,21 @@ const Header = ({ user, onProfileClick, onLogout }: HeaderProps) => {
                 <DropdownMenuContent align="end" className="w-56 bg-black border border-white/10">
                   <DropdownMenuLabel className="uppercase text-xs tracking-widest">
                     {user.displayName} {user.isGuest && "(Guest)"}
+                    {user.role === "admin" && " (Admin)"}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-white/10" />
+                  {user.role === "admin" && (
+                    <DropdownMenuItem 
+                      className="hover:bg-white/5 focus:bg-white/5"
+                      asChild
+                    >
+                      <a href="/admin">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        <span className="uppercase text-xs tracking-widest">Admin Dashboard</span>
+                      </a>
+                    </DropdownMenuItem>
+                  )}
+                  {user.role === "admin" && <DropdownMenuSeparator className="bg-white/10" />}
                   <DropdownMenuItem 
                     onClick={onLogout}
                     className="hover:bg-white/5 focus:bg-white/5"
