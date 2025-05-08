@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Plus, Pencil, Trash, Users, Tag, Layers, Activity, BarChart, Eye, EyeOff } from "lucide-react";
+import { Plus, Pencil, Trash, Users, Tag, Layers, Activity, BarChart, Eye, EyeOff, Search } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -1663,29 +1663,34 @@ export default function AdminPage() {
                   <CardTitle>Users</CardTitle>
                   <CardDescription>Manage user accounts and permissions</CardDescription>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Input 
-                    placeholder="Search users..." 
-                    className="w-[200px]"
-                    onChange={(e) => {
-                      // Filter users locally based on search term
-                      const searchTerm = e.target.value.toLowerCase();
-                      if (searchTerm && users) {
-                        setFilteredUsers(
-                          users.filter(user => 
-                            user.username.toLowerCase().includes(searchTerm) || 
-                            (user.displayName && user.displayName.toLowerCase().includes(searchTerm)) ||
-                            (user.email && user.email.toLowerCase().includes(searchTerm))
-                          )
-                        );
-                      } else {
-                        setFilteredUsers(null);
-                      }
-                    }}
-                  />
+                <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-2">
+                  <div className="relative w-full md:w-[200px]">
+                    <Input 
+                      placeholder="Search users..." 
+                      className="w-full pr-8"
+                      onChange={(e) => {
+                        // Filter users locally based on search term
+                        const searchTerm = e.target.value.toLowerCase();
+                        if (searchTerm && users) {
+                          setFilteredUsers(
+                            users.filter(user => 
+                              user.username.toLowerCase().includes(searchTerm) || 
+                              (user.displayName && user.displayName.toLowerCase().includes(searchTerm)) ||
+                              (user.email && user.email.toLowerCase().includes(searchTerm))
+                            )
+                          );
+                        } else {
+                          setFilteredUsers(null);
+                        }
+                      }}
+                    />
+                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400">
+                      <Search className="h-4 w-4" />
+                    </div>
+                  </div>
                   <Button 
                     size="sm" 
-                    className="sg-btn"
+                    className="sg-btn w-full md:w-auto"
                     onClick={() => {
                       setUserForm({
                         username: "",
@@ -1722,98 +1727,197 @@ export default function AdminPage() {
                     </Button>
                   </div>
                 ) : (filteredUsers || users).length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Username</TableHead>
-                          <TableHead>Display Name</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Role</TableHead>
-                          <TableHead>Auth Provider</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {(filteredUsers || users).map((user) => (
-                          <TableRow key={user.id} className={user.isGuest ? "bg-slate-50 dark:bg-slate-900/30" : ""}>
-                            <TableCell className="font-medium">
-                              <div className="flex items-center space-x-2">
-                                <Avatar className="h-8 w-8">
-                                  <AvatarFallback>
-                                    {user.displayName 
-                                      ? user.displayName.split(" ").map(n => n[0]).join("").toUpperCase()
-                                      : user.username.slice(0, 2).toUpperCase()
-                                    }
-                                  </AvatarFallback>
-                                  {user.avatar && (
-                                    <AvatarImage src={user.avatar} alt={user.username} />
-                                  )}
-                                </Avatar>
-                                <span>{user.username}</span>
-                                {user.isGuest && (
-                                  <Badge variant="outline" className="ml-1">Guest</Badge>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>{user.displayName || "-"}</TableCell>
-                            <TableCell>{user.email || "-"}</TableCell>
-                            <TableCell>
-                              <Badge variant={
-                                user.role === "admin" ? "default" :
-                                user.role === "moderator" ? "secondary" :
-                                "outline"
-                              }>
-                                {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {user.username.startsWith('firebase_') ? (
-                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                                  Google
-                                </Badge>
-                              ) : user.username.startsWith('guest-') ? (
-                                <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
-                                  Guest
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                                  Email
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-2">
-                                <Select 
-                                  defaultValue={user.role} 
-                                  onValueChange={(value) => handleChangeUserRole(user.id, value)}
-                                  disabled={currentUser && user.id === currentUser.id}
-                                >
-                                  <SelectTrigger className="h-8 w-[100px]">
-                                    <SelectValue placeholder="Role" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="user">User</SelectItem>
-                                    <SelectItem value="moderator">Moderator</SelectItem>
-                                    <SelectItem value="admin">Admin</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleDeleteUser(user.id)}
-                                  disabled={currentUser && user.id === currentUser.id}
-                                  title={currentUser && user.id === currentUser.id ? "Cannot delete your own account" : "Delete user"}
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-500" />
-                                </Button>
-                              </div>
-                            </TableCell>
+                  <>
+                    {/* Desktop view: Table for md and larger screens */}
+                    <div className="overflow-x-auto hidden md:block">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Username</TableHead>
+                            <TableHead>Display Name</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Role</TableHead>
+                            <TableHead>Auth Provider</TableHead>
+                            <TableHead>Actions</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                        </TableHeader>
+                        <TableBody>
+                          {(filteredUsers || users).map((user) => (
+                            <TableRow key={user.id} className={user.isGuest ? "bg-slate-50 dark:bg-slate-900/30" : ""}>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center space-x-2">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarFallback>
+                                      {user.displayName 
+                                        ? user.displayName.split(" ").map(n => n[0]).join("").toUpperCase()
+                                        : user.username.slice(0, 2).toUpperCase()
+                                      }
+                                    </AvatarFallback>
+                                    {user.avatar && (
+                                      <AvatarImage src={user.avatar} alt={user.username} />
+                                    )}
+                                  </Avatar>
+                                  <span>{user.username}</span>
+                                  {user.isGuest && (
+                                    <Badge variant="outline" className="ml-1">Guest</Badge>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>{user.displayName || "-"}</TableCell>
+                              <TableCell>{user.email || "-"}</TableCell>
+                              <TableCell>
+                                <Badge variant={
+                                  user.role === "admin" ? "default" :
+                                  user.role === "moderator" ? "secondary" :
+                                  "outline"
+                                }>
+                                  {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {user.username.startsWith('firebase_') ? (
+                                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                    Google
+                                  </Badge>
+                                ) : user.username.startsWith('guest-') ? (
+                                  <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+                                    Guest
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                    Email
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center space-x-2">
+                                  <Select 
+                                    defaultValue={user.role} 
+                                    onValueChange={(value) => handleChangeUserRole(user.id, value)}
+                                    disabled={currentUser && user.id === currentUser.id}
+                                  >
+                                    <SelectTrigger className="h-8 w-[100px]">
+                                      <SelectValue placeholder="Role" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="user">User</SelectItem>
+                                      <SelectItem value="moderator">Moderator</SelectItem>
+                                      <SelectItem value="admin">Admin</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleDeleteUser(user.id)}
+                                    disabled={currentUser && user.id === currentUser.id}
+                                    title={currentUser && user.id === currentUser.id ? "Cannot delete your own account" : "Delete user"}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    
+                    {/* Mobile view: Card-based layout for small screens */}
+                    <div className="md:hidden space-y-4">
+                      {(filteredUsers || users).map((user) => (
+                        <div 
+                          key={user.id} 
+                          className={`rounded-lg border p-4 ${user.isGuest ? "bg-slate-50 dark:bg-slate-900/30" : ""}`}
+                        >
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center space-x-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarFallback>
+                                  {user.displayName 
+                                    ? user.displayName.split(" ").map(n => n[0]).join("").toUpperCase()
+                                    : user.username.slice(0, 2).toUpperCase()
+                                  }
+                                </AvatarFallback>
+                                {user.avatar && (
+                                  <AvatarImage src={user.avatar} alt={user.username} />
+                                )}
+                              </Avatar>
+                              <div>
+                                <div className="font-semibold flex items-center gap-2">
+                                  {user.username}
+                                  {user.isGuest && (
+                                    <Badge variant="outline" className="text-xs">Guest</Badge>
+                                  )}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  {user.displayName || "No display name"}
+                                </div>
+                              </div>
+                            </div>
+                            <Badge variant={
+                              user.role === "admin" ? "default" :
+                              user.role === "moderator" ? "secondary" :
+                              "outline"
+                            }>
+                              {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                            </Badge>
+                          </div>
+                          
+                          <div className="grid gap-1 text-sm mb-4">
+                            <div className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-muted-foreground">Email</span>
+                              <span className="font-medium">{user.email || "—"}</span>
+                            </div>
+                            <div className="flex justify-between items-center py-1 border-b border-gray-100 dark:border-gray-800">
+                              <span className="text-muted-foreground">Auth Provider</span>
+                              <span>
+                                {user.username.startsWith('firebase_') ? (
+                                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                    Google
+                                  </Badge>
+                                ) : user.username.startsWith('guest-') ? (
+                                  <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+                                    Guest
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                    Email
+                                  </Badge>
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex justify-between items-center">
+                            <Select 
+                              defaultValue={user.role} 
+                              onValueChange={(value) => handleChangeUserRole(user.id, value)}
+                              disabled={currentUser && user.id === currentUser.id}
+                            >
+                              <SelectTrigger className="h-9 w-[120px]">
+                                <SelectValue placeholder="Role" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="user">User</SelectItem>
+                                <SelectItem value="moderator">Moderator</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDeleteUser(user.id)}
+                              disabled={currentUser && user.id === currentUser.id}
+                              className={currentUser && user.id === currentUser.id ? "opacity-50 cursor-not-allowed" : ""}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 ) : (
                   <div className="py-10 text-center">
                     <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
