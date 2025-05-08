@@ -781,6 +781,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await capturePaypalOrder(req, res);
   });
   
+  // Endpoint to get PayPal order details for the payment success page
+  router.get("/payment/paypal-order/:orderID/details", async (req: Request, res: Response) => {
+    try {
+      const { orderID } = req.params;
+      
+      // In a real app, you would fetch the order from your database
+      // For now, we'll return minimal information since the capture already happened
+      res.json({
+        id: orderID,
+        status: "completed",
+        amount: req.query.amount || "Payment completed"
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get PayPal order details: " + error.message });
+    }
+  });
+  
   // Stripe payment routes  
   router.post("/payment/create-intent", authenticateUser, async (req: Request, res: Response) => {
     try {
