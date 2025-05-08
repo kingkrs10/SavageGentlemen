@@ -143,6 +143,11 @@ export class MemStorage implements IStorage {
     this.posts = new Map();
     this.comments = new Map();
     this.chatMessages = new Map();
+    this.tickets = new Map();
+    this.discountCodes = new Map();
+    this.orders = new Map();
+    this.orderItems = new Map();
+    this.mediaUploads = new Map();
     
     this.userCurrentId = 1;
     this.eventCurrentId = 1;
@@ -151,6 +156,11 @@ export class MemStorage implements IStorage {
     this.postCurrentId = 1;
     this.commentCurrentId = 1;
     this.chatMessageCurrentId = 1;
+    this.ticketCurrentId = 1;
+    this.discountCodeCurrentId = 1;
+    this.orderCurrentId = 1;
+    this.orderItemCurrentId = 1;
+    this.mediaUploadCurrentId = 1;
     
     // Initialize with sample data
     this.initializeSampleData();
@@ -175,9 +185,50 @@ export class MemStorage implements IStorage {
       password: userData.password,
       displayName: userData.displayName || null,
       avatar: userData.avatar || null,
-      isGuest: userData.isGuest || false
+      isGuest: userData.isGuest || false,
+      role: userData.role || 'user',
+      stripeCustomerId: userData.stripeCustomerId || null,
+      paypalCustomerId: userData.paypalCustomerId || null,
+      email: userData.email || null
     };
     this.users.set(id, user);
+    return user;
+  }
+  
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+  
+  async updateUserRole(id: number, role: string): Promise<User | undefined> {
+    const user = await this.getUser(id);
+    if (!user) {
+      return undefined;
+    }
+    
+    user.role = role;
+    this.users.set(id, user);
+    return user;
+  }
+  
+  async updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User> {
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    user.stripeCustomerId = stripeCustomerId;
+    this.users.set(userId, user);
+    return user;
+  }
+  
+  async updatePaypalCustomerId(userId: number, paypalCustomerId: string): Promise<User> {
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    user.paypalCustomerId = paypalCustomerId;
+    this.users.set(userId, user);
     return user;
   }
 
@@ -210,6 +261,30 @@ export class MemStorage implements IStorage {
     this.events.set(id, event);
     return event;
   }
+  
+  async updateEvent(id: number, eventData: Partial<InsertEvent>): Promise<Event | undefined> {
+    const event = await this.getEvent(id);
+    if (!event) {
+      return undefined;
+    }
+    
+    const updatedEvent: Event = {
+      ...event,
+      ...eventData
+    };
+    
+    this.events.set(id, updatedEvent);
+    return updatedEvent;
+  }
+  
+  async deleteEvent(id: number): Promise<boolean> {
+    const event = await this.getEvent(id);
+    if (!event) {
+      return false;
+    }
+    
+    return this.events.delete(id);
+  }
 
   // Product operations
   async getProduct(id: number): Promise<Product | undefined> {
@@ -239,6 +314,30 @@ export class MemStorage implements IStorage {
     };
     this.products.set(id, product);
     return product;
+  }
+  
+  async updateProduct(id: number, productData: Partial<InsertProduct>): Promise<Product | undefined> {
+    const product = await this.getProduct(id);
+    if (!product) {
+      return undefined;
+    }
+    
+    const updatedProduct: Product = {
+      ...product,
+      ...productData
+    };
+    
+    this.products.set(id, updatedProduct);
+    return updatedProduct;
+  }
+  
+  async deleteProduct(id: number): Promise<boolean> {
+    const product = await this.getProduct(id);
+    if (!product) {
+      return false;
+    }
+    
+    return this.products.delete(id);
   }
 
   // Livestream operations
@@ -363,6 +462,85 @@ export class MemStorage implements IStorage {
     
     this.chatMessages.set(id, chatMessage);
     return chatMessage;
+  }
+  
+  // Ticket operations
+  async createTicket(ticketData: InsertTicket): Promise<Ticket> {
+    const id = this.ticketCurrentId++;
+    const createdAt = new Date();
+    const ticket: Ticket = { 
+      ...ticketData,
+      id,
+      createdAt,
+      isUsed: false 
+    };
+    this.tickets.set(id, ticket);
+    return ticket;
+  }
+  
+  async getTicketsByEventId(eventId: number): Promise<Ticket[]> {
+    return Array.from(this.tickets.values())
+      .filter(ticket => ticket.eventId === eventId);
+  }
+  
+  // Discount code operations
+  async createDiscountCode(discountCodeData: InsertDiscountCode): Promise<DiscountCode> {
+    const id = this.discountCodeCurrentId++;
+    const createdAt = new Date();
+    const discountCode: DiscountCode = { 
+      ...discountCodeData,
+      id,
+      createdAt,
+      isActive: true,
+      usageCount: 0
+    };
+    this.discountCodes.set(id, discountCode);
+    return discountCode;
+  }
+  
+  async getDiscountCodeByCode(code: string): Promise<DiscountCode | undefined> {
+    return Array.from(this.discountCodes.values())
+      .find(discount => discount.code === code && discount.isActive);
+  }
+  
+  // Order operations
+  async createOrder(orderData: InsertOrder): Promise<Order> {
+    const id = this.orderCurrentId++;
+    const createdAt = new Date();
+    const order: Order = { 
+      ...orderData,
+      id,
+      createdAt,
+      status: 'processing'
+    };
+    this.orders.set(id, order);
+    return order;
+  }
+  
+  async getAllOrders(): Promise<Order[]> {
+    return Array.from(this.orders.values());
+  }
+  
+  async getOrderById(id: number): Promise<Order | undefined> {
+    return this.orders.get(id);
+  }
+  
+  // Media upload operations
+  async createMediaUpload(mediaUploadData: InsertMediaUpload): Promise<MediaUpload> {
+    const id = this.mediaUploadCurrentId++;
+    const createdAt = new Date();
+    const mediaUpload: MediaUpload = { 
+      ...mediaUploadData,
+      id,
+      createdAt
+    };
+    this.mediaUploads.set(id, mediaUpload);
+    return mediaUpload;
+  }
+  
+  async getMediaUploadsByRelatedEntity(relatedEntityType: string, relatedEntityId: number): Promise<MediaUpload[]> {
+    return Array.from(this.mediaUploads.values())
+      .filter(upload => upload.relatedEntityType === relatedEntityType && upload.relatedEntityId === relatedEntityId);
   }
 
   // Initialize with sample data
@@ -655,6 +833,47 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date()
       })
       .returning();
+    return user;
+  }
+  
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+  
+  async updateUserRole(id: number, role: string): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ role, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+  
+  async updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ stripeCustomerId, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
+    return user;
+  }
+  
+  async updatePaypalCustomerId(userId: number, paypalCustomerId: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ paypalCustomerId, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found`);
+    }
+    
     return user;
   }
 
