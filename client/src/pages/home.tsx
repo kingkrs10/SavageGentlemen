@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { ChevronRight } from "lucide-react";
@@ -9,6 +9,7 @@ import ProductCard from "@/components/home/ProductCard";
 import { API_ROUTES, EXTERNAL_URLS } from "@/lib/constants";
 import { Event, Product, Livestream } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import SGFlyerLogoPng from "@assets/SGFLYERLOGO.png";
 
 const Home = () => {
   const [, navigate] = useLocation();
@@ -53,6 +54,10 @@ const Home = () => {
     // For now, we'll just show a toast
   };
 
+  const [heroImgError, setHeroImgError] = useState(false);
+  const [adImgError, setAdImgError] = useState(false);
+  const [livestreamImgError, setLivestreamImgError] = useState(false);
+  
   return (
     <div>
       {/* Hero Banner */}
@@ -61,21 +66,33 @@ const Home = () => {
           <Skeleton className="h-64 w-full" />
         ) : featuredEvents && featuredEvents.length > 0 ? (
           <div className="relative">
-            <div 
-              className="h-64 bg-cover bg-center" 
-              style={{ backgroundImage: `url(${featuredEvents[0].imageUrl})` }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black bg-opacity-60"></div>
-              <div className="absolute bottom-0 left-0 p-4">
-                <h2 className="text-3xl font-heading text-white">{featuredEvents[0].title}</h2>
-                <p className="text-lg text-gray-200">Get your tickets now</p>
-                <Button 
-                  className="mt-2 bg-primary text-white hover:bg-red-800 transition"
-                  onClick={() => handleGetTicket(featuredEvents[0].id)}
-                >
-                  Buy Tickets
-                </Button>
+            {heroImgError ? (
+              <div className="h-64 bg-gray-800 flex items-center justify-center">
+                <img 
+                  src={SGFlyerLogoPng} 
+                  alt="Savage Gentlemen" 
+                  className="h-40 w-40 object-contain"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black bg-opacity-60"></div>
               </div>
+            ) : (
+              <div 
+                className="h-64 bg-cover bg-center" 
+                style={{ backgroundImage: `url(${featuredEvents[0].imageUrl})` }}
+                onError={() => setHeroImgError(true)}
+              >
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black bg-opacity-60"></div>
+              </div>
+            )}
+            <div className="absolute bottom-0 left-0 p-4">
+              <h2 className="text-3xl font-heading text-white">{featuredEvents[0].title}</h2>
+              <p className="text-lg text-gray-200">Get your tickets now</p>
+              <Button 
+                className="mt-2 bg-primary text-white hover:bg-red-800 transition"
+                onClick={() => handleGetTicket(featuredEvents[0].id)}
+              >
+                Buy Tickets
+              </Button>
             </div>
           </div>
         ) : (
@@ -164,11 +181,22 @@ const Home = () => {
         ) : currentLivestream ? (
           <div className="bg-gray-900 rounded-xl overflow-hidden shadow-lg">
             <div className="relative">
-              <img 
-                src={currentLivestream.thumbnailUrl} 
-                alt={currentLivestream.title} 
-                className="w-full h-56 object-cover"
-              />
+              {livestreamImgError ? (
+                <div className="w-full h-56 bg-gray-800 flex items-center justify-center">
+                  <img 
+                    src={SGFlyerLogoPng} 
+                    alt={currentLivestream.title}
+                    className="h-32 w-32 object-contain"
+                  />
+                </div>
+              ) : (
+                <img 
+                  src={currentLivestream.thumbnailUrl} 
+                  alt={currentLivestream.title} 
+                  className="w-full h-56 object-cover"
+                  onError={() => setLivestreamImgError(true)}
+                />
+              )}
               <div className="absolute inset-0 flex justify-center items-center">
                 <div className="bg-black bg-opacity-50 px-4 py-2 rounded-full flex items-center">
                   <span className="animate-pulse inline-block w-3 h-3 bg-red-600 rounded-full mr-2"></span>
@@ -220,11 +248,22 @@ const Home = () => {
               Shop Now
             </Button>
           </div>
-          <img 
-            src="https://images.unsplash.com/photo-1489987707025-afc232f7ea0f" 
-            alt="Summer Collection" 
-            className="w-24 h-24 rounded-lg object-cover"
-          />
+          {adImgError ? (
+            <div className="w-24 h-24 rounded-lg bg-gray-800 flex items-center justify-center">
+              <img 
+                src={SGFlyerLogoPng} 
+                alt="Savage Gentlemen Collection" 
+                className="h-16 w-16 object-contain"
+              />
+            </div>
+          ) : (
+            <img 
+              src="https://images.unsplash.com/photo-1489987707025-afc232f7ea0f" 
+              alt="Summer Collection" 
+              className="w-24 h-24 rounded-lg object-cover"
+              onError={() => setAdImgError(true)}
+            />
+          )}
         </div>
       </div>
     </div>
