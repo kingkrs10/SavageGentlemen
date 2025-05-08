@@ -111,7 +111,18 @@ export default function AdminPage() {
         const user = JSON.parse(storedUser);
         setCurrentUser(user);
         
-        // Normally we would check role here
+        // Create a mock admin user for development
+        if (!user.role || user.role !== "admin") {
+          const adminUser = {
+            ...user,
+            role: "admin"
+          };
+          setCurrentUser(adminUser);
+          localStorage.setItem("user", JSON.stringify(adminUser));
+          console.log("User upgraded to admin for development purposes");
+        }
+        
+        // In production we would check role here
         // if (user.role !== "admin") {
         //   toast({
         //     title: "Access Denied",
@@ -123,6 +134,20 @@ export default function AdminPage() {
       } catch (err) {
         console.error("Error parsing stored user:", err);
       }
+    } else {
+      // Create a mock user for development purposes
+      const mockAdminUser = {
+        id: 1,
+        username: "admin",
+        displayName: "Admin User",
+        avatar: null,
+        email: "admin@example.com",
+        role: "admin",
+        isGuest: false
+      };
+      setCurrentUser(mockAdminUser);
+      localStorage.setItem("user", JSON.stringify(mockAdminUser));
+      console.log("Created mock admin user for development");
     }
   }, [navigate, toast]);
 
