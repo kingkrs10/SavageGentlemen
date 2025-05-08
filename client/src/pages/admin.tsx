@@ -2209,11 +2209,9 @@ export default function AdminPage() {
           </Card>
         </TabsContent>
       </Tabs>
-      </div>
-    </div>
-
-    {/* Livestream Dialog */}
-    <Dialog open={livestreamDialogOpen} onOpenChange={setLivestreamDialogOpen}>
+      
+      {/* Livestream Dialog */}
+      <Dialog open={livestreamDialogOpen} onOpenChange={setLivestreamDialogOpen}>
       <DialogContent className="sm:max-w-md md:max-w-lg">
         <DialogHeader>
           <DialogTitle>
