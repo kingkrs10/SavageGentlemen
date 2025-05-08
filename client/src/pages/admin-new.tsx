@@ -194,36 +194,16 @@ export default function AdminPage() {
       try {
         const user = JSON.parse(storedUser);
         setCurrentUser(user);
-        
-        // Create a mock admin user for development if needed
-        if (!user.role || user.role !== "admin") {
-          const adminUser = {
-            ...user,
-            role: "admin"
-          };
-          setCurrentUser(adminUser);
-          localStorage.setItem("user", JSON.stringify(adminUser));
-          console.log("User upgraded to admin for development purposes");
-        }
+        console.log("User loaded from localStorage:", user);
       } catch (err) {
         console.error("Error parsing stored user:", err);
       }
     } else {
-      // Create a mock user for development purposes
-      const mockAdminUser = {
-        id: 1,
-        username: "admin",
-        displayName: "Admin User",
-        avatar: null,
-        email: "admin@example.com",
-        role: "admin",
-        isGuest: false
-      };
-      setCurrentUser(mockAdminUser);
-      localStorage.setItem("user", JSON.stringify(mockAdminUser));
-      console.log("Created mock admin user for development");
+      // No user in localStorage, redirect to login
+      console.warn("No user found in localStorage, redirecting to login");
+      navigate("/login");
     }
-  }, []);
+  }, [navigate]);
 
   // Fetch products
   const {
