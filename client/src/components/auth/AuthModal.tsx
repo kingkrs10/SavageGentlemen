@@ -89,9 +89,27 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
       loginForm.reset();
     },
     onError: (error) => {
+      console.error("Login error:", error);
+      
+      let errorMessage = "Please check your credentials";
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Provide more user-friendly messages based on common errors
+        if (errorMessage.includes("Invalid username or password")) {
+          errorMessage = "Invalid username or password. Please try again.";
+        } else if (errorMessage.includes("User not found")) {
+          errorMessage = "Account not found. Please check your username or register.";
+        } else if (errorMessage.toLowerCase().includes("network") || 
+                   errorMessage.toLowerCase().includes("connection")) {
+          errorMessage = "Network error. Please check your connection and try again.";
+        }
+      }
+      
       toast({
         title: "Login Failed",
-        description: error instanceof Error ? error.message : "Please check your credentials",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -112,9 +130,27 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
       registerForm.reset();
     },
     onError: (error) => {
+      console.error("Registration error:", error);
+      
+      let errorMessage = "Registration failed. Please try again.";
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Provide more user-friendly messages based on common errors
+        if (errorMessage.includes("already exists") || errorMessage.includes("already taken")) {
+          errorMessage = "Username already exists. Please choose a different username.";
+        } else if (errorMessage.toLowerCase().includes("network") || 
+                 errorMessage.toLowerCase().includes("connection")) {
+          errorMessage = "Network error. Please check your connection and try again.";
+        } else if (errorMessage.includes("validation")) {
+          errorMessage = "Please check your information and try again.";
+        }
+      }
+      
       toast({
         title: "Registration Failed",
-        description: error instanceof Error ? error.message : "Please try again",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -276,10 +312,29 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
                   title: "Login Successful",
                   description: "Welcome to Savage Gentlemen!",
                 });
-              } catch (error) {
+              } catch (error: any) {
+                console.error("Error signing in:", error);
+                
+                // Handle specific Firebase error codes with user-friendly messages
+                let errorMessage = "Failed to login with Google";
+                
+                if (error?.code === "auth/configuration-not-found") {
+                  errorMessage = "Google authentication needs to be configured. Please ensure your domain is added to Firebase authorized domains.";
+                } else if (error?.code === "auth/popup-closed-by-user") {
+                  errorMessage = "Login was canceled. Please try again.";
+                } else if (error?.code === "auth/popup-blocked") {
+                  errorMessage = "Login popup was blocked by your browser. Please allow popups for this site.";
+                } else if (error?.code === "auth/account-exists-with-different-credential") {
+                  errorMessage = "An account already exists with the same email but different sign-in credentials.";
+                } else if (error?.code === "auth/network-request-failed") {
+                  errorMessage = "Network error. Please check your internet connection and try again.";
+                } else if (error?.message) {
+                  errorMessage = error.message;
+                }
+                
                 toast({
                   title: "Login Failed",
-                  description: error instanceof Error ? error.message : "Failed to login with Google",
+                  description: errorMessage,
                   variant: "destructive",
                 });
               }

@@ -67,14 +67,37 @@ export function useAuth() {
     setError(null);
     
     try {
+      // Add scopes for better user data
+      googleProvider.addScope('profile');
+      googleProvider.addScope('email');
+      
+      // Set custom parameters for better UX
+      googleProvider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      
       const result = await signInWithPopup(auth, googleProvider);
       // The signed-in user info is in result.user
       // But our app will get the user from the onAuthStateChanged listener
       return result;
     } catch (error) {
       const authError = error as AuthError;
+      
+      // Log detailed error information for debugging
+      console.error('Error signing in with Google:', {
+        code: authError.code,
+        message: authError.message,
+        customData: authError.customData,
+        stack: authError.stack
+      });
+      
       setError(authError.message);
-      console.error('Error signing in:', authError);
+      
+      // Check if this is an auth domain error
+      if (authError.code === 'auth/configuration-not-found') {
+        console.warn('Firebase Auth Domain Error: Make sure your app domain is added to Firebase authorized domains');
+      }
+      
       throw error;
     } finally {
       setLoading(false);
