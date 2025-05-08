@@ -533,17 +533,22 @@ export default function AdminPage() {
       // Combine date and time
       const dateTimeString = `${eventForm.date}T${eventForm.time || '19:00'}:00`;
       
-      // Create payload with date as an ISO string that will be parsed properly on the server
+      // Create payload with date properly formatted for the server
       const eventData = {
         title: eventForm.title,
         description: eventForm.description,
-        date: dateTimeString, // This will be parsed on the server side
+        date: new Date(dateTimeString), // Convert to Date object explicitly
         location: eventForm.location,
         price: eventForm.price,
         imageUrl: eventForm.imageUrl,
         category: eventForm.category,
         featured: eventForm.featured
       };
+      
+      console.log("Sending event data:", JSON.stringify({
+        ...eventData,
+        date: eventData.date.toISOString() // Log as ISO string for debugging
+      }));
       
       // Use apiRequest instead of direct fetch
       const response = await apiRequest('POST', '/api/admin/events', eventData);
@@ -600,18 +605,23 @@ export default function AdminPage() {
       // Combine date and time
       const dateTimeString = `${eventForm.date}T${eventForm.time || '19:00'}:00`;
       
-      // Create payload with date as a string for proper serialization
+      // Create payload with date properly formatted for the server
       const eventData = {
         id: currentEvent.id,
         title: eventForm.title,
         description: eventForm.description,
-        date: dateTimeString, // Use ISO string format to avoid serialization issues
+        date: new Date(dateTimeString), // Convert to Date object explicitly
         location: eventForm.location,
         price: eventForm.price,
         imageUrl: eventForm.imageUrl,
         category: eventForm.category,
         featured: eventForm.featured
       };
+      
+      console.log("Updating event data:", JSON.stringify({
+        ...eventData,
+        date: eventData.date.toISOString() // Log as ISO string for debugging
+      }));
       
       // Use apiRequest instead of direct fetch
       const response = await apiRequest('PUT', `/api/admin/events/${currentEvent.id}`, eventData);

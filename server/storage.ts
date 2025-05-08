@@ -1051,6 +1051,32 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return livestream;
   }
+  
+  async updateLivestream(id: number, livestreamData: Partial<Livestream>): Promise<Livestream | undefined> {
+    const livestream = await this.getLivestream(id);
+    if (!livestream) {
+      return undefined;
+    }
+    
+    const [updatedLivestream] = await db
+      .update(livestreams)
+      .set({
+        ...livestreamData,
+        updatedAt: new Date()
+      })
+      .where(eq(livestreams.id, id))
+      .returning();
+    
+    return updatedLivestream;
+  }
+  
+  async deleteLivestream(id: number): Promise<boolean> {
+    const result = await db
+      .delete(livestreams)
+      .where(eq(livestreams.id, id));
+    
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
 
   // Post operations
   async getPost(id: number): Promise<Post | undefined> {
