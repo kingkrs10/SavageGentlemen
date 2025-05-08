@@ -13,6 +13,8 @@ export default function PaymentSuccess() {
     const searchParams = new URLSearchParams(window.location.search);
     const paymentIntentParam = searchParams.get('payment_intent');
     const paymentIntentClientSecret = searchParams.get('payment_intent_client_secret');
+    const provider = searchParams.get('provider');
+    const orderId = searchParams.get('order_id');
     
     if (paymentIntentParam && paymentIntentClientSecret) {
       // For Stripe payments
@@ -20,8 +22,30 @@ export default function PaymentSuccess() {
         id: paymentIntentParam,
         type: 'stripe'
       });
+    } else if (provider === 'paypal' && orderId) {
+      // For PayPal payments - fetch order details if needed
+      fetch(`/api/payment/paypal-order/${orderId}/details`)
+        .then(response => {
+          if (response.ok) return response.json();
+          return { id: orderId };
+        })
+        .then(data => {
+          setPaymentDetails({
+            id: orderId,
+            type: 'paypal',
+            amount: data.amount,
+            status: data.status || 'completed'
+          });
+        })
+        .catch(error => {
+          console.error('Error fetching PayPal order details:', error);
+          setPaymentDetails({
+            id: orderId,
+            type: 'paypal'
+          });
+        });
     } else {
-      // For PayPal or other payment methods where we might not have URL params
+      // For other payment methods where we might not have URL params
       setPaymentDetails({
         id: `order-${Date.now()}`,
         type: 'other'
@@ -51,12 +75,24 @@ export default function PaymentSuccess() {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Order ID:</span>
-                    <span>{paymentDetails.id}</span>
+                    <span className="text-sm break-all font-mono">{paymentDetails.id}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Payment Method:</span>
                     <span className="capitalize">{paymentDetails.type}</span>
                   </div>
+                  {paymentDetails.amount && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Amount:</span>
+                      <span>${paymentDetails.amount}</span>
+                    </div>
+                  )}
+                  {paymentDetails.status && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Status:</span>
+                      <span className="capitalize">{paymentDetails.status}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-gray-600">Date:</span>
                     <span>{new Date().toLocaleDateString()}</span>

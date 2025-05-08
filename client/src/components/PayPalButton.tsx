@@ -61,6 +61,9 @@ export default function PayPalButton({
     console.log("onApprove", data);
     const orderData = await captureOrder(data.orderId);
     console.log("Capture result", orderData);
+    
+    // Redirect to success page after successful payment
+    window.location.href = '/payment-success?provider=paypal&order_id=' + data.orderId;
   };
 
   const onCancel = async (data: any) => {

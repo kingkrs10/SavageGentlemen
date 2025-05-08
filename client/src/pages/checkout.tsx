@@ -185,25 +185,27 @@ export default function Checkout() {
             <TabsContent value="paypal" className="mt-4">
               <div className="flex flex-col items-center space-y-4">
                 <div className="w-full p-4 rounded-md">
-                  <style jsx>{`
-                    paypal-button {
-                      display: block;
-                      width: 100%;
-                      height: 45px;
-                      border-radius: 4px;
-                      background-color: #0070ba;
-                      color: white;
-                      font-weight: bold;
-                      text-align: center;
-                      line-height: 45px;
-                      cursor: pointer;
-                      position: relative;
-                    }
-                    
-                    paypal-button::before {
-                      content: "Pay with PayPal";
-                    }
-                  `}</style>
+                  <style dangerouslySetInnerHTML={{
+                    __html: `
+                      paypal-button {
+                        display: block;
+                        width: 100%;
+                        height: 45px;
+                        border-radius: 4px;
+                        background-color: #0070ba;
+                        color: white;
+                        font-weight: bold;
+                        text-align: center;
+                        line-height: 45px;
+                        cursor: pointer;
+                        position: relative;
+                      }
+                      
+                      paypal-button::before {
+                        content: "Pay with PayPal";
+                      }
+                    `
+                  }} />
                   <PayPalButton 
                     amount={amount.toString()} 
                     currency={currency.toLowerCase()} 
