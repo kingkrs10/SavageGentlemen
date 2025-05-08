@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Facebook, Mail } from "lucide-react";
+import { X, Mail } from "lucide-react";
 import { FaGoogle } from "react-icons/fa";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -55,7 +55,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalProps) => {
   const [currentTab, setCurrentTab] = useState<"login" | "register">("login");
   const { toast } = useToast();
-  const { signInWithGoogle, signInWithFacebook, loading, error } = useAuth();
+  const { signInWithGoogle, loading, error } = useAuth();
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -266,29 +266,6 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
         </div>
 
         <div className="space-y-3">
-          <Button 
-            variant="outline" 
-            className="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 border-0 text-white"
-            onClick={async () => {
-              try {
-                await signInWithFacebook();
-                toast({
-                  title: "Login Successful",
-                  description: "Welcome to Savage Gentlemen!",
-                });
-              } catch (error) {
-                toast({
-                  title: "Login Failed",
-                  description: error instanceof Error ? error.message : "Failed to login with Facebook",
-                  variant: "destructive",
-                });
-              }
-            }}
-            disabled={loading}
-          >
-            <Facebook className="w-4 h-4 mr-2" />
-            <span>Facebook</span>
-          </Button>
           <Button 
             variant="outline" 
             className="w-full flex items-center justify-center bg-white hover:bg-gray-100 text-black"

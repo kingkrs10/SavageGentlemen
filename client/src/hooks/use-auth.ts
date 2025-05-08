@@ -4,15 +4,14 @@ import {
   signOut as firebaseSignOut, 
   onAuthStateChanged,
   GoogleAuthProvider,
-  FacebookAuthProvider,
   UserCredential,
   AuthError
 } from 'firebase/auth';
-import { auth, googleProvider, facebookProvider } from '@/lib/firebase';
+import { auth, googleProvider } from '@/lib/firebase';
 import { User } from '@/lib/types';
 import { apiRequest } from '@/lib/queryClient';
 
-export type AuthProviderType = 'google' | 'facebook';
+export type AuthProviderType = 'google';
 
 export function useAuth() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -62,18 +61,15 @@ export function useAuth() {
     return () => unsubscribe();
   }, []);
 
-  // Sign in with a provider (Google or Facebook)
-  const signInWithProvider = async (providerType: AuthProviderType) => {
+  // Sign in with Google
+  const signInWithGoogle = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const provider = providerType === 'google' ? googleProvider : facebookProvider;
-      const result = await signInWithPopup(auth, provider);
-      
+      const result = await signInWithPopup(auth, googleProvider);
       // The signed-in user info is in result.user
       // But our app will get the user from the onAuthStateChanged listener
-      
       return result;
     } catch (error) {
       const authError = error as AuthError;
@@ -104,8 +100,7 @@ export function useAuth() {
     currentUser,
     loading,
     error,
-    signInWithGoogle: () => signInWithProvider('google'),
-    signInWithFacebook: () => signInWithProvider('facebook'),
+    signInWithGoogle,
     signOut
   };
 }
