@@ -910,6 +910,25 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return event;
   }
+  
+  async updateEvent(id: number, eventData: Partial<InsertEvent>): Promise<Event | undefined> {
+    const [event] = await db
+      .update(events)
+      .set({
+        ...eventData,
+        updatedAt: new Date()
+      })
+      .where(eq(events.id, id))
+      .returning();
+    return event;
+  }
+  
+  async deleteEvent(id: number): Promise<boolean> {
+    const result = await db
+      .delete(events)
+      .where(eq(events.id, id));
+    return result.rowCount > 0;
+  }
 
   // Product operations
   async getProduct(id: number): Promise<Product | undefined> {
@@ -943,6 +962,25 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return product;
+  }
+  
+  async updateProduct(id: number, productData: Partial<InsertProduct>): Promise<Product | undefined> {
+    const [product] = await db
+      .update(products)
+      .set({
+        ...productData,
+        updatedAt: new Date()
+      })
+      .where(eq(products.id, id))
+      .returning();
+    return product;
+  }
+  
+  async deleteProduct(id: number): Promise<boolean> {
+    const result = await db
+      .delete(products)
+      .where(eq(products.id, id));
+    return result.rowCount > 0;
   }
 
   // Livestream operations
@@ -1160,6 +1198,99 @@ export class DatabaseStorage implements IStorage {
         avatar: user.avatar
       }
     };
+  }
+  
+  // Ticket operations
+  async createTicket(ticketData: InsertTicket): Promise<Ticket> {
+    const [ticket] = await db
+      .insert(tickets)
+      .values({
+        ...ticketData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return ticket;
+  }
+  
+  async getTicketsByEventId(eventId: number): Promise<Ticket[]> {
+    return await db
+      .select()
+      .from(tickets)
+      .where(eq(tickets.eventId, eventId));
+  }
+  
+  // Discount code operations
+  async createDiscountCode(discountCodeData: InsertDiscountCode): Promise<DiscountCode> {
+    const [discountCode] = await db
+      .insert(discountCodes)
+      .values({
+        ...discountCodeData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return discountCode;
+  }
+  
+  async getDiscountCodeByCode(code: string): Promise<DiscountCode | undefined> {
+    const [discountCode] = await db
+      .select()
+      .from(discountCodes)
+      .where(eq(discountCodes.code, code));
+    return discountCode;
+  }
+  
+  // Order operations
+  async createOrder(orderData: InsertOrder): Promise<Order> {
+    const [order] = await db
+      .insert(orders)
+      .values({
+        ...orderData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return order;
+  }
+  
+  async getAllOrders(): Promise<Order[]> {
+    return await db
+      .select()
+      .from(orders);
+  }
+  
+  async getOrderById(id: number): Promise<Order | undefined> {
+    const [order] = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, id));
+    return order;
+  }
+  
+  // Media upload operations
+  async createMediaUpload(mediaUploadData: InsertMediaUpload): Promise<MediaUpload> {
+    const [mediaUpload] = await db
+      .insert(mediaUploads)
+      .values({
+        ...mediaUploadData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return mediaUpload;
+  }
+  
+  async getMediaUploadsByRelatedEntity(relatedEntityType: string, relatedEntityId: number): Promise<MediaUpload[]> {
+    return await db
+      .select()
+      .from(mediaUploads)
+      .where(
+        and(
+          eq(mediaUploads.relatedEntityType, relatedEntityType),
+          eq(mediaUploads.relatedEntityId, relatedEntityId)
+        )
+      );
   }
 }
 

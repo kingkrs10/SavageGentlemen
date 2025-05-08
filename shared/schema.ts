@@ -37,6 +37,8 @@ export const events = pgTable("events", {
   imageUrl: text("image_url"),
   category: text("category"),
   featured: boolean("featured").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertEventSchema = createInsertSchema(events).pick({
@@ -61,6 +63,8 @@ export const products = pgTable("products", {
   sizes: text("sizes").array(),
   featured: boolean("featured").default(false),
   etsyUrl: text("etsy_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertProductSchema = createInsertSchema(products).pick({
@@ -84,6 +88,8 @@ export const livestreams = pgTable("livestreams", {
   isLive: boolean("is_live").default(false),
   streamUrl: text("stream_url"),
   hostName: text("host_name"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertLivestreamSchema = createInsertSchema(livestreams).pick({
@@ -178,6 +184,8 @@ export const tickets = pgTable("tickets", {
   remainingQuantity: integer("remaining_quantity"),
   isActive: boolean("is_active").default(true),
   maxPerPurchase: integer("max_per_purchase").default(10),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertTicketSchema = createInsertSchema(tickets).pick({
@@ -202,6 +210,8 @@ export const discountCodes = pgTable("discount_codes", {
   currentUses: integer("current_uses").default(0),
   eventId: integer("event_id"), // Optional - can be for specific event or all events
   isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertDiscountCodeSchema = createInsertSchema(discountCodes).pick({
@@ -263,6 +273,7 @@ export const mediaUploads = pgTable("media_uploads", {
   fileType: text("file_type").notNull(),
   fileSize: integer("file_size").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
   relatedEntityType: text("related_entity_type"), // product, event, post, etc.
   relatedEntityId: integer("related_entity_id"),
 });
