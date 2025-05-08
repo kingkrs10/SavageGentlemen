@@ -202,7 +202,16 @@ export class MemStorage implements IStorage {
 
   async createLivestream(livestreamData: InsertLivestream): Promise<Livestream> {
     const id = this.livestreamCurrentId++;
-    const livestream: Livestream = { ...livestreamData, id };
+    const livestream: Livestream = {
+      id,
+      title: livestreamData.title,
+      streamDate: livestreamData.streamDate,
+      description: livestreamData.description || null,
+      thumbnailUrl: livestreamData.thumbnailUrl || null,
+      isLive: livestreamData.isLive || false,
+      streamUrl: livestreamData.streamUrl || null,
+      hostName: livestreamData.hostName || null
+    };
     this.livestreams.set(id, livestream);
     return livestream;
   }
@@ -221,10 +230,12 @@ export class MemStorage implements IStorage {
     const id = this.postCurrentId++;
     const createdAt = new Date();
     const post: Post = { 
-      ...postData, 
       id, 
-      createdAt, 
-      likes: 0, 
+      userId: postData.userId,
+      content: postData.content || null,
+      mediaUrl: postData.mediaUrl || null,
+      createdAt,
+      likes: 0,
       comments: 0 
     };
     this.posts.set(id, post);
@@ -268,7 +279,27 @@ export class MemStorage implements IStorage {
   async createChatMessage(messageData: InsertChatMessage): Promise<ChatMessage> {
     const id = this.chatMessageCurrentId++;
     const createdAt = new Date();
-    const chatMessage: ChatMessage = { ...messageData, id, createdAt };
+    
+    // Find the user to include user details in the chat message
+    const user = await this.getUser(messageData.userId);
+    
+    if (!user) {
+      throw new Error(`User with ID ${messageData.userId} not found`);
+    }
+    
+    const chatMessage: ChatMessage = {
+      id,
+      userId: messageData.userId,
+      content: messageData.content,
+      livestreamId: messageData.livestreamId || null,
+      createdAt,
+      user: {
+        id: user.id,
+        displayName: user.displayName || 'Anonymous',
+        avatar: user.avatar || null
+      }
+    };
+    
     this.chatMessages.set(id, chatMessage);
     return chatMessage;
   }
