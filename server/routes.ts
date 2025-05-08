@@ -117,10 +117,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const authorizeAdmin = (req: Request, res: Response, next: NextFunction) => {
     const user = (req as any).user;
     
-    if (!user || user.role !== 'admin') {
-      return res.status(403).json({ message: "Admin access required" });
+    console.log("Authorization check - user:", user);
+    
+    if (!user) {
+      console.log("Authorization failed: No user found in request");
+      return res.status(403).json({ message: "Admin access required - No user found" });
     }
     
+    if (user.role !== 'admin') {
+      console.log(`Authorization failed: User role is ${user.role}, not admin`);
+      return res.status(403).json({ message: `Admin access required - Current role: ${user.role}` });
+    }
+    
+    console.log("Authorization successful: User is admin");
     next();
   };
   

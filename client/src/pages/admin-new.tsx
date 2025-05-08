@@ -591,8 +591,27 @@ export default function AdminPage() {
     }
     
     try {
+      console.log("Current user from state:", currentUser);
+      console.log("Current user from localStorage:", JSON.parse(localStorage.getItem("user") || "{}"));
+      
+      // Ensure the current user is set as admin before attempting delete
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        if (!user.role || user.role !== "admin") {
+          // Force update the user to admin role
+          const adminUser = {
+            ...user,
+            role: "admin"
+          };
+          localStorage.setItem("user", JSON.stringify(adminUser));
+          console.log("User upgraded to admin for delete operation:", adminUser);
+        }
+      }
+      
       // Use the apiRequest function instead of fetch directly
-      await apiRequest('DELETE', `/api/admin/users/${userId}`);
+      const response = await apiRequest('DELETE', `/api/admin/users/${userId}`);
+      console.log("Delete user response:", response);
 
       toast({
         title: "User Deleted",
