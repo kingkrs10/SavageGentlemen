@@ -1,87 +1,101 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { API_ROUTES, PRODUCT_CATEGORIES, EXTERNAL_URLS } from "@/lib/constants";
 import { Product } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingBag, AlertCircle } from "lucide-react";
-import ProductCard from "@/components/home/ProductCard";
+import { ShoppingBag, AlertCircle, ShoppingCart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import SGFlyerLogoPng from "@assets/SGFLYERLOGO.png";
+
+// Simplified direct product card component
+const SimpleProductCard = ({ product, onAddToCart }: { 
+  product: Product; 
+  onAddToCart: (id: number) => void;
+}) => {
+  const [imgError, setImgError] = useState(false);
+  
+  return (
+    <div className="bg-gray-900 rounded-lg overflow-hidden shadow-lg border border-gray-800">
+      <div className="relative h-48 bg-gray-800 flex items-center justify-center">
+        {imgError ? (
+          <img 
+            src={SGFlyerLogoPng} 
+            alt={product.title} 
+            className="h-32 w-32 object-contain"
+          />
+        ) : (
+          <img 
+            src={product.imageUrl} 
+            alt={product.title} 
+            className="w-full h-48 object-cover" 
+            onError={() => setImgError(true)}
+          />
+        )}
+      </div>
+      <div className="p-4">
+        <h3 className="font-semibold text-white">{product.title}</h3>
+        <div className="flex justify-between items-center mt-2">
+          <span className="text-primary font-bold">${(product.price / 100).toFixed(2)}</span>
+          <span className="text-xs text-gray-400">
+            {product.sizes && product.sizes.join(", ")}
+          </span>
+        </div>
+        <Button 
+          className="w-full bg-primary text-white hover:bg-red-800 transition mt-3 flex items-center justify-center gap-2"
+          onClick={() => onAddToCart(product.id)}
+        >
+          <ShoppingCart className="h-4 w-4" />
+          Buy on Etsy
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 const Shop = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const { toast } = useToast();
-  const [fetchError, setFetchError] = useState<string | null>(null);
-  const [productsState, setProductsState] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
-  // Enhanced debugging query
-  const { 
-    data: products, 
-    isLoading, 
-    error, 
-    isError 
-  } = useQuery<Product[]>({
-    queryKey: [API_ROUTES.PRODUCTS],
-    onError: (err: any) => {
-      console.error("Error fetching products:", err);
-      setFetchError(err.message || "Failed to load products");
-    }
-  });
-  
-  // Added debugging useEffect and set products in state
+  // Direct fetch - no React Query
   useEffect(() => {
-    if (products && products.length > 0) {
-      console.log("Products data from React Query:", products);
-      setProductsState(products);
-    } else {
-      // Fallback direct fetch if React Query is not working
-      const fetchProductsDirectly = async () => {
-        try {
-          const res = await fetch(API_ROUTES.PRODUCTS);
-          const data = await res.json();
-          console.log("Direct fetch products:", data);
-          
-          if (data && Array.isArray(data) && data.length > 0) {
-            setProductsState(data);
-          }
-        } catch (err) {
-          console.error("Direct fetch error:", err);
-          setFetchError(`Direct fetch error: ${err}`);
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(API_ROUTES.PRODUCTS);
+        if (!response.ok) {
+          throw new Error(`HTTP error: ${response.status}`);
         }
-      };
-      
-      fetchProductsDirectly();
-    }
-  }, [products]);
+        const data = await response.json();
+        console.log("Fetched products:", data);
+        setProducts(data);
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        setError(String(err));
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchProducts();
+  }, []);
   
-  // Use productsState instead of products from React Query
-  const filteredProducts = productsState.filter(
+  const filteredProducts = products.filter(
     (product) => selectedCategory === "all" || product.category === selectedCategory
   );
   
-  const featuredProduct = productsState.find((product) => product.featured);
-  
   const handleAddToCart = (productId: number) => {
-    const product = productsState.find(p => p.id === productId);
+    const product = products.find(p => p.id === productId);
     if (product) {
       toast({
-        title: "Added to cart",
-        description: `${product.title} has been added to your cart.`
+        title: "Opening Etsy shop",
+        description: `Redirecting to ${product.title} on Etsy`
       });
-      
-      // In a real app, this would add to cart
-      // For now, we'll redirect to Etsy
       window.open(product.etsyUrl || EXTERNAL_URLS.ETSY_SHOP, "_blank");
     }
-  };
-  
-  const handleAddToWishlist = (productId: number) => {
-    toast({
-      title: "Added to wishlist",
-      description: "Product has been added to your wishlist."
-    });
   };
   
   const handleCategorySelect = (category: string) => {
@@ -89,37 +103,27 @@ const Shop = () => {
   };
   
   return (
-    <div>
+    <div className="pb-20">
       {/* Featured Collection */}
       <div className="relative rounded-xl overflow-hidden mb-6 shadow-lg">
-        {isLoading ? (
-          <Skeleton className="w-full h-64" />
-        ) : featuredProduct ? (
-          <>
-            <img 
-              src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b" 
-              alt="Caribbean Collection" 
-              className="w-full h-64 object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
-            <div className="absolute bottom-0 left-0 p-6">
-              <Badge className="bg-primary text-white text-sm px-3 py-1 rounded-full mb-2 inline-block">
-                New Arrival
-              </Badge>
-              <h2 className="text-3xl font-heading text-white">Summer Collection 2023</h2>
-              <p className="text-lg text-gray-200 mb-4">Vibrant styles for the Caribbean soul</p>
-              <a href={EXTERNAL_URLS.ETSY_SHOP} target="_blank" rel="noopener noreferrer">
-                <Button className="bg-primary text-white hover:bg-red-800 transition">
-                  Shop Collection
-                </Button>
-              </a>
-            </div>
-          </>
-        ) : (
-          <div className="bg-gray-900 h-64 flex items-center justify-center">
-            <p className="text-gray-400">No featured collection available</p>
-          </div>
-        )}
+        <img 
+          src={SGFlyerLogoPng} 
+          alt="SG Flyer Logo" 
+          className="w-full h-64 object-contain bg-gray-900 p-8"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
+        <div className="absolute bottom-0 left-0 p-6">
+          <Badge className="bg-primary text-white text-sm px-3 py-1 rounded-full mb-2 inline-block">
+            Shop Now
+          </Badge>
+          <h2 className="text-3xl font-heading text-white">SG Merch Collection</h2>
+          <p className="text-lg text-gray-200 mb-4">Caribbean-inspired clothing and accessories</p>
+          <a href={EXTERNAL_URLS.ETSY_SHOP} target="_blank" rel="noopener noreferrer">
+            <Button className="bg-primary text-white hover:bg-red-800 transition">
+              Visit Etsy Shop
+            </Button>
+          </a>
+        </div>
       </div>
 
       {/* Category Filter */}
@@ -154,39 +158,36 @@ const Shop = () => {
       </div>
 
       {/* Debug Info */}
-      {isError && (
+      {error && (
         <div className="bg-red-900 text-white p-4 rounded-lg mb-4">
           <AlertCircle className="h-6 w-6 inline-block mr-2" />
           <span className="font-semibold">Error loading products:</span>
-          <p className="mt-1">{fetchError || String(error)}</p>
+          <p className="mt-1">{error}</p>
         </div>
       )}
       
-      {productsState.length > 0 && (
+      {products.length > 0 && (
         <div className="bg-blue-900 text-white p-4 rounded-lg mb-4">
-          <p className="font-semibold">Debug Info:</p>
-          <p>Total products in local state: {productsState.length}</p>
-          <p>Categories: {productsState.map(p => p.category).join(', ')}</p>
+          <p className="font-semibold">Products Loaded:</p>
+          <p>Total products: {products.length}</p>
+          <p>Categories: {Array.from(new Set(products.map(p => p.category))).join(', ')}</p>
         </div>
       )}
       
       {/* Products Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-        {isLoading ? (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {loading ? (
           <>
-            <Skeleton className="w-full aspect-square" />
-            <Skeleton className="w-full aspect-square" />
-            <Skeleton className="w-full aspect-square" />
-            <Skeleton className="w-full aspect-square" />
+            <Skeleton className="h-64 rounded-lg bg-gray-800" />
+            <Skeleton className="h-64 rounded-lg bg-gray-800" />
+            <Skeleton className="h-64 rounded-lg bg-gray-800" />
           </>
-        ) : filteredProducts && filteredProducts.length > 0 ? (
+        ) : filteredProducts.length > 0 ? (
           filteredProducts.map((product) => (
-            <ProductCard 
+            <SimpleProductCard 
               key={product.id} 
               product={product} 
-              variant="large"
               onAddToCart={handleAddToCart}
-              onAddToWishlist={handleAddToWishlist}
             />
           ))
         ) : (
@@ -194,13 +195,24 @@ const Shop = () => {
             <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">No Products Found</h3>
             <p className="text-gray-400">
-              {productsState.length > 0 
+              {products.length > 0 
                 ? "There are no products matching your filter. Try changing your selection."
                 : "There are no products available. Products may not be loading from the database."
               }
             </p>
           </div>
         )}
+      </div>
+      
+      {/* Bottom CTA */}
+      <div className="bg-gray-900 rounded-lg p-6 text-center">
+        <h3 className="text-xl font-semibold mb-3">Can't find what you're looking for?</h3>
+        <p className="text-gray-400 mb-4">Visit our full Etsy shop for more products and options</p>
+        <a href={EXTERNAL_URLS.ETSY_SHOP} target="_blank" rel="noopener noreferrer">
+          <Button size="lg" className="bg-primary text-white hover:bg-red-800 transition">
+            Browse Full Etsy Shop
+          </Button>
+        </a>
       </div>
     </div>
   );
