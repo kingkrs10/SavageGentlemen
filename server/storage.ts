@@ -86,8 +86,10 @@ export interface IStorage {
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
   
   // Ticket operations
+  getTicket(id: number): Promise<Ticket | undefined>;
   createTicket(ticket: InsertTicket): Promise<Ticket>;
   getTicketsByEventId(eventId: number): Promise<Ticket[]>;
+  updateTicket(id: number, ticketData: Partial<InsertTicket>): Promise<Ticket | undefined>;
   
   // Discount code operations
   createDiscountCode(discountCode: InsertDiscountCode): Promise<DiscountCode>;

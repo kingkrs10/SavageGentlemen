@@ -675,6 +675,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Update ticket
+  router.put("/admin/tickets/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const updatedTicket = await storage.updateTicket(ticketId, req.body);
+      if (!updatedTicket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+      return res.status(200).json(updatedTicket);
+    } catch (err) {
+      console.error("Error updating ticket:", err);
+      return res.status(500).json({ message: "Failed to update ticket" });
+    }
+  });
+  
+  // Toggle ticket status
+  router.put("/admin/tickets/:id/toggle-status", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const ticket = await storage.getTicket(ticketId);
+      
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+      
+      const updatedTicket = await storage.updateTicket(ticketId, { 
+        isActive: !ticket.isActive 
+      });
+      
+      return res.status(200).json(updatedTicket);
+    } catch (err) {
+      console.error("Error toggling ticket status:", err);
+      return res.status(500).json({ message: "Failed to toggle ticket status" });
+    }
+  });
+  
   // Discount codes
   router.post("/admin/discount-codes", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {

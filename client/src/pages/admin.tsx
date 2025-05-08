@@ -1144,20 +1144,14 @@ export default function AdminPage() {
                                 <Button 
                                   variant="outline" 
                                   size="sm"
-                                  onClick={() => toast({
-                                    title: "Edit Ticket",
-                                    description: "Coming soon"
-                                  })}
+                                  onClick={() => handleEditTicket(ticket)}
                                 >
                                   Edit
                                 </Button>
                                 <Button 
                                   variant={ticket.isActive ? "destructive" : "outline"}
                                   size="sm"
-                                  onClick={() => toast({
-                                    title: ticket.isActive ? "Deactivate Ticket" : "Activate Ticket",
-                                    description: "Coming soon"
-                                  })}
+                                  onClick={() => handleToggleTicketStatus(ticket)}
                                 >
                                   {ticket.isActive ? "Deactivate" : "Activate"}
                                 </Button>
