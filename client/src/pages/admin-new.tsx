@@ -814,10 +814,10 @@ export default function AdminPage() {
   const handleCreateTicket = async () => {
     try {
       // Validation
-      if (!ticketForm.name || !ticketForm.price || !ticketForm.eventId) {
+      if (!ticketForm.name || ticketForm.price < 0 || !ticketForm.eventId) {
         toast({
           title: "Missing fields",
-          description: "Name, price, and event are required",
+          description: "Name, valid price (0 or more), and event are required",
           variant: "destructive"
         });
         return;
@@ -877,10 +877,10 @@ export default function AdminPage() {
     
     try {
       // Validation
-      if (!ticketForm.name || !ticketForm.price || !ticketForm.eventId) {
+      if (!ticketForm.name || ticketForm.price < 0 || !ticketForm.eventId) {
         toast({
           title: "Missing fields",
-          description: "Name, price, and event are required",
+          description: "Name, valid price (0 or more), and event are required",
           variant: "destructive"
         });
         return;
