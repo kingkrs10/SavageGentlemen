@@ -61,7 +61,7 @@ import {
   inventoryHistory
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gt, sql } from "drizzle-orm";
+import { eq, desc, and, gt, sql, lte, lt, isNotNull } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
@@ -2454,8 +2454,8 @@ export class DatabaseStorage implements IStorage {
         .from(products)
         .where(
           and(
-            lte(products.stockLevel, coalesce(products.lowStockThreshold, threshold)),
-            eq(products.trackInventory, true)
+            lt(products.stockLevel, threshold),
+            isNotNull(products.stockLevel)
           )
         );
     } catch (error) {

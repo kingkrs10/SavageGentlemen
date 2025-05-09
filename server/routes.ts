@@ -725,6 +725,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Inventory Management Endpoints
+  
+  // Update product stock level
+  router.post("/admin/products/:id/stock", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { newStockLevel, changeType, reason } = req.body;
+      
+      if (typeof newStockLevel !== 'number' || newStockLevel < 0) {
+        return res.status(400).json({ message: "Invalid stock level" });
+      }
+      
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const updatedProduct = await storage.updateProductStock(
+        id, 
+        newStockLevel, 
+        changeType || 'manual_update', 
+        userId,
+        reason
+      );
+      
+      return res.status(200).json(updatedProduct);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Failed to update stock level" });
+    }
+  });
+  
+  // Update variant stock level
+  router.post("/admin/variants/:id/stock", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { newStockLevel, changeType, reason } = req.body;
+      
+      if (typeof newStockLevel !== 'number' || newStockLevel < 0) {
+        return res.status(400).json({ message: "Invalid stock level" });
+      }
+      
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const updatedVariant = await storage.updateVariantStock(
+        id, 
+        newStockLevel, 
+        changeType || 'manual_update', 
+        userId,
+        reason
+      );
+      
+      return res.status(200).json(updatedVariant);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Failed to update variant stock level" });
+    }
+  });
+  
+  // Get inventory history for a product
+  router.get("/admin/products/:id/inventory-history", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const history = await storage.getInventoryHistoryByProduct(id);
+      return res.status(200).json(history);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Failed to fetch inventory history" });
+    }
+  });
+  
+  // Get inventory history for a variant
+  router.get("/admin/variants/:id/inventory-history", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const history = await storage.getInventoryHistoryByVariant(id);
+      return res.status(200).json(history);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Failed to fetch variant inventory history" });
+    }
+  });
+  
+  // Get recent inventory changes (for dashboard)
+  router.get("/admin/inventory/recent-changes", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const history = await storage.getRecentInventoryChanges(limit);
+      return res.status(200).json(history);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Failed to fetch recent inventory changes" });
+    }
+  });
+  
+  // Get low stock products
+  router.get("/admin/products/inventory/low-stock", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const threshold = req.query.threshold ? parseInt(req.query.threshold as string) : undefined;
+      const products = await storage.getLowStockProducts(threshold);
+      return res.status(200).json(products);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Failed to fetch low stock products" });
+    }
+  });
+  
   // Media uploads
   router.post("/admin/uploads", authenticateUser, authorizeAdmin, upload.single('file'), async (req: Request, res: Response) => {
     try {
