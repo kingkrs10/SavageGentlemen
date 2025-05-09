@@ -1434,10 +1434,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFeaturedProducts(): Promise<Product[]> {
-    return await db
-      .select()
-      .from(products)
-      .where(eq(products.featured, true));
+    try {
+      return await db
+        .select()
+        .from(products)
+        .where(eq(products.featured, true));
+    } catch (error) {
+      console.error('Error in getFeaturedProducts:', error);
+      // Fallback to get all products without filtering if there's a schema mismatch
+      // This is a temporary solution until the database migration completes
+      try {
+        const allProducts = await db.select().from(products);
+        // Filter in memory if possible
+        return allProducts.filter(product => product.featured);
+      } catch (fallbackError) {
+        console.error('Fallback error in getFeaturedProducts:', fallbackError);
+        return []; // Return empty array as last resort
+      }
+    }
   }
 
   async createProduct(productData: InsertProduct): Promise<Product> {
@@ -1835,6 +1849,76 @@ export class DatabaseStorage implements IStorage {
       );
   }
   
+  // Inventory management - Product Variants
+  async getProductVariantsByProductId(productId: number): Promise<ProductVariant[]> {
+    return await db
+      .select()
+      .from(productVariants)
+      .where(eq(productVariants.productId, productId));
+  }
+  
+  async getProductVariant(id: number): Promise<ProductVariant | undefined> {
+    const [variant] = await db
+      .select()
+      .from(productVariants)
+      .where(eq(productVariants.id, id));
+    return variant;
+  }
+  
+  async createProductVariant(variantData: InsertProductVariant): Promise<ProductVariant> {
+    const [variant] = await db
+      .insert(productVariants)
+      .values({
+        ...variantData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    
+    // Update product to mark that it has variants
+    await db
+      .update(products)
+      .set({ hasVariants: true })
+      .where(eq(products.id, variant.productId));
+      
+    return variant;
+  }
+  
+  async updateProductVariant(id: number, variantData: Partial<InsertProductVariant>): Promise<ProductVariant | undefined> {
+    const [variant] = await db
+      .update(productVariants)
+      .set({
+        ...variantData,
+        updatedAt: new Date()
+      })
+      .where(eq(productVariants.id, id))
+      .returning();
+      
+    return variant;
+  }
+  
+  async deleteProductVariant(id: number): Promise<boolean> {
+    const variant = await this.getProductVariant(id);
+    if (!variant) return false;
+    
+    const result = await db
+      .delete(productVariants)
+      .where(eq(productVariants.id, id));
+      
+    // Check if there are any remaining variants for this product
+    const remainingVariants = await this.getProductVariantsByProductId(variant.productId);
+    
+    // If no variants left, update the product to show it no longer has variants
+    if (remainingVariants.length === 0) {
+      await db
+        .update(products)
+        .set({ hasVariants: false })
+        .where(eq(products.id, variant.productId));
+    }
+    
+    return result.rowCount > 0;
+  }
+  
   // Ticket scan operations
   async createTicketScan(ticketScanData: InsertTicketScan): Promise<TicketScan> {
     const [ticketScan] = await db
@@ -2146,6 +2230,155 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(dailyStats.date);
+  }
+  
+  // Inventory management - Inventory History
+  async recordInventoryChange(change: InsertInventoryHistory): Promise<InventoryHistory> {
+    const [history] = await db
+      .insert(inventoryHistory)
+      .values({
+        ...change,
+        timestamp: new Date()
+      })
+      .returning();
+      
+    return history;
+  }
+  
+  async getInventoryHistoryByProduct(productId: number): Promise<InventoryHistory[]> {
+    return await db
+      .select()
+      .from(inventoryHistory)
+      .where(
+        and(
+          eq(inventoryHistory.entityType, 'product'),
+          eq(inventoryHistory.entityId, productId)
+        )
+      )
+      .orderBy(desc(inventoryHistory.timestamp));
+  }
+  
+  async getInventoryHistoryByVariant(variantId: number): Promise<InventoryHistory[]> {
+    return await db
+      .select()
+      .from(inventoryHistory)
+      .where(
+        and(
+          eq(inventoryHistory.entityType, 'variant'),
+          eq(inventoryHistory.entityId, variantId)
+        )
+      )
+      .orderBy(desc(inventoryHistory.timestamp));
+  }
+  
+  async getRecentInventoryChanges(limit: number = 20): Promise<InventoryHistory[]> {
+    return await db
+      .select()
+      .from(inventoryHistory)
+      .orderBy(desc(inventoryHistory.timestamp))
+      .limit(limit);
+  }
+  
+  // Inventory management - Stock operations
+  async updateProductStock(productId: number, newStockLevel: number, changeType: string, userId: number, reason?: string): Promise<Product> {
+    // First get current product
+    const product = await this.getProduct(productId);
+    if (!product) {
+      throw new Error(`Product with ID ${productId} not found`);
+    }
+    
+    // Get old stock level
+    const oldStockLevel = product.stockLevel || 0;
+    
+    // Update the product
+    const [updatedProduct] = await db
+      .update(products)
+      .set({
+        stockLevel: newStockLevel,
+        inStock: newStockLevel > 0,
+        updatedAt: new Date()
+      })
+      .where(eq(products.id, productId))
+      .returning();
+      
+    // Record the inventory change
+    await this.recordInventoryChange({
+      entityType: 'product',
+      entityId: productId,
+      changeType: changeType,
+      oldValue: oldStockLevel,
+      newValue: newStockLevel,
+      userId: userId,
+      notes: reason || null
+    });
+    
+    return updatedProduct;
+  }
+  
+  async updateVariantStock(variantId: number, newStockLevel: number, changeType: string, userId: number, reason?: string): Promise<ProductVariant> {
+    // First get current variant
+    const variant = await this.getProductVariant(variantId);
+    if (!variant) {
+      throw new Error(`Product variant with ID ${variantId} not found`);
+    }
+    
+    // Get old stock level
+    const oldStockLevel = variant.stockLevel || 0;
+    
+    // Update the variant
+    const [updatedVariant] = await db
+      .update(productVariants)
+      .set({
+        stockLevel: newStockLevel,
+        inStock: newStockLevel > 0,
+        updatedAt: new Date()
+      })
+      .where(eq(productVariants.id, variantId))
+      .returning();
+      
+    // Record the inventory change
+    await this.recordInventoryChange({
+      entityType: 'variant',
+      entityId: variantId,
+      changeType: changeType,
+      oldValue: oldStockLevel,
+      newValue: newStockLevel,
+      userId: userId,
+      notes: reason || null
+    });
+    
+    return updatedVariant;
+  }
+  
+  async checkProductAvailability(productId: number, quantity: number): Promise<boolean> {
+    const product = await this.getProduct(productId);
+    if (!product) return false;
+    
+    // If product has variants, check if any variants have enough stock
+    if (product.hasVariants) {
+      const variants = await this.getProductVariantsByProductId(productId);
+      return variants.some(variant => (variant.stockLevel || 0) >= quantity);
+    }
+    
+    // Otherwise check the product stock directly
+    return (product.stockLevel || 0) >= quantity;
+  }
+  
+  async checkVariantAvailability(variantId: number, quantity: number): Promise<boolean> {
+    const variant = await this.getProductVariant(variantId);
+    if (!variant) return false;
+    
+    return (variant.stockLevel || 0) >= quantity;
+  }
+  
+  async getLowStockProducts(threshold?: number): Promise<Product[]> {
+    // Use default threshold from product or a default of 5
+    return await db
+      .select()
+      .from(products)
+      .where(
+        sql`${products.stock_level} <= COALESCE(${products.low_stock_threshold}, ${threshold || 5}) AND ${products.track_inventory} = true`
+      );
   }
 }
 
