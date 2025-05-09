@@ -25,6 +25,8 @@ interface PayPalButtonProps {
   intent: string;
   eventId?: number | null;
   eventTitle?: string;
+  ticketId?: number | null;
+  ticketName?: string;
 }
 
 export default function PayPalButton({
@@ -33,6 +35,8 @@ export default function PayPalButton({
   intent,
   eventId,
   eventTitle,
+  ticketId,
+  ticketName,
 }: PayPalButtonProps) {
   const createOrder = async () => {
     const orderPayload = {
@@ -41,7 +45,9 @@ export default function PayPalButton({
       intent: intent,
       // Include event information if available
       eventId: eventId || undefined,
-      eventTitle: eventTitle || undefined
+      eventTitle: eventTitle || undefined,
+      ticketId: ticketId || undefined, 
+      ticketName: ticketName || undefined
     };
     const response = await fetch("/payment/paypal-order", {
       method: "POST",
@@ -53,8 +59,13 @@ export default function PayPalButton({
   };
 
   const captureOrder = async (orderId: string) => {
-    // Include event information in the capture request if available
-    const capturePayload = eventId ? { eventId, eventTitle } : {};
+    // Include event and ticket information in the capture request if available
+    const capturePayload = eventId ? { 
+      eventId, 
+      eventTitle,
+      ticketId: ticketId || undefined,
+      ticketName: ticketName || undefined
+    } : {};
     
     const response = await fetch(`/payment/paypal-order/${orderId}/capture`, {
       method: "POST",

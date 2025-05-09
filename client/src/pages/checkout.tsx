@@ -43,11 +43,15 @@ const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY ?
 const StripeCheckoutForm = ({ 
   amount, 
   eventId, 
-  eventTitle 
+  eventTitle,
+  ticketId,
+  ticketName
 }: { 
   amount: number; 
   eventId?: number | null;
-  eventTitle?: string; 
+  eventTitle?: string;
+  ticketId?: number | null;
+  ticketName?: string;
 }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -608,6 +612,8 @@ export default function Checkout() {
                     amount={amount} 
                     eventId={eventId} 
                     eventTitle={eventTitle}
+                    ticketId={ticketId}
+                    ticketName={ticketName}
                   />
                 </Elements>
               ) : (
