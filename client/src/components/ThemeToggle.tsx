@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
-import { Sun, Moon, LaptopIcon, Check } from 'lucide-react';
+import { SmilePlus, Smile, LaptopIcon, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -66,8 +66,8 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
 
   // Determine which icon to show based on the current theme
   const renderIcon = () => {
-    if (theme === 'light') return <Sun className="h-[1.2rem] w-[1.2rem]" />;
-    if (theme === 'dark') return <Moon className="h-[1.2rem] w-[1.2rem]" />;
+    if (theme === 'light') return <Smile className="h-[1.2rem] w-[1.2rem]" />;
+    if (theme === 'dark') return <SmilePlus className="h-[1.2rem] w-[1.2rem]" />;
     return <LaptopIcon className="h-[1.2rem] w-[1.2rem]" />;
   };
 
@@ -89,7 +89,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
           className="flex items-center justify-between cursor-pointer"
         >
           <div className="flex items-center">
-            <Sun className="h-4 w-4 mr-2" />
+            <Smile className="h-4 w-4 mr-2" />
             <span>Light</span>
           </div>
           {theme === 'light' && <Check className="h-4 w-4 ml-2" />}
@@ -100,7 +100,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
           className="flex items-center justify-between cursor-pointer"
         >
           <div className="flex items-center">
-            <Moon className="h-4 w-4 mr-2" />
+            <SmilePlus className="h-4 w-4 mr-2" />
             <span>Dark</span>
           </div>
           {theme === 'dark' && <Check className="h-4 w-4 ml-2" />}
