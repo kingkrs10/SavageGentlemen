@@ -2,6 +2,7 @@ import { Calendar, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { getNormalizedImageUrl } from "@/lib/utils/image-utils";
 import { Event } from "@/lib/types";
 import SGFlyerLogoPng from "@assets/SGFLYERLOGO.png";
 import AddToCalendarButton from "@/components/events/AddToCalendarButton";
