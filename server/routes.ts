@@ -135,6 +135,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
   
+  // Endpoint to check if user is logged in (for session validation)
+  router.get("/me", async (req: Request, res: Response) => {
+    try {
+      const userId = req.headers['user-id'];
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const id = parseInt(userId as string);
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
+      // Return user information without sensitive data
+      return res.status(200).json({
+        id: user.id,
+        username: user.username,
+        displayName: user.displayName,
+        avatar: user.avatar,
+        isGuest: user.isGuest,
+        role: user.role
+      });
+    } catch (error) {
+      console.error("Error in /me endpoint:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
   // Admin authorization middleware
   const authorizeAdmin = (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;

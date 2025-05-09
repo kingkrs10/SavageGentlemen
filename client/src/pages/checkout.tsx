@@ -134,12 +134,19 @@ export default function Checkout() {
           const userData = await response.json();
           console.log("Checkout page: User authenticated", userData);
           setUser(userData);
+          
+          // Store the user data in localStorage for persistence
+          localStorage.setItem("user", JSON.stringify(userData));
         } else {
           console.log("Checkout page: User not authenticated");
+          // Clear localStorage to ensure consistent state
+          localStorage.removeItem("user");
           setUser(null);
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
+        // Clear localStorage on error for safety
+        localStorage.removeItem("user");
         setUser(null);
       } finally {
         setCheckingAuth(false);
@@ -149,17 +156,34 @@ export default function Checkout() {
     getCurrentUser();
     
     // Re-check authentication when auth-related changes happen
-    const handleAuthChange = () => {
+    const handleAuthChange = (event: Event) => {
       console.log("Checkout page: Auth change detected");
-      getCurrentUser();
+      // Extract user data from event if available
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail && customEvent.detail.user) {
+        console.log("Checkout page: User data from event", customEvent.detail.user);
+        setUser(customEvent.detail.user);
+        setCheckingAuth(false);
+      } else {
+        // Otherwise re-fetch user data
+        getCurrentUser();
+      }
+    };
+    
+    // Handle URL parameter changes
+    const handlePopState = () => {
+      console.log("Checkout page: PopState event detected");
+      updateParamsFromURL();
     };
     
     window.addEventListener('sg:auth:changed', handleAuthChange);
+    window.addEventListener('popstate', handlePopState);
     
     return () => {
       window.removeEventListener('sg:auth:changed', handleAuthChange);
+      window.removeEventListener('popstate', handlePopState);
     };
-  }, [window.location.search]);
+  }, []);
   
   // Get the params from the URL search params if available
   useEffect(() => {
