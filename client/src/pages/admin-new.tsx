@@ -103,12 +103,30 @@ interface Event {
 interface Ticket {
   id: number;
   name: string;
+  description?: string | null;
   price: number;
   eventId: number;
   quantity: number;
   remainingQuantity: number;
   isActive: boolean;
-  maxPerPurchase?: number;
+  status?: string | null;
+  priceType?: string | null;
+  minPerOrder?: number | null;
+  maxPerPurchase?: number | null;
+  displayRemainingQuantity?: boolean | null;
+  hideIfSoldOut?: boolean | null;
+  hidePriceIfSoldOut?: boolean | null;
+  secretCode?: string | null;
+  salesStartDate?: Date | string | null; 
+  salesStartTime?: string | null;
+  salesEndDate?: Date | string | null;
+  salesEndTime?: string | null;
+  hideBeforeSalesStart?: boolean | null;
+  hideAfterSalesEnd?: boolean | null;
+  lockMinQuantity?: number | null;
+  lockTicketTypeId?: number | null;
+  createdAt?: Date | string | null;
+  updatedAt?: Date | string | null;
 }
 
 interface Order {
@@ -349,7 +367,7 @@ export default function AdminPage() {
   });
   
   // Filter tickets by selected event
-  const displayedTickets = selectedEventId
+  const displayedTickets = selectedEventId && selectedEventId !== "all"
     ? tickets.filter(ticket => ticket.eventId === parseInt(selectedEventId))
     : tickets;
   
@@ -1440,7 +1458,7 @@ export default function AdminPage() {
                         <SelectValue placeholder="Filter by event" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Events</SelectItem>
+                        <SelectItem value="all">All Events</SelectItem>
                         {events.map((event) => (
                           <SelectItem key={event.id} value={event.id.toString()}>
                             {event.title}

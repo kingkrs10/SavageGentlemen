@@ -662,11 +662,18 @@ export class MemStorage implements IStorage {
   async createTicket(ticketData: InsertTicket): Promise<Ticket> {
     const id = this.ticketCurrentId++;
     const createdAt = new Date();
+    const updatedAt = new Date();
+    
+    // Ensure remainingQuantity is set if not provided
+    if (ticketData.remainingQuantity === undefined) {
+      ticketData.remainingQuantity = ticketData.quantity;
+    }
+    
     const ticket: Ticket = { 
       ...ticketData,
       id,
       createdAt,
-      isUsed: false 
+      updatedAt
     };
     this.tickets.set(id, ticket);
     return ticket;
