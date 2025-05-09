@@ -290,9 +290,16 @@ const EventDetail = () => {
                       <div key={ticket.id} className="border rounded-md p-3 mb-3">
                         <div className="flex justify-between items-center mb-1">
                           <h4 className="font-medium">{ticket.name}</h4>
-                          <p className="font-bold text-primary">
-                            {ticket.price === 0 ? 'FREE' : `$${(ticket.price / 100).toFixed(2)}`}
-                          </p>
+                          {ticket.price > 0 && (
+                            <p className="font-bold text-primary">
+                              ${(ticket.price / 100).toFixed(2)}
+                            </p>
+                          )}
+                          {ticket.price === 0 && (
+                            <span className="px-2 py-1 bg-primary text-white rounded-full text-xs font-medium">
+                              FREE
+                            </span>
+                          )}
                         </div>
                         {ticket.description && (
                           <p className="text-sm text-muted-foreground mb-2">{ticket.description}</p>

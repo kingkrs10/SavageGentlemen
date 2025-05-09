@@ -471,13 +471,15 @@ export default function Checkout() {
                 <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-md my-2">
                   <h4 className="font-medium">{eventTitle}</h4>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    1 × Free Event Ticket
+                    1 × {ticketName || 'Free Event Ticket'}
                   </div>
                 </div>
               )}
               <div className="flex justify-between mt-2">
-                <span>Ticket Price:</span>
-                <span>FREE</span>
+                <span>Ticket Type:</span>
+                <span className="px-2 py-1 bg-primary text-white rounded-full text-xs font-medium">
+                  FREE
+                </span>
               </div>
             </div>
             
@@ -566,7 +568,7 @@ export default function Checkout() {
               <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-md my-2">
                 <h4 className="font-medium">{eventTitle}</h4>
                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                  1 × Event Ticket
+                  1 × {ticketName || 'Event Ticket'}
                 </div>
               </div>
             )}
@@ -645,6 +647,8 @@ export default function Checkout() {
                     intent="CAPTURE"
                     eventId={eventId}
                     eventTitle={eventTitle}
+                    ticketId={ticketId}
+                    ticketName={ticketName}
                   />
                 </div>
                 <p className="text-sm text-gray-500 text-center">
