@@ -106,14 +106,20 @@ const Home = () => {
               </div>
             </div>
             
-            {/* Hero Content - Hidden */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 z-10 opacity-0">
+            {/* Hero Content */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 z-10 animate-fade-in">
               <h1 className="text-5xl md:text-7xl font-heading text-white uppercase tracking-wide mb-6 [text-shadow:_0_2px_5px_rgba(0,0,0,0.7)]">
                 Savage Gentlemen
               </h1>
               <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto mb-8 uppercase tracking-widest [text-shadow:_0_1px_3px_rgba(0,0,0,0.9)]">
                 Events · Merchandise · Live Stream · Community
               </p>
+              <Button 
+                className="bg-primary hover:bg-primary/80 text-white uppercase tracking-widest px-8 py-6 text-lg"
+                onClick={() => navigate('/events')}
+              >
+                Explore Events
+              </Button>
             </div>
           </div>
         )}
