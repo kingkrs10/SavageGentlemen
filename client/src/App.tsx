@@ -105,9 +105,37 @@ function App() {
       
       // Handle redirect path if specified
       if (event.detail && event.detail.redirectPath) {
-        // Store the redirect path in localStorage so AuthModal can retrieve it after login
-        localStorage.setItem('sg:auth:redirect', event.detail.redirectPath);
-        console.log('Stored redirect path:', event.detail.redirectPath);
+        // Parse the current URL to extract query parameters
+        const currentUrl = new URL(window.location.href);
+        const params = new URLSearchParams(currentUrl.search);
+        
+        // Ensure we're capturing all relevant parameters
+        let redirectPath = event.detail.redirectPath;
+        
+        // Check if the redirectPath includes the necessary parameters
+        const redirectUrl = new URL(window.location.origin + redirectPath);
+        const redirectParams = new URLSearchParams(redirectUrl.search);
+        
+        // Ensure all parameters are present
+        if (params.has('eventId') && !redirectParams.has('eventId')) {
+          redirectParams.set('eventId', params.get('eventId')!);
+        }
+        if (params.has('title') && !redirectParams.has('title')) {
+          redirectParams.set('title', params.get('title')!);
+        }
+        if (params.has('amount') && !redirectParams.has('amount')) {
+          redirectParams.set('amount', params.get('amount')!);
+        }
+        if (params.has('currency') && !redirectParams.has('currency')) {
+          redirectParams.set('currency', params.get('currency')!);
+        }
+        
+        // Update the redirect path with the enhanced parameters
+        redirectPath = redirectUrl.pathname + '?' + redirectParams.toString();
+        
+        // Store the enhanced redirect path
+        localStorage.setItem('sg:auth:redirect', redirectPath);
+        console.log('Stored redirect path:', redirectPath);
       }
     };
 

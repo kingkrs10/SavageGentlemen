@@ -126,13 +126,16 @@ export default function Checkout() {
   useEffect(() => {
     const getCurrentUser = async () => {
       try {
+        console.log("Checkout page: Checking authentication");
         setCheckingAuth(true);
         const response = await apiRequest('GET', '/api/me');
         
         if (response.ok) {
           const userData = await response.json();
+          console.log("Checkout page: User authenticated", userData);
           setUser(userData);
         } else {
+          console.log("Checkout page: User not authenticated");
           setUser(null);
         }
       } catch (error) {
@@ -144,35 +147,66 @@ export default function Checkout() {
     };
     
     getCurrentUser();
-  }, []);
+    
+    // Re-check authentication when auth-related changes happen
+    const handleAuthChange = () => {
+      console.log("Checkout page: Auth change detected");
+      getCurrentUser();
+    };
+    
+    window.addEventListener('sg:auth:changed', handleAuthChange);
+    
+    return () => {
+      window.removeEventListener('sg:auth:changed', handleAuthChange);
+    };
+  }, [window.location.search]);
   
   // Get the params from the URL search params if available
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
+    // Use a function to ensure we always get the latest URL
+    const updateParamsFromURL = () => {
+      console.log("Checkout page: Updating params from URL:", window.location.search);
+      const searchParams = new URLSearchParams(window.location.search);
+      
+      // Get amount
+      const amountParam = searchParams.get('amount');
+      if (amountParam) {
+        setAmount(parseFloat(amountParam));
+      }
+      
+      // Get event ID
+      const eventIdParam = searchParams.get('eventId');
+      if (eventIdParam) {
+        setEventId(parseInt(eventIdParam));
+      }
+      
+      // Get event title
+      const titleParam = searchParams.get('title');
+      if (titleParam) {
+        setEventTitle(decodeURIComponent(titleParam));
+      }
+      
+      // Get currency (optional)
+      const currencyParam = searchParams.get('currency');
+      if (currencyParam) {
+        setCurrency(currencyParam.toUpperCase());
+      }
+    };
     
-    // Get amount
-    const amountParam = searchParams.get('amount');
-    if (amountParam) {
-      setAmount(parseFloat(amountParam));
-    }
+    // Update parameters immediately
+    updateParamsFromURL();
     
-    // Get event ID
-    const eventIdParam = searchParams.get('eventId');
-    if (eventIdParam) {
-      setEventId(parseInt(eventIdParam));
-    }
+    // Also add a listener for PopStateEvent which is triggered by our custom navigation
+    const handlePopState = () => {
+      console.log("Checkout page: PopState event detected");
+      updateParamsFromURL();
+    };
     
-    // Get event title
-    const titleParam = searchParams.get('title');
-    if (titleParam) {
-      setEventTitle(decodeURIComponent(titleParam));
-    }
+    window.addEventListener('popstate', handlePopState);
     
-    // Get currency (optional)
-    const currencyParam = searchParams.get('currency');
-    if (currencyParam) {
-      setCurrency(currencyParam.toUpperCase());
-    }
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, [location]);
 
   // Create PaymentIntent for paid tickets only
