@@ -92,12 +92,17 @@ interface Event {
   id: number;
   title: string;
   date: Date | string;
+  time?: string;
+  endTime?: string;
+  duration?: number;
   location: string;
   price: number;
   description: string | null;
   imageUrl: string | null;
   category: string | null;
   featured?: boolean;
+  organizerName?: string;
+  organizerEmail?: string;
 }
 
 interface Ticket {
@@ -640,11 +645,16 @@ export default function AdminPage() {
         title: eventForm.title,
         description: eventForm.description,
         date: new Date(dateTimeString), // Convert to Date object explicitly
+        time: eventForm.time || '19:00',
+        endTime: eventForm.endTime || '',
+        duration: eventForm.duration || 180,
         location: eventForm.location,
         price: eventForm.price,
         imageUrl: eventForm.imageUrl,
         category: eventForm.category,
-        featured: eventForm.featured
+        featured: eventForm.featured,
+        organizerName: eventForm.organizerName || 'Savage Gentlemen',
+        organizerEmail: eventForm.organizerEmail || 'info@savagegentlemen.com'
       };
       
       console.log("Sending event data:", JSON.stringify({
@@ -717,11 +727,16 @@ export default function AdminPage() {
         title: eventForm.title,
         description: eventForm.description,
         date: new Date(dateTimeString), // Convert to Date object explicitly
+        time: eventForm.time || '19:00',
+        endTime: eventForm.endTime || '',
+        duration: eventForm.duration || 180,
         location: eventForm.location,
         price: eventForm.price,
         imageUrl: eventForm.imageUrl,
         category: eventForm.category,
-        featured: eventForm.featured
+        featured: eventForm.featured,
+        organizerName: eventForm.organizerName || 'Savage Gentlemen',
+        organizerEmail: eventForm.organizerEmail || 'info@savagegentlemen.com'
       };
       
       console.log("Updating event data:", JSON.stringify({
@@ -746,11 +761,15 @@ export default function AdminPage() {
         description: '',
         date: '',
         time: '',
+        endTime: '',
+        duration: 180,
         location: '',
         price: 0,
         imageUrl: '',
         category: 'concert',
-        featured: false
+        featured: false,
+        organizerName: 'Savage Gentlemen',
+        organizerEmail: 'info@savagegentlemen.com'
       });
       
       // Refresh events list
@@ -801,17 +820,44 @@ export default function AdminPage() {
     const formattedDate = eventDate.toISOString().split('T')[0];
     const formattedTime = eventDate.toISOString().split('T')[1].substring(0, 5);
     
+    // Get end time if available or calculate based on duration
+    let formattedEndTime = '';
+    if (event.endTime) {
+      formattedEndTime = event.endTime;
+    } else if (event.time && event.duration) {
+      // Calculate end time based on start time + duration
+      const [hours, minutes] = event.time.split(':').map(num => parseInt(num));
+      const durationHours = Math.floor(event.duration / 60);
+      const durationMinutes = event.duration % 60;
+      
+      let endHours = hours + durationHours;
+      let endMinutes = minutes + durationMinutes;
+      
+      if (endMinutes >= 60) {
+        endHours += 1;
+        endMinutes -= 60;
+      }
+      
+      endHours = endHours % 24; // Handle wrap around midnight
+      
+      formattedEndTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+    }
+    
     // Populate the form with the event's data
     setEventForm({
       title: event.title,
       description: event.description || '',
       date: formattedDate,
       time: formattedTime,
+      endTime: formattedEndTime,
+      duration: event.duration || 180,
       location: event.location,
       price: event.price,
       imageUrl: event.imageUrl || '',
       category: event.category || 'concert',
-      featured: event.featured || false
+      featured: event.featured || false,
+      organizerName: event.organizerName || 'Savage Gentlemen',
+      organizerEmail: event.organizerEmail || 'info@savagegentlemen.com'
     });
     
     // Open the event dialog
@@ -1205,11 +1251,15 @@ export default function AdminPage() {
                       description: '',
                       date: '',
                       time: '',
+                      endTime: '',
+                      duration: 180,
                       location: '',
                       price: 0,
                       imageUrl: '',
                       category: 'concert',
-                      featured: false
+                      featured: false,
+                      organizerName: 'Savage Gentlemen',
+                      organizerEmail: 'info@savagegentlemen.com'
                     });
                     setEventDialogOpen(true);
                   }}
