@@ -27,6 +27,11 @@ import {
   InsertTicketScan,
   PasswordResetToken,
   InsertPasswordResetToken,
+  // Inventory management types
+  ProductVariant,
+  InsertProductVariant,
+  InventoryHistory,
+  InsertInventoryHistory,
   // Analytics schemas
   PageView,
   InsertPageView,
@@ -51,7 +56,9 @@ import {
   orderItems,
   mediaUploads,
   ticketScans,
-  passwordResetTokens
+  passwordResetTokens,
+  productVariants,
+  inventoryHistory
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, sql } from "drizzle-orm";
@@ -169,6 +176,26 @@ export interface IStorage {
   getDailyStatByDate(date: Date): Promise<DailyStat | undefined>;
   updateDailyStat(date: Date, updates: Partial<InsertDailyStat>): Promise<DailyStat | undefined>;
   getDailyStatsByDateRange(startDate: Date, endDate: Date): Promise<DailyStat[]>;
+  
+  // Inventory management operations
+  getProductVariantsByProductId(productId: number): Promise<ProductVariant[]>;
+  getProductVariant(id: number): Promise<ProductVariant | undefined>;
+  createProductVariant(variant: InsertProductVariant): Promise<ProductVariant>;
+  updateProductVariant(id: number, variantData: Partial<InsertProductVariant>): Promise<ProductVariant | undefined>;
+  deleteProductVariant(id: number): Promise<boolean>;
+  
+  // Inventory history operations
+  recordInventoryChange(change: InsertInventoryHistory): Promise<InventoryHistory>;
+  getInventoryHistoryByProduct(productId: number): Promise<InventoryHistory[]>;
+  getInventoryHistoryByVariant(variantId: number): Promise<InventoryHistory[]>;
+  getRecentInventoryChanges(limit?: number): Promise<InventoryHistory[]>;
+  
+  // Inventory management operations
+  updateProductStock(productId: number, newStockLevel: number, changeType: string, userId: number, reason?: string): Promise<Product>;
+  updateVariantStock(variantId: number, newStockLevel: number, changeType: string, userId: number, reason?: string): Promise<ProductVariant>;
+  checkProductAvailability(productId: number, quantity: number): Promise<boolean>;
+  checkVariantAvailability(variantId: number, quantity: number): Promise<boolean>;
+  getLowStockProducts(threshold?: number): Promise<Product[]>;
 }
 
 // In-memory storage implementation
