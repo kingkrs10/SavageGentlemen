@@ -173,7 +173,32 @@ export default function Checkout() {
     // Handle URL parameter changes
     const handlePopState = () => {
       console.log("Checkout page: PopState event detected");
-      updateParamsFromURL();
+      // Update params from URL
+      const searchParams = new URLSearchParams(window.location.search);
+      
+      // Get amount
+      const amountParam = searchParams.get('amount');
+      if (amountParam) {
+        setAmount(parseFloat(amountParam));
+      }
+      
+      // Get event ID
+      const eventIdParam = searchParams.get('eventId');
+      if (eventIdParam) {
+        setEventId(parseInt(eventIdParam));
+      }
+      
+      // Get event title
+      const titleParam = searchParams.get('title');
+      if (titleParam) {
+        setEventTitle(decodeURIComponent(titleParam));
+      }
+      
+      // Get currency (optional)
+      const currencyParam = searchParams.get('currency');
+      if (currencyParam) {
+        setCurrency(currencyParam.toUpperCase());
+      }
     };
     
     window.addEventListener('sg:auth:changed', handleAuthChange);

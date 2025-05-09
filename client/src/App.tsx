@@ -64,8 +64,11 @@ function App() {
   // Only show splash screen on first visit to the site in this browser session
   const [showSplash, setShowSplash] = useState<boolean>(() => {
     // Check if we've shown the splash already this session
-    const hasShownSplash = sessionStorage.getItem("hasShownSplash");
-    return !hasShownSplash;
+    if (typeof window !== 'undefined') {
+      const hasShownSplash = sessionStorage.getItem("hasShownSplash");
+      return !hasShownSplash;
+    }
+    return true; // Default for SSR
   });
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -128,12 +131,16 @@ function App() {
       console.log("Loading SplashScreen component");
       console.log("Application starting...");
       
+      // Immediately mark that we've shown the splash in this session
+      // This prevents the splash from showing again if the user refreshes the page
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem("hasShownSplash", "true");
+      }
+      
       // Hide splash screen after 3 seconds to allow video to play
       const timer = setTimeout(() => {
         console.log("Splash screen timer completed, moving to main app");
         setShowSplash(false);
-        // Mark that we've shown the splash this session
-        sessionStorage.setItem("hasShownSplash", "true");
       }, 3000);
       
       return () => clearTimeout(timer);
