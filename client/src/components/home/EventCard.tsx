@@ -58,7 +58,11 @@ const EventCard = ({
               </Badge>
               <Button 
                 className="bg-primary text-white hover:bg-red-800 transition"
-                onClick={() => onGetTicket && onGetTicket(id)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onGetTicket && onGetTicket(id);
+                }}
               >
                 Get Ticket
               </Button>
@@ -114,7 +118,11 @@ const EventCard = ({
             <Button 
               className="bg-primary text-white hover:bg-red-800 transition"
               size="sm"
-              onClick={() => onGetTicket && onGetTicket(id)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onGetTicket && onGetTicket(id);
+              }}
             >
               Get Ticket
             </Button>
