@@ -1276,7 +1276,7 @@ export default function AdminPage() {
                             <div className="h-8 w-8 overflow-hidden rounded-full border">
                               {user.avatar ? (
                                 <img 
-                                  src={user.avatar} 
+                                  src={getNormalizedImageUrl(user.avatar)} 
                                   alt={user.username} 
                                   className="h-full w-full object-cover" 
                                 />
