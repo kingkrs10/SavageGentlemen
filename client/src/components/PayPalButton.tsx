@@ -43,7 +43,7 @@ export default function PayPalButton({
       eventId: eventId || undefined,
       eventTitle: eventTitle || undefined
     };
-    const response = await fetch("/api/payment/paypal-order", {
+    const response = await fetch("/payment/paypal-order", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(orderPayload),
@@ -56,7 +56,7 @@ export default function PayPalButton({
     // Include event information in the capture request if available
     const capturePayload = eventId ? { eventId, eventTitle } : {};
     
-    const response = await fetch(`/api/payment/paypal-order/${orderId}/capture`, {
+    const response = await fetch(`/payment/paypal-order/${orderId}/capture`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

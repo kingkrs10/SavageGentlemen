@@ -146,45 +146,10 @@ export default function Checkout() {
     }
   }, [location]);
 
-  // Handle free tickets (0.00 price) or Create PaymentIntent for paid tickets
+  // Create PaymentIntent for paid tickets only
   useEffect(() => {
-    const processTicket = async () => {
-      // If this is a free ticket (amount is 0), we'll claim it directly
-      if (amount === 0) {
-        setProcessingFreeTicket(true);
-        try {
-          const response = await apiRequest("POST", "/api/tickets/free", {
-            eventId: eventId,
-            eventTitle: eventTitle
-          });
-          
-          const data = await response.json();
-          
-          if (data.success) {
-            toast({
-              title: "Free Ticket Claimed!",
-              description: "Your free ticket has been claimed successfully. Check your email for details.",
-            });
-            
-            // Redirect to the success page
-            setLocation(`/payment-success?eventId=${eventId}&eventTitle=${encodeURIComponent(eventTitle || '')}`);
-          } else {
-            throw new Error(data.message || "Failed to claim free ticket");
-          }
-        } catch (error) {
-          console.error("Error claiming free ticket:", error);
-          toast({
-            title: "Error",
-            description: "Could not claim free ticket. Please try again.",
-            variant: "destructive",
-          });
-        } finally {
-          setProcessingFreeTicket(false);
-        }
-        return;
-      }
-      
-      // For paid tickets, create a payment intent
+    const createPaymentIntent = async () => {
+      // Only process paid tickets automatically
       if (amount > 0) {
         if (!stripePromise) {
           console.error("Stripe not initialized");
@@ -220,8 +185,8 @@ export default function Checkout() {
       }
     };
 
-    processTicket();
-  }, [amount, currency, eventId, eventTitle, toast, setLocation]);
+    createPaymentIntent();
+  }, [amount, currency, eventId, eventTitle, toast]);
 
   // Display a free ticket message when the amount is 0
   if (amount === 0) {
@@ -268,7 +233,38 @@ export default function Checkout() {
                 </div>
                 <Button 
                   className="w-full" 
-                  onClick={() => processTicket()}
+                  onClick={async () => {
+                    setProcessingFreeTicket(true);
+                    try {
+                      const response = await apiRequest("POST", "/tickets/free", {
+                        eventId: eventId,
+                        eventTitle: eventTitle
+                      });
+                      
+                      const data = await response.json();
+                      
+                      if (data.success) {
+                        toast({
+                          title: "Free Ticket Claimed!",
+                          description: "Your free ticket has been claimed successfully. Check your email for details.",
+                        });
+                        
+                        // Redirect to the success page
+                        setLocation(`/payment-success?eventId=${eventId}&eventTitle=${encodeURIComponent(eventTitle || '')}`);
+                      } else {
+                        throw new Error(data.message || "Failed to claim free ticket");
+                      }
+                    } catch (error) {
+                      console.error("Error claiming free ticket:", error);
+                      toast({
+                        title: "Error",
+                        description: "Could not claim free ticket. Please try again.",
+                        variant: "destructive",
+                      });
+                    } finally {
+                      setProcessingFreeTicket(false);
+                    }
+                  }}
                   disabled={processingFreeTicket}
                 >
                   Claim Free Ticket
