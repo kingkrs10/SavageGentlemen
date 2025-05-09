@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, uuid, date, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -424,3 +424,101 @@ export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTo
 
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
+
+// Analytics schemas
+export const pageViews = pgTable('page_views', {
+  id: serial('id').primaryKey(),
+  path: text('path').notNull(),
+  userId: integer('user_id').references(() => users.id),
+  sessionId: text('session_id').notNull(),
+  timestamp: timestamp('timestamp').defaultNow().notNull(),
+  deviceType: text('device_type'),
+  browser: text('browser'),
+  referrer: text('referrer'),
+  duration: integer('duration'),
+});
+
+export const eventAnalytics = pgTable('event_analytics', {
+  id: serial('id').primaryKey(),
+  eventId: integer('event_id').references(() => events.id),
+  views: integer('views').default(0),
+  ticketClicks: integer('ticket_clicks').default(0),
+  ticketSales: integer('ticket_sales').default(0),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const productAnalytics = pgTable('product_analytics', {
+  id: serial('id').primaryKey(),
+  productId: integer('product_id').references(() => products.id),
+  views: integer('views').default(0),
+  detailClicks: integer('detail_clicks').default(0),
+  purchaseClicks: integer('purchase_clicks').default(0),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const userEvents = pgTable('user_events', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id),
+  eventType: text('event_type').notNull(), // login, register, purchase, view_event, view_product, etc.
+  eventData: jsonb('event_data'),
+  timestamp: timestamp('timestamp').defaultNow().notNull(),
+  sessionId: text('session_id'),
+});
+
+export const dailyStats = pgTable('daily_stats', {
+  id: serial('id').primaryKey(),
+  date: date('date').notNull().unique(),
+  newUsers: integer('new_users').default(0),
+  activeUsers: integer('active_users').default(0),
+  pageViews: integer('page_views').default(0),
+  eventViews: integer('event_views').default(0),
+  productViews: integer('product_views').default(0),
+  ticketSales: integer('ticket_sales').default(0),
+  productClicks: integer('product_clicks').default(0),
+  totalRevenue: numeric('total_revenue').default('0'),
+});
+
+// Create insert schemas for analytics tables
+export const insertPageViewSchema = createInsertSchema(pageViews).omit({
+  id: true,
+  timestamp: true,
+});
+
+export const insertEventAnalyticSchema = createInsertSchema(eventAnalytics).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertProductAnalyticSchema = createInsertSchema(productAnalytics).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserEventSchema = createInsertSchema(userEvents).omit({
+  id: true,
+  timestamp: true,
+});
+
+export const insertDailyStatSchema = createInsertSchema(dailyStats).omit({
+  id: true,
+});
+
+// Define analytics types
+export type PageView = typeof pageViews.$inferSelect;
+export type InsertPageView = z.infer<typeof insertPageViewSchema>;
+
+export type EventAnalytic = typeof eventAnalytics.$inferSelect;
+export type InsertEventAnalytic = z.infer<typeof insertEventAnalyticSchema>;
+
+export type ProductAnalytic = typeof productAnalytics.$inferSelect;
+export type InsertProductAnalytic = z.infer<typeof insertProductAnalyticSchema>;
+
+export type UserEvent = typeof userEvents.$inferSelect;
+export type InsertUserEvent = z.infer<typeof insertUserEventSchema>;
+
+export type DailyStat = typeof dailyStats.$inferSelect;
+export type InsertDailyStat = z.infer<typeof insertDailyStatSchema>;

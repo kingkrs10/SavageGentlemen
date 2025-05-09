@@ -27,6 +27,17 @@ import {
   InsertTicketScan,
   PasswordResetToken,
   InsertPasswordResetToken,
+  // Analytics schemas
+  PageView,
+  InsertPageView,
+  EventAnalytic,
+  InsertEventAnalytic,
+  ProductAnalytic,
+  InsertProductAnalytic,
+  UserEvent,
+  InsertUserEvent,
+  DailyStat,
+  InsertDailyStat,
   users,
   events,
   products,
@@ -129,6 +140,35 @@ export interface IStorage {
   // Stripe & PayPal customer operations
   updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User>;
   updatePaypalCustomerId(userId: number, paypalCustomerId: string): Promise<User>;
+  
+  // Analytics operations
+  createPageView(pageView: InsertPageView): Promise<PageView>;
+  getPageViewsByPath(path: string): Promise<PageView[]>;
+  getPageViewsByUserId(userId: number): Promise<PageView[]>;
+  
+  // Event analytics operations
+  createEventAnalytic(eventAnalytic: InsertEventAnalytic): Promise<EventAnalytic>;
+  getEventAnalyticsByEventId(eventId: number): Promise<EventAnalytic | undefined>;
+  incrementEventViews(eventId: number): Promise<EventAnalytic | undefined>;
+  incrementEventTicketClicks(eventId: number): Promise<EventAnalytic | undefined>;
+  incrementEventTicketSales(eventId: number): Promise<EventAnalytic | undefined>;
+  
+  // Product analytics operations
+  createProductAnalytic(productAnalytic: InsertProductAnalytic): Promise<ProductAnalytic>;
+  getProductAnalyticsByProductId(productId: number): Promise<ProductAnalytic | undefined>;
+  incrementProductViews(productId: number): Promise<ProductAnalytic | undefined>;
+  incrementProductDetailClicks(productId: number): Promise<ProductAnalytic | undefined>;
+  incrementProductPurchaseClicks(productId: number): Promise<ProductAnalytic | undefined>;
+  
+  // User events operations
+  createUserEvent(userEvent: InsertUserEvent): Promise<UserEvent>;
+  getUserEventsByUserId(userId: number): Promise<UserEvent[]>;
+  
+  // Daily stats operations
+  createDailyStat(dailyStat: InsertDailyStat): Promise<DailyStat>;
+  getDailyStatByDate(date: Date): Promise<DailyStat | undefined>;
+  updateDailyStat(date: Date, updates: Partial<InsertDailyStat>): Promise<DailyStat | undefined>;
+  getDailyStatsByDateRange(startDate: Date, endDate: Date): Promise<DailyStat[]>;
 }
 
 // In-memory storage implementation
