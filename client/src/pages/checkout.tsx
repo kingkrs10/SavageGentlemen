@@ -116,6 +116,8 @@ export default function Checkout() {
   const [isLoading, setIsLoading] = useState(false);
   const [eventId, setEventId] = useState<number | null>(null);
   const [eventTitle, setEventTitle] = useState<string>('');
+  const [ticketId, setTicketId] = useState<number | null>(null);
+  const [ticketName, setTicketName] = useState<string>('');
   const [processingFreeTicket, setProcessingFreeTicket] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -239,6 +241,18 @@ export default function Checkout() {
       const currencyParam = searchParams.get('currency');
       if (currencyParam) {
         setCurrency(currencyParam.toUpperCase());
+      }
+      
+      // Get ticket ID (optional)
+      const ticketIdParam = searchParams.get('ticketId');
+      if (ticketIdParam) {
+        setTicketId(parseInt(ticketIdParam));
+      }
+      
+      // Get ticket name (optional)
+      const ticketNameParam = searchParams.get('ticketName');
+      if (ticketNameParam) {
+        setTicketName(decodeURIComponent(ticketNameParam));
       }
     };
     
@@ -489,7 +503,9 @@ export default function Checkout() {
                     try {
                       const response = await apiRequest("POST", "/tickets/free", {
                         eventId: eventId,
-                        eventTitle: eventTitle
+                        eventTitle: eventTitle,
+                        ticketId: ticketId,
+                        ticketName: ticketName
                       });
                       
                       const data = await response.json();
