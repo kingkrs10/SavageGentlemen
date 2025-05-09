@@ -384,11 +384,52 @@ export class MemStorage implements IStorage {
   }
 
   async getAllEvents(): Promise<Event[]> {
-    return Array.from(this.events.values());
+    try {
+      console.log("Storage: Getting all events");
+      if (!this.events) {
+        console.log("Storage: Events map is undefined, returning empty array");
+        return [];
+      }
+      
+      const eventsList = Array.from(this.events.values());
+      console.log(`Storage: Retrieved ${eventsList.length} events`);
+      
+      // Log first event for debugging if available
+      if (eventsList.length > 0) {
+        console.log("Storage: First event sample:", JSON.stringify(eventsList[0]));
+      }
+      
+      return eventsList;
+    } catch (error) {
+      console.error("Storage: Error in getAllEvents:", error);
+      // Return empty array instead of throwing to prevent API errors
+      return [];
+    }
   }
 
   async getFeaturedEvents(): Promise<Event[]> {
-    return Array.from(this.events.values()).filter(event => event.featured);
+    try {
+      console.log("Storage: Getting featured events");
+      if (!this.events) {
+        console.log("Storage: Events map is undefined, returning empty array");
+        return [];
+      }
+      
+      const allEvents = Array.from(this.events.values());
+      const featuredEvents = allEvents.filter(event => event.featured);
+      console.log(`Storage: Retrieved ${featuredEvents.length} featured events out of ${allEvents.length} total events`);
+      
+      // Log first featured event for debugging if available
+      if (featuredEvents.length > 0) {
+        console.log("Storage: First featured event sample:", JSON.stringify(featuredEvents[0]));
+      }
+      
+      return featuredEvents;
+    } catch (error) {
+      console.error("Storage: Error in getFeaturedEvents:", error);
+      // Return empty array instead of throwing to prevent API errors
+      return [];
+    }
   }
 
   async createEvent(eventData: InsertEvent): Promise<Event> {
