@@ -21,32 +21,34 @@ interface HeaderProps {
 
 const Header = ({ user, onProfileClick, onLogout }: HeaderProps) => {
   return (
-    <header className="sticky top-0 z-50 bg-black border-b border-white/10">
+    <header className="sticky top-0 z-50 bg-black border-b border-white/10 dark:bg-black dark:border-white/10 light:bg-white light:border-black/10">
       <div className="container mx-auto px-4 flex flex-col">
         {/* Desktop Menu Above Logo - Hidden on Mobile */}
         <div className="hidden md:flex justify-center py-4 text-sm">
           <nav className="flex space-x-8">
-            <a href="/" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Home</a>
-            <a href="/events" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Events</a>
-            <a href="/shop" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Shop</a>
-            <a href="/live" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Live</a>
-            <a href="/community" className="uppercase text-white hover:text-primary font-semibold tracking-widest">Community</a>
+            <a href="/" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Home</a>
+            <a href="/events" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Events</a>
+            <a href="/shop" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Shop</a>
+            <a href="/live" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Live</a>
+            <a href="/community" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Community</a>
           </nav>
         </div>
         
         {/* Logo and User Controls */}
-        <div className="py-3 flex justify-between items-center border-t border-white/10">
+        <div className="py-3 flex justify-between items-center border-t dark:border-white/10 light:border-black/10">
           <div className="flex items-center">
             <img src={LogoSvg} alt="Savage Gentlemen Logo" className="h-10 w-10" />
-            <h1 className="ml-2 text-xl md:text-2xl font-heading text-white tracking-widest truncate max-w-[180px] sm:max-w-none">
+            <h1 className="ml-2 text-xl md:text-2xl font-heading dark:text-white light:text-foreground tracking-widest truncate max-w-[180px] sm:max-w-none">
               SAVAGE GENTLEMEN
             </h1>
           </div>
           <div className="flex items-center space-x-4">
+            <ThemeToggle variant="ghost" size="icon" />
+            
             <Button
               variant="ghost"
               size="icon"
-              className="text-white hover:text-primary transition"
+              className="dark:text-white light:text-foreground hover:text-primary transition"
             >
               <Search className="h-5 w-5" />
             </Button>
@@ -65,14 +67,14 @@ const Header = ({ user, onProfileClick, onLogout }: HeaderProps) => {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-black border border-white/10">
+                <DropdownMenuContent align="end" className="w-56 dark:bg-black dark:border-white/10 light:bg-white light:border-black/10">
                   <DropdownMenuLabel className="uppercase text-xs tracking-widest">
                     {user.displayName} {user.isGuest && "(Guest)"}
                     {user.role === "admin" && " (Admin)"}
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-white/10" />
+                  <DropdownMenuSeparator className="dark:bg-white/10 light:bg-black/10" />
                   <DropdownMenuItem 
-                      className="hover:bg-white/5 focus:bg-white/5"
+                      className="dark:hover:bg-white/5 dark:focus:bg-white/5 light:hover:bg-black/5 light:focus:bg-black/5"
                       asChild
                     >
                       <a href="/my-tickets">
@@ -80,10 +82,10 @@ const Header = ({ user, onProfileClick, onLogout }: HeaderProps) => {
                         <span className="uppercase text-xs tracking-widest">My Tickets</span>
                       </a>
                     </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-white/10" />
+                  <DropdownMenuSeparator className="dark:bg-white/10 light:bg-black/10" />
                   {user.role === "admin" && (
                     <DropdownMenuItem 
-                      className="hover:bg-white/5 focus:bg-white/5"
+                      className="dark:hover:bg-white/5 dark:focus:bg-white/5 light:hover:bg-black/5 light:focus:bg-black/5"
                       asChild
                     >
                       <a href="/admin">
@@ -105,7 +107,7 @@ const Header = ({ user, onProfileClick, onLogout }: HeaderProps) => {
             ) : (
               <Button
                 variant="ghost"
-                className="text-white hover:text-primary hover:bg-transparent uppercase text-xs tracking-widest px-4 py-2"
+                className="dark:text-white light:text-foreground hover:text-primary hover:bg-transparent uppercase text-xs tracking-widest px-4 py-2"
                 onClick={onProfileClick}
               >
                 <User className="h-5 w-5 mr-2" />
