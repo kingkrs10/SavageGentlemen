@@ -28,6 +28,7 @@ const PaymentSuccess = lazy(() => import("@/pages/payment-success"));
 const Admin = lazy(() => import("@/pages/admin-new"));
 const PasswordReset = lazy(() => import("@/pages/password-reset"));
 const AnalyticsDashboard = lazy(() => import("@/pages/analytics-dashboard"));
+const MyTickets = lazy(() => import("@/pages/my-tickets"));
 
 function Router() {
   return (
@@ -50,6 +51,7 @@ function Router() {
         <Route path="/admin" component={Admin} />
         <Route path="/password-reset" component={PasswordReset} />
         <Route path="/analytics" component={AnalyticsDashboard} />
+        <Route path="/my-tickets" component={MyTickets} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>

@@ -1,16 +1,16 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import TicketQRCode from "@/components/TicketQRCode";
-import { Loader2, Calendar, MapPin, Download, ExternalLink } from "lucide-react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, Calendar, MapPin, Download } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ics } from "ics";
+import * as icsLib from "ics";
 import { saveAs } from "file-saver";
 
 interface TicketPurchase {
@@ -38,8 +38,8 @@ interface TicketPurchase {
 }
 
 export default function MyTickets() {
-  const { user, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
+  const { currentUser, loading } = useAuth();
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const [selectedTicket, setSelectedTicket] = useState<TicketPurchase | null>(null);
 
@@ -49,10 +49,10 @@ export default function MyTickets() {
     error
   } = useQuery<TicketPurchase[]>({
     queryKey: ["/api/user/tickets"],
-    enabled: !!user && isAuthenticated,
+    enabled: !!currentUser,
   });
 
-  if (!isAuthenticated) {
+  if (!currentUser && !loading) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <h1 className="text-2xl font-bold mb-6">My Tickets</h1>
@@ -120,7 +120,7 @@ export default function MyTickets() {
       busyStatus: 'BUSY',
     };
     
-    ics.createEvent(event, (error, value) => {
+    icsLib.createEvent(event, (error: any, value: any) => {
       if (error) {
         toast({
           title: "Error",

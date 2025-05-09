@@ -70,6 +70,16 @@ const Header = ({ user, onProfileClick, onLogout }: HeaderProps) => {
                     {user.role === "admin" && " (Admin)"}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-white/10" />
+                  <DropdownMenuItem 
+                      className="hover:bg-white/5 focus:bg-white/5"
+                      asChild
+                    >
+                      <a href="/my-tickets">
+                        <Ticket className="mr-2 h-4 w-4" />
+                        <span className="uppercase text-xs tracking-widest">My Tickets</span>
+                      </a>
+                    </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-white/10" />
                   {user.role === "admin" && (
                     <DropdownMenuItem 
                       className="hover:bg-white/5 focus:bg-white/5"
