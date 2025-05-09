@@ -114,15 +114,25 @@ const Home = () => {
               <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto mb-8 uppercase tracking-widest [text-shadow:_0_1px_3px_rgba(0,0,0,0.9)]">
                 Events · Merchandise · Live Stream · Community
               </p>
-              <Button 
-                className="bg-primary hover:bg-primary/80 text-white uppercase tracking-widest px-8 py-6 text-lg"
-                onClick={() => navigate('/events')}
-              >
-                Explore Events
-              </Button>
             </div>
           </div>
         )}
+      </div>
+
+      {/* Hero Call-to-action Buttons */}
+      <div className="container mx-auto px-4 py-8 flex flex-col md:flex-row gap-4 justify-center animate-fade-in">
+        <Button 
+          className="bg-primary hover:bg-primary/80 text-white uppercase tracking-widest px-8 py-6 text-lg w-full md:w-auto"
+          onClick={() => navigate('/events')}
+        >
+          Explore Events
+        </Button>
+        <Button 
+          className="border-white bg-transparent hover:bg-white/10 text-white uppercase tracking-widest px-8 py-6 text-lg w-full md:w-auto"
+          onClick={() => window.open(EXTERNAL_URLS.ETSY_SHOP, '_blank', 'noopener,noreferrer')}
+        >
+          Shop Collection
+        </Button>
       </div>
 
       {/* Content Sections with Full-Width Dividers */}
