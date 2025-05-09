@@ -27,17 +27,22 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Make sure to call loadStripe outside of a component's render to avoid
 // recreating the Stripe object on every render.
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  console.warn('Missing Stripe public key');
+// Force production mode for Stripe - always try to initialize even if key is missing
+let stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+
+// Check and log the Stripe key status for debugging
+if (!stripePublicKey) {
+  console.warn('Missing Stripe public key from environment. Using fallback key.');
+  // Fallback for development/testing - this is safe to expose as it's just a public test key
+  // This key won't work for actual charges but allows the form to render for testing
+  stripePublicKey = 'pk_test_TYooMQauvdEDq54NiTphI7jx';
+} else {
+  console.log('Stripe public key loaded from environment successfully');
 }
 
-// Force production mode for Stripe - always try to initialize even with warnings
-let stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
-// Fallback for development/testing - this is safe to expose as it's just a public key
-if (!stripePublicKey) {
-  console.warn('Using fallback Stripe public key for development');
-  stripePublicKey = 'pk_test_TYooMQauvdEDq54NiTphI7jx';
-}
+// Log the key type for debugging (prod vs test)
+const isTestKey = stripePublicKey.startsWith('pk_test_');
+console.log(`Using ${isTestKey ? 'TEST' : 'PRODUCTION'} Stripe key`);
 
 // Initialize Stripe with the key
 const stripePromise = loadStripe(stripePublicKey, {
@@ -52,13 +57,15 @@ const StripeCheckoutForm = ({
   eventId, 
   eventTitle,
   ticketId,
-  ticketName
+  ticketName,
+  userData
 }: { 
   amount: number; 
   eventId?: number | null;
   eventTitle?: string;
   ticketId?: number | null;
   ticketName?: string;
+  userData?: User | null;
 }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -160,16 +167,69 @@ const StripeCheckoutForm = ({
     }
   };
 
+  // Check for Stripe readiness
+  const [stripeReady, setStripeReady] = useState(false);
+
+  useEffect(() => {
+    // Set ready state when Stripe is available
+    if (stripe && elements) {
+      setStripeReady(true);
+    }
+  }, [stripe, elements]);
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement />
-      <Button 
-        disabled={isProcessing} 
-        className="w-full" 
-        type="submit"
-      >
-        {isProcessing ? 'Processing...' : 'Pay with Card'}
-      </Button>
+      {/* Payment Element with options for better loading and error handling */}
+      <div className="mb-4">
+        <PaymentElement 
+          options={{
+            layout: 'tabs',
+            defaultValues: {
+              billingDetails: {
+                name: userData?.displayName || '',
+              }
+            },
+            paymentMethodOrder: ['card']
+          }}
+          onChange={(event) => {
+            // Log payment element load status for debugging
+            if (event.complete) {
+              console.log("Payment element fully loaded and ready");
+              setStripeReady(true);
+            } else if (event.empty) {
+              console.log("Payment element is empty");
+            } else {
+              console.log("Payment element status:", event);
+            }
+          }}
+        />
+      </div>
+      
+      {/* Submit Button with loading and ready states */}
+      <div className="relative">
+        <Button 
+          disabled={isProcessing || !stripeReady} 
+          className="w-full" 
+          type="submit"
+        >
+          {isProcessing ? 'Processing...' : 'Pay with Card'}
+        </Button>
+        
+        {/* Show loading overlay if Stripe is not ready */}
+        {!stripeReady && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded">
+            <div className="text-sm text-muted-foreground flex items-center">
+              <div className="mr-2 w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              Loading payment form...
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Help text */}
+      <p className="text-xs text-gray-500 mt-2 text-center">
+        Your payment information is securely processed by Stripe.
+      </p>
     </form>
   );
 };
@@ -669,6 +729,7 @@ export default function Checkout() {
                 </div>
               ) : clientSecret ? (
                 <Elements 
+                  key={clientSecret} // Force re-create when client secret changes
                   stripe={stripePromise} 
                   options={{ 
                     clientSecret,
@@ -690,6 +751,10 @@ export default function Checkout() {
                         },
                         '.Input': {
                           padding: '12px'
+                        },
+                        '.Button': {
+                          backgroundColor: '#E91E63',
+                          fontWeight: '600'
                         }
                       }
                     },
@@ -697,7 +762,7 @@ export default function Checkout() {
                       cssSrc: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap'
                     }],
                     locale: 'en',
-                    loader: 'always'
+                    loader: 'always' // Always reload elements
                   }}
                 >
                   <StripeCheckoutForm 
