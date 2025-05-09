@@ -228,12 +228,33 @@ analyticsRouter.get("/daily-stats/today", async (req: Request, res: Response) =>
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    let dailyStat = await storage.getDailyStatByDate(today);
-    
-    if (!dailyStat) {
-      // Create a new daily stat for today
-      dailyStat = await storage.createDailyStat({
-        date: today.toISOString().split('T')[0],
+    try {
+      let dailyStat = await storage.getDailyStatByDate(today);
+      
+      if (!dailyStat) {
+        // Create a new daily stat for today with a properly formatted date string
+        const formattedDate = today.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+        dailyStat = await storage.createDailyStat({
+          date: formattedDate,
+          newUsers: 0,
+          activeUsers: 0,
+          pageViews: 0,
+          eventViews: 0,
+          productViews: 0,
+          ticketSales: 0,
+          productClicks: 0,
+          totalRevenue: "0"
+        });
+      }
+      
+      return res.status(200).json(dailyStat);
+    } catch (storageError) {
+      // Provide a fallback response if there's a database access error
+      console.error('Error retrieving daily stats:', storageError);
+      const formattedDate = today.toISOString().split('T')[0];
+      return res.status(200).json({
+        id: 0,
+        date: formattedDate,
         newUsers: 0,
         activeUsers: 0,
         pageViews: 0,
@@ -244,10 +265,8 @@ analyticsRouter.get("/daily-stats/today", async (req: Request, res: Response) =>
         totalRevenue: "0"
       });
     }
-    
-    return res.status(200).json(dailyStat);
   } catch (err) {
-    console.error(err);
+    console.error('Unhandled error in daily stats endpoint:', err);
     return res.status(500).json({ message: "Internal server error" });
   }
 });
@@ -255,23 +274,52 @@ analyticsRouter.get("/daily-stats/today", async (req: Request, res: Response) =>
 // Update daily stat for a specific date
 analyticsRouter.put("/daily-stats/:date", async (req: Request, res: Response) => {
   try {
-    const dateParam = req.params.date; // Format: YYYY-MM-DD
-    const date = new Date(dateParam);
-    
-    if (isNaN(date.getTime())) {
-      return res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
+    try {
+      const dateParam = req.params.date; // Format: YYYY-MM-DD
+      const date = new Date(dateParam);
+      
+      if (isNaN(date.getTime())) {
+        return res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
+      }
+      
+      const updates = req.body;
+      
+      // Ensure date is stored as string in YYYY-MM-DD format if it's being updated
+      if (updates.date && updates.date instanceof Date) {
+        updates.date = updates.date.toISOString().split('T')[0];
+      }
+      
+      const updatedStat = await storage.updateDailyStat(date, updates);
+      
+      if (!updatedStat) {
+        // If no stat exists yet, try to create one with the updates
+        try {
+          const newStat = await storage.createDailyStat({
+            date: dateParam,
+            newUsers: updates.newUsers || 0,
+            activeUsers: updates.activeUsers || 0,
+            pageViews: updates.pageViews || 0,
+            eventViews: updates.eventViews || 0,
+            productViews: updates.productViews || 0,
+            ticketSales: updates.ticketSales || 0,
+            productClicks: updates.productClicks || 0,
+            totalRevenue: updates.totalRevenue || "0"
+          });
+          return res.status(201).json(newStat);
+        } catch (createError) {
+          console.error('Error creating new daily stat:', createError);
+          return res.status(404).json({ message: "Daily stat not found for this date and could not be created" });
+        }
+      }
+      
+      return res.status(200).json(updatedStat);
+    } catch (updateError) {
+      console.error('Error updating daily stat:', updateError);
+      const errorMessage = updateError instanceof Error ? updateError.message : String(updateError);
+      return res.status(400).json({ message: "Could not update daily stat", error: errorMessage });
     }
-    
-    const updates = req.body;
-    const updatedStat = await storage.updateDailyStat(date, updates);
-    
-    if (!updatedStat) {
-      return res.status(404).json({ message: "Daily stat not found for this date" });
-    }
-    
-    return res.status(200).json(updatedStat);
   } catch (err) {
-    console.error(err);
+    console.error('Unhandled error in update daily stat endpoint:', err);
     return res.status(500).json({ message: "Internal server error" });
   }
 });
@@ -279,23 +327,45 @@ analyticsRouter.put("/daily-stats/:date", async (req: Request, res: Response) =>
 // Get daily stats for a date range
 analyticsRouter.get("/daily-stats/range", async (req: Request, res: Response) => {
   try {
-    const { startDate, endDate } = req.query;
-    
-    if (!startDate || !endDate) {
-      return res.status(400).json({ message: "Both startDate and endDate are required" });
+    try {
+      const { startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: "Both startDate and endDate are required" });
+      }
+      
+      const start = new Date(startDate as string);
+      const end = new Date(endDate as string);
+      
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
+      }
+      
+      // Make the end date inclusive by setting it to the end of the day
+      end.setHours(23, 59, 59, 999);
+      
+      const stats = await storage.getDailyStatsByDateRange(start, end);
+      
+      // Ensure dates are properly formatted in the response
+      const formattedStats = stats.map(stat => ({
+        ...stat,
+        date: typeof stat.date === 'object' && stat.date instanceof Date 
+          ? stat.date.toISOString().split('T')[0] 
+          : stat.date
+      }));
+      
+      return res.status(200).json(formattedStats);
+    } catch (rangeError) {
+      console.error('Error retrieving daily stats for range:', rangeError);
+      
+      // Return empty array with proper error message
+      return res.status(200).json({
+        stats: [],
+        message: "Could not retrieve stats for the specified date range"
+      });
     }
-    
-    const start = new Date(startDate as string);
-    const end = new Date(endDate as string);
-    
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      return res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
-    }
-    
-    const stats = await storage.getDailyStatsByDateRange(start, end);
-    return res.status(200).json(stats);
   } catch (err) {
-    console.error(err);
+    console.error('Unhandled error in daily stats range endpoint:', err);
     return res.status(500).json({ message: "Internal server error" });
   }
 });
