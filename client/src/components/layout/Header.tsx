@@ -1,4 +1,4 @@
-import { Search, User, LogOut, LayoutDashboard } from "lucide-react";
+import { Search, User, LogOut, LayoutDashboard, Ticket } from "lucide-react";
 import { User as UserType } from "@/lib/types";
 import {
   DropdownMenu,

@@ -120,7 +120,8 @@ export default function MyTickets() {
       busyStatus: 'BUSY',
     };
     
-    icsLib.createEvent(event, (error: any, value: any) => {
+    import('ics').then(icsModule => {
+      icsModule.createEvent(event, (error: any, value: any) => {
       if (error) {
         toast({
           title: "Error",
@@ -137,6 +138,7 @@ export default function MyTickets() {
         title: "Success!",
         description: "Event saved to your calendar",
       });
+    });
     });
   };
 
