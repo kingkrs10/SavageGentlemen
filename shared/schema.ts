@@ -393,6 +393,41 @@ export const insertMediaUploadSchema = createInsertSchema(mediaUploads).pick({
 export type Ticket = typeof tickets.$inferSelect;
 export type InsertTicket = z.infer<typeof insertTicketSchema>;
 
+// Ticket Purchases schema
+export const ticketPurchases = pgTable("ticket_purchases", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  ticketId: integer("ticket_id").notNull(),
+  eventId: integer("event_id").notNull(),
+  orderId: integer("order_id").notNull(),
+  purchaseDate: timestamp("purchase_date").defaultNow().notNull(),
+  status: text("status").default("valid"), // valid, used, cancelled, refunded
+  qrCodeData: text("qr_code_data").notNull().unique(),
+  ticketType: text("ticket_type").default("standard"),
+  price: numeric("price"),
+  attendeeEmail: text("attendee_email"),
+  attendeeName: text("attendee_name"),
+  scanned: boolean("scanned").default(false),
+  firstScanAt: timestamp("first_scan_at"),
+  lastScanAt: timestamp("last_scan_at"),
+  scanCount: integer("scan_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertTicketPurchaseSchema = createInsertSchema(ticketPurchases).omit({ 
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  scanCount: true,
+  scanned: true,
+  firstScanAt: true,
+  lastScanAt: true,
+});
+
+export type TicketPurchase = typeof ticketPurchases.$inferSelect;
+export type InsertTicketPurchase = z.infer<typeof insertTicketPurchaseSchema>;
+
 export type DiscountCode = typeof discountCodes.$inferSelect;
 export type InsertDiscountCode = z.infer<typeof insertDiscountCodeSchema>;
 
@@ -405,32 +440,21 @@ export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 export type MediaUpload = typeof mediaUploads.$inferSelect;
 export type InsertMediaUpload = z.infer<typeof insertMediaUploadSchema>;
 
-// Ticket Purchases schema to track purchased tickets
-export const ticketPurchases = pgTable("ticket_purchases", {
-  id: serial("id").primaryKey(),
-  orderId: integer("order_id").notNull(),
-  eventId: integer("event_id").notNull(),
-  userId: integer("user_id").notNull(),
-  ticketTypeId: integer("ticket_type_id"),
-  purchaseDate: timestamp("purchase_date").defaultNow(),
-  status: text("status").default("valid"), // valid, used, refunded, cancelled
-  qrCodeData: text("qr_code_data").notNull(),
-  ticketType: text("ticket_type").default("standard"),
-  price: integer("price"),
-  email: text("email"),
-  attendeeName: text("attendee_name"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-export const insertTicketPurchaseSchema = createInsertSchema(ticketPurchases).omit({ 
-  id: true,
-  createdAt: true,
-  updatedAt: true
-});
-
-export type TicketPurchase = typeof ticketPurchases.$inferSelect;
-export type InsertTicketPurchase = z.infer<typeof insertTicketPurchaseSchema>;
+// Define ticket purchase relations
+export const ticketPurchasesRelations = relations(ticketPurchases, ({ one }) => ({
+  user: one(users, {
+    fields: [ticketPurchases.userId],
+    references: [users.id],
+  }),
+  event: one(events, {
+    fields: [ticketPurchases.eventId],
+    references: [events.id],
+  }),
+  order: one(orders, {
+    fields: [ticketPurchases.orderId],
+    references: [orders.id],
+  }),
+}));
 
 // Ticket Scans schema to track when tickets are scanned
 export const ticketScans = pgTable("ticket_scans", {
