@@ -10,15 +10,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import PostCard from "@/components/community/PostCard";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { Post, User } from "@/lib/types";
 
 const Community = () => {
   const [postContent, setPostContent] = useState("");
   const { toast } = useToast();
-  
-  // Get current user from localStorage
-  const userString = localStorage.getItem("user");
-  const currentUser: User | null = userString ? JSON.parse(userString) : null;
+  const { currentUser, loading } = useAuth();
   
   const { data: posts, isLoading } = useQuery<Post[]>({
     queryKey: [API_ROUTES.POSTS],
@@ -77,6 +75,16 @@ const Community = () => {
     });
   };
   
+  // Show loading state while auth is initializing
+  if (loading) {
+    return (
+      <div className="container mx-auto flex flex-col items-center justify-center min-h-[50vh]">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-lg">Loading community...</p>
+      </div>
+    );
+  }
+
   return (
     <div>
       {/* Create Post */}
@@ -194,10 +202,16 @@ const Community = () => {
               <Button 
                 size="sm"
                 className="bg-primary text-white hover:bg-red-800"
-                onClick={() => toast({
-                  title: "Login Required",
-                  description: "Please login to create posts",
-                })}
+                onClick={() => {
+                  // Open the auth modal using the custom event
+                  const event = new CustomEvent('sg:open-auth-modal', { 
+                    detail: { 
+                      tab: 'login',
+                      redirectPath: '/community'
+                    } 
+                  });
+                  window.dispatchEvent(event);
+                }}
               >
                 Login to Post
               </Button>

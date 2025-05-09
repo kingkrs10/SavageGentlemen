@@ -116,6 +116,24 @@ const PostCard = ({ post, currentUser }: PostCardProps) => {
           variant="ghost" 
           size="sm"
           className="flex items-center text-xs px-2 h-8 text-gray-300 hover:text-primary"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // In a production environment, this would use the Web Share API if available
+            // or show a modal with sharing options
+            if (navigator.share) {
+              navigator.share({
+                title: `Post by ${post.user?.displayName || 'Anonymous'}`,
+                text: post.content.substring(0, 100) + (post.content.length > 100 ? '...' : ''),
+                url: window.location.href
+              })
+              .then(() => console.log('Successfully shared'))
+              .catch((error) => console.log('Error sharing:', error));
+            } else {
+              console.log("Sharing post:", post.id);
+              // Here you would show a custom share modal
+            }
+          }}
         >
           <Share className="w-3 h-3 mr-1" />
           <span>Share</span>
