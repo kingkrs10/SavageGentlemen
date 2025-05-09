@@ -210,13 +210,23 @@ function App() {
       // Clear the redirect path from localStorage first to prevent loops
       localStorage.removeItem('sg:auth:redirect');
       
-      // Use history.pushState for navigation to prevent page reload
+      // IMPORTANT: We need to wait for the auth state to propagate before navigation
       setTimeout(() => {
-        // Update URL without triggering a full reload
-        window.history.pushState({}, '', redirectPath);
-        // Force a navigation event to update the UI
-        window.dispatchEvent(new PopStateEvent('popstate'));
-      }, 500);
+        try {
+          // Use direct URL manipulation without page reload
+          const url = new URL(window.location.origin + redirectPath);
+          
+          // Use history API to navigate without reload - note we're using replaceState not pushState
+          window.history.replaceState({}, '', url.toString());
+          
+          // Force a navigation event to update the UI
+          window.dispatchEvent(new PopStateEvent('popstate'));
+          
+          console.log('Successfully navigated to:', url.toString());
+        } catch (err) {
+          console.error('Navigation error:', err);
+        }
+      }, 800); // Increased delay to ensure state is fully updated
     }
   };
 
@@ -231,13 +241,23 @@ function App() {
       // Clear the redirect path from localStorage first to prevent loops
       localStorage.removeItem('sg:auth:redirect');
       
-      // Use history.pushState for navigation to prevent page reload
+      // IMPORTANT: We need to wait for the auth state to propagate before navigation
       setTimeout(() => {
-        // Update URL without triggering a full reload
-        window.history.pushState({}, '', redirectPath);
-        // Force a navigation event to update the UI
-        window.dispatchEvent(new PopStateEvent('popstate'));
-      }, 500);
+        try {
+          // Use direct URL manipulation without page reload
+          const url = new URL(window.location.origin + redirectPath);
+          
+          // Use history API to navigate without reload - note we're using replaceState not pushState
+          window.history.replaceState({}, '', url.toString());
+          
+          // Force a navigation event to update the UI
+          window.dispatchEvent(new PopStateEvent('popstate'));
+          
+          console.log('Successfully navigated to:', url.toString());
+        } catch (err) {
+          console.error('Navigation error:', err);
+        }
+      }, 800); // Increased delay to ensure state is fully updated
     }
   };
 
