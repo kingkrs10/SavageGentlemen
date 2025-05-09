@@ -64,68 +64,99 @@ const StripeCheckoutForm = ({
   const elements = useElements();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [, setLocation] = useLocation();
+
+  // Check if Stripe is available on mount
+  useEffect(() => {
+    if (!stripe) {
+      console.log("Stripe not yet loaded, waiting...");
+    } else {
+      console.log("Stripe loaded successfully");
+    }
+  }, [stripe]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Always allow submitting the form, even if stripe is not immediately available
+    // Verify Stripe and Elements are available
     if (!stripe || !elements) {
-      console.log("Attempting payment without Stripe instance...");
-      // Try to reload the Stripe instance
-      setTimeout(() => {
-        const stripeInstance = document.querySelector('iframe[title="Secure payment frame"]');
-        if (stripeInstance) {
-          console.log("Stripe iframe found, attempting to force activation");
-          // Stripe element found in DOM, but not connected in JS
-          toast({
-            title: "Please try again",
-            description: "Payment form is ready now. Please submit again.",
-          });
-        } else {
-          toast({
-            title: "Payment form loading",
-            description: "Please wait a moment and try again.",
-          });
-        }
-      }, 500);
+      console.error("Attempting payment without Stripe instance...");
+      
+      // Check if iframe exists but JS not connected
+      const stripeInstance = document.querySelector('iframe[title="Secure payment frame"]');
+      if (stripeInstance) {
+        console.log("Stripe iframe found, but JS API not connected");
+        toast({
+          title: "Payment System Not Ready",
+          description: "Please try submitting again in a few seconds.",
+        });
+      } else {
+        toast({
+          title: "Payment Form Not Loaded",
+          description: "Please wait for the payment form to load completely and try again.",
+          variant: "destructive",
+        });
+      }
       return;
     }
 
     setIsProcessing(true);
 
-    // Build the return URL with event and ticket information as query parameters
-    let returnUrl = window.location.origin + '/payment-success';
-    if (eventId && eventTitle) {
-      returnUrl += `?eventId=${eventId}&eventTitle=${encodeURIComponent(eventTitle)}`;
+    try {
+      console.log("Processing payment with Stripe...");
       
-      // Add ticket information if available
-      if (ticketId && ticketName) {
-        returnUrl += `&ticketId=${ticketId}&ticketName=${encodeURIComponent(ticketName)}`;
+      // Build the return URL with event and ticket information as query parameters
+      let returnUrl = window.location.origin + '/payment-success';
+      if (eventId && eventTitle) {
+        returnUrl += `?eventId=${eventId}&eventTitle=${encodeURIComponent(eventTitle)}`;
+        
+        // Add ticket information if available
+        if (ticketId && ticketName) {
+          returnUrl += `&ticketId=${ticketId}&ticketName=${encodeURIComponent(ticketName)}`;
+        }
       }
-    }
 
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: returnUrl,
-      },
-    });
+      // Try to process the payment
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: returnUrl,
+        },
+        redirect: 'if_required',
+      });
 
-    setIsProcessing(false);
-
-    if (error) {
+      if (error) {
+        console.error("Payment failed:", error);
+        toast({
+          title: "Payment Failed",
+          description: error.message || "Payment could not be processed. Please try again.",
+          variant: "destructive",
+        });
+      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        // Payment succeeded without redirect
+        toast({
+          title: "Payment Successful",
+          description: "Thank you for your purchase! Your ticket has been confirmed.",
+        });
+        
+        // Manually redirect to success page
+        const params = new URLSearchParams();
+        if (eventId) params.append('eventId', eventId.toString());
+        if (eventTitle) params.append('eventTitle', encodeURIComponent(eventTitle));
+        if (ticketId) params.append('ticketId', ticketId.toString());
+        if (ticketName) params.append('ticketName', encodeURIComponent(ticketName));
+        
+        setLocation(`/payment-success?${params.toString()}`);
+      }
+    } catch (err) {
+      console.error("Unexpected error during payment:", err);
       toast({
-        title: "Payment Failed",
-        description: error.message,
+        title: "Payment Error",
+        description: "An unexpected error occurred. Please try again or use a different payment method.",
         variant: "destructive",
       });
-    } else {
-      // The payment has been processed!
-      toast({
-        title: "Payment Successful",
-        description: "Thank you for your purchase!",
-      });
-      // No need to manually redirect, the confirmPayment will handle it
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -640,18 +671,32 @@ export default function Checkout() {
                 <Elements 
                   stripe={stripePromise} 
                   options={{ 
-                    clientSecret, 
+                    clientSecret,
                     appearance: { 
                       theme: 'stripe',
                       variables: {
-                        colorPrimary: '#0366d6', 
+                        colorPrimary: '#E91E63', // Brand color 
+                        colorBackground: '#ffffff',
+                        colorText: '#30313d',
+                        colorDanger: '#df1b41',
+                        fontFamily: 'Inter, system-ui, sans-serif',
+                        spacingUnit: '4px',
+                        borderRadius: '4px'
+                      },
+                      rules: {
+                        '.Label': {
+                          marginBottom: '8px',
+                          fontWeight: '500'
+                        },
+                        '.Input': {
+                          padding: '12px'
+                        }
                       }
                     },
                     fonts: [{
                       cssSrc: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap'
                     }],
                     locale: 'en',
-                    // Use always to ensure payment form is loaded properly
                     loader: 'always'
                   }}
                 >
