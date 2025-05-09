@@ -158,7 +158,7 @@ export default function Checkout() {
         
         setIsLoading(true);
         try {
-          const response = await apiRequest("POST", "/api/payment/create-intent", { 
+          const response = await apiRequest("POST", "/payment/create-intent", { 
             amount: amount,
             currency: currency.toLowerCase(),
             eventId: eventId,

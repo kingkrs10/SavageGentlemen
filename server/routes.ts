@@ -1567,7 +1567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           await sendTicketEmail({
             ticketId: ticket.id.toString(),
-            qrCodeData: ticket.qrCodeData,
+            qrCodeDataUrl: ticket.qrCodeData,
             eventName: event.title,
             eventLocation: event.location,
             eventDate: event.date,
@@ -1804,7 +1804,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       // Send ticket email with QR code
                       await sendTicketEmail({
                         ticketId: ticket.id,
-                        qrCodeData: ticket.qrCodeData,
+                        qrCodeDataUrl: ticket.qrCodeData,
                         eventName: event.title,
                         eventLocation: event.location,
                         eventDate: event.date,
