@@ -879,8 +879,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Media uploads - this is mounted under /api already
-  app.post("/api/admin/uploads", upload.single('file'), async (req: Request, res: Response) => {
+  // Media uploads - make sure we use router not app
+  router.post("/admin/uploads", upload.single('file'), async (req: Request, res: Response) => {
     try {
       // Check authentication manually since multer needs to run before we access the file
       const userId = req.headers['user-id'];
