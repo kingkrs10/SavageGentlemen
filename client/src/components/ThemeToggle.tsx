@@ -65,7 +65,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
   }
 
   // Determine which icon to show based on the current theme
-  const renderIcon = () => {
+  const getThemeIcon = () => {
     if (theme === 'light') return <Smile className="h-[1.2rem] w-[1.2rem]" />;
     if (theme === 'dark') return <SmilePlus className="h-[1.2rem] w-[1.2rem]" />;
     return <LaptopIcon className="h-[1.2rem] w-[1.2rem]" />;
@@ -75,7 +75,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant={variant} size={size} className={className}>
-          {renderIcon()}
+          {getThemeIcon()}
           {showLabel && (
             <span className="ml-2">
               {theme === 'light' ? 'Light' : theme === 'dark' ? 'Dark' : 'Auto'}
