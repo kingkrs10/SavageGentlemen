@@ -25,6 +25,8 @@ import {
   InsertMediaUpload,
   TicketScan,
   InsertTicketScan,
+  PasswordResetToken,
+  InsertPasswordResetToken,
   users,
   events,
   products,
@@ -37,7 +39,8 @@ import {
   orders,
   orderItems,
   mediaUploads,
-  ticketScans
+  ticketScans,
+  passwordResetTokens
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, sql } from "drizzle-orm";
@@ -264,6 +267,41 @@ export class MemStorage implements IStorage {
     user.paypalCustomerId = paypalCustomerId;
     this.users.set(userId, user);
     return user;
+  }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email === email
+    );
+  }
+  
+  async updateUserPassword(id: number, newPassword: string): Promise<User | undefined> {
+    const user = await this.getUser(id);
+    if (!user) {
+      return undefined;
+    }
+    
+    user.password = newPassword;
+    this.users.set(id, user);
+    return user;
+  }
+  
+  // Password reset operations
+  async storePasswordResetToken(userId: number, token: string, expiresAt: Date): Promise<void> {
+    console.log(`[MemStorage] Storing password reset token: ${token} for user ${userId}`);
+    // In-memory implementation just logs the token (no need to store)
+  }
+  
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    console.log(`[MemStorage] Getting password reset token: ${token}`);
+    // In-memory implementation doesn't actually store tokens
+    return undefined;
+  }
+  
+  async deletePasswordResetToken(token: string): Promise<boolean> {
+    console.log(`[MemStorage] Deleting password reset token: ${token}`);
+    // In-memory implementation doesn't actually store tokens
+    return true;
   }
 
   // Event operations
@@ -918,6 +956,35 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return user;
+  }
+  
+  // Password reset operations
+  async storePasswordResetToken(userId: number, token: string, expiresAt: Date): Promise<void> {
+    await db
+      .insert(passwordResetTokens)
+      .values({
+        userId,
+        token,
+        expiresAt,
+        createdAt: new Date()
+      });
+  }
+  
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    const [resetToken] = await db
+      .select()
+      .from(passwordResetTokens)
+      .where(eq(passwordResetTokens.token, token));
+      
+    return resetToken;
+  }
+  
+  async deletePasswordResetToken(token: string): Promise<boolean> {
+    const result = await db
+      .delete(passwordResetTokens)
+      .where(eq(passwordResetTokens.token, token));
+      
+    return result.rowCount ? result.rowCount > 0 : false;
   }
   
   async getAllUsers(): Promise<User[]> {
