@@ -18,6 +18,7 @@ import Community from "@/pages/community";
 import Checkout from "@/pages/checkout";
 import PaymentSuccess from "@/pages/payment-success";
 import Admin from "@/pages/admin-new";
+import PasswordReset from "@/pages/password-reset";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { User } from "@/lib/types";
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/checkout" component={Checkout} />
       <Route path="/payment-success" component={PaymentSuccess} />
       <Route path="/admin" component={Admin} />
+      <Route path="/password-reset" component={PasswordReset} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -25,7 +25,7 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
-import { sendEmail, sendTicketEmail, sendOrderConfirmation, sendAdminNotification, sendWelcomeEmail } from "./email";
+import { sendEmail, sendTicketEmail, sendOrderConfirmation, sendAdminNotification, sendWelcomeEmail, sendPasswordResetEmail } from "./email";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -360,26 +360,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const resetUrl = `${baseUrl}/password-reset?token=${resetToken}`;
       
       // Send reset email
-      const emailSent = await sendEmail({
-        to: email,
-        subject: "Reset Your Password - Savage Gentlemen",
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #1E3A8A;">Reset Your Password</h2>
-            <p>Hello ${user.displayName || user.username},</p>
-            <p>We received a request to reset your password for your Savage Gentlemen account. If you didn't make this request, you can ignore this email.</p>
-            <p>To reset your password, click the button below:</p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetUrl}" style="background-color: #1E3A8A; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Reset Password</a>
-            </div>
-            <p>Or copy and paste this link into your browser:</p>
-            <p style="word-break: break-all; color: #4A5568;">${resetUrl}</p>
-            <p>This link will expire in 1 hour for security reasons.</p>
-            <p>Thanks,<br>Savage Gentlemen Team</p>
-          </div>
-        `,
-        from: "noreply@savagegentlemen.com"
-      });
+      const emailSent = await sendPasswordResetEmail(
+        user.displayName || user.username,
+        email,
+        resetUrl
+      );
       
       if (!emailSent) {
         return res.status(500).json({ message: "Failed to send password reset email" });

@@ -535,3 +535,120 @@ export const sendWelcomeEmail = async (
     html
   });
 };
+
+/**
+ * Send a password reset email with a reset link
+ */
+export const sendPasswordResetEmail = async (
+  userName: string,
+  userEmail: string,
+  resetUrl: string
+): Promise<boolean> => {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          max-width: 600px;
+          margin: 0 auto;
+        }
+        .reset-container {
+          border: 2px solid #cccccc;
+          border-radius: 8px;
+          padding: 30px;
+          margin-top: 20px;
+        }
+        .reset-header {
+          font-size: 24px;
+          font-weight: bold;
+          color: #c01c28;
+          margin-bottom: 20px;
+          text-align: center;
+        }
+        .reset-button {
+          display: inline-block;
+          background-color: #c01c28;
+          color: white;
+          text-decoration: none;
+          padding: 12px 24px;
+          border-radius: 4px;
+          font-weight: bold;
+          margin: 20px 0;
+        }
+        .reset-link {
+          word-break: break-all;
+          background-color: #f7f7f7;
+          padding: 10px;
+          border-radius: 4px;
+          font-family: monospace;
+          margin: 15px 0;
+          border: 1px solid #eee;
+        }
+        .footer {
+          margin-top: 30px;
+          font-size: 14px;
+          color: #666;
+          text-align: center;
+          border-top: 1px solid #eee;
+          padding-top: 20px;
+        }
+        .logo {
+          text-align: center;
+          margin-bottom: 20px;
+        }
+        .note {
+          font-size: 14px;
+          color: #666;
+          margin-top: 20px;
+          padding: 10px;
+          background-color: #f9f9f9;
+          border-radius: 4px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="logo">
+        <img src="https://sgxmedia.com/logo.png" alt="Savage Gentlemen" width="200" />
+      </div>
+      
+      <div class="reset-container">
+        <div class="reset-header">Reset Your Password</div>
+        
+        <p>Hello ${userName},</p>
+        
+        <p>We received a request to reset your password for your Savage Gentlemen account. If you didn't make this request, you can safely ignore this email.</p>
+        
+        <p>To reset your password, click the button below:</p>
+        
+        <div style="text-align: center;">
+          <a href="${resetUrl}" class="reset-button">Reset Password</a>
+        </div>
+        
+        <p>Or copy and paste this link into your browser:</p>
+        <div class="reset-link">${resetUrl}</div>
+        
+        <div class="note">
+          <strong>Note:</strong> This link will expire in 1 hour for security reasons.
+        </div>
+      </div>
+      
+      <div class="footer">
+        <p>This email was sent to ${userEmail} by Savage Gentlemen.</p>
+        <p>If you have any questions, please contact us at support@sgxmedia.com</p>
+        <p>&copy; ${new Date().getFullYear()} Savage Gentlemen. All rights reserved.</p>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  return sendEmail({
+    to: userEmail,
+    subject: `Reset Your Password - Savage Gentlemen`,
+    html
+  });
+};
