@@ -61,7 +61,12 @@ function Router() {
 }
 
 function App() {
-  const [showSplash, setShowSplash] = useState(true);
+  // Only show splash screen on first visit to the site in this browser session
+  const [showSplash, setShowSplash] = useState<boolean>(() => {
+    // Check if we've shown the splash already this session
+    const hasShownSplash = sessionStorage.getItem("hasShownSplash");
+    return !hasShownSplash;
+  });
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
@@ -73,26 +78,70 @@ function App() {
     onSuccess: (data) => {
       setUser(data);
       localStorage.setItem("user", JSON.stringify(data));
+      // Dispatch auth changed event
+      window.dispatchEvent(new CustomEvent('sg:auth:changed', { detail: { user: data } }));
     },
   });
 
+  // Validate the user session on initial load
   useEffect(() => {
-    // Hide splash screen after 3 seconds to allow video to play (reduced for testing)
-    const timer = setTimeout(() => {
-      console.log("Splash screen timer completed, moving to main app");
-      setShowSplash(false);
-    }, 3000);
-
-    // Check if user is logged in
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
+    // Function to validate user session with server
+    const validateUserSession = async () => {
       try {
-        setUser(JSON.parse(storedUser));
-      } catch (err) {
-        console.error("Error parsing stored user:", err);
+        // Only attempt validation if we have a stored user
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          // Parse the stored user
+          const parsedUser = JSON.parse(storedUser);
+          console.log("Validating user session:", parsedUser.username);
+          
+          // Validate the session with the server
+          const response = await apiRequest("GET", "/api/me");
+          
+          if (response.ok) {
+            // Session is valid, set the user state
+            const validatedUser = await response.json();
+            console.log("User session validated successfully");
+            setUser(validatedUser);
+          } else {
+            // Session is invalid, clear the user data
+            console.log("User session invalid, clearing local storage");
+            localStorage.removeItem("user");
+            setUser(null);
+          }
+        }
+      } catch (error) {
+        console.error("Error validating user session:", error);
+        // In case of error, clear the user data to be safe
+        localStorage.removeItem("user");
+        setUser(null);
       }
-    }
+    };
+    
+    // Validate the user session
+    validateUserSession();
+  }, []);
 
+  // Effect for splash screen
+  useEffect(() => {
+    if (showSplash) {
+      console.log("Loading SplashScreen component");
+      console.log("Application starting...");
+      
+      // Hide splash screen after 3 seconds to allow video to play
+      const timer = setTimeout(() => {
+        console.log("Splash screen timer completed, moving to main app");
+        setShowSplash(false);
+        // Mark that we've shown the splash this session
+        sessionStorage.setItem("hasShownSplash", "true");
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [showSplash]);
+
+  // Effect for auth modal event listener
+  useEffect(() => {
     // Listen for custom event to open auth modal with tab and redirect parameters
     const handleOpenAuthModal = (event: CustomEvent) => {
       setShowAuthModal(true);
@@ -142,7 +191,6 @@ function App() {
     window.addEventListener("sg:open-auth-modal", handleOpenAuthModal as EventListener);
 
     return () => {
-      clearTimeout(timer);
       window.removeEventListener("sg:open-auth-modal", handleOpenAuthModal as EventListener);
     };
   }, []);
@@ -151,6 +199,25 @@ function App() {
     setUser(userData);
     localStorage.setItem("user", JSON.stringify(userData));
     setShowAuthModal(false);
+    
+    // Dispatch auth changed event
+    window.dispatchEvent(new CustomEvent('sg:auth:changed', { detail: { user: userData } }));
+    
+    // Check if there's a stored redirect path
+    const redirectPath = localStorage.getItem('sg:auth:redirect');
+    if (redirectPath) {
+      console.log('Redirecting after login to:', redirectPath);
+      // Clear the redirect path from localStorage first to prevent loops
+      localStorage.removeItem('sg:auth:redirect');
+      
+      // Use history.pushState for navigation to prevent page reload
+      setTimeout(() => {
+        // Update URL without triggering a full reload
+        window.history.pushState({}, '', redirectPath);
+        // Force a navigation event to update the UI
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      }, 500);
+    }
   };
 
   const handleContinueAsGuest = () => {
@@ -177,6 +244,8 @@ function App() {
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem("user");
+    // Dispatch auth changed event
+    window.dispatchEvent(new CustomEvent('sg:auth:changed', { detail: { user: null } }));
   };
 
   if (showSplash) {

@@ -102,6 +102,9 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
       onLogin(data);
       loginForm.reset();
       
+      // Dispatch auth changed event
+      window.dispatchEvent(new CustomEvent('sg:auth:changed', { detail: { user: data } }));
+      
       // Check if there's a stored redirect path
       const redirectPath = localStorage.getItem('sg:auth:redirect');
       if (redirectPath) {
