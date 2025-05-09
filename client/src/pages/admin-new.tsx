@@ -1138,6 +1138,12 @@ export default function AdminPage() {
             <TabsTrigger value="tickets">Tickets</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="livestreams">Livestreams</TabsTrigger>
+            <TabsTrigger value="inventory">
+              <div className="flex items-center gap-1">
+                <Package className="h-4 w-4" />
+                <span>Inventory</span>
+              </div>
+            </TabsTrigger>
             <TabsTrigger value="analytics">
               <div className="flex items-center gap-1">
                 <BarChart className="h-4 w-4" />
