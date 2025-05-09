@@ -244,11 +244,15 @@ export default function AdminPage() {
     description: '',
     date: '',
     time: '',
+    endTime: '',
+    duration: 180, // Default duration 3 hours in minutes
     location: '',
     price: 0,
     imageUrl: '',
     category: 'concert',
-    featured: false
+    featured: false,
+    organizerName: 'Savage Gentlemen',
+    organizerEmail: 'info@savagegentlemen.com'
   });
   
   // State for ticket form
@@ -1359,7 +1363,7 @@ export default function AdminPage() {
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="time">Time</Label>
+                      <Label htmlFor="time">Start Time</Label>
                       <Input
                         id="time"
                         type="time"
@@ -1367,6 +1371,32 @@ export default function AdminPage() {
                         onChange={(e) => 
                           setEventForm({ ...eventForm, time: e.target.value })
                         }
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="endTime">End Time</Label>
+                      <Input
+                        id="endTime"
+                        type="time"
+                        value={eventForm.endTime}
+                        onChange={(e) => 
+                          setEventForm({ ...eventForm, endTime: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="duration">Duration (minutes)</Label>
+                      <Input
+                        id="duration"
+                        type="number"
+                        min="0"
+                        value={eventForm.duration}
+                        onChange={(e) => 
+                          setEventForm({ ...eventForm, duration: parseInt(e.target.value) || 180 })
+                        }
+                        placeholder="Event duration in minutes (e.g. 180)"
                       />
                     </div>
                   </div>

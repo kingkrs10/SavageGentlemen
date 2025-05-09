@@ -39,11 +39,16 @@ export const events = pgTable("events", {
   title: text("title").notNull(),
   description: text("description"),
   date: timestamp("date").notNull(),
+  time: text("time"), // Time string in HH:MM format
+  endTime: text("end_time"), // End time string in HH:MM format
+  duration: integer("duration"), // Duration in minutes
   location: text("location").notNull(),
   price: integer("price").notNull(),
   imageUrl: text("image_url"),
   category: text("category"),
   featured: boolean("featured").default(false),
+  organizerName: text("organizer_name").default("Savage Gentlemen"),
+  organizerEmail: text("organizer_email").default("info@savagegentlemen.com"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -53,11 +58,16 @@ export const insertEventSchema = createInsertSchema(events)
     title: true,
     description: true,
     date: true,
+    time: true,
+    endTime: true,
+    duration: true,
     location: true,
     price: true,
     imageUrl: true,
     category: true,
     featured: true,
+    organizerName: true,
+    organizerEmail: true,
   })
   .transform((data) => {
     // If date is provided as a string, convert it to a Date object
