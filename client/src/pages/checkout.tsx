@@ -259,10 +259,10 @@ export default function Checkout() {
             </div>
             
             <div className="space-y-3">
-              <Button 
+              <Button
                 className="w-full"
                 onClick={() => {
-                  // Preserve eventId and other params in the redirect
+                  // Preserve event parameters in redirect
                   const params = new URLSearchParams();
                   if (eventId) params.append("eventId", eventId.toString());
                   if (eventTitle) params.append("eventTitle", eventTitle);
@@ -272,11 +272,11 @@ export default function Checkout() {
               >
                 Sign In
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full"
                 onClick={() => {
-                  // Preserve eventId and other params in the redirect
+                  // Preserve event parameters in redirect
                   const params = new URLSearchParams();
                   if (eventId) params.append("eventId", eventId.toString());
                   if (eventTitle) params.append("eventTitle", eventTitle);

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import LogoSvg from "@/assets/logo.svg";
+import LogoImage from "@/assets/SGFLYERLOGO.png";
 
 interface HeaderProps {
   user: UserType | null;
@@ -37,7 +37,7 @@ const Header = ({ user, onProfileClick, onLogout }: HeaderProps) => {
         {/* Logo and User Controls */}
         <div className="py-3 flex justify-between items-center border-t dark:border-white/10 light:border-black/10">
           <div className="flex items-center">
-            <img src={LogoSvg} alt="Savage Gentlemen Logo" className="h-10 w-10" />
+            <img src={LogoImage} alt="Savage Gentlemen Logo" className="h-12 w-auto" />
             <h1 className="ml-2 text-xl md:text-2xl font-heading dark:text-white light:text-foreground tracking-widest truncate max-w-[180px] sm:max-w-none">
               SAVAGE GENTLEMEN
             </h1>
