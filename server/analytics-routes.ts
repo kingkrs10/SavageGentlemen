@@ -323,37 +323,50 @@ analyticsRouter.get("/dashboard", async (req: Request, res: Response) => {
       stat => new Date(stat.date).getTime() >= last7Days.getTime()
     );
     
+    // Helper function to safely handle null values in sums
+    const safeSum = (array: any[], accessor: (item: any) => number): number => {
+      return array.reduce((sum, item) => sum + (accessor(item) || 0), 0);
+    };
+    
+    // Helper function to safely handle null values in revenue calculations
+    const safeRevenueSum = (array: any[], accessor: (item: any) => string | null): string => {
+      return array.reduce((sum, item) => {
+        const value = accessor(item);
+        return sum + (value ? parseFloat(value) : 0);
+      }, 0).toFixed(2);
+    };
+    
     const summary = {
-      totalPageViews: dailyStats.reduce((sum, stat) => sum + stat.pageViews, 0),
-      totalEventViews: dailyStats.reduce((sum, stat) => sum + stat.eventViews, 0),
-      totalProductViews: dailyStats.reduce((sum, stat) => sum + stat.productViews, 0),
-      totalTicketSales: dailyStats.reduce((sum, stat) => sum + stat.ticketSales, 0),
-      totalProductClicks: dailyStats.reduce((sum, stat) => sum + stat.productClicks, 0),
-      totalRevenue: dailyStats.reduce((sum, stat) => sum + parseFloat(stat.totalRevenue), 0).toFixed(2),
-      totalNewUsers: dailyStats.reduce((sum, stat) => sum + stat.newUsers, 0),
-      totalActiveUsers: dailyStats.reduce((sum, stat) => sum + stat.activeUsers, 0),
+      totalPageViews: safeSum(dailyStats, stat => stat.pageViews),
+      totalEventViews: safeSum(dailyStats, stat => stat.eventViews),
+      totalProductViews: safeSum(dailyStats, stat => stat.productViews),
+      totalTicketSales: safeSum(dailyStats, stat => stat.ticketSales),
+      totalProductClicks: safeSum(dailyStats, stat => stat.productClicks),
+      totalRevenue: safeRevenueSum(dailyStats, stat => stat.totalRevenue),
+      totalNewUsers: safeSum(dailyStats, stat => stat.newUsers),
+      totalActiveUsers: safeSum(dailyStats, stat => stat.activeUsers),
       
       last7Days: {
-        pageViews: last7DaysStats.reduce((sum, stat) => sum + stat.pageViews, 0),
-        eventViews: last7DaysStats.reduce((sum, stat) => sum + stat.eventViews, 0),
-        productViews: last7DaysStats.reduce((sum, stat) => sum + stat.productViews, 0),
-        ticketSales: last7DaysStats.reduce((sum, stat) => sum + stat.ticketSales, 0),
-        productClicks: last7DaysStats.reduce((sum, stat) => sum + stat.productClicks, 0),
-        revenue: last7DaysStats.reduce((sum, stat) => sum + parseFloat(stat.totalRevenue), 0).toFixed(2),
-        newUsers: last7DaysStats.reduce((sum, stat) => sum + stat.newUsers, 0),
-        activeUsers: last7DaysStats.reduce((sum, stat) => sum + stat.activeUsers, 0),
+        pageViews: safeSum(last7DaysStats, stat => stat.pageViews),
+        eventViews: safeSum(last7DaysStats, stat => stat.eventViews),
+        productViews: safeSum(last7DaysStats, stat => stat.productViews),
+        ticketSales: safeSum(last7DaysStats, stat => stat.ticketSales),
+        productClicks: safeSum(last7DaysStats, stat => stat.productClicks),
+        revenue: safeRevenueSum(last7DaysStats, stat => stat.totalRevenue),
+        newUsers: safeSum(last7DaysStats, stat => stat.newUsers),
+        activeUsers: safeSum(last7DaysStats, stat => stat.activeUsers),
       },
       
       dailyData: dailyStats.map(stat => ({
         date: stat.date,
-        pageViews: stat.pageViews,
-        eventViews: stat.eventViews,
-        productViews: stat.productViews,
-        ticketSales: stat.ticketSales,
-        productClicks: stat.productClicks,
-        revenue: parseFloat(stat.totalRevenue),
-        newUsers: stat.newUsers,
-        activeUsers: stat.activeUsers
+        pageViews: stat.pageViews || 0,
+        eventViews: stat.eventViews || 0,
+        productViews: stat.productViews || 0,
+        ticketSales: stat.ticketSales || 0,
+        productClicks: stat.productClicks || 0,
+        revenue: stat.totalRevenue ? parseFloat(stat.totalRevenue) : 0,
+        newUsers: stat.newUsers || 0,
+        activeUsers: stat.activeUsers || 0
       }))
     };
     
