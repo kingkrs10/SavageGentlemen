@@ -262,12 +262,35 @@ export default function Checkout() {
               <Button
                 className="w-full"
                 onClick={() => {
-                  // Preserve event parameters in redirect
-                  const params = new URLSearchParams();
-                  if (eventId) params.append("eventId", eventId.toString());
-                  if (eventTitle) params.append("eventTitle", eventTitle);
-                  const redirectPath = `/checkout${params.toString() ? `?${params.toString()}` : ''}`;
-                  setLocation(`/login?redirect=${encodeURIComponent(redirectPath)}`);
+                  // Preserve all original URL parameters in the redirect
+                  const currentParams = new URLSearchParams(window.location.search);
+                  
+                  // Make sure to include all event parameters
+                  if (eventId && !currentParams.has('eventId')) {
+                    currentParams.set('eventId', eventId.toString());
+                  }
+                  if (eventTitle && !currentParams.has('title')) {
+                    currentParams.set('title', eventTitle);
+                  }
+                  if (!currentParams.has('amount') && amount) {
+                    currentParams.set('amount', amount.toString());
+                  }
+                  if (!currentParams.has('currency') && currency) {
+                    currentParams.set('currency', currency);
+                  }
+                  
+                  // Create the redirect path with all parameters
+                  const redirectPath = `/checkout?${currentParams.toString()}`;
+                  console.log("Redirecting to login with return path:", redirectPath);
+                  
+                  // Open the auth modal instead of redirecting
+                  const event = new CustomEvent('sg:open-auth-modal', { 
+                    detail: { 
+                      tab: 'login',
+                      redirectPath 
+                    } 
+                  });
+                  window.dispatchEvent(event);
                 }}
               >
                 Sign In
@@ -276,12 +299,35 @@ export default function Checkout() {
                 variant="outline"
                 className="w-full"
                 onClick={() => {
-                  // Preserve event parameters in redirect
-                  const params = new URLSearchParams();
-                  if (eventId) params.append("eventId", eventId.toString());
-                  if (eventTitle) params.append("eventTitle", eventTitle);
-                  const redirectPath = `/checkout${params.toString() ? `?${params.toString()}` : ''}`;
-                  setLocation(`/register?redirect=${encodeURIComponent(redirectPath)}`);
+                  // Preserve all original URL parameters in the redirect
+                  const currentParams = new URLSearchParams(window.location.search);
+                  
+                  // Make sure to include all event parameters
+                  if (eventId && !currentParams.has('eventId')) {
+                    currentParams.set('eventId', eventId.toString());
+                  }
+                  if (eventTitle && !currentParams.has('title')) {
+                    currentParams.set('title', eventTitle);
+                  }
+                  if (!currentParams.has('amount') && amount) {
+                    currentParams.set('amount', amount.toString());
+                  }
+                  if (!currentParams.has('currency') && currency) {
+                    currentParams.set('currency', currency);
+                  }
+                  
+                  // Create the redirect path with all parameters
+                  const redirectPath = `/checkout?${currentParams.toString()}`;
+                  console.log("Redirecting to register with return path:", redirectPath);
+                  
+                  // Open the auth modal instead of redirecting
+                  const event = new CustomEvent('sg:open-auth-modal', { 
+                    detail: { 
+                      tab: 'register',
+                      redirectPath 
+                    } 
+                  });
+                  window.dispatchEvent(event);
                 }}
               >
                 Create Account
