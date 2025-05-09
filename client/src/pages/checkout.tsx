@@ -411,7 +411,7 @@ export default function Checkout() {
         
         setIsLoading(true);
         try {
-          const response = await apiRequest("POST", "/payment/create-intent", { 
+          const response = await apiRequest("POST", "/api/payment/create-intent", { 
             amount: amount,
             currency: currency.toLowerCase(),
             eventId: eventId,
@@ -632,7 +632,7 @@ export default function Checkout() {
                   onClick={async () => {
                     setProcessingFreeTicket(true);
                     try {
-                      const response = await apiRequest("POST", "/tickets/free", {
+                      const response = await apiRequest("POST", "/api/tickets/free", {
                         eventId: eventId,
                         eventTitle: eventTitle,
                         ticketId: ticketId,
@@ -789,7 +789,7 @@ export default function Checkout() {
                         if (user) {
                           const createIntent = async () => {
                             try {
-                              const response = await apiRequest("POST", "/payment/create-intent", { 
+                              const response = await apiRequest("POST", "/api/payment/create-intent", { 
                                 amount: amount,
                                 currency: currency.toLowerCase(),
                                 eventId: eventId,
