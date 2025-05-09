@@ -1,4 +1,5 @@
 import { Search, User, LogOut, LayoutDashboard, Ticket } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 import { User as UserType } from "@/lib/types";
 import {
   DropdownMenu,

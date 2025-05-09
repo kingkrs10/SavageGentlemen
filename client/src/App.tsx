@@ -132,7 +132,7 @@ function App() {
         title="Home"
         description="Savage Gentlemen - Caribbean-American lifestyle brand featuring events, merchandise, livestreams, and community connection. Shop tickets, apparel, and more."
       />
-      <ThemeProvider attribute="class" forcedTheme="dark">
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <TooltipProvider>
           <div className="min-h-screen flex flex-col bg-background">
             <Header
