@@ -42,7 +42,7 @@ const EventCard = ({
           <div>
             <div className="flex justify-between items-start">
               <div>
-                <Link href={`/event/${id}`} className="hover:underline">
+                <Link href={`/events/${id}`} className="hover:underline">
                   <h3 className="text-xl font-heading">{title}</h3>
                 </Link>
                 <p className="text-sm text-gray-300 flex items-center mt-1">
@@ -64,7 +64,7 @@ const EventCard = ({
                 <span className="mr-1">🎟️</span> Tickets available
               </Badge>
               <div className="flex space-x-2">
-                <Link href={`/event/${id}`}>
+                <Link href={`/events/${id}`}>
                   <Button 
                     variant="outline"
                     size="sm"
@@ -104,7 +104,7 @@ const EventCard = ({
   
   return (
     <div className="event-card rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 group">
-      <Link href={`/event/${id}`} className="block relative">
+      <Link href={`/events/${id}`} className="block relative">
         <div className="w-full h-48">
           <LazyImage 
             src={getNormalizedImageUrl(imageUrl)}
@@ -122,7 +122,7 @@ const EventCard = ({
       <div className="p-4">
         <div className="flex justify-between items-start">
           <div>
-            <Link href={`/event/${id}`} className="hover:underline block">
+            <Link href={`/events/${id}`} className="hover:underline block">
               <h3 className="text-xl font-heading">{title}</h3>
             </Link>
             <p className="text-sm text-gray-300 flex items-center mt-1">
@@ -139,7 +139,7 @@ const EventCard = ({
             <MapPin className="w-3 h-3 mr-1" /> {location}
           </span>
           <div className="flex ml-auto space-x-2">
-            <Link href={`/event/${id}`}>
+            <Link href={`/events/${id}`}>
               <Button 
                 variant="outline"
                 size="sm"
