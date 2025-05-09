@@ -26,7 +26,7 @@ const EventCard = ({
       <div className="event-card rounded-xl overflow-hidden shadow-lg flex flex-col md:flex-row">
         <div className="w-full md:w-1/3 h-48 md:h-auto">
           <LazyImage 
-            src={imageUrl || ''}
+            src={getNormalizedImageUrl(imageUrl)}
             alt={title}
             className="w-full h-full object-cover"
             fallbackSrc={SGFlyerLogoPng}
@@ -86,7 +86,7 @@ const EventCard = ({
     <div className="event-card rounded-xl overflow-hidden shadow-lg">
       <div className="w-full h-48">
         <LazyImage 
-          src={imageUrl || ''}
+          src={getNormalizedImageUrl(imageUrl)}
           alt={title}
           className="w-full h-full object-cover"
           fallbackSrc={SGFlyerLogoPng}

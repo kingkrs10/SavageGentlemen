@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import EventCard from "@/components/home/EventCard";
 import BrandLoader from "@/components/ui/BrandLoader";
 import { useToast } from "@/hooks/use-toast";
+import { getNormalizedImageUrl } from "@/lib/utils/image-utils";
 
 const Events = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -67,7 +68,7 @@ const Events = () => {
         ) : featuredEvent ? (
           <>
             <img 
-              src={featuredEvent.imageUrl} 
+              src={getNormalizedImageUrl(featuredEvent.imageUrl)} 
               alt={featuredEvent.title} 
               className="w-full h-64 object-cover"
             />
