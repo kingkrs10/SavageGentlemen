@@ -329,10 +329,11 @@ analyticsRouter.get("/dashboard", async (req: Request, res: Response) => {
     };
     
     // Helper function to safely handle null values in revenue calculations
-    const safeRevenueSum = (array: any[], accessor: (item: any) => string | null): string => {
+    const safeRevenueSum = (array: any[], accessor: (item: any) => string | number | null): string => {
       return array.reduce((sum, item) => {
         const value = accessor(item);
-        return sum + (value ? parseFloat(value) : 0);
+        if (value === null || value === undefined) return sum;
+        return sum + (typeof value === 'string' ? parseFloat(value) : value);
       }, 0).toFixed(2);
     };
     
@@ -364,7 +365,7 @@ analyticsRouter.get("/dashboard", async (req: Request, res: Response) => {
         productViews: stat.productViews || 0,
         ticketSales: stat.ticketSales || 0,
         productClicks: stat.productClicks || 0,
-        revenue: stat.totalRevenue ? parseFloat(stat.totalRevenue) : 0,
+        revenue: stat.totalRevenue ? (typeof stat.totalRevenue === 'string' ? parseFloat(stat.totalRevenue) : Number(stat.totalRevenue)) : 0,
         newUsers: stat.newUsers || 0,
         activeUsers: stat.activeUsers || 0
       }))
