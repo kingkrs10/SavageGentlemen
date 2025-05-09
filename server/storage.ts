@@ -1428,28 +1428,96 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllProducts(): Promise<Product[]> {
-    return await db
-      .select()
-      .from(products);
+    try {
+      // Use raw SQL query to handle schema differences
+      const result = await db.execute(
+        sql`SELECT id, title, description, price, image_url as "imageUrl", 
+        category, sizes, featured, etsy_url as "etsyUrl", created_at as "createdAt", 
+        updated_at as "updatedAt", 
+        COALESCE(stock_level, 0) as "stockLevel",
+        COALESCE(sku, '') as "sku",
+        COALESCE(in_stock, true) as "inStock",
+        COALESCE(low_stock_threshold, 5) as "lowStockThreshold"
+        FROM products`
+      );
+      return result.rows as Product[];
+    } catch (error) {
+      console.error('Error in getAllProducts:', error);
+      // Fallback for backward compatibility
+      try {
+        const result = await db.execute(
+          sql`SELECT id, title, description, price, image_url as "imageUrl", 
+              category, sizes, featured, etsy_url as "etsyUrl", created_at as "createdAt", 
+              updated_at as "updatedAt" FROM products`
+        );
+        // Add default inventory fields
+        return (result.rows as Product[]).map(product => ({
+          ...product,
+          stockLevel: 0,
+          sku: '',
+          inStock: true,
+          lowStockThreshold: 5
+        }));
+      } catch (fallbackError) {
+        console.error('Fallback error in getAllProducts:', fallbackError);
+        return [];
+      }
+    }
   }
 
   async getFeaturedProducts(): Promise<Product[]> {
     try {
-      // Directly use a raw SQL query to avoid issues with schema mismatch
+      // Use the same query approach as getAllProducts but with featured filter
       const result = await db.execute(
-        sql`SELECT * FROM products WHERE featured = true`
+        sql`SELECT id, title, description, price, image_url as "imageUrl", 
+        category, sizes, featured, etsy_url as "etsyUrl", created_at as "createdAt", 
+        updated_at as "updatedAt", 
+        COALESCE(stock_level, 0) as "stockLevel",
+        COALESCE(sku, '') as "sku",
+        COALESCE(in_stock, true) as "inStock",
+        COALESCE(low_stock_threshold, 5) as "lowStockThreshold"
+        FROM products WHERE featured = true`
       );
       return result.rows as Product[];
     } catch (error) {
       console.error('Error in getFeaturedProducts:', error);
-      // Fallback with even simpler query
+      // Fallback for backward compatibility with no inventory fields
       try {
-        const result = await db.execute(sql`SELECT * FROM products`);
-        // Filter in memory
-        return (result.rows as Product[]).filter(product => product.featured === true);
+        const result = await db.execute(
+          sql`SELECT id, title, description, price, image_url as "imageUrl", 
+              category, sizes, featured, etsy_url as "etsyUrl", created_at as "createdAt", 
+              updated_at as "updatedAt" FROM products WHERE featured = true`
+        );
+        // Add default inventory fields
+        return (result.rows as Product[]).map(product => ({
+          ...product,
+          stockLevel: 0,
+          sku: '',
+          inStock: true,
+          lowStockThreshold: 5
+        }));
       } catch (fallbackError) {
-        console.error('Ultimate fallback error in getFeaturedProducts:', fallbackError);
-        return []; // Return empty array as last resort
+        // Ultimate fallback - get all products and filter in memory
+        try {
+          console.error('Fallback error in getFeaturedProducts:', fallbackError);
+          const result = await db.execute(
+            sql`SELECT id, title, description, price, image_url as "imageUrl", 
+                category, sizes, featured, etsy_url as "etsyUrl", created_at as "createdAt", 
+                updated_at as "updatedAt" FROM products`
+          );
+          return (result.rows as Product[])
+            .filter(product => product.featured === true)
+            .map(product => ({
+              ...product,
+              stockLevel: 0,
+              sku: '',
+              inStock: true,
+              lowStockThreshold: 5
+            }));
+        } catch (ultimateFallbackError) {
+          console.error('Ultimate fallback error in getFeaturedProducts:', ultimateFallbackError);
+          return [];
+        }
       }
     }
   }
