@@ -1491,25 +1491,52 @@ export default function AdminPage() {
                                   formData.append('relatedEntityId', currentEvent.id.toString());
                                 }
                                 
-                                // Can't use apiRequest directly with FormData
-                                // We need to manually add the auth headers
+                                // Log what we're uploading
+                                console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
+                                
+                                // Check authentication
                                 const userId = currentUser?.id;
-                                const headers: HeadersInit = {};
-                                if (userId) {
-                                  headers['user-id'] = userId.toString();
+                                if (!userId) {
+                                  toast({
+                                    title: "Authentication required",
+                                    description: "You must be logged in as admin to upload images.",
+                                    variant: "destructive",
+                                  });
+                                  return;
                                 }
                                 
+                                console.log('User ID for upload:', userId);
+                                
+                                // Upload the file with authentication header
                                 const response = await fetch('/api/admin/uploads', {
                                   method: 'POST',
                                   body: formData,
-                                  headers
+                                  headers: {
+                                    'user-id': userId.toString()
+                                  }
                                 });
                                 
+                                console.log('Upload response status:', response.status);
+                                
+                                // Handle error responses
                                 if (!response.ok) {
-                                  throw new Error('Failed to upload image');
+                                  const errorText = await response.text();
+                                  console.error('Upload error response:', errorText);
+                                  let errorMessage = 'Failed to upload image';
+                                  
+                                  try {
+                                    const errorData = JSON.parse(errorText);
+                                    errorMessage = errorData.message || errorMessage;
+                                  } catch (e) {
+                                    // If the response is not valid JSON, use the text directly
+                                    errorMessage = errorText || errorMessage;
+                                  }
+                                  
+                                  throw new Error(errorMessage);
                                 }
                                 
                                 const data = await response.json();
+                                console.log('Upload success, data:', data);
                                 setEventForm({ ...eventForm, imageUrl: data.file.url });
                                 toast({
                                   title: "Image uploaded",
@@ -1519,7 +1546,7 @@ export default function AdminPage() {
                                 console.error('Error uploading image:', error);
                                 toast({
                                   title: "Upload failed",
-                                  description: "Failed to upload image. Please try again.",
+                                  description: error instanceof Error ? error.message : "Failed to upload image. Please try again.",
                                   variant: "destructive",
                                 });
                               }
