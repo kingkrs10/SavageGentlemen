@@ -292,11 +292,13 @@ const EventDetail = () => {
                 <Button 
                   className="w-full bg-primary hover:bg-primary/90 mb-4 py-6 text-lg"
                   onClick={() => {
-                    // Add ticket purchase logic here
                     toast({
-                      title: "Get Ticket",
-                      description: "Redirecting to ticket purchase...",
+                      title: "Processing",
+                      description: "Redirecting to secure checkout..."
                     });
+                    
+                    // Redirect to checkout page with event details
+                    window.location.href = `/checkout?eventId=${event.id}&amount=${event.price}&currency=USD&title=${encodeURIComponent(event.title)}`;
                   }}
                 >
                   Get Ticket

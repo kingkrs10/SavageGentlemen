@@ -10,7 +10,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import PayPalButton from '@/components/PayPalButton';
 import { loadStripe } from '@stripe/stripe-js';
 import {
@@ -21,6 +21,9 @@ import {
 } from '@stripe/react-stripe-js';
 import { apiRequest } from "@/lib/queryClient";
 import BrandLoader from '@/components/ui/BrandLoader';
+import { User } from '@/lib/types';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Make sure to call loadStripe outside of a component's render to avoid
 // recreating the Stripe object on every render.
@@ -114,8 +117,34 @@ export default function Checkout() {
   const [eventId, setEventId] = useState<number | null>(null);
   const [eventTitle, setEventTitle] = useState<string>('');
   const [processingFreeTicket, setProcessingFreeTicket] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  
+  // Fetch current user
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      try {
+        setCheckingAuth(true);
+        const response = await apiRequest('GET', '/api/me');
+        
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        setUser(null);
+      } finally {
+        setCheckingAuth(false);
+      }
+    };
+    
+    getCurrentUser();
+  }, []);
   
   // Get the params from the URL search params if available
   useEffect(() => {
