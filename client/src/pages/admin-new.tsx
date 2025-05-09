@@ -858,7 +858,9 @@ export default function AdminPage() {
       });
       
       // Refresh tickets list
-      queryClient.invalidateQueries({queryKey: ["/api/admin/tickets"]});
+      await queryClient.invalidateQueries({queryKey: ["/api/admin/tickets"]});
+      // Force a refetch to ensure UI is updated with new data
+      await queryClient.refetchQueries({queryKey: ["/api/admin/tickets"]});
     } catch (error) {
       console.error("Failed to create ticket:", error);
       toast({
@@ -923,7 +925,9 @@ export default function AdminPage() {
       });
       
       // Refresh tickets list
-      queryClient.invalidateQueries({queryKey: ["/api/admin/tickets"]});
+      await queryClient.invalidateQueries({queryKey: ["/api/admin/tickets"]});
+      // Force a refetch to ensure UI is updated with new data
+      await queryClient.refetchQueries({queryKey: ["/api/admin/tickets"]});
     } catch (error) {
       console.error("Failed to update ticket:", error);
       toast({
@@ -946,7 +950,9 @@ export default function AdminPage() {
       });
       
       // Refresh tickets list
-      queryClient.invalidateQueries({queryKey: ["/api/admin/tickets"]});
+      await queryClient.invalidateQueries({queryKey: ["/api/admin/tickets"]});
+      // Force a refetch to ensure UI is updated with new data
+      await queryClient.refetchQueries({queryKey: ["/api/admin/tickets"]});
     } catch (error) {
       console.error('Error updating ticket status:', error);
       toast({
