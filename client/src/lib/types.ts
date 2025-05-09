@@ -20,11 +20,16 @@ export interface Event {
   title: string;
   description: string;
   date: string | Date;
+  time?: string;
+  endTime?: string;
+  duration?: number;
   location: string;
   price: number;
   imageUrl: string;
   category: string;
   featured: boolean;
+  organizerName?: string;
+  organizerEmail?: string;
 }
 
 // Product types

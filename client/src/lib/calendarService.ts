@@ -79,7 +79,10 @@ export const saveEventToCalendar = (event: Event): void => {
       location: event.location,
       url: window.location.href,
       status: 'CONFIRMED' as const,
-      organizer: { name: 'Savage Gentlemen', email: 'info@savagegentlemen.com' },
+      organizer: { 
+        name: event.organizerName || 'Savage Gentlemen', 
+        email: event.organizerEmail || 'info@savagegentlemen.com' 
+      },
       categories: ['SavageGentlemen', 'Caribbean', 'Event'],
       busyStatus: 'BUSY' as const,
       productId: 'savagegentlemen/events'
@@ -114,10 +117,22 @@ export const getGoogleCalendarUrl = (event: Event): string => {
       return date.toISOString().replace(/-|:|\.\d+/g, '');
     };
     
+    // Prepare description with organizer information if available
+    let details = event.description || '';
+    if (event.organizerName || event.organizerEmail) {
+      details += '\n\n';
+      if (event.organizerName) {
+        details += `Organized by: ${event.organizerName}\n`;
+      }
+      if (event.organizerEmail) {
+        details += `Contact: ${event.organizerEmail}`;
+      }
+    }
+
     const params = new URLSearchParams({
       action: 'TEMPLATE',
       text: event.title,
-      details: event.description,
+      details: details,
       location: event.location,
       dates: `${formatDate(startDate)}/${formatDate(endDate)}`
     });
@@ -137,9 +152,21 @@ export const getOutlookCalendarUrl = (event: Event): string => {
   try {
     const { startDate, endDate } = parseEventDateTime(event);
     
+    // Prepare description with organizer information
+    let body = event.description || '';
+    if (event.organizerName || event.organizerEmail) {
+      body += '\n\n';
+      if (event.organizerName) {
+        body += `Organized by: ${event.organizerName}\n`;
+      }
+      if (event.organizerEmail) {
+        body += `Contact: ${event.organizerEmail}`;
+      }
+    }
+
     const params = new URLSearchParams({
       subject: event.title,
-      body: event.description,
+      body: body,
       location: event.location,
       startdt: startDate.toISOString(),
       enddt: endDate.toISOString(),
@@ -165,10 +192,22 @@ export const getYahooCalendarUrl = (event: Event): string => {
     // Duration in minutes for Yahoo Calendar
     const durationMinutes = Math.round((endDate.getTime() - startDate.getTime()) / (60 * 1000));
     
+    // Prepare description with organizer information
+    let desc = event.description || '';
+    if (event.organizerName || event.organizerEmail) {
+      desc += '\n\n';
+      if (event.organizerName) {
+        desc += `Organized by: ${event.organizerName}\n`;
+      }
+      if (event.organizerEmail) {
+        desc += `Contact: ${event.organizerEmail}`;
+      }
+    }
+
     const params = new URLSearchParams({
       v: '60',
       title: event.title,
-      desc: event.description,
+      desc: desc,
       in_loc: event.location,
       st: Math.floor(startDate.getTime() / 1000).toString(),
       dur: durationMinutes.toString()
