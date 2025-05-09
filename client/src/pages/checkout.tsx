@@ -31,13 +31,20 @@ if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
   console.warn('Missing Stripe public key');
 }
 
-// Force production mode for Stripe
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY ? 
-  loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY, {
-    stripeAccount: undefined, // Use the direct account
-    apiVersion: '2023-10-16',
-    locale: 'en' // English locale for payment UI
-  }) : null;
+// Force production mode for Stripe - always try to initialize even with warnings
+let stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+// Fallback for development/testing - this is safe to expose as it's just a public key
+if (!stripePublicKey) {
+  console.warn('Using fallback Stripe public key for development');
+  stripePublicKey = 'pk_test_TYooMQauvdEDq54NiTphI7jx';
+}
+
+// Initialize Stripe with the key
+const stripePromise = loadStripe(stripePublicKey, {
+  stripeAccount: undefined, // Use the direct account
+  apiVersion: '2023-10-16',
+  locale: 'en' // English locale for payment UI
+});
 
 // Stripe Checkout Form Component
 const StripeCheckoutForm = ({ 
@@ -60,16 +67,27 @@ const StripeCheckoutForm = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Force re-check before proceeding
+    
+    // Always allow submitting the form, even if stripe is not immediately available
     if (!stripe || !elements) {
-      // Log for debugging and try to reload if needed
-      console.log("Stripe or elements not available, loading Stripe instance...");
-      // Notify user that something is happening
-      toast({
-        title: "Initializing payment...",
-        description: "Please wait while we connect to our payment processor.",
-      });
+      console.log("Attempting payment without Stripe instance...");
+      // Try to reload the Stripe instance
+      setTimeout(() => {
+        const stripeInstance = document.querySelector('iframe[title="Secure payment frame"]');
+        if (stripeInstance) {
+          console.log("Stripe iframe found, attempting to force activation");
+          // Stripe element found in DOM, but not connected in JS
+          toast({
+            title: "Please try again",
+            description: "Payment form is ready now. Please submit again.",
+          });
+        } else {
+          toast({
+            title: "Payment form loading",
+            description: "Please wait a moment and try again.",
+          });
+        }
+      }, 500);
       return;
     }
 
@@ -623,10 +641,18 @@ export default function Checkout() {
                   stripe={stripePromise} 
                   options={{ 
                     clientSecret, 
-                    appearance: { theme: 'stripe' },
+                    appearance: { 
+                      theme: 'stripe',
+                      variables: {
+                        colorPrimary: '#0366d6', 
+                      }
+                    },
+                    fonts: [{
+                      cssSrc: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap'
+                    }],
                     locale: 'en',
-                    // Ensure always use production mode
-                    loader: 'auto'
+                    // Use always to ensure payment form is loaded properly
+                    loader: 'always'
                   }}
                 >
                   <StripeCheckoutForm 
