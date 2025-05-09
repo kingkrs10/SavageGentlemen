@@ -7,11 +7,13 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-// Helper function to remove /api prefix if present
+// Helper function to ensure URL has the correct format
 function normalizeUrl(url: string): string {
-  // If the URL starts with /api/, remove it
-  if (url.startsWith('/api/')) {
-    return url.substring(4); // Remove the first 4 characters (/api)
+  // For API routes, ensure they start with /api/
+  if (!url.startsWith('/api/') && !url.startsWith('/')) {
+    return `/api/${url}`;
+  } else if (!url.startsWith('/api/') && url.startsWith('/')) {
+    return `/api${url}`;
   }
   return url;
 }

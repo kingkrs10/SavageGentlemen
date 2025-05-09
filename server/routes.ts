@@ -972,7 +972,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get all tickets in the admin dashboard
-  router.get("/admin/tickets", async (req: Request, res: Response) => {
+  router.get("/admin/tickets", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
       // Use real data from database
       const tickets = await storage.getAllTickets();
@@ -1132,7 +1132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Orders management
-  router.get("/admin/orders", async (req: Request, res: Response) => {
+  router.get("/admin/orders", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
       // Use real data from database
       const orders = await storage.getAllOrders();
@@ -1144,7 +1144,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // User management
-  router.get("/admin/users", async (req: Request, res: Response) => {
+  router.get("/admin/users", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
       // Use real data from database
       const users = await storage.getAllUsers();
