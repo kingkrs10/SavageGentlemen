@@ -3,6 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Plus, Pencil, Trash, Users, Tag, Layers, Activity, BarChart, Eye, EyeOff, Search } from "lucide-react";
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+} from "recharts";
 import {
   Select,
   SelectContent,
@@ -144,6 +147,38 @@ interface Livestream {
   embedCode?: string | null;
   // Legacy field
   streamUrl?: string | null;
+}
+
+interface AnalyticsData {
+  totalPageViews: number;
+  totalEventViews: number;
+  totalProductViews: number;
+  totalTicketSales: number;
+  totalProductClicks: number;
+  totalRevenue: string;
+  totalNewUsers: number;
+  totalActiveUsers: number;
+  last7Days: {
+    pageViews: number;
+    eventViews: number;
+    productViews: number;
+    ticketSales: number;
+    productClicks: number;
+    revenue: string;
+    newUsers: number;
+    activeUsers: number;
+  };
+  dailyData: Array<{
+    date: string;
+    pageViews: number;
+    eventViews: number;
+    productViews: number;
+    ticketSales: number;
+    productClicks: number;
+    revenue: number;
+    newUsers: number;
+    activeUsers: number;
+  }>;
 }
 
 export default function AdminPage() {
@@ -2514,9 +2549,21 @@ export default function AdminPage() {
                         <CardTitle className="text-sm font-medium">Page Views</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-3xl font-bold">--</div>
+                        {analyticsLoading ? (
+                          <div className="text-3xl font-bold">--</div>
+                        ) : analyticsError ? (
+                          <div className="text-3xl font-bold text-red-500">Error</div>
+                        ) : (
+                          <div className="text-3xl font-bold">
+                            {analyticsData?.totalPageViews.toLocaleString() || "0"}
+                          </div>
+                        )}
                         <p className="text-xs text-muted-foreground">
-                          Loading data...
+                          {analyticsLoading 
+                            ? "Loading data..." 
+                            : analyticsError 
+                            ? "Failed to load data" 
+                            : `${analyticsData?.last7Days.pageViews.toLocaleString() || "0"} in the last 7 days`}
                         </p>
                       </CardContent>
                     </Card>
@@ -2525,9 +2572,21 @@ export default function AdminPage() {
                         <CardTitle className="text-sm font-medium">Event Views</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-3xl font-bold">--</div>
+                        {analyticsLoading ? (
+                          <div className="text-3xl font-bold">--</div>
+                        ) : analyticsError ? (
+                          <div className="text-3xl font-bold text-red-500">Error</div>
+                        ) : (
+                          <div className="text-3xl font-bold">
+                            {analyticsData?.totalEventViews.toLocaleString() || "0"}
+                          </div>
+                        )}
                         <p className="text-xs text-muted-foreground">
-                          Loading data...
+                          {analyticsLoading 
+                            ? "Loading data..." 
+                            : analyticsError 
+                            ? "Failed to load data" 
+                            : `${analyticsData?.last7Days.eventViews.toLocaleString() || "0"} in the last 7 days`}
                         </p>
                       </CardContent>
                     </Card>
@@ -2536,9 +2595,21 @@ export default function AdminPage() {
                         <CardTitle className="text-sm font-medium">Revenue</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-3xl font-bold">--</div>
+                        {analyticsLoading ? (
+                          <div className="text-3xl font-bold">--</div>
+                        ) : analyticsError ? (
+                          <div className="text-3xl font-bold text-red-500">Error</div>
+                        ) : (
+                          <div className="text-3xl font-bold">
+                            {analyticsData?.totalRevenue || "$0.00"}
+                          </div>
+                        )}
                         <p className="text-xs text-muted-foreground">
-                          Loading data...
+                          {analyticsLoading 
+                            ? "Loading data..." 
+                            : analyticsError 
+                            ? "Failed to load data" 
+                            : `${analyticsData?.last7Days.revenue || "$0.00"} in the last 7 days`}
                         </p>
                       </CardContent>
                     </Card>
@@ -2547,9 +2618,21 @@ export default function AdminPage() {
                         <CardTitle className="text-sm font-medium">Users</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-3xl font-bold">--</div>
+                        {analyticsLoading ? (
+                          <div className="text-3xl font-bold">--</div>
+                        ) : analyticsError ? (
+                          <div className="text-3xl font-bold text-red-500">Error</div>
+                        ) : (
+                          <div className="text-3xl font-bold">
+                            {analyticsData?.totalActiveUsers.toLocaleString() || "0"}
+                          </div>
+                        )}
                         <p className="text-xs text-muted-foreground">
-                          Loading data...
+                          {analyticsLoading 
+                            ? "Loading data..." 
+                            : analyticsError 
+                            ? "Failed to load data" 
+                            : `${analyticsData?.totalNewUsers.toLocaleString() || "0"} new users total`}
                         </p>
                       </CardContent>
                     </Card>
@@ -2562,16 +2645,71 @@ export default function AdminPage() {
                         Visit the full analytics dashboard for detailed insights and interactive charts.
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="h-[300px] flex items-center justify-center">
-                      <div className="text-center">
-                        <BarChart className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-                        <h3 className="text-lg font-medium">Analytics Preview</h3>
-                        <p className="text-sm text-gray-500 max-w-md mx-auto">
-                          The analytics dashboard provides detailed insights into user engagement, 
-                          event performance, and revenue metrics. Click "Detailed View" above to 
-                          access the full analytics dashboard.
-                        </p>
-                      </div>
+                    <CardContent className="h-[300px]">
+                      {analyticsLoading ? (
+                        <div className="h-full flex items-center justify-center">
+                          <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full"></div>
+                        </div>
+                      ) : analyticsError ? (
+                        <div className="h-full flex items-center justify-center text-center">
+                          <div>
+                            <BarChart className="h-16 w-16 mx-auto text-red-500 mb-4" />
+                            <h3 className="text-lg font-medium text-red-500">Error Loading Data</h3>
+                            <p className="text-sm text-gray-500 max-w-md mx-auto">
+                              Failed to load analytics data. Please try again later.
+                            </p>
+                          </div>
+                        </div>
+                      ) : !analyticsData?.dailyData?.length ? (
+                        <div className="h-full flex items-center justify-center text-center">
+                          <div>
+                            <BarChart className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                            <h3 className="text-lg font-medium">No Data Available</h3>
+                            <p className="text-sm text-gray-500 max-w-md mx-auto">
+                              No analytics data has been recorded yet. Start collecting data by using your app.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="h-full w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart
+                              data={analyticsData.dailyData.slice(-7)} // Last 7 days
+                              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="date" />
+                              <YAxis />
+                              <Tooltip />
+                              <Legend />
+                              <Area 
+                                type="monotone" 
+                                dataKey="pageViews" 
+                                stackId="1"
+                                stroke="#8884d8" 
+                                fill="#8884d8" 
+                                name="Page Views"
+                              />
+                              <Area 
+                                type="monotone" 
+                                dataKey="eventViews" 
+                                stackId="1"
+                                stroke="#82ca9d" 
+                                fill="#82ca9d" 
+                                name="Event Views"
+                              />
+                              <Area 
+                                type="monotone" 
+                                dataKey="productViews" 
+                                stackId="1"
+                                stroke="#ffc658" 
+                                fill="#ffc658" 
+                                name="Product Views"
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
