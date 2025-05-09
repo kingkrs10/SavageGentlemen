@@ -292,7 +292,7 @@ const EventDetail = () => {
                           <h4 className="font-medium">{ticket.name}</h4>
                           {ticket.price > 0 && (
                             <p className="font-bold text-primary">
-                              ${(ticket.price / 100).toFixed(2)}
+                              ${ticket.price.toFixed(2)}
                             </p>
                           )}
                           {ticket.price === 0 && (

@@ -298,9 +298,11 @@ export default function Checkout() {
             currency: currency.toLowerCase(),
             eventId: eventId,
             eventTitle: eventTitle,
+            ticketId: ticketId,
+            ticketName: ticketName,
             items: [{ 
-              id: eventId ? `event-ticket-${eventId}` : "sg-event-ticket", 
-              name: eventTitle || "Event Ticket",
+              id: ticketId ? `event-ticket-${eventId}-${ticketId}` : (eventId ? `event-ticket-${eventId}` : "sg-event-ticket"), 
+              name: ticketName ? `${eventTitle} - ${ticketName}` : (eventTitle || "Event Ticket"),
               quantity: 1 
             }]
           });
@@ -527,8 +529,14 @@ export default function Checkout() {
                           description: "Your free ticket has been claimed successfully. Check your email for details.",
                         });
                         
-                        // Redirect to the success page
-                        setLocation(`/payment-success?eventId=${eventId}&eventTitle=${encodeURIComponent(eventTitle || '')}`);
+                        // Redirect to the success page with event and ticket details
+                        const redirectParams = new URLSearchParams();
+                        if (eventId) redirectParams.append('eventId', eventId.toString());
+                        if (eventTitle) redirectParams.append('eventTitle', encodeURIComponent(eventTitle));
+                        if (ticketId) redirectParams.append('ticketId', ticketId.toString());
+                        if (ticketName) redirectParams.append('ticketName', encodeURIComponent(ticketName));
+                        
+                        setLocation(`/payment-success?${redirectParams.toString()}`);
                       } else {
                         throw new Error(data.message || "Failed to claim free ticket");
                       }

@@ -1760,7 +1760,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount, 
         currency = "usd",
         eventId,
-        eventTitle
+        eventTitle,
+        ticketId,
+        ticketName
       } = req.body;
       
       if (!amount) {
@@ -1779,6 +1781,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (eventTitle) {
         metadata.eventTitle = eventTitle;
+      }
+      
+      // Add ticket information to metadata if provided
+      if (ticketId) {
+        metadata.ticketId = ticketId.toString();
+      }
+      
+      if (ticketName) {
+        metadata.ticketName = ticketName;
       }
       
       // Create a PaymentIntent with the order amount and currency

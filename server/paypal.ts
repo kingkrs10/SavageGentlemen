@@ -66,7 +66,7 @@ export async function getClientToken() {
 
 export async function createPaypalOrder(req: Request, res: Response) {
   try {
-    const { amount, currency, intent, eventId, eventTitle } = req.body;
+    const { amount, currency, intent, eventId, eventTitle, ticketId, ticketName } = req.body;
 
     if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
       return res
@@ -88,6 +88,17 @@ export async function createPaypalOrder(req: Request, res: Response) {
         .json({ error: "Invalid intent. Intent is required." });
     }
 
+    // Create descriptive item name
+    let itemDescription = "SG Event Ticket";
+    if (eventTitle) {
+      itemDescription = eventTitle;
+      if (ticketName) {
+        itemDescription = `${eventTitle} - ${ticketName}`;
+      }
+    } else if (ticketName) {
+      itemDescription = ticketName;
+    }
+
     // Create the purchase unit with optional custom fields
     const purchaseUnit = {
       amount: {
@@ -95,8 +106,8 @@ export async function createPaypalOrder(req: Request, res: Response) {
         value: amount,
       },
       // Add custom metadata if event information is provided
-      custom_id: eventId ? `event_${eventId}` : undefined,
-      description: eventTitle || undefined
+      custom_id: eventId ? `event_${eventId}${ticketId ? `_ticket_${ticketId}` : ''}` : undefined,
+      description: itemDescription
     };
 
     const collect = {
@@ -123,8 +134,8 @@ export async function createPaypalOrder(req: Request, res: Response) {
 export async function capturePaypalOrder(req: Request, res: Response) {
   try {
     const { orderID } = req.params;
-    // Optional event data in the request body
-    const { eventId, eventTitle } = req.body;
+    // Optional event and ticket data in the request body
+    const { eventId, eventTitle, ticketId, ticketName } = req.body;
     
     const collect = {
       id: orderID,
@@ -151,7 +162,11 @@ export async function capturePaypalOrder(req: Request, res: Response) {
         
         // This would be handled by your webhook for completed processing
         
-        console.log(`Successfully processed PayPal payment for event ${eventId}: ${eventTitle} - Amount: ${amount}`);
+        const ticketInfo = ticketId && ticketName 
+          ? ` (${ticketName} #${ticketId})` 
+          : '';
+          
+        console.log(`Successfully processed PayPal payment for event ${eventId}: ${eventTitle}${ticketInfo} - Amount: ${amount}`);
       } catch (err) {
         console.error('Error handling event ticket purchase:', err);
         // We still return success to the client since the payment was successful
