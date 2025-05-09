@@ -589,6 +589,9 @@ export default function AdminPage() {
       const dateTimeString = `${eventForm.date}T${eventForm.time || '00:00:00'}`;
       const eventDate = new Date(dateTimeString);
       
+      // Log image URL for debugging
+      console.log("Original image URL:", eventForm.imageUrl);
+      
       // Prepare data for API
       const eventData = {
         title: eventForm.title,
@@ -596,7 +599,7 @@ export default function AdminPage() {
         location: eventForm.location,
         price: priceInCents,
         description: eventForm.description || null,
-        imageUrl: eventForm.imageUrl || null,
+        imageUrl: eventForm.imageUrl || null, // Original URL is stored in the database
         category: eventForm.category || 'party',
         featured: eventForm.featured
       };
