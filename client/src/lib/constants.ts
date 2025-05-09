@@ -2,6 +2,7 @@
 export const API_ROUTES = {
   EVENTS: "/api/events",
   EVENTS_FEATURED: "/api/events/featured",
+  EVENT_DETAIL: "/api/events/:id",
   PRODUCTS: "/api/products",
   PRODUCTS_FEATURED: "/api/products/featured",
   LIVESTREAMS: "/api/livestreams",

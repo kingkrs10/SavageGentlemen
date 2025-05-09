@@ -31,8 +31,10 @@ interface AddToCalendarButtonProps {
   variant?: 'default' | 'outline' | 'ghost' | 'link';
   size?: 'sm' | 'default' | 'lg' | 'icon';
   className?: string;
+  iconClassName?: string;
   showOneClickButton?: boolean;
   oneClickProvider?: 'google' | 'outlook' | 'yahoo' | 'apple' | 'download';
+  showText?: boolean;
 }
 
 const AddToCalendarButton: React.FC<AddToCalendarButtonProps> = ({ 
@@ -40,8 +42,10 @@ const AddToCalendarButton: React.FC<AddToCalendarButtonProps> = ({
   variant = 'outline',
   size = 'default',
   className = '',
+  iconClassName = '',
   showOneClickButton = true,
   oneClickProvider = 'google',
+  showText = false
 }) => {
   const { toast } = useToast();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);

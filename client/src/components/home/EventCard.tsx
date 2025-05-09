@@ -1,4 +1,4 @@
-import { Calendar, MapPin } from "lucide-react";
+import { Calendar, MapPin, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -7,6 +7,7 @@ import { Event } from "@/lib/types";
 import SGFlyerLogoPng from "@assets/SGFLYERLOGO.png";
 import AddToCalendarButton from "@/components/events/AddToCalendarButton";
 import LazyImage from "@/components/ui/LazyImage";
+import { Link } from "wouter";
 
 interface EventCardProps {
   event: Event;
@@ -23,8 +24,8 @@ const EventCard = ({
   
   if (variant === "horizontal") {
     return (
-      <div className="event-card rounded-xl overflow-hidden shadow-lg flex flex-col md:flex-row">
-        <div className="w-full md:w-1/3 h-48 md:h-auto">
+      <div className="event-card rounded-xl overflow-hidden shadow-lg flex flex-col md:flex-row group hover:shadow-xl transition-shadow duration-300">
+        <Link href={`/event/${id}`} className="block w-full md:w-1/3 h-48 md:h-auto relative">
           <LazyImage 
             src={getNormalizedImageUrl(imageUrl)}
             alt={title}
@@ -33,12 +34,17 @@ const EventCard = ({
             placeholderColor="#1f2937"
             loadingClassName="w-full h-full bg-gray-800 animate-pulse"
           />
-        </div>
+          <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
+            <ExternalLink className="w-8 h-8 text-white" />
+          </div>
+        </Link>
         <div className="p-4 flex-1 flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="text-xl font-heading">{title}</h3>
+                <Link href={`/event/${id}`} className="hover:underline">
+                  <h3 className="text-xl font-heading">{title}</h3>
+                </Link>
                 <p className="text-sm text-gray-300 flex items-center mt-1">
                   <Calendar className="w-4 h-4 mr-1" /> {formatDate(date)}
                 </p>
@@ -57,16 +63,27 @@ const EventCard = ({
               <Badge variant="secondary" className="bg-green-900 text-green-300 px-2 py-1 rounded">
                 <span className="mr-1">🎟️</span> Tickets available
               </Badge>
-              <Button 
-                className="bg-primary text-white hover:bg-red-800 transition"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onGetTicket && onGetTicket(id);
-                }}
-              >
-                Get Ticket
-              </Button>
+              <div className="flex space-x-2">
+                <Link href={`/event/${id}`}>
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className="border-primary text-primary hover:bg-primary hover:text-white transition"
+                  >
+                    View Details
+                  </Button>
+                </Link>
+                <Button 
+                  className="bg-primary text-white hover:bg-red-800 transition"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onGetTicket && onGetTicket(id);
+                  }}
+                >
+                  Get Ticket
+                </Button>
+              </div>
             </div>
             <div className="flex justify-end">
               <AddToCalendarButton 
@@ -83,39 +100,51 @@ const EventCard = ({
   }
   
   return (
-    <div className="event-card rounded-xl overflow-hidden shadow-lg">
-      <div className="w-full h-48">
-        <LazyImage 
-          src={getNormalizedImageUrl(imageUrl)}
-          alt={title}
-          className="w-full h-full object-cover"
-          fallbackSrc={SGFlyerLogoPng}
-          placeholderColor="#1f2937"
-          loadingClassName="w-full h-full bg-gray-800 animate-pulse"
-        />
-      </div>
+    <div className="event-card rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 group">
+      <Link href={`/event/${id}`} className="block relative">
+        <div className="w-full h-48">
+          <LazyImage 
+            src={getNormalizedImageUrl(imageUrl)}
+            alt={title}
+            className="w-full h-full object-cover"
+            fallbackSrc={SGFlyerLogoPng}
+            placeholderColor="#1f2937"
+            loadingClassName="w-full h-full bg-gray-800 animate-pulse"
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
+            <ExternalLink className="w-8 h-8 text-white" />
+          </div>
+        </div>
+      </Link>
       <div className="p-4">
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="text-xl font-heading">{title}</h3>
-            <p className="text-sm text-gray-300">{formatDate(date)}</p>
+            <Link href={`/event/${id}`} className="hover:underline block">
+              <h3 className="text-xl font-heading">{title}</h3>
+            </Link>
+            <p className="text-sm text-gray-300 flex items-center mt-1">
+              <Calendar className="w-3 h-3 mr-1" /> {formatDate(date)}
+            </p>
           </div>
           <Badge variant="outline" className="bg-accent text-black text-xs font-bold px-3 py-1 rounded-full">
             {formatCurrency(price)}
           </Badge>
         </div>
         <p className="text-sm mt-2">{description}</p>
-        <div className="flex items-center mt-4">
+        <div className="flex flex-wrap items-center gap-2 mt-4">
           <span className="text-xs flex items-center">
             <MapPin className="w-3 h-3 mr-1" /> {location}
           </span>
           <div className="flex ml-auto space-x-2">
-            <AddToCalendarButton 
-              event={event} 
-              variant="ghost" 
-              size="sm" 
-              className="text-white/70 hover:text-white" 
-            />
+            <Link href={`/event/${id}`}>
+              <Button 
+                variant="outline"
+                size="sm"
+                className="border-primary text-primary hover:bg-primary hover:text-white transition"
+              >
+                Details
+              </Button>
+            </Link>
             <Button 
               className="bg-primary text-white hover:bg-red-800 transition"
               size="sm"
@@ -128,6 +157,16 @@ const EventCard = ({
               Get Ticket
             </Button>
           </div>
+        </div>
+        <div className="mt-3 border-t border-gray-800 pt-3">
+          <AddToCalendarButton 
+            event={event} 
+            variant="ghost" 
+            size="sm"
+            className="text-white/70 hover:text-white w-full flex justify-center items-center"
+            iconClassName="mr-2 h-4 w-4"
+            showText={true}
+          />
         </div>
       </div>
     </div>

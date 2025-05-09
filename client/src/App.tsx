@@ -20,6 +20,7 @@ import { User } from "@/lib/types";
 // Lazily load pages for code splitting
 const Home = lazy(() => import("@/pages/home"));
 const Events = lazy(() => import("@/pages/events"));
+const EventDetail = lazy(() => import("@/pages/event-detail"));
 const Shop = lazy(() => import("@/pages/shop"));
 const Live = lazy(() => import("@/pages/live"));
 const Community = lazy(() => import("@/pages/community"));
@@ -43,6 +44,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/events" component={Events} />
+        <Route path="/event/:id" component={EventDetail} />
         <Route path="/shop" component={Shop} />
         <Route path="/live" component={Live} />
         <Route path="/community" component={Community} />
