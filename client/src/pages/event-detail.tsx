@@ -282,27 +282,50 @@ const EventDetail = () => {
           <div className="md:col-span-1">
             <Card>
               <CardContent className="p-6">
-                <div className="mb-4">
-                  <h3 className="text-xl font-bold mb-1">Ticket Price</h3>
-                  <p className="text-2xl font-bold text-primary">
-                    ${(event.price / 100).toFixed(2)}
-                  </p>
-                </div>
-                
-                <Button 
-                  className="w-full bg-primary hover:bg-primary/90 mb-4 py-6 text-lg"
-                  onClick={() => {
-                    toast({
-                      title: "Processing",
-                      description: "Redirecting to secure checkout..."
-                    });
+                {event.tickets && event.tickets.length > 0 ? (
+                  <>
+                    <h3 className="text-xl font-bold mb-3">Available Tickets</h3>
                     
-                    // Redirect to checkout page with event details
-                    window.location.href = `/checkout?eventId=${event.id}&amount=${event.price}&currency=USD&title=${encodeURIComponent(event.title)}`;
-                  }}
-                >
-                  Get Ticket
-                </Button>
+                    {event.tickets.filter(ticket => ticket.isActive).map((ticket) => (
+                      <div key={ticket.id} className="border rounded-md p-3 mb-3">
+                        <div className="flex justify-between items-center mb-1">
+                          <h4 className="font-medium">{ticket.name}</h4>
+                          <p className="font-bold text-primary">
+                            {ticket.price === 0 ? 'FREE' : `$${(ticket.price / 100).toFixed(2)}`}
+                          </p>
+                        </div>
+                        {ticket.description && (
+                          <p className="text-sm text-muted-foreground mb-2">{ticket.description}</p>
+                        )}
+                        <Button 
+                          className="w-full mt-2"
+                          onClick={() => {
+                            toast({
+                              title: "Processing",
+                              description: "Redirecting to secure checkout..."
+                            });
+                            
+                            // Redirect to checkout page with ticket details
+                            window.location.href = `/checkout?eventId=${event.id}&ticketId=${ticket.id}&amount=${ticket.price}&currency=USD&title=${encodeURIComponent(event.title)}`;
+                          }}
+                        >
+                          {ticket.price === 0 ? 'Claim Free Ticket' : 'Purchase Ticket'}
+                        </Button>
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <div className="py-3">
+                    <h3 className="text-xl font-bold mb-1">Tickets</h3>
+                    <p className="text-muted-foreground">Tickets are not available for this event yet.</p>
+                    <Button 
+                      className="w-full bg-primary hover:bg-primary/90 mt-4 py-6 text-lg"
+                      disabled
+                    >
+                      Coming Soon
+                    </Button>
+                  </div>
+                )}
                 
                 {/* Add to Calendar Section */}
                 <div className="mb-4">

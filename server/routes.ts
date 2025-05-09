@@ -514,7 +514,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Event not found" });
       }
       
-      return res.status(200).json(event);
+      // Get tickets for this event
+      const tickets = await storage.getTicketsByEventId(id);
+      
+      // Return event with its tickets
+      return res.status(200).json({
+        ...event,
+        tickets: tickets || []
+      });
     } catch (err) {
       console.error(err);
       return res.status(500).json({ message: "Internal server error" });
