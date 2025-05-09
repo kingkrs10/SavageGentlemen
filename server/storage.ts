@@ -126,6 +126,13 @@ export interface IStorage {
   getTicketsByEventId(eventId: number): Promise<Ticket[]>;
   updateTicket(id: number, ticketData: Partial<InsertTicket>): Promise<Ticket | undefined>;
   
+  // Ticket purchase operations
+  createTicketPurchase(ticketPurchase: InsertTicketPurchase): Promise<TicketPurchase>;
+  getTicketPurchasesByUserId(userId: number): Promise<TicketPurchase[]>;
+  getTicketPurchasesByEventId(eventId: number): Promise<TicketPurchase[]>;
+  getTicketPurchase(id: number): Promise<TicketPurchase | undefined>;
+  getTicketPurchaseByQrCodeData(qrCodeData: string): Promise<TicketPurchase | undefined>;
+  
   // Ticket scan operations
   createTicketScan(ticketScan: InsertTicketScan): Promise<TicketScan>;
   getTicketScansByTicketId(ticketId: number): Promise<TicketScan[]>;
