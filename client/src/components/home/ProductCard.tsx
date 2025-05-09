@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { Product } from "@/lib/types";
 import SGFlyerLogoPng from "@assets/SGFLYERLOGO.png";
+import { Link } from "wouter";
 
 interface ProductCardProps {
   product: Product;
@@ -58,22 +59,24 @@ const ProductCard = ({
     return (
       <div className="bg-gray-900 rounded-lg overflow-hidden shadow-lg">
         <div className="relative">
-          {imgError ? (
-            <div className="w-full h-48 bg-gray-800 flex items-center justify-center">
+          <Link href={`/product/${id}`} className="block">
+            {imgError ? (
+              <div className="w-full h-48 bg-gray-800 flex items-center justify-center">
+                <img 
+                  src={SGFlyerLogoPng} 
+                  alt={title} 
+                  className="h-32 object-contain"
+                />
+              </div>
+            ) : (
               <img 
-                src={SGFlyerLogoPng} 
+                src={imgSrc} 
                 alt={title} 
-                className="h-32 object-contain"
+                className="w-full h-48 object-cover" 
+                onError={() => setImgError(true)}
               />
-            </div>
-          ) : (
-            <img 
-              src={imgSrc} 
-              alt={title} 
-              className="w-full h-48 object-cover" 
-              onError={() => setImgError(true)}
-            />
-          )}
+            )}
+          </Link>
           <Button
             variant="ghost"
             size="icon"
@@ -84,7 +87,9 @@ const ProductCard = ({
           </Button>
         </div>
         <div className="p-4">
-          <h3 className="font-semibold">{title}</h3>
+          <Link href={`/product/${id}`} className="block">
+            <h3 className="font-semibold hover:text-primary transition">{title}</h3>
+          </Link>
           <div className="flex justify-between items-center mt-2">
             <span className="text-primary font-bold">{formatCurrency(price)}</span>
             <div className="flex space-x-2">
@@ -95,7 +100,11 @@ const ProductCard = ({
           </div>
           <Button 
             className="w-full bg-primary text-white hover:bg-red-800 transition mt-3"
-            onClick={() => onAddToCart && onAddToCart(id)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onAddToCart && onAddToCart(id);
+            }}
           >
             Add to Cart
           </Button>
@@ -106,31 +115,39 @@ const ProductCard = ({
   
   return (
     <div className="bg-gray-900 rounded-lg overflow-hidden shadow-lg">
-      {imgError ? (
-        <div className="w-full h-40 bg-gray-800 flex items-center justify-center">
+      <Link href={`/product/${id}`} className="block">
+        {imgError ? (
+          <div className="w-full h-40 bg-gray-800 flex items-center justify-center">
+            <img 
+              src={SGFlyerLogoPng} 
+              alt={title} 
+              className="h-24 object-contain"
+            />
+          </div>
+        ) : (
           <img 
-            src={SGFlyerLogoPng} 
+            src={imgSrc} 
             alt={title} 
-            className="h-24 object-contain"
+            className="w-full h-40 object-cover"
+            onError={() => setImgError(true)}
           />
-        </div>
-      ) : (
-        <img 
-          src={imgSrc} 
-          alt={title} 
-          className="w-full h-40 object-cover"
-          onError={() => setImgError(true)}
-        />
-      )}
+        )}
+      </Link>
       <div className="p-3">
-        <h3 className="text-md font-semibold truncate">{title}</h3>
+        <Link href={`/product/${id}`} className="block">
+          <h3 className="text-md font-semibold truncate hover:text-primary transition">{title}</h3>
+        </Link>
         <div className="flex justify-between items-center mt-1">
           <span className="text-primary font-bold">{formatCurrency(price)}</span>
           <Button
             variant="ghost"
             size="icon"
             className="bg-black text-white p-1 rounded-full h-8 w-8 flex items-center justify-center hover:bg-primary transition"
-            onClick={() => onAddToCart && onAddToCart(id)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onAddToCart && onAddToCart(id);
+            }}
           >
             <ShoppingCart className="w-4 h-4" />
           </Button>
