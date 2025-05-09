@@ -61,7 +61,15 @@ const StripeCheckoutForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Force re-check before proceeding
     if (!stripe || !elements) {
+      // Log for debugging and try to reload if needed
+      console.log("Stripe or elements not available, loading Stripe instance...");
+      // Notify user that something is happening
+      toast({
+        title: "Initializing payment...",
+        description: "Please wait while we connect to our payment processor.",
+      });
       return;
     }
 
@@ -107,7 +115,7 @@ const StripeCheckoutForm = ({
     <form onSubmit={handleSubmit} className="space-y-4">
       <PaymentElement />
       <Button 
-        disabled={!stripe || isProcessing} 
+        disabled={isProcessing} 
         className="w-full" 
         type="submit"
       >
@@ -610,7 +618,7 @@ export default function Checkout() {
                 <div className="flex justify-center py-8">
                   <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
                 </div>
-              ) : clientSecret && stripePromise ? (
+              ) : clientSecret ? (
                 <Elements 
                   stripe={stripePromise} 
                   options={{ 
@@ -618,7 +626,7 @@ export default function Checkout() {
                     appearance: { theme: 'stripe' },
                     locale: 'en',
                     // Ensure always use production mode
-                    loader: 'always'
+                    loader: 'auto'
                   }}
                 >
                   <StripeCheckoutForm 
@@ -630,8 +638,62 @@ export default function Checkout() {
                   />
                 </Elements>
               ) : (
-                <div className="text-center py-4 text-red-500">
-                  Could not initialize Stripe payment form.
+                <div className="text-center py-6 space-y-4">
+                  <div className="text-red-500 font-medium">
+                    Could not initialize payment form.
+                  </div>
+                  <Button 
+                    onClick={() => {
+                      // Try to reinitialize payment
+                      setIsLoading(true);
+                      // Force re-run of the payment intent creation
+                      setTimeout(() => {
+                        if (user) {
+                          const createIntent = async () => {
+                            try {
+                              const response = await apiRequest("POST", "/payment/create-intent", { 
+                                amount: amount,
+                                currency: currency.toLowerCase(),
+                                eventId: eventId,
+                                eventTitle: eventTitle,
+                                ticketId: ticketId,
+                                ticketName: ticketName,
+                                items: [{ 
+                                  id: ticketId ? `event-ticket-${eventId}-${ticketId}` : (eventId ? `event-ticket-${eventId}` : "sg-event-ticket"), 
+                                  name: ticketName ? `${eventTitle} - ${ticketName}` : (eventTitle || "Event Ticket"),
+                                  quantity: 1 
+                                }]
+                              });
+                              
+                              if (response.ok) {
+                                const data = await response.json();
+                                setClientSecret(data.clientSecret);
+                                toast({
+                                  title: "Payment Initialized",
+                                  description: "You can now complete your payment.",
+                                });
+                              } else {
+                                throw new Error("Failed to create payment intent");
+                              }
+                            } catch (error) {
+                              console.error("Error creating payment intent:", error);
+                              toast({
+                                title: "Error",
+                                description: "Could not initialize payment. Please try again.",
+                                variant: "destructive",
+                              });
+                            } finally {
+                              setIsLoading(false);
+                            }
+                          };
+                          createIntent();
+                        }
+                      }, 1000);
+                    }}
+                    variant="outline"
+                  >
+                    Try Again
+                  </Button>
                 </div>
               )}
             </TabsContent>
