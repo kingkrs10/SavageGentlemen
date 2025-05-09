@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Mail } from "lucide-react";
 import { FaGoogle } from "react-icons/fa";
 import { useForm } from "react-hook-form";
@@ -53,9 +53,21 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalProps) => {
-  const [currentTab, setCurrentTab] = useState<"login" | "register">("login");
+  // Check for stored tab preference in localStorage
+  const storedTab = localStorage.getItem('sg:auth:tab');
+  const [currentTab, setCurrentTab] = useState<"login" | "register">(
+    (storedTab === "register" ? "register" : "login")
+  );
   const { toast } = useToast();
   const { signInWithGoogle, loading, error } = useAuth();
+  
+  // Clear stored tab preference when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      // Only clear the tab preference, keep the redirect path
+      localStorage.removeItem('sg:auth:tab');
+    }
+  }, [isOpen]);
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -85,8 +97,22 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
         title: "Login Successful",
         description: `Welcome back, ${data.displayName}!`,
       });
+      
+      // Call the onLogin function to update user state
       onLogin(data);
       loginForm.reset();
+      
+      // Check if there's a stored redirect path
+      const redirectPath = localStorage.getItem('sg:auth:redirect');
+      if (redirectPath) {
+        console.log('Redirecting after login to:', redirectPath);
+        // Wait a small amount of time to ensure state is updated before redirect
+        setTimeout(() => {
+          window.location.href = redirectPath;
+          // Clear the redirect path from localStorage
+          localStorage.removeItem('sg:auth:redirect');
+        }, 500);
+      }
     },
     onError: (error) => {
       console.error("Login error:", error);
@@ -128,6 +154,18 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
       });
       onLogin(data);
       registerForm.reset();
+      
+      // Check if there's a stored redirect path
+      const redirectPath = localStorage.getItem('sg:auth:redirect');
+      if (redirectPath) {
+        console.log('Redirecting after registration to:', redirectPath);
+        // Wait a small amount of time to ensure state is updated before redirect
+        setTimeout(() => {
+          window.location.href = redirectPath;
+          // Clear the redirect path from localStorage
+          localStorage.removeItem('sg:auth:redirect');
+        }, 500);
+      }
     },
     onError: (error) => {
       console.error("Registration error:", error);

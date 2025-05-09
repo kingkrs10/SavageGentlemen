@@ -93,11 +93,22 @@ function App() {
       }
     }
 
-    // Listen for custom event to open auth modal from password reset flow
+    // Listen for custom event to open auth modal with tab and redirect parameters
     const handleOpenAuthModal = (event: CustomEvent) => {
       setShowAuthModal(true);
-      // If a tab is specified, we could handle it here
-      // const { tab } = event.detail;
+      
+      // Handle tab parameter if specified
+      if (event.detail && event.detail.tab) {
+        // Store the selected tab in localStorage so AuthModal can access it
+        localStorage.setItem('sg:auth:tab', event.detail.tab);
+      }
+      
+      // Handle redirect path if specified
+      if (event.detail && event.detail.redirectPath) {
+        // Store the redirect path in localStorage so AuthModal can retrieve it after login
+        localStorage.setItem('sg:auth:redirect', event.detail.redirectPath);
+        console.log('Stored redirect path:', event.detail.redirectPath);
+      }
     };
 
     window.addEventListener("sg:open-auth-modal", handleOpenAuthModal as EventListener);
@@ -117,6 +128,18 @@ function App() {
   const handleContinueAsGuest = () => {
     guestLoginMutation.mutate();
     setShowAuthModal(false);
+    
+    // Check if there's a stored redirect path
+    const redirectPath = localStorage.getItem('sg:auth:redirect');
+    if (redirectPath) {
+      console.log('Redirecting after guest login to:', redirectPath);
+      // Wait a small amount of time to ensure state is updated before redirect
+      setTimeout(() => {
+        window.location.href = redirectPath;
+        // Clear the redirect path from localStorage
+        localStorage.removeItem('sg:auth:redirect');
+      }, 500);
+    }
   };
 
   const handleLogout = () => {
