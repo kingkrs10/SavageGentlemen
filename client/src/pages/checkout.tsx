@@ -20,6 +20,7 @@ import {
   useElements,
 } from '@stripe/react-stripe-js';
 import { apiRequest } from "@/lib/queryClient";
+import BrandLoader from '@/components/ui/BrandLoader';
 
 // Make sure to call loadStripe outside of a component's render to avoid
 // recreating the Stripe object on every render.
@@ -91,15 +92,37 @@ export default function Checkout() {
   const [amount, setAmount] = useState(29.99);
   const [currency, setCurrency] = useState('USD');
   const [isLoading, setIsLoading] = useState(false);
+  const [eventId, setEventId] = useState<number | null>(null);
+  const [eventTitle, setEventTitle] = useState<string>('');
   const { toast } = useToast();
   const [location] = useLocation();
   
-  // Get the amount from the URL search params if available
+  // Get the params from the URL search params if available
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
+    
+    // Get amount
     const amountParam = searchParams.get('amount');
     if (amountParam) {
       setAmount(parseFloat(amountParam));
+    }
+    
+    // Get event ID
+    const eventIdParam = searchParams.get('eventId');
+    if (eventIdParam) {
+      setEventId(parseInt(eventIdParam));
+    }
+    
+    // Get event title
+    const titleParam = searchParams.get('title');
+    if (titleParam) {
+      setEventTitle(decodeURIComponent(titleParam));
+    }
+    
+    // Get currency (optional)
+    const currencyParam = searchParams.get('currency');
+    if (currencyParam) {
+      setCurrency(currencyParam.toUpperCase());
     }
   }, [location]);
 
@@ -116,7 +139,13 @@ export default function Checkout() {
         const response = await apiRequest("POST", "/api/payment/create-intent", { 
           amount: amount,
           currency: currency.toLowerCase(),
-          items: [{ id: "sg-event-ticket", quantity: 1 }]
+          eventId: eventId,
+          eventTitle: eventTitle,
+          items: [{ 
+            id: eventId ? `event-ticket-${eventId}` : "sg-event-ticket", 
+            name: eventTitle || "Event Ticket",
+            quantity: 1 
+          }]
         });
         
         const data = await response.json();
@@ -136,7 +165,7 @@ export default function Checkout() {
     if (amount > 0) {
       createPaymentIntent();
     }
-  }, [amount, currency, toast]);
+  }, [amount, currency, eventId, eventTitle, toast]);
 
   return (
     <div className="container max-w-md mx-auto py-8">
@@ -150,6 +179,14 @@ export default function Checkout() {
         <CardContent>
           <div className="mb-4">
             <h3 className="text-lg font-semibold">Order Summary</h3>
+            {eventTitle && (
+              <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-md my-2">
+                <h4 className="font-medium">{eventTitle}</h4>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  1 × Event Ticket
+                </div>
+              </div>
+            )}
             <div className="flex justify-between mt-2">
               <span>Subtotal:</span>
               <span>${amount.toFixed(2)}</span>

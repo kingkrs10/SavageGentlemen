@@ -25,13 +25,25 @@ const Events = () => {
   const featuredEvent = events?.find((event) => event.featured);
   
   const handleGetTicket = (eventId: number) => {
+    // Find the event to get its price
+    const event = events?.find(e => e.id === eventId);
+    
+    if (!event) {
+      toast({
+        title: "Error",
+        description: "Could not find event details. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     toast({
-      title: "Redirecting to ticket provider",
-      description: "You'll be redirected to our ticketing partner's website to complete your purchase."
+      title: "Processing",
+      description: "Redirecting to secure checkout..."
     });
     
-    // In a real app, this would redirect to a ticketing service
-    window.open("https://www.ticketmaster.com", "_blank");
+    // Redirect to our checkout page with the event details
+    window.location.href = `/checkout?eventId=${eventId}&amount=${event.price}&currency=USD&title=${encodeURIComponent(event.title)}`;
   };
   
   const handleCategorySelect = (category: string) => {
