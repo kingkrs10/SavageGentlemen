@@ -16,40 +16,7 @@
   --chart-5: 273 70% 50%;
 }
 
-.dark {
-  /* Base colors - dark theme inspired by video aesthetic */
-  --background: 220 10% 4%; /* Slightly blue-tinted black background */
-  --foreground: 0 0% 98%;
-  --card: 220 10% 6%;
-  --card-foreground: 0 0% 98%;
-  --popover: 220 10% 4%;
-  --popover-foreground: 0 0% 98%;
-  
-  /* Primary: Rich Red from logo */
-  --primary: 0 80% 30%;
-  --primary-foreground: 0 0% 100%;
-  
-  /* Secondary: Deep navy blue for contrast */
-  --secondary: 220 70% 16%;
-  --secondary-foreground: 0 0% 98%;
-  
-  /* Muted: Subtle blue-gray tones */
-  --muted: 220 10% 16%;
-  --muted-foreground: 220 5% 65%;
-  
-  /* Accent: Gold/amber color from logo */
-  --accent: 36 100% 50%;
-  --accent-foreground: 0 0% 10%;
-  
-  /* Utility colors */
-  --destructive: 0 70% 30%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 220 12% 18%;
-  --input: 220 12% 18%;
-  --ring: 220 70% 30%;
-}
-
-.light {
+:root {
   /* Base colors - light theme with brand-appropriate colors */
   --background: 0 0% 98%;
   --foreground: 220 10% 4%;
@@ -80,6 +47,39 @@
   --border: 220 12% 85%;
   --input: 220 12% 85%;
   --ring: 220 70% 50%;
+}
+
+:root.dark {
+  /* Base colors - dark theme inspired by video aesthetic */
+  --background: 220 10% 4%; /* Slightly blue-tinted black background */
+  --foreground: 0 0% 98%;
+  --card: 220 10% 6%;
+  --card-foreground: 0 0% 98%;
+  --popover: 220 10% 4%;
+  --popover-foreground: 0 0% 98%;
+  
+  /* Primary: Rich Red from logo */
+  --primary: 0 80% 30%;
+  --primary-foreground: 0 0% 100%;
+  
+  /* Secondary: Deep navy blue for contrast */
+  --secondary: 220 70% 16%;
+  --secondary-foreground: 0 0% 98%;
+  
+  /* Muted: Subtle blue-gray tones */
+  --muted: 220 10% 16%;
+  --muted-foreground: 220 5% 65%;
+  
+  /* Accent: Gold/amber color from logo */
+  --accent: 36 100% 50%;
+  --accent-foreground: 0 0% 10%;
+  
+  /* Utility colors */
+  --destructive: 0 70% 30%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 220 12% 18%;
+  --input: 220 12% 18%;
+  --ring: 220 70% 30%;
 }
 
 @layer base {

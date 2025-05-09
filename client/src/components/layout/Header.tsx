@@ -61,7 +61,7 @@ const Header = ({ user, onProfileClick, onLogout }: HeaderProps) => {
                     size="icon"
                     className="rounded-none hover:bg-transparent hover:text-primary"
                   >
-                    <Avatar className="h-8 w-8 ring-1 ring-white/20">
+                    <Avatar className="h-8 w-8 ring-1 dark:ring-white/20 light:ring-black/20">
                       <AvatarImage src={user.avatar} alt={user.displayName} />
                       <AvatarFallback>{user.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
@@ -94,10 +94,10 @@ const Header = ({ user, onProfileClick, onLogout }: HeaderProps) => {
                       </a>
                     </DropdownMenuItem>
                   )}
-                  {user.role === "admin" && <DropdownMenuSeparator className="bg-white/10" />}
+                  {user.role === "admin" && <DropdownMenuSeparator className="dark:bg-white/10 light:bg-black/10" />}
                   <DropdownMenuItem 
                     onClick={onLogout}
-                    className="hover:bg-white/5 focus:bg-white/5"
+                    className="dark:hover:bg-white/5 dark:focus:bg-white/5 light:hover:bg-black/5 light:focus:bg-black/5"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
                     <span className="uppercase text-xs tracking-widest">Logout</span>
