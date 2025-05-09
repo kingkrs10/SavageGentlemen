@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Calendar, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +5,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { Event } from "@/lib/types";
 import SGFlyerLogoPng from "@assets/SGFLYERLOGO.png";
 import AddToCalendarButton from "@/components/events/AddToCalendarButton";
+import LazyImage from "@/components/ui/LazyImage";
 
 interface EventCardProps {
   event: Event;
@@ -19,27 +19,20 @@ const EventCard = ({
   onGetTicket 
 }: EventCardProps) => {
   const { id, title, description, date, location, price, imageUrl } = event;
-  const [imgError, setImgError] = useState(false);
   
   if (variant === "horizontal") {
     return (
       <div className="event-card rounded-xl overflow-hidden shadow-lg flex flex-col md:flex-row">
-        {imgError ? (
-          <div className="w-full md:w-1/3 h-48 md:h-auto bg-gray-800 flex items-center justify-center">
-            <img 
-              src={SGFlyerLogoPng} 
-              alt={title} 
-              className="h-32 w-32 object-contain"
-            />
-          </div>
-        ) : (
-          <img 
-            src={imageUrl} 
-            alt={title} 
-            className="w-full md:w-1/3 h-48 md:h-auto object-cover"
-            onError={() => setImgError(true)}
+        <div className="w-full md:w-1/3 h-48 md:h-auto">
+          <LazyImage 
+            src={imageUrl || ''}
+            alt={title}
+            className="w-full h-full object-cover"
+            fallbackSrc={SGFlyerLogoPng}
+            placeholderColor="#1f2937"
+            loadingClassName="w-full h-full bg-gray-800 animate-pulse"
           />
-        )}
+        </div>
         <div className="p-4 flex-1 flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-start">
@@ -86,22 +79,16 @@ const EventCard = ({
   
   return (
     <div className="event-card rounded-xl overflow-hidden shadow-lg">
-      {imgError ? (
-        <div className="w-full h-48 bg-gray-800 flex items-center justify-center">
-          <img 
-            src={SGFlyerLogoPng} 
-            alt={title} 
-            className="h-32 w-32 object-contain"
-          />
-        </div>
-      ) : (
-        <img 
-          src={imageUrl} 
-          alt={title} 
-          className="w-full h-48 object-cover"
-          onError={() => setImgError(true)}
+      <div className="w-full h-48">
+        <LazyImage 
+          src={imageUrl || ''}
+          alt={title}
+          className="w-full h-full object-cover"
+          fallbackSrc={SGFlyerLogoPng}
+          placeholderColor="#1f2937"
+          loadingClassName="w-full h-full bg-gray-800 animate-pulse"
         />
-      )}
+      </div>
       <div className="p-4">
         <div className="flex justify-between items-start">
           <div>

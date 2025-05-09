@@ -3,6 +3,7 @@ import React from 'react';
 interface BrandLoaderProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  message?: string;
 }
 
 /**
@@ -13,7 +14,8 @@ interface BrandLoaderProps {
  */
 const BrandLoader: React.FC<BrandLoaderProps> = ({ 
   size = 'md',
-  className = ''
+  className = '',
+  message
 }) => {
   const sizeClasses = {
     sm: 'w-6 h-6',
@@ -24,7 +26,7 @@ const BrandLoader: React.FC<BrandLoaderProps> = ({
   const sizeClass = sizeClasses[size];
   
   return (
-    <div className={`flex items-center justify-center ${className}`}>
+    <div className={`flex flex-col items-center justify-center ${className}`}>
       <div className={`relative ${sizeClass}`}>
         {/* Main circle with brand color */}
         <div className={`absolute inset-0 rounded-full border-4 border-primary/30`}></div>
@@ -41,6 +43,10 @@ const BrandLoader: React.FC<BrandLoaderProps> = ({
           animate-[bounce_1.5s_ease-in-out_infinite]
         `}></div>
       </div>
+      
+      {message && (
+        <p className="mt-4 text-sm text-muted-foreground">{message}</p>
+      )}
     </div>
   );
 };
