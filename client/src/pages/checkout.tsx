@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -10,7 +10,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation, Link } from 'wouter';
+import { useLocation } from 'wouter';
 import PayPalButton from '@/components/PayPalButton';
 import { loadStripe } from '@stripe/stripe-js';
 import {
@@ -178,8 +178,8 @@ export default function Checkout() {
   // Create PaymentIntent for paid tickets only
   useEffect(() => {
     const createPaymentIntent = async () => {
-      // Only process paid tickets automatically
-      if (amount > 0) {
+      // Only process paid tickets automatically when the user is authenticated
+      if (amount > 0 && user) {
         if (!stripePromise) {
           console.error("Stripe not initialized");
           return;
@@ -199,8 +199,15 @@ export default function Checkout() {
             }]
           });
           
-          const data = await response.json();
-          setClientSecret(data.clientSecret);
+          if (response.ok) {
+            const data = await response.json();
+            setClientSecret(data.clientSecret);
+          } else if (response.status === 401) {
+            // User is not authenticated, handled in the render method
+            console.warn("Authentication required");
+          } else {
+            throw new Error("Failed to create payment intent");
+          }
         } catch (error) {
           console.error("Error creating payment intent:", error);
           toast({
@@ -214,8 +221,80 @@ export default function Checkout() {
       }
     };
 
-    createPaymentIntent();
-  }, [amount, currency, eventId, eventTitle, toast]);
+    // Only attempt to create payment intent if we're done checking authentication
+    if (!checkingAuth) {
+      createPaymentIntent();
+    }
+  }, [amount, currency, eventId, eventTitle, toast, user, checkingAuth]);
+
+  // Show auth required message if user is not authenticated and we're done checking
+  if (!checkingAuth && !user) {
+    return (
+      <div className="container max-w-md mx-auto py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Authentication Required</CardTitle>
+            <CardDescription>
+              You need to sign in to purchase tickets
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Alert className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Sign in required</AlertTitle>
+              <AlertDescription>
+                To continue with your ticket purchase, please sign in or create an account.
+              </AlertDescription>
+            </Alert>
+            
+            <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-md mb-6">
+              {eventTitle && (
+                <>
+                  <h4 className="font-medium">{eventTitle}</h4>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    1 × {amount === 0 ? 'Free' : `$${amount.toFixed(2)}`} Event Ticket
+                  </div>
+                </>
+              )}
+            </div>
+            
+            <div className="space-y-3">
+              <Button 
+                className="w-full"
+                onClick={() => setLocation("/login?redirect=/checkout")}
+              >
+                Sign In
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => setLocation("/register?redirect=/checkout")}
+              >
+                Create Account
+              </Button>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button variant="ghost" onClick={() => window.history.back()}>
+              Back to Event
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+  
+  // Display loading state while checking authentication
+  if (checkingAuth) {
+    return (
+      <div className="container max-w-md mx-auto py-8 flex flex-col items-center justify-center">
+        <BrandLoader size="lg" />
+        <p className="mt-4 text-center text-gray-600 dark:text-gray-400">
+          Preparing checkout...
+        </p>
+      </div>
+    );
+  }
 
   // Display a free ticket message when the amount is 0
   if (amount === 0) {
