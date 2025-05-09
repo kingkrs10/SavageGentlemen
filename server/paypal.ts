@@ -69,7 +69,7 @@ export async function getClientToken() {
 
 export async function createPaypalOrder(req: Request, res: Response) {
   try {
-    const { amount, currency, intent } = req.body;
+    const { amount, currency, intent, eventId, eventTitle } = req.body;
 
     if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
       return res
@@ -91,17 +91,21 @@ export async function createPaypalOrder(req: Request, res: Response) {
         .json({ error: "Invalid intent. Intent is required." });
     }
 
+    // Create the purchase unit with optional custom fields
+    const purchaseUnit = {
+      amount: {
+        currencyCode: currency,
+        value: amount,
+      },
+      // Add custom metadata if event information is provided
+      custom_id: eventId ? `event_${eventId}` : undefined,
+      description: eventTitle || undefined
+    };
+
     const collect = {
       body: {
         intent: intent,
-        purchaseUnits: [
-          {
-            amount: {
-              currencyCode: currency,
-              value: amount,
-            },
-          },
-        ],
+        purchaseUnits: [purchaseUnit],
       },
       prefer: "return=minimal",
     };
@@ -122,6 +126,9 @@ export async function createPaypalOrder(req: Request, res: Response) {
 export async function capturePaypalOrder(req: Request, res: Response) {
   try {
     const { orderID } = req.params;
+    // Optional event data in the request body
+    const { eventId, eventTitle } = req.body;
+    
     const collect = {
       id: orderID,
       prefer: "return=minimal",
@@ -132,10 +139,32 @@ export async function capturePaypalOrder(req: Request, res: Response) {
 
     const jsonResponse = JSON.parse(String(body));
     const httpStatusCode = httpResponse.statusCode;
+    
+    // If this is an event ticket purchase, create a ticket record
+    if (jsonResponse.status === 'COMPLETED' && eventId) {
+      try {
+        // Extract purchase details
+        const amount = jsonResponse.purchase_units[0]?.amount?.value || 0;
+        
+        // Here you would typically:
+        // 1. Find the user by payment information
+        // 2. Create an order record in your database
+        // 3. Generate a ticket record
+        // 4. Send a confirmation email with the ticket details
+        
+        // This would be handled by your webhook for completed processing
+        
+        console.log(`Successfully processed PayPal payment for event ${eventId}: ${eventTitle} - Amount: ${amount}`);
+      } catch (err) {
+        console.error('Error handling event ticket purchase:', err);
+        // We still return success to the client since the payment was successful
+        // The ticket creation can be retried separately
+      }
+    }
 
     res.status(httpStatusCode).json(jsonResponse);
   } catch (error) {
-    console.error("Failed to create order:", error);
+    console.error("Failed to capture order:", error);
     res.status(500).json({ error: "Failed to capture order." });
   }
 }

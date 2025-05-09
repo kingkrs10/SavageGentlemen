@@ -264,7 +264,9 @@ export default function Checkout() {
                   <PayPalButton 
                     amount={amount.toString()} 
                     currency={currency.toLowerCase()} 
-                    intent="CAPTURE" 
+                    intent="CAPTURE"
+                    eventId={eventId}
+                    eventTitle={eventTitle}
                   />
                 </div>
                 <p className="text-sm text-gray-500 text-center">

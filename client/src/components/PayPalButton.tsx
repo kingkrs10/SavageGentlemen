@@ -23,18 +23,25 @@ interface PayPalButtonProps {
   amount: string;
   currency: string;
   intent: string;
+  eventId?: number | null;
+  eventTitle?: string;
 }
 
 export default function PayPalButton({
   amount,
   currency,
   intent,
+  eventId,
+  eventTitle,
 }: PayPalButtonProps) {
   const createOrder = async () => {
     const orderPayload = {
       amount: amount,
       currency: currency,
       intent: intent,
+      // Include event information if available
+      eventId: eventId || undefined,
+      eventTitle: eventTitle || undefined
     };
     const response = await fetch("/api/payment/paypal-order", {
       method: "POST",
@@ -62,8 +69,16 @@ export default function PayPalButton({
     const orderData = await captureOrder(data.orderId);
     console.log("Capture result", orderData);
     
+    // Build the redirect URL with any event information
+    let redirectUrl = '/payment-success?provider=paypal&order_id=' + data.orderId;
+    
+    // Add event information if available
+    if (eventId && eventTitle) {
+      redirectUrl += `&eventId=${eventId}&eventTitle=${encodeURIComponent(eventTitle)}`;
+    }
+    
     // Redirect to success page after successful payment
-    window.location.href = '/payment-success?provider=paypal&order_id=' + data.orderId;
+    window.location.href = redirectUrl;
   };
 
   const onCancel = async (data: any) => {
