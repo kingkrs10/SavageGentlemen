@@ -298,6 +298,16 @@ export default function AdminPage() {
     enabled: !!currentUser,
   });
   
+  // Fetch analytics data
+  const {
+    data: analyticsData,
+    isLoading: analyticsLoading,
+    error: analyticsError
+  } = useQuery<AnalyticsData>({
+    queryKey: ["/api/analytics/dashboard"],
+    enabled: !!currentUser,
+  });
+  
   // Filter tickets by selected event
   const displayedTickets = selectedEventId
     ? tickets.filter(ticket => ticket.eventId === parseInt(selectedEventId))
@@ -1093,6 +1103,12 @@ export default function AdminPage() {
             <TabsTrigger value="tickets">Tickets</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="livestreams">Livestreams</TabsTrigger>
+            <TabsTrigger value="analytics">
+              <div className="flex items-center gap-1">
+                <BarChart className="h-4 w-4" />
+                <span>Analytics</span>
+              </div>
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="events">
@@ -2470,6 +2486,97 @@ export default function AdminPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle>Analytics Dashboard</CardTitle>
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      // Redirect to full analytics dashboard
+                      navigate("/analytics-dashboard");
+                    }}
+                  >
+                    <BarChart className="h-4 w-4 mr-2" />
+                    Detailed View
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Card>
+                      <CardHeader className="py-3">
+                        <CardTitle className="text-sm font-medium">Page Views</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-3xl font-bold">--</div>
+                        <p className="text-xs text-muted-foreground">
+                          Loading data...
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="py-3">
+                        <CardTitle className="text-sm font-medium">Event Views</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-3xl font-bold">--</div>
+                        <p className="text-xs text-muted-foreground">
+                          Loading data...
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="py-3">
+                        <CardTitle className="text-sm font-medium">Revenue</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-3xl font-bold">--</div>
+                        <p className="text-xs text-muted-foreground">
+                          Loading data...
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="py-3">
+                        <CardTitle className="text-sm font-medium">Users</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-3xl font-bold">--</div>
+                        <p className="text-xs text-muted-foreground">
+                          Loading data...
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Data Visualization</CardTitle>
+                      <CardDescription>
+                        Visit the full analytics dashboard for detailed insights and interactive charts.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="h-[300px] flex items-center justify-center">
+                      <div className="text-center">
+                        <BarChart className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                        <h3 className="text-lg font-medium">Analytics Preview</h3>
+                        <p className="text-sm text-gray-500 max-w-md mx-auto">
+                          The analytics dashboard provides detailed insights into user engagement, 
+                          event performance, and revenue metrics. Click "Detailed View" above to 
+                          access the full analytics dashboard.
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
