@@ -668,11 +668,15 @@ export default function AdminPage() {
         description: '',
         date: '',
         time: '',
+        endTime: '',
+        duration: 180,
         location: '',
         price: 0,
         imageUrl: '',
         category: 'concert',
-        featured: false
+        featured: false,
+        organizerName: 'Savage Gentlemen',
+        organizerEmail: 'info@savagegentlemen.com'
       });
       
       // Refresh events list
