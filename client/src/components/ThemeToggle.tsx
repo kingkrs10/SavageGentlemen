@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
-import { SmilePlus, Smile, LaptopIcon, Check } from 'lucide-react';
+import { LaptopIcon, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -64,10 +64,30 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
     return <Button className={className} variant={variant} size={size} disabled />;
   }
 
+  // Custom SVG Smiley Face components
+  const LightSmiley = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+      <line x1="9" y1="9" x2="9.01" y2="9"></line>
+      <line x1="15" y1="9" x2="15.01" y2="9"></line>
+    </svg>
+  );
+  
+  const DarkSmiley = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <path d="M8 13s1.5 2 4 2 4-2 4-2"></path>
+      <line x1="9" y1="9" x2="9.01" y2="9"></line>
+      <line x1="15" y1="9" x2="15.01" y2="9"></line>
+      <line x1="12" y1="5" x2="12" y2="3"></line>
+    </svg>
+  );
+
   // Determine which icon to show based on the current theme
   const getThemeIcon = () => {
-    if (theme === 'light') return <Smile className="h-[1.2rem] w-[1.2rem]" />;
-    if (theme === 'dark') return <SmilePlus className="h-[1.2rem] w-[1.2rem]" />;
+    if (theme === 'light') return <LightSmiley />;
+    if (theme === 'dark') return <DarkSmiley />;
     return <LaptopIcon className="h-[1.2rem] w-[1.2rem]" />;
   };
 
@@ -89,8 +109,8 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
           className="flex items-center justify-between cursor-pointer"
         >
           <div className="flex items-center">
-            <Smile className="h-4 w-4 mr-2" />
-            <span>Light</span>
+            <LightSmiley />
+            <span className="ml-2">Light</span>
           </div>
           {theme === 'light' && <Check className="h-4 w-4 ml-2" />}
         </DropdownMenuItem>
@@ -100,8 +120,8 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
           className="flex items-center justify-between cursor-pointer"
         >
           <div className="flex items-center">
-            <SmilePlus className="h-4 w-4 mr-2" />
-            <span>Dark</span>
+            <DarkSmiley />
+            <span className="ml-2">Dark</span>
           </div>
           {theme === 'dark' && <Check className="h-4 w-4 ml-2" />}
         </DropdownMenuItem>
