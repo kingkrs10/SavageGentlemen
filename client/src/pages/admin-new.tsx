@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Plus, Pencil, Trash, Users, Tag, Layers, Activity, BarChart, Eye, EyeOff, Search } from "lucide-react";
+import { Plus, Pencil, Trash, Users, Tag, Layers, Activity, BarChart, Eye, EyeOff, Search, Package, ArrowUp, ArrowDown, AlertTriangle } from "lucide-react";
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from "recharts";
@@ -49,7 +49,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
-  Package,
   Ticket,
   ShoppingCart,
   Lock,
@@ -81,6 +80,12 @@ interface Product {
   featured: boolean;
   sizes?: string[];
   etsyUrl?: string | null;
+  sku?: string | null;
+  stockLevel?: number | null;
+  lowStockThreshold?: number | null;
+  inStock?: boolean | null;
+  updatedAt?: Date | string | null;
+  createdAt?: Date | string | null;
 }
 
 interface Event {
@@ -2527,6 +2532,209 @@ export default function AdminPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+          </TabsContent>
+          
+          <TabsContent value="inventory">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle>Inventory Management</CardTitle>
+                <Button 
+                  size="sm" 
+                  className="sg-btn"
+                  onClick={() => {
+                    toast({
+                      title: "Feature in Progress",
+                      description: "The stock update form will be available soon",
+                    });
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Update Stock
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {productsLoading ? (
+                  <div className="py-10 text-center">
+                    <div className="animate-spin h-12 w-12 mx-auto border-4 border-primary border-t-transparent rounded-full mb-4"></div>
+                    <h3 className="text-lg font-medium">Loading inventory data...</h3>
+                  </div>
+                ) : productsError ? (
+                  <div className="py-10 text-center text-red-500">
+                    <h3 className="text-lg font-medium">Error loading inventory data</h3>
+                    <p className="text-sm">Please try again later</p>
+                  </div>
+                ) : products.length > 0 ? (
+                  <div className="space-y-5">
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Product</TableHead>
+                            <TableHead>SKU</TableHead>
+                            <TableHead>Stock Level</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Last Updated</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {products.map((product) => (
+                            <TableRow key={product.id}>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center space-x-2">
+                                  <div className="h-10 w-10 rounded bg-gray-200 flex items-center justify-center overflow-hidden">
+                                    {product.imageUrl ? (
+                                      <img 
+                                        src={product.imageUrl} 
+                                        alt={product.title} 
+                                        className="h-full w-full object-cover"
+                                      />
+                                    ) : (
+                                      <Package className="h-5 w-5 text-gray-500" />
+                                    )}
+                                  </div>
+                                  <span>{product.title}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {product.sku || 'N/A'}
+                              </TableCell>
+                              <TableCell>
+                                {product.stockLevel !== undefined ? (
+                                  <div className="flex items-center">
+                                    <span className={product.stockLevel < (product.lowStockThreshold || 5) ? 'text-red-500 font-medium' : ''}>
+                                      {product.stockLevel}
+                                    </span>
+                                    {product.stockLevel < (product.lowStockThreshold || 5) && (
+                                      <AlertTriangle className="h-4 w-4 text-red-500 ml-2" />
+                                    )}
+                                  </div>
+                                ) : (
+                                  'Not tracked'
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {product.stockLevel !== undefined ? (
+                                  product.stockLevel > 0 ? (
+                                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                      In Stock
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                                      Out of Stock
+                                    </Badge>
+                                  )
+                                ) : (
+                                  <Badge variant="outline">Unknown</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {product.updatedAt ? new Date(product.updatedAt).toLocaleDateString() : 'N/A'}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center space-x-2">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => {
+                                      toast({
+                                        title: "Coming Soon",
+                                        description: "Stock adjustment functionality will be available soon",
+                                      });
+                                    }}
+                                  >
+                                    <ArrowUp className="h-4 w-4 text-green-500" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => {
+                                      toast({
+                                        title: "Coming Soon",
+                                        description: "Stock adjustment functionality will be available soon",
+                                      });
+                                    }}
+                                  >
+                                    <ArrowDown className="h-4 w-4 text-amber-500" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => {
+                                      toast({
+                                        title: "Coming Soon",
+                                        description: "View inventory history functionality will be available soon",
+                                      });
+                                    }}
+                                  >
+                                    <Eye className="h-4 w-4 text-blue-500" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    
+                    <div className="pt-4">
+                      <h3 className="text-lg font-medium mb-4">Inventory Alerts</h3>
+                      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                        {products
+                          .filter(p => p.stockLevel !== undefined && p.stockLevel < (p.lowStockThreshold || 5))
+                          .map(product => (
+                            <Card key={`alert-${product.id}`} className="border-l-4 border-red-500">
+                              <CardContent className="p-4">
+                                <div className="flex items-start justify-between">
+                                  <div>
+                                    <h4 className="font-medium">{product.title}</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                      Stock level: <span className="text-red-500 font-semibold">{product.stockLevel}</span>
+                                      {product.lowStockThreshold && (
+                                        <span> (Threshold: {product.lowStockThreshold})</span>
+                                      )}
+                                    </p>
+                                  </div>
+                                  <AlertTriangle className="h-5 w-5 text-red-500" />
+                                </div>
+                                <div className="mt-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    className="w-full text-xs"
+                                    onClick={() => {
+                                      toast({
+                                        title: "Coming Soon",
+                                        description: "Restock functionality will be available soon",
+                                      });
+                                    }}
+                                  >
+                                    Restock Now
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        
+                        {!products.some(p => p.stockLevel !== undefined && p.stockLevel < (p.lowStockThreshold || 5)) && (
+                          <div className="col-span-full py-6 text-center bg-gray-50 rounded-md border border-dashed">
+                            <p className="text-sm text-muted-foreground">No low stock alerts at this time.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-10 text-center">
+                    <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium">No products found</h3>
+                    <p className="text-sm text-gray-500">
+                      Add products to start managing inventory.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="analytics">
