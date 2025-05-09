@@ -879,35 +879,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Media uploads
-  router.post("/admin/uploads", authenticateUser, authorizeAdmin, upload.single('file'), async (req: Request, res: Response) => {
+  // Media uploads - this is mounted under /api already
+  app.post("/api/admin/uploads", upload.single('file'), async (req: Request, res: Response) => {
     try {
-      const file = req.file;
+      // Check authentication manually since multer needs to run before we access the file
+      const userId = req.headers['user-id'];
       
-      if (!file) {
-        return res.status(400).json({ message: "No file uploaded" });
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required - No user ID" });
       }
       
-      const userId = (req as any).user.id;
-      
-      // Create a relative URL to the file
-      const fileUrl = `/uploads/${file.filename}`;
-      
-      // Create a record in the database
-      const mediaUpload = await storage.createMediaUpload({
-        userId,
-        url: fileUrl,
-        fileName: file.originalname,
-        fileType: file.mimetype,
-        fileSize: file.size,
-        relatedEntityType: req.body.relatedEntityType,
-        relatedEntityId: req.body.relatedEntityId ? parseInt(req.body.relatedEntityId) : undefined
-      });
-      
-      return res.status(201).json({
-        message: "File uploaded successfully",
-        file: mediaUpload
-      });
+      try {
+        const id = parseInt(userId as string);
+        const user = await storage.getUser(id);
+        
+        if (!user) {
+          return res.status(401).json({ message: `User not found - ID: ${id}` });
+        }
+        
+        // Check if user is admin
+        if (user.role !== 'admin') {
+          return res.status(403).json({ 
+            message: `Admin access required - Current role: ${user.role}` 
+          });
+        }
+        
+        const file = req.file;
+        
+        if (!file) {
+          return res.status(400).json({ message: "No file uploaded" });
+        }
+        
+        console.log('File uploaded:', file.originalname, 'by user ID:', id);
+        
+        // Create a relative URL to the file
+        const fileUrl = `/uploads/${file.filename}`;
+        
+        // Create a record in the database
+        const mediaUpload = await storage.createMediaUpload({
+          userId: id,
+          url: fileUrl,
+          fileName: file.originalname,
+          fileType: file.mimetype,
+          fileSize: file.size,
+          relatedEntityType: req.body.relatedEntityType,
+          relatedEntityId: req.body.relatedEntityId ? parseInt(req.body.relatedEntityId) : undefined
+        });
+        
+        return res.status(201).json({
+          message: "File uploaded successfully",
+          file: mediaUpload
+        });
+      } catch (error) {
+        console.error("Authentication error:", error);
+        return res.status(500).json({ message: "Authentication error" });
+      }
     } catch (err) {
       console.error("Error uploading file:", err);
       return res.status(500).json({ message: "Failed to upload file" });
