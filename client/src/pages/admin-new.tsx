@@ -252,7 +252,6 @@ export default function AdminPage() {
     endTime: '',
     duration: 180, // Default duration 3 hours in minutes
     location: '',
-    price: 0,
     imageUrl: '',
     category: 'concert',
     featured: false,
@@ -649,7 +648,6 @@ export default function AdminPage() {
         endTime: eventForm.endTime || '',
         duration: eventForm.duration || 180,
         location: eventForm.location,
-        price: eventForm.price,
         imageUrl: eventForm.imageUrl,
         category: eventForm.category,
         featured: eventForm.featured,
@@ -681,7 +679,6 @@ export default function AdminPage() {
         endTime: '',
         duration: 180,
         location: '',
-        price: 0,
         imageUrl: '',
         category: 'concert',
         featured: false,
@@ -763,7 +760,6 @@ export default function AdminPage() {
         endTime: '',
         duration: 180,
         location: '',
-        price: 0,
         imageUrl: '',
         category: 'concert',
         featured: false,
@@ -851,7 +847,6 @@ export default function AdminPage() {
       endTime: formattedEndTime,
       duration: event.duration || 180,
       location: event.location,
-      price: event.price,
       imageUrl: event.imageUrl || '',
       category: event.category || 'concert',
       featured: event.featured || false,
@@ -1464,20 +1459,7 @@ export default function AdminPage() {
                       }
                     />
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="price">Price</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="Enter event price"
-                      value={eventForm.price}
-                      onChange={(e) => 
-                        setEventForm({ ...eventForm, price: parseFloat(e.target.value) || 0 })
-                      }
-                    />
-                  </div>
+                  {/* Price field removed - use tickets for pricing */}
                   <div className="grid gap-2">
                     <Label htmlFor="imageUrl">Image URL</Label>
                     <Input
