@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Switch, Route } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,33 +10,47 @@ import AuthModal from "@/components/auth/AuthModal";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import SEOHead from "@/components/SEOHead";
 import NotFound from "@/pages/not-found";
-import Home from "@/pages/home";
-import Events from "@/pages/events";
-import Shop from "@/pages/shop";
-import Live from "@/pages/live";
-import Community from "@/pages/community";
-import Checkout from "@/pages/checkout";
-import PaymentSuccess from "@/pages/payment-success";
-import Admin from "@/pages/admin-new";
-import PasswordReset from "@/pages/password-reset";
+import { Skeleton } from "@/components/ui/skeleton";
+import BrandLoader from "@/components/ui/BrandLoader";
+
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { User } from "@/lib/types";
 
+// Lazily load pages for code splitting
+const Home = lazy(() => import("@/pages/home"));
+const Events = lazy(() => import("@/pages/events"));
+const Shop = lazy(() => import("@/pages/shop"));
+const Live = lazy(() => import("@/pages/live"));
+const Community = lazy(() => import("@/pages/community"));
+const Checkout = lazy(() => import("@/pages/checkout"));
+const PaymentSuccess = lazy(() => import("@/pages/payment-success"));
+const Admin = lazy(() => import("@/pages/admin-new"));
+const PasswordReset = lazy(() => import("@/pages/password-reset"));
+
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/events" component={Events} />
-      <Route path="/shop" component={Shop} />
-      <Route path="/live" component={Live} />
-      <Route path="/community" component={Community} />
-      <Route path="/checkout" component={Checkout} />
-      <Route path="/payment-success" component={PaymentSuccess} />
-      <Route path="/admin" component={Admin} />
-      <Route path="/password-reset" component={PasswordReset} />
-      <Route component={NotFound} />
-    </Switch>
+    <Suspense fallback={
+      <div className="w-full h-[70vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-6">
+          <BrandLoader size="lg" />
+          <p className="text-muted-foreground text-sm">Loading content...</p>
+        </div>
+      </div>
+    }>
+      <Switch>
+        <Route path="/" component={Home} />
+        <Route path="/events" component={Events} />
+        <Route path="/shop" component={Shop} />
+        <Route path="/live" component={Live} />
+        <Route path="/community" component={Community} />
+        <Route path="/checkout" component={Checkout} />
+        <Route path="/payment-success" component={PaymentSuccess} />
+        <Route path="/admin" component={Admin} />
+        <Route path="/password-reset" component={PasswordReset} />
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 
