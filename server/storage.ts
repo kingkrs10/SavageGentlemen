@@ -744,8 +744,265 @@ export class MemStorage implements IStorage {
       .filter(upload => upload.relatedEntityType === relatedEntityType && upload.relatedEntityId === relatedEntityId);
   }
 
+  // Analytics methods for MemStorage
+  private pageViews: Map<number, PageView>;
+  private eventAnalytics: Map<number, EventAnalytic>;
+  private productAnalytics: Map<number, ProductAnalytic>;
+  private userEvents: Map<number, UserEvent>;
+  private dailyStats: Map<number, DailyStat>;
+  
+  private pageViewCurrentId: number;
+  private eventAnalyticCurrentId: number;
+  private productAnalyticCurrentId: number;
+  private userEventCurrentId: number;
+  private dailyStatCurrentId: number;
+  
+  // Page Views
+  async createPageView(pageViewData: InsertPageView): Promise<PageView> {
+    const id = this.pageViewCurrentId++;
+    const pageView: PageView = {
+      id,
+      ...pageViewData,
+      timestamp: new Date()
+    };
+    this.pageViews.set(id, pageView);
+    return pageView;
+  }
+  
+  async getPageViewsByPath(path: string): Promise<PageView[]> {
+    return Array.from(this.pageViews.values())
+      .filter(view => view.path === path)
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  }
+  
+  async getPageViewsByUserId(userId: number): Promise<PageView[]> {
+    return Array.from(this.pageViews.values())
+      .filter(view => view.userId === userId)
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  }
+  
+  // Event Analytics
+  async createEventAnalytic(eventAnalyticData: InsertEventAnalytic): Promise<EventAnalytic> {
+    const id = this.eventAnalyticCurrentId++;
+    const eventAnalytic: EventAnalytic = {
+      id,
+      ...eventAnalyticData,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.eventAnalytics.set(id, eventAnalytic);
+    return eventAnalytic;
+  }
+  
+  async getEventAnalyticsByEventId(eventId: number): Promise<EventAnalytic | undefined> {
+    return Array.from(this.eventAnalytics.values())
+      .find(analytic => analytic.eventId === eventId);
+  }
+  
+  async incrementEventViews(eventId: number): Promise<EventAnalytic | undefined> {
+    const existing = await this.getEventAnalyticsByEventId(eventId);
+    
+    if (existing) {
+      existing.views += 1;
+      existing.updatedAt = new Date();
+      this.eventAnalytics.set(existing.id, existing);
+      return existing;
+    } else {
+      return await this.createEventAnalytic({
+        eventId,
+        views: 1,
+        ticketClicks: 0,
+        ticketSales: 0
+      });
+    }
+  }
+  
+  async incrementEventTicketClicks(eventId: number): Promise<EventAnalytic | undefined> {
+    const existing = await this.getEventAnalyticsByEventId(eventId);
+    
+    if (existing) {
+      existing.ticketClicks += 1;
+      existing.updatedAt = new Date();
+      this.eventAnalytics.set(existing.id, existing);
+      return existing;
+    } else {
+      return await this.createEventAnalytic({
+        eventId,
+        views: 0,
+        ticketClicks: 1,
+        ticketSales: 0
+      });
+    }
+  }
+  
+  async incrementEventTicketSales(eventId: number): Promise<EventAnalytic | undefined> {
+    const existing = await this.getEventAnalyticsByEventId(eventId);
+    
+    if (existing) {
+      existing.ticketSales += 1;
+      existing.updatedAt = new Date();
+      this.eventAnalytics.set(existing.id, existing);
+      return existing;
+    } else {
+      return await this.createEventAnalytic({
+        eventId,
+        views: 0,
+        ticketClicks: 0,
+        ticketSales: 1
+      });
+    }
+  }
+  
+  // Product Analytics
+  async createProductAnalytic(productAnalyticData: InsertProductAnalytic): Promise<ProductAnalytic> {
+    const id = this.productAnalyticCurrentId++;
+    const productAnalytic: ProductAnalytic = {
+      id,
+      ...productAnalyticData,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.productAnalytics.set(id, productAnalytic);
+    return productAnalytic;
+  }
+  
+  async getProductAnalyticsByProductId(productId: number): Promise<ProductAnalytic | undefined> {
+    return Array.from(this.productAnalytics.values())
+      .find(analytic => analytic.productId === productId);
+  }
+  
+  async incrementProductViews(productId: number): Promise<ProductAnalytic | undefined> {
+    const existing = await this.getProductAnalyticsByProductId(productId);
+    
+    if (existing) {
+      existing.views += 1;
+      existing.updatedAt = new Date();
+      this.productAnalytics.set(existing.id, existing);
+      return existing;
+    } else {
+      return await this.createProductAnalytic({
+        productId,
+        views: 1,
+        detailClicks: 0,
+        purchaseClicks: 0
+      });
+    }
+  }
+  
+  async incrementProductDetailClicks(productId: number): Promise<ProductAnalytic | undefined> {
+    const existing = await this.getProductAnalyticsByProductId(productId);
+    
+    if (existing) {
+      existing.detailClicks += 1;
+      existing.updatedAt = new Date();
+      this.productAnalytics.set(existing.id, existing);
+      return existing;
+    } else {
+      return await this.createProductAnalytic({
+        productId,
+        views: 0,
+        detailClicks: 1,
+        purchaseClicks: 0
+      });
+    }
+  }
+  
+  async incrementProductPurchaseClicks(productId: number): Promise<ProductAnalytic | undefined> {
+    const existing = await this.getProductAnalyticsByProductId(productId);
+    
+    if (existing) {
+      existing.purchaseClicks += 1;
+      existing.updatedAt = new Date();
+      this.productAnalytics.set(existing.id, existing);
+      return existing;
+    } else {
+      return await this.createProductAnalytic({
+        productId,
+        views: 0,
+        detailClicks: 0,
+        purchaseClicks: 1
+      });
+    }
+  }
+  
+  // User Events
+  async createUserEvent(userEventData: InsertUserEvent): Promise<UserEvent> {
+    const id = this.userEventCurrentId++;
+    const userEvent: UserEvent = {
+      id,
+      ...userEventData,
+      timestamp: new Date()
+    };
+    this.userEvents.set(id, userEvent);
+    return userEvent;
+  }
+  
+  async getUserEventsByUserId(userId: number): Promise<UserEvent[]> {
+    return Array.from(this.userEvents.values())
+      .filter(event => event.userId === userId)
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  }
+  
+  // Daily Stats
+  async createDailyStat(dailyStatData: InsertDailyStat): Promise<DailyStat> {
+    const id = this.dailyStatCurrentId++;
+    const dailyStat: DailyStat = {
+      id,
+      ...dailyStatData
+    };
+    this.dailyStats.set(id, dailyStat);
+    return dailyStat;
+  }
+  
+  async getDailyStatByDate(date: Date): Promise<DailyStat | undefined> {
+    const dateStr = date.toISOString().split('T')[0];
+    return Array.from(this.dailyStats.values())
+      .find(stat => stat.date.toISOString().split('T')[0] === dateStr);
+  }
+  
+  async updateDailyStat(date: Date, updates: Partial<InsertDailyStat>): Promise<DailyStat | undefined> {
+    const stat = await this.getDailyStatByDate(date);
+    
+    if (!stat) {
+      return undefined;
+    }
+    
+    const updatedStat: DailyStat = {
+      ...stat,
+      ...updates
+    };
+    
+    this.dailyStats.set(stat.id, updatedStat);
+    return updatedStat;
+  }
+  
+  async getDailyStatsByDateRange(startDate: Date, endDate: Date): Promise<DailyStat[]> {
+    const startTime = startDate.getTime();
+    const endTime = endDate.getTime();
+    
+    return Array.from(this.dailyStats.values())
+      .filter(stat => {
+        const statTime = stat.date.getTime();
+        return statTime >= startTime && statTime <= endTime;
+      })
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+  }
+  
   // Initialize with sample data
   private initializeSampleData(): void {
+    // Initialize analytics maps
+    this.pageViews = new Map();
+    this.eventAnalytics = new Map();
+    this.productAnalytics = new Map();
+    this.userEvents = new Map();
+    this.dailyStats = new Map();
+    
+    this.pageViewCurrentId = 1;
+    this.eventAnalyticCurrentId = 1;
+    this.productAnalyticCurrentId = 1;
+    this.userEventCurrentId = 1;
+    this.dailyStatCurrentId = 1;
+    
     // Create admin user
     this.createUser({
       username: "admin",
@@ -1584,6 +1841,284 @@ export class DatabaseStorage implements IStorage {
       .from(ticketScans)
       .where(eq(ticketScans.orderId, orderId))
       .orderBy(desc(ticketScans.scannedAt));
+  }
+  
+  // Analytics operations
+  
+  // Page Views
+  async createPageView(pageViewData: InsertPageView): Promise<PageView> {
+    const [pageView] = await db
+      .insert(pageViews)
+      .values({
+        ...pageViewData,
+        timestamp: new Date()
+      })
+      .returning();
+    return pageView;
+  }
+  
+  async getPageViewsByPath(path: string): Promise<PageView[]> {
+    return await db
+      .select()
+      .from(pageViews)
+      .where(eq(pageViews.path, path))
+      .orderBy(desc(pageViews.timestamp));
+  }
+  
+  async getPageViewsByUserId(userId: number): Promise<PageView[]> {
+    return await db
+      .select()
+      .from(pageViews)
+      .where(eq(pageViews.userId, userId))
+      .orderBy(desc(pageViews.timestamp));
+  }
+  
+  // Event Analytics
+  async createEventAnalytic(eventAnalyticData: InsertEventAnalytic): Promise<EventAnalytic> {
+    const [eventAnalytic] = await db
+      .insert(eventAnalytics)
+      .values({
+        ...eventAnalyticData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return eventAnalytic;
+  }
+  
+  async getEventAnalyticsByEventId(eventId: number): Promise<EventAnalytic | undefined> {
+    const [eventAnalytic] = await db
+      .select()
+      .from(eventAnalytics)
+      .where(eq(eventAnalytics.eventId, eventId));
+    return eventAnalytic;
+  }
+  
+  async incrementEventViews(eventId: number): Promise<EventAnalytic | undefined> {
+    const existing = await this.getEventAnalyticsByEventId(eventId);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(eventAnalytics)
+        .set({ 
+          views: existing.views + 1,
+          updatedAt: new Date()
+        })
+        .where(eq(eventAnalytics.eventId, eventId))
+        .returning();
+      return updated;
+    } else {
+      return await this.createEventAnalytic({
+        eventId,
+        views: 1,
+        ticketClicks: 0,
+        ticketSales: 0
+      });
+    }
+  }
+  
+  async incrementEventTicketClicks(eventId: number): Promise<EventAnalytic | undefined> {
+    const existing = await this.getEventAnalyticsByEventId(eventId);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(eventAnalytics)
+        .set({ 
+          ticketClicks: existing.ticketClicks + 1,
+          updatedAt: new Date()
+        })
+        .where(eq(eventAnalytics.eventId, eventId))
+        .returning();
+      return updated;
+    } else {
+      return await this.createEventAnalytic({
+        eventId,
+        views: 0,
+        ticketClicks: 1,
+        ticketSales: 0
+      });
+    }
+  }
+  
+  async incrementEventTicketSales(eventId: number): Promise<EventAnalytic | undefined> {
+    const existing = await this.getEventAnalyticsByEventId(eventId);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(eventAnalytics)
+        .set({ 
+          ticketSales: existing.ticketSales + 1,
+          updatedAt: new Date()
+        })
+        .where(eq(eventAnalytics.eventId, eventId))
+        .returning();
+      return updated;
+    } else {
+      return await this.createEventAnalytic({
+        eventId,
+        views: 0,
+        ticketClicks: 0,
+        ticketSales: 1
+      });
+    }
+  }
+  
+  // Product Analytics
+  async createProductAnalytic(productAnalyticData: InsertProductAnalytic): Promise<ProductAnalytic> {
+    const [productAnalytic] = await db
+      .insert(productAnalytics)
+      .values({
+        ...productAnalyticData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return productAnalytic;
+  }
+  
+  async getProductAnalyticsByProductId(productId: number): Promise<ProductAnalytic | undefined> {
+    const [productAnalytic] = await db
+      .select()
+      .from(productAnalytics)
+      .where(eq(productAnalytics.productId, productId));
+    return productAnalytic;
+  }
+  
+  async incrementProductViews(productId: number): Promise<ProductAnalytic | undefined> {
+    const existing = await this.getProductAnalyticsByProductId(productId);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(productAnalytics)
+        .set({ 
+          views: existing.views + 1,
+          updatedAt: new Date()
+        })
+        .where(eq(productAnalytics.productId, productId))
+        .returning();
+      return updated;
+    } else {
+      return await this.createProductAnalytic({
+        productId,
+        views: 1,
+        detailClicks: 0,
+        purchaseClicks: 0
+      });
+    }
+  }
+  
+  async incrementProductDetailClicks(productId: number): Promise<ProductAnalytic | undefined> {
+    const existing = await this.getProductAnalyticsByProductId(productId);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(productAnalytics)
+        .set({ 
+          detailClicks: existing.detailClicks + 1,
+          updatedAt: new Date()
+        })
+        .where(eq(productAnalytics.productId, productId))
+        .returning();
+      return updated;
+    } else {
+      return await this.createProductAnalytic({
+        productId,
+        views: 0,
+        detailClicks: 1,
+        purchaseClicks: 0
+      });
+    }
+  }
+  
+  async incrementProductPurchaseClicks(productId: number): Promise<ProductAnalytic | undefined> {
+    const existing = await this.getProductAnalyticsByProductId(productId);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(productAnalytics)
+        .set({ 
+          purchaseClicks: existing.purchaseClicks + 1,
+          updatedAt: new Date()
+        })
+        .where(eq(productAnalytics.productId, productId))
+        .returning();
+      return updated;
+    } else {
+      return await this.createProductAnalytic({
+        productId,
+        views: 0,
+        detailClicks: 0,
+        purchaseClicks: 1
+      });
+    }
+  }
+  
+  // User Events
+  async createUserEvent(userEventData: InsertUserEvent): Promise<UserEvent> {
+    const [userEvent] = await db
+      .insert(userEvents)
+      .values({
+        ...userEventData,
+        timestamp: new Date()
+      })
+      .returning();
+    return userEvent;
+  }
+  
+  async getUserEventsByUserId(userId: number): Promise<UserEvent[]> {
+    return await db
+      .select()
+      .from(userEvents)
+      .where(eq(userEvents.userId, userId))
+      .orderBy(desc(userEvents.timestamp));
+  }
+  
+  // Daily Stats
+  async createDailyStat(dailyStatData: InsertDailyStat): Promise<DailyStat> {
+    const [dailyStat] = await db
+      .insert(dailyStats)
+      .values(dailyStatData)
+      .returning();
+    return dailyStat;
+  }
+  
+  async getDailyStatByDate(date: Date): Promise<DailyStat | undefined> {
+    const dateStr = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    
+    const [dailyStat] = await db
+      .select()
+      .from(dailyStats)
+      .where(sql`${dailyStats.date}::text = ${dateStr}`);
+    
+    return dailyStat;
+  }
+  
+  async updateDailyStat(date: Date, updates: Partial<InsertDailyStat>): Promise<DailyStat | undefined> {
+    const dateStr = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    
+    const [updated] = await db
+      .update(dailyStats)
+      .set(updates)
+      .where(sql`${dailyStats.date}::text = ${dateStr}`)
+      .returning();
+    
+    return updated;
+  }
+  
+  async getDailyStatsByDateRange(startDate: Date, endDate: Date): Promise<DailyStat[]> {
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
+    
+    return await db
+      .select()
+      .from(dailyStats)
+      .where(
+        and(
+          sql`${dailyStats.date}::text >= ${startDateStr}`,
+          sql`${dailyStats.date}::text <= ${endDateStr}`
+        )
+      )
+      .orderBy(dailyStats.date);
   }
 }
 

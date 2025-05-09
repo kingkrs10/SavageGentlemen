@@ -26,6 +26,7 @@ import fs from "fs";
 import crypto from "crypto";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
 import { sendEmail, sendTicketEmail, sendOrderConfirmation, sendAdminNotification, sendWelcomeEmail, sendPasswordResetEmail } from "./email";
+import { analyticsRouter } from "./analytics-routes";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
