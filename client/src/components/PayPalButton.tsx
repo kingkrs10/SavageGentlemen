@@ -53,11 +53,15 @@ export default function PayPalButton({
   };
 
   const captureOrder = async (orderId: string) => {
+    // Include event information in the capture request if available
+    const capturePayload = eventId ? { eventId, eventTitle } : {};
+    
     const response = await fetch(`/api/payment/paypal-order/${orderId}/capture`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
+      body: JSON.stringify(capturePayload)
     });
     const data = await response.json();
 

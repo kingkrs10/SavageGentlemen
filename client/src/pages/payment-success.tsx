@@ -36,26 +36,39 @@ export default function PaymentSuccess() {
       });
     } else if (provider === 'paypal' && orderId) {
       // For PayPal payments - fetch order details if needed
-      fetch(`/api/payment/paypal-order/${orderId}/details`)
-        .then(response => {
-          if (response.ok) return response.json();
-          return { id: orderId };
-        })
-        .then(data => {
-          setPaymentDetails({
-            id: orderId,
-            type: 'paypal',
-            amount: data.amount,
-            status: data.status || 'completed'
-          });
-        })
-        .catch(error => {
-          console.error('Error fetching PayPal order details:', error);
-          setPaymentDetails({
-            id: orderId,
-            type: 'paypal'
-          });
+      // Check if this is a ticket purchase (for PayPal)
+      if (eventId && eventTitle) {
+        setPaymentDetails({
+          id: orderId,
+          type: 'paypal',
+          isEventTicket: true,
+          eventId: eventId,
+          eventTitle: decodeURIComponent(eventTitle),
+          ticketType: 'Standard Admission'
         });
+      } else {
+        // For regular PayPal purchases
+        fetch(`/api/payment/paypal-order/${orderId}/details`)
+          .then(response => {
+            if (response.ok) return response.json();
+            return { id: orderId };
+          })
+          .then(data => {
+            setPaymentDetails({
+              id: orderId,
+              type: 'paypal',
+              amount: data.amount,
+              status: data.status || 'completed'
+            });
+          })
+          .catch(error => {
+            console.error('Error fetching PayPal order details:', error);
+            setPaymentDetails({
+              id: orderId,
+              type: 'paypal'
+            });
+          });
+      }
     } else {
       // For other payment methods where we might not have URL params
       setPaymentDetails({
