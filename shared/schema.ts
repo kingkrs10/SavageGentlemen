@@ -81,6 +81,16 @@ export const products = pgTable("products", {
   sizes: text("sizes").array(),
   featured: boolean("featured").default(false),
   etsyUrl: text("etsy_url"),
+  // Inventory management fields
+  sku: text("sku"), // Stock Keeping Unit for inventory tracking
+  inStock: boolean("in_stock").default(true),
+  stockLevel: integer("stock_level").default(0),
+  lowStockThreshold: integer("low_stock_threshold").default(5),
+  weight: numeric("weight"), // For shipping calculations
+  dimensions: jsonb("dimensions"), // For shipping calculations {length, width, height}
+  hasVariants: boolean("has_variants").default(false), // If product has variants like sizes, colors
+  trackInventory: boolean("track_inventory").default(true), // Whether to track inventory for this product
+  restockDate: timestamp("restock_date"), // Expected date for restocking
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -94,6 +104,16 @@ export const insertProductSchema = createInsertSchema(products).pick({
   sizes: true,
   featured: true,
   etsyUrl: true,
+  // Inventory fields
+  sku: true,
+  inStock: true,
+  stockLevel: true,
+  lowStockThreshold: true,
+  weight: true,
+  dimensions: true,
+  hasVariants: true,
+  trackInventory: true,
+  restockDate: true,
 });
 
 // Livestreams schema
@@ -317,20 +337,32 @@ export const insertOrderSchema = createInsertSchema(orders).pick({
 export const orderItems = pgTable("order_items", {
   id: serial("id").primaryKey(),
   orderId: integer("order_id").notNull(),
-  ticketId: integer("ticket_id").notNull(),
+  itemType: text("item_type").notNull(), // product, ticket, variant
+  productId: integer("product_id"), // If type is product
+  variantId: integer("variant_id"), // If type is variant
+  ticketId: integer("ticket_id"), // If type is ticket
   quantity: integer("quantity").notNull(),
   unitPrice: integer("unit_price").notNull(),
   subtotal: integer("subtotal").notNull(),
+  sku: text("sku"), // For inventory tracking
+  itemName: text("item_name"), // Name of the product/ticket
+  itemDetails: jsonb("item_details").default({}), // Additional details like size, color
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertOrderItemSchema = createInsertSchema(orderItems).pick({
   orderId: true,
+  itemType: true,
+  productId: true,
+  variantId: true,
   ticketId: true,
   quantity: true,
   unitPrice: true,
   subtotal: true,
+  sku: true,
+  itemName: true,
+  itemDetails: true,
 });
 
 // Media Upload schema for product images
@@ -395,6 +427,52 @@ export const insertTicketScanSchema = createInsertSchema(ticketScans).omit({
 export type TicketScan = typeof ticketScans.$inferSelect;
 export type InsertTicketScan = z.infer<typeof insertTicketScanSchema>;
 
+// Product Variants schema
+export const productVariants = pgTable("product_variants", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").notNull().references(() => products.id),
+  sku: text("sku").notNull().unique(),
+  name: text("name").notNull(), // e.g., "Red - Small", "Blue - Large"
+  attributes: jsonb("attributes").default({}), // e.g., {color: "red", size: "S"}
+  price: integer("price"), // Override price for this variant
+  imageUrl: text("image_url"),
+  stockLevel: integer("stock_level").default(0),
+  inStock: boolean("in_stock").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertProductVariantSchema = createInsertSchema(productVariants).pick({
+  productId: true,
+  sku: true,
+  name: true,
+  attributes: true,
+  price: true,
+  imageUrl: true,
+  stockLevel: true,
+  inStock: true,
+});
+
+// Inventory History schema for tracking stock changes
+export const inventoryHistory = pgTable("inventory_history", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").references(() => products.id),
+  variantId: integer("variant_id").references(() => productVariants.id),
+  previousStock: integer("previous_stock").notNull(),
+  newStock: integer("new_stock").notNull(),
+  changeQuantity: integer("change_quantity").notNull(),
+  changeType: text("change_type").notNull(), // purchase, restock, adjustment, return
+  reason: text("reason"),
+  userId: integer("user_id").references(() => users.id), // Who made the change
+  orderId: integer("order_id").references(() => orders.id), // If change was from purchase
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+export const insertInventoryHistorySchema = createInsertSchema(inventoryHistory).omit({
+  id: true,
+  timestamp: true,
+});
+
 // Password reset tokens schema
 export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: serial("id").primaryKey(),
@@ -405,14 +483,82 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
   used: boolean("used").default(false),
 });
 
+// Define relationships between tables
 export const usersRelations = relations(users, ({ many }) => ({
   passwordResetTokens: many(passwordResetTokens),
+  orders: many(orders),
+  inventoryChanges: many(inventoryHistory, { relationName: "userInventoryChanges" }),
 }));
 
 export const passwordResetTokensRelations = relations(passwordResetTokens, ({ one }) => ({
   user: one(users, {
     fields: [passwordResetTokens.userId],
     references: [users.id],
+  }),
+}));
+
+export const productsRelations = relations(products, ({ many }) => ({
+  variants: many(productVariants),
+  inventoryHistory: many(inventoryHistory),
+  analytics: many(productAnalytics),
+}));
+
+export const productVariantsRelations = relations(productVariants, ({ one, many }) => ({
+  product: one(products, {
+    fields: [productVariants.productId],
+    references: [products.id],
+  }),
+  inventoryHistory: many(inventoryHistory),
+}));
+
+export const ordersRelations = relations(orders, ({ one, many }) => ({
+  user: one(users, {
+    fields: [orders.userId],
+    references: [users.id],
+  }),
+  items: many(orderItems),
+  inventoryChanges: many(inventoryHistory),
+}));
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderItems.orderId],
+    references: [orders.id],
+  }),
+  product: one(products, {
+    fields: [orderItems.productId],
+    references: [products.id],
+    relationName: "productOrderItems",
+  }),
+  variant: one(productVariants, {
+    fields: [orderItems.variantId],
+    references: [productVariants.id],
+    relationName: "variantOrderItems",
+  }),
+  ticket: one(tickets, {
+    fields: [orderItems.ticketId],
+    references: [tickets.id],
+    relationName: "ticketOrderItems",
+  }),
+}));
+
+export const inventoryHistoryRelations = relations(inventoryHistory, ({ one }) => ({
+  product: one(products, {
+    fields: [inventoryHistory.productId],
+    references: [products.id],
+  }),
+  variant: one(productVariants, {
+    fields: [inventoryHistory.variantId],
+    references: [productVariants.id],
+  }),
+  user: one(users, {
+    fields: [inventoryHistory.userId],
+    references: [users.id],
+    relationName: "userInventoryChanges",
+  }),
+  order: one(orders, {
+    fields: [inventoryHistory.orderId],
+    references: [orders.id],
   }),
 }));
 
@@ -522,3 +668,10 @@ export type InsertUserEvent = z.infer<typeof insertUserEventSchema>;
 
 export type DailyStat = typeof dailyStats.$inferSelect;
 export type InsertDailyStat = z.infer<typeof insertDailyStatSchema>;
+
+// Export inventory management types
+export type ProductVariant = typeof productVariants.$inferSelect;
+export type InsertProductVariant = z.infer<typeof insertProductVariantSchema>;
+
+export type InventoryHistory = typeof inventoryHistory.$inferSelect;
+export type InsertInventoryHistory = z.infer<typeof insertInventoryHistorySchema>;
