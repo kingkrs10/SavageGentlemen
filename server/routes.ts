@@ -82,6 +82,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const router = express.Router();
   app.use("/api", router);
   
+  // Register analytics router
+  router.use("/analytics", analyticsRouter);
+  
   // Create uploads directory for media files if it doesn't exist
   const uploadsDir = path.join(process.cwd(), 'uploads');
   if (!fs.existsSync(uploadsDir)) {

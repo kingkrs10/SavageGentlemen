@@ -27,6 +27,7 @@ const Checkout = lazy(() => import("@/pages/checkout"));
 const PaymentSuccess = lazy(() => import("@/pages/payment-success"));
 const Admin = lazy(() => import("@/pages/admin-new"));
 const PasswordReset = lazy(() => import("@/pages/password-reset"));
+const AnalyticsDashboard = lazy(() => import("@/pages/analytics-dashboard"));
 
 function Router() {
   return (
@@ -48,6 +49,7 @@ function Router() {
         <Route path="/payment-success" component={PaymentSuccess} />
         <Route path="/admin" component={Admin} />
         <Route path="/password-reset" component={PasswordReset} />
+        <Route path="/analytics" component={AnalyticsDashboard} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
