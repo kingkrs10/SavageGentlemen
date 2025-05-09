@@ -943,11 +943,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Event management
   router.post("/admin/events", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
-      // Manually convert date string to Date object before validation
+      // Properly handle date string conversion
       const requestData = req.body;
-      if (requestData.date && typeof requestData.date === 'string') {
-        requestData.date = new Date(requestData.date);
+      
+      // Always ensure date is properly converted to a Date object
+      if (requestData.date) {
+        try {
+          // Handle ISO string format from client
+          if (typeof requestData.date === 'string') {
+            requestData.date = new Date(requestData.date);
+            
+            // Verify date is valid
+            if (isNaN(requestData.date.getTime())) {
+              throw new Error('Invalid date format');
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing date:', error, 'Received date:', requestData.date);
+          return res.status(400).json({ message: "Invalid date format" });
+        }
       }
+      
+      // Log the date being saved
+      console.log(`Creating event with date:`, requestData.date);
       
       // Now parse with the schema
       const eventData = insertEventSchema.parse(requestData);
@@ -968,11 +986,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Event not found" });
       }
 
-      // Manually convert date string to Date object if it exists
+      // Properly handle date string conversion for the database
       const requestData = req.body;
-      if (requestData.date && typeof requestData.date === 'string') {
-        requestData.date = new Date(requestData.date);
+      
+      // Always ensure date is properly converted to a Date object
+      if (requestData.date) {
+        try {
+          // Handle ISO string format from client
+          if (typeof requestData.date === 'string') {
+            requestData.date = new Date(requestData.date);
+            
+            // Verify date is valid
+            if (isNaN(requestData.date.getTime())) {
+              throw new Error('Invalid date format');
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing date:', error, 'Received date:', requestData.date);
+          return res.status(400).json({ message: "Invalid date format" });
+        }
       }
+      
+      // Log the date being saved
+      console.log(`Updating event ${id} with date:`, requestData.date);
       
       // Now update the event with the processed data
       const updatedEvent = await storage.updateEvent(id, requestData);

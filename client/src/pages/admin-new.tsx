@@ -636,15 +636,29 @@ export default function AdminPage() {
         return;
       }
       
-      // Combine date and time
-      const dateTimeString = `${eventForm.date}T${eventForm.time || '19:00'}:00`;
+      // Make sure we have a valid time or use a default
+      const time = eventForm.time || '19:00';
+      
+      // Combine date and time - ensure we have a proper date string format
+      const dateTimeString = `${eventForm.date}T${time}:00`;
+      const eventDate = new Date(dateTimeString);
+      
+      // Ensure the date is valid
+      if (isNaN(eventDate.getTime())) {
+        toast({
+          title: "Invalid Date",
+          description: "The date and time provided are not valid",
+          variant: "destructive"
+        });
+        return;
+      }
       
       // Create payload with date properly formatted for the server
       const eventData = {
         title: eventForm.title,
         description: eventForm.description,
-        date: new Date(dateTimeString), // Convert to Date object explicitly
-        time: eventForm.time || '19:00',
+        date: eventDate.toISOString(), // Convert to ISO string for consistent server handling
+        time: time,
         endTime: eventForm.endTime || '',
         duration: eventForm.duration || 180,
         location: eventForm.location,
@@ -657,7 +671,7 @@ export default function AdminPage() {
       
       console.log("Sending event data:", JSON.stringify({
         ...eventData,
-        date: eventData.date.toISOString() // Log as ISO string for debugging
+        date: eventData.date // Log the ISO string for debugging
       }));
       
       // Use apiRequest instead of direct fetch
@@ -715,16 +729,30 @@ export default function AdminPage() {
         return;
       }
       
-      // Combine date and time
-      const dateTimeString = `${eventForm.date}T${eventForm.time || '19:00'}:00`;
+      // Make sure we have a valid time or use a default
+      const time = eventForm.time || '19:00';
       
+      // Combine date and time - ensure we have a proper date string format
+      const dateTimeString = `${eventForm.date}T${time}:00`;
+      const eventDate = new Date(dateTimeString);
+      
+      // Ensure the date is valid
+      if (isNaN(eventDate.getTime())) {
+        toast({
+          title: "Invalid Date",
+          description: "The date and time provided are not valid",
+          variant: "destructive"
+        });
+        return;
+      }
+
       // Create payload with date properly formatted for the server
       const eventData = {
         id: currentEvent.id,
         title: eventForm.title,
         description: eventForm.description,
-        date: new Date(dateTimeString), // Convert to Date object explicitly
-        time: eventForm.time || '19:00',
+        date: eventDate.toISOString(), // Convert to ISO string for consistent server handling
+        time: time,
         endTime: eventForm.endTime || '',
         duration: eventForm.duration || 180,
         location: eventForm.location,
@@ -737,7 +765,7 @@ export default function AdminPage() {
       
       console.log("Updating event data:", JSON.stringify({
         ...eventData,
-        date: eventData.date.toISOString() // Log as ISO string for debugging
+        date: eventData.date // Log the ISO string for debugging
       }));
       
       // Use apiRequest instead of direct fetch
