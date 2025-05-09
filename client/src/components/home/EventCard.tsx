@@ -157,7 +157,7 @@ const EventCard = ({
                 onGetTicket && onGetTicket(id);
               }}
             >
-              Get Ticket
+              Get Tickets
             </Button>
           </div>
         </div>
