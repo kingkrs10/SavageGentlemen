@@ -1663,15 +1663,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentId: `free-${Date.now()}`
       });
       
+      // Check if ticketId was provided in the request
+      let ticketType = 'standard';
+      let ticketName = 'General Admission';
+      let ticketPrice = 0;
+      let selectedTicket = null;
+      
+      if (req.body.ticketId) {
+        try {
+          selectedTicket = await storage.getTicket(Number(req.body.ticketId));
+          if (selectedTicket) {
+            ticketType = selectedTicket.name;
+            ticketName = selectedTicket.name;
+            ticketPrice = selectedTicket.price;
+            
+            // Make sure the ticket is actually free
+            if (ticketPrice > 0) {
+              return res.status(400).json({ 
+                message: "This endpoint is only for free tickets. Use payment endpoints for paid tickets." 
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Error fetching ticket:", err);
+          // Continue with default ticket type if there's an error
+        }
+      }
+      
       // Create ticket record
       const ticketData = {
         orderId: order.id,
         eventId: event.id,
+        ticketId: selectedTicket ? selectedTicket.id : null,
         status: 'valid',
         userId: user.id,
         purchaseDate: new Date(),
         qrCodeData: `EVENT-${event.id}-ORDER-${order.id}-${Date.now()}`,
-        ticketType: 'standard'
+        ticketType: ticketType,
+        price: 0,
+        attendeeEmail: user.email || null,
+        attendeeName: user.displayName || user.username || null
       };
       
       const ticket = await storage.createTicketPurchase(ticketData);
@@ -1685,8 +1716,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             eventName: event.title,
             eventLocation: event.location,
             eventDate: event.date,
-            ticketType: ticket.ticketType,
-            price: "0.00",
+            ticketType: ticketName,
+            ticketPrice: 0,
             purchaseDate: new Date()
           }, user.email);
         } catch (emailError) {
@@ -1697,19 +1728,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Track analytics - count as ticket sale for free event
       try {
-        const analyticsData = await storage.getEventAnalytics(event.id);
-        if (analyticsData) {
-          await storage.updateEventAnalytics(analyticsData.id, {
-            ticketSales: (analyticsData.ticketSales || 0) + 1
-          });
-        } else {
-          await storage.createEventAnalytics({
-            eventId: event.id,
-            ticketSales: 1
-          });
-        }
+        // Use the proper event analytics function
+        await storage.incrementEventTicketSales(event.id);
       } catch (analyticsError) {
         console.error("Error updating analytics:", analyticsError);
+        // Continue despite analytics failure
       }
       
       return res.status(200).json({
