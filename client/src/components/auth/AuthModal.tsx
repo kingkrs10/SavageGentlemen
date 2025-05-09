@@ -315,48 +315,66 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
         </div>
 
         <div className="space-y-3">
-          <Button 
-            variant="outline" 
-            className="w-full flex items-center justify-center bg-white hover:bg-gray-100 text-black"
-            onClick={async () => {
-              try {
-                await signInWithGoogle();
-                toast({
-                  title: "Login Successful",
-                  description: "Welcome to Savage Gentlemen!",
-                });
-              } catch (error: any) {
-                console.error("Error signing in:", error);
-                
-                // Handle specific Firebase error codes with user-friendly messages
-                let errorMessage = "Failed to login with Google";
-                
-                if (error?.code === "auth/configuration-not-found") {
-                  errorMessage = "Google authentication needs to be configured. Please ensure your domain is added to Firebase authorized domains.";
-                } else if (error?.code === "auth/popup-closed-by-user") {
-                  errorMessage = "Login was canceled. Please try again.";
-                } else if (error?.code === "auth/popup-blocked") {
-                  errorMessage = "Login popup was blocked by your browser. Please allow popups for this site.";
-                } else if (error?.code === "auth/account-exists-with-different-credential") {
-                  errorMessage = "An account already exists with the same email but different sign-in credentials.";
-                } else if (error?.code === "auth/network-request-failed") {
-                  errorMessage = "Network error. Please check your internet connection and try again.";
-                } else if (error?.message) {
-                  errorMessage = error.message;
+          {/* Check if we're on Replit and show appropriate Google button */}
+          {window.location.hostname.includes('replit.dev') || window.location.hostname.includes('replit.app') ? (
+            <>
+              <Button 
+                variant="outline" 
+                className="w-full flex items-center justify-center bg-gray-300 text-gray-500 cursor-not-allowed"
+                disabled={true}
+              >
+                <FaGoogle className="w-4 h-4 mr-2" />
+                <span>Google Login (Disabled on Replit)</span>
+              </Button>
+              <div className="text-xs text-center text-gray-400 mt-1 mb-2">
+                <p>Google login requires domain verification.</p>
+                <p>Please use email login or continue as guest.</p>
+              </div>
+            </>
+          ) : (
+            <Button 
+              variant="outline" 
+              className="w-full flex items-center justify-center bg-white hover:bg-gray-100 text-black"
+              onClick={async () => {
+                try {
+                  await signInWithGoogle();
+                  toast({
+                    title: "Login Successful",
+                    description: "Welcome to Savage Gentlemen!",
+                  });
+                } catch (error: any) {
+                  console.error("Error signing in:", error);
+                  
+                  // Handle specific Firebase error codes with user-friendly messages
+                  let errorMessage = "Failed to login with Google";
+                  
+                  if (error?.code === "auth/configuration-not-found") {
+                    errorMessage = "Google authentication needs to be configured. Please ensure your domain is added to Firebase authorized domains.";
+                  } else if (error?.code === "auth/popup-closed-by-user") {
+                    errorMessage = "Login was canceled. Please try again.";
+                  } else if (error?.code === "auth/popup-blocked") {
+                    errorMessage = "Login popup was blocked by your browser. Please allow popups for this site.";
+                  } else if (error?.code === "auth/account-exists-with-different-credential") {
+                    errorMessage = "An account already exists with the same email but different sign-in credentials.";
+                  } else if (error?.code === "auth/network-request-failed") {
+                    errorMessage = "Network error. Please check your internet connection and try again.";
+                  } else if (error?.message) {
+                    errorMessage = error.message;
+                  }
+                  
+                  toast({
+                    title: "Login Failed",
+                    description: errorMessage,
+                    variant: "destructive",
+                  });
                 }
-                
-                toast({
-                  title: "Login Failed",
-                  description: errorMessage,
-                  variant: "destructive",
-                });
-              }
-            }}
-            disabled={loading}
-          >
-            <FaGoogle className="w-4 h-4 mr-2" />
-            <span>Google</span>
-          </Button>
+              }}
+              disabled={loading}
+            >
+              <FaGoogle className="w-4 h-4 mr-2" />
+              <span>Google</span>
+            </Button>
+          )}
           <Button 
             variant="outline" 
             className="w-full flex items-center justify-center bg-black hover:bg-gray-900 border-gray-700"
