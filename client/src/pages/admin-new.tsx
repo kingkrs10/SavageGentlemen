@@ -1461,15 +1461,89 @@ export default function AdminPage() {
                   </div>
                   {/* Price field removed - use tickets for pricing */}
                   <div className="grid gap-2">
-                    <Label htmlFor="imageUrl">Image URL</Label>
-                    <Input
-                      id="imageUrl"
-                      placeholder="Enter image URL (optional)"
-                      value={eventForm.imageUrl}
-                      onChange={(e) => 
-                        setEventForm({ ...eventForm, imageUrl: e.target.value })
-                      }
-                    />
+                    <Label htmlFor="imageUrl">Image URL or Upload</Label>
+                    <div className="flex flex-col gap-3">
+                      <Input
+                        id="imageUrl"
+                        placeholder="Enter image URL (optional)"
+                        value={eventForm.imageUrl}
+                        onChange={(e) => 
+                          setEventForm({ ...eventForm, imageUrl: e.target.value })
+                        }
+                      />
+                      <div className="flex flex-col">
+                        <p className="text-sm text-gray-500 mb-2">Or upload an image:</p>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id="eventImageUpload"
+                            type="file"
+                            accept="image/*"
+                            className="max-w-[300px]"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              
+                              try {
+                                const formData = new FormData();
+                                formData.append('file', file);
+                                formData.append('relatedEntityType', 'event');
+                                if (currentEvent?.id) {
+                                  formData.append('relatedEntityId', currentEvent.id.toString());
+                                }
+                                
+                                const response = await fetch('/api/admin/uploads', {
+                                  method: 'POST',
+                                  body: formData,
+                                });
+                                
+                                if (!response.ok) {
+                                  throw new Error('Failed to upload image');
+                                }
+                                
+                                const data = await response.json();
+                                setEventForm({ ...eventForm, imageUrl: data.file.url });
+                                toast({
+                                  title: "Image uploaded",
+                                  description: "The image has been uploaded successfully.",
+                                });
+                              } catch (error) {
+                                console.error('Error uploading image:', error);
+                                toast({
+                                  title: "Upload failed",
+                                  description: "Failed to upload image. Please try again.",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const fileInput = document.getElementById('eventImageUpload') as HTMLInputElement;
+                              if (fileInput) fileInput.value = '';
+                            }}
+                          >
+                            Clear
+                          </Button>
+                        </div>
+                      </div>
+                      {eventForm.imageUrl && (
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-500 mb-1">Image preview:</p>
+                          <img 
+                            src={eventForm.imageUrl} 
+                            alt="Event preview" 
+                            className="max-w-full max-h-[200px] object-contain border border-border rounded-md"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'https://placehold.co/600x400?text=Image+Not+Found';
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="category">Category</Label>
@@ -1613,7 +1687,7 @@ export default function AdminPage() {
                               <TableCell>{ticket.remainingQuantity}</TableCell>
                               <TableCell>
                                 {ticket.isActive ? (
-                                  <Badge variant="success">Active</Badge>
+                                  <Badge className="bg-green-500 hover:bg-green-600">Active</Badge>
                                 ) : (
                                   <Badge variant="secondary">Inactive</Badge>
                                 )}
