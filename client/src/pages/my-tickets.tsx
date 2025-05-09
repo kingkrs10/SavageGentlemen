@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -57,7 +57,20 @@ export default function MyTickets() {
       <div className="container mx-auto px-4 py-8 text-center">
         <h1 className="text-2xl font-bold mb-6">My Tickets</h1>
         <p className="mb-6">Please log in to view your tickets.</p>
-        <Button onClick={() => navigate("/login")}>Log In</Button>
+        <Button 
+          onClick={() => {
+            // Open the auth modal using the custom event
+            const event = new CustomEvent('sg:open-auth-modal', { 
+              detail: { 
+                tab: 'login',
+                redirectPath: '/my-tickets'
+              } 
+            });
+            window.dispatchEvent(event);
+          }}
+        >
+          Log In
+        </Button>
       </div>
     );
   }
@@ -76,7 +89,9 @@ export default function MyTickets() {
       <div className="container mx-auto px-4 py-8 text-center">
         <h1 className="text-2xl font-bold mb-6">My Tickets</h1>
         <p className="text-red-500 mb-6">Error loading tickets. Please try again later.</p>
-        <Button onClick={() => navigate("/")}>Go Back Home</Button>
+        <Link href="/">
+          <Button>Go Back Home</Button>
+        </Link>
       </div>
     );
   }
@@ -243,9 +258,11 @@ export default function MyTickets() {
         <div className="text-center py-12">
           <h2 className="text-xl mb-4">You don't have any tickets yet</h2>
           <p className="mb-6">Explore upcoming events and get your tickets now!</p>
-          <Button onClick={() => navigate("/events")}>
-            Browse Events
-          </Button>
+          <Link href="/events">
+            <Button>
+              Browse Events
+            </Button>
+          </Link>
         </div>
       ) : (
         <Tabs defaultValue="upcoming" className="w-full">
@@ -262,9 +279,11 @@ export default function MyTickets() {
             {upcomingTickets.length === 0 ? (
               <div className="text-center py-8">
                 <p className="mb-4">No upcoming tickets found</p>
-                <Button onClick={() => navigate("/events")}>
-                  Browse Events
-                </Button>
+                <Link href="/events">
+                  <Button>
+                    Browse Events
+                  </Button>
+                </Link>
               </div>
             ) : (
               <div>

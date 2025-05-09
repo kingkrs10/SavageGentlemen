@@ -92,6 +92,12 @@ const PostCard = ({ post, currentUser }: PostCardProps) => {
             variant="ghost" 
             size="sm"
             className="flex items-center text-xs px-2 h-8 text-gray-300 hover:text-primary"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              // In a full implementation, this would call a like API
+              console.log("Liked post:", post.id);
+            }}
           >
             <Heart className="w-3 h-3 mr-1" />
             <span>{post.likes}</span>
