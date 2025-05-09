@@ -1489,10 +1489,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe payment routes  
   router.post("/payment/create-intent", authenticateUser, async (req: Request, res: Response) => {
     try {
-      const { items, amount, currency = "usd" } = req.body;
+      const { 
+        items, 
+        amount, 
+        currency = "usd",
+        eventId,
+        eventTitle
+      } = req.body;
       
       if (!amount) {
         return res.status(400).json({ message: "Amount is required" });
+      }
+      
+      // Build metadata object with all relevant information
+      const metadata: Record<string, string> = {
+        items: JSON.stringify(items || [])
+      };
+      
+      // Add event information to metadata if provided
+      if (eventId) {
+        metadata.eventId = eventId.toString();
+      }
+      
+      if (eventTitle) {
+        metadata.eventTitle = eventTitle;
       }
       
       // Create a PaymentIntent with the order amount and currency
@@ -1502,9 +1522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         automatic_payment_methods: {
           enabled: true,
         },
-        metadata: {
-          items: JSON.stringify(items || []),
-        },
+        metadata,
       });
       
       return res.status(200).json({
@@ -1612,11 +1630,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`PaymentIntent for ${paymentIntent.amount} was successful!`);
         
         try {
-          // In a full implementation, we would:
-          // 1. Find the order in the database using paymentIntent.metadata
-          // 2. Update the order status to 'paid'
-          // 3. Send a confirmation email to the customer
-          
           // Get customer email from payment intent
           const customerId = paymentIntent.customer;
           if (customerId) {
@@ -1625,18 +1638,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const items = paymentIntent.metadata?.items ? JSON.parse(paymentIntent.metadata.items) : [];
               const email = customer.email;
               
+              // Check if this is an event ticket purchase
+              const eventId = paymentIntent.metadata?.eventId ? parseInt(paymentIntent.metadata.eventId) : null;
+              const eventTitle = paymentIntent.metadata?.eventTitle || null;
+              
               if (email) {
-                // Send order confirmation email
-                await sendOrderConfirmation({
-                  orderId: paymentIntent.id,
-                  orderDate: new Date(paymentIntent.created * 1000),
-                  items: items.map((item: any) => ({
-                    name: item.name || 'Product',
-                    quantity: item.quantity || 1,
-                    price: item.price || (paymentIntent.amount / 100)
-                  })),
-                  totalAmount: paymentIntent.amount / 100
-                }, email);
+                // Create order record
+                const order = await storage.createOrder({
+                  userId: customer.metadata?.userId ? parseInt(customer.metadata.userId) : 0,
+                  totalAmount: paymentIntent.amount / 100,
+                  status: 'completed',
+                  paymentMethod: 'stripe',
+                  paymentId: paymentIntent.id
+                });
+                
+                // If this is an event ticket purchase, create a ticket record
+                if (eventId) {
+                  try {
+                    // Get the event info
+                    const event = await storage.getEvent(eventId);
+                    
+                    if (event) {
+                      // Create ticket record
+                      const ticketData = {
+                        orderId: order.id,
+                        eventId: eventId,
+                        status: 'valid',
+                        userId: order.userId,
+                        purchaseDate: new Date(),
+                        qrCodeData: `EVENT-${eventId}-ORDER-${order.id}-${Date.now()}`,
+                        ticketType: 'standard'
+                      };
+                      
+                      const ticket = await storage.createTicketPurchase(ticketData);
+                      
+                      // Send ticket email with QR code
+                      await sendTicketEmail({
+                        ticketId: ticket.id,
+                        qrCodeData: ticket.qrCodeData,
+                        eventName: event.title,
+                        eventLocation: event.location,
+                        eventDate: event.date,
+                        ticketType: ticket.ticketType,
+                        price: (paymentIntent.amount / 100).toFixed(2),
+                        purchaseDate: new Date()
+                      }, email);
+                    }
+                  } catch (err) {
+                    console.error('Error creating ticket record:', err);
+                  }
+                } else {
+                  // For non-ticket purchases, send regular order confirmation
+                  await sendOrderConfirmation({
+                    orderId: paymentIntent.id,
+                    orderDate: new Date(paymentIntent.created * 1000),
+                    items: items.map((item: any) => ({
+                      name: item.name || 'Product',
+                      quantity: item.quantity || 1,
+                      price: item.price || (paymentIntent.amount / 100)
+                    })),
+                    totalAmount: paymentIntent.amount / 100
+                  }, email);
+                }
                 
                 // Notify admins about the successful payment
                 await sendAdminNotification(
@@ -1646,7 +1709,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     Amount: `$${(paymentIntent.amount / 100).toFixed(2)}`,
                     Customer: email,
                     PaymentId: paymentIntent.id,
-                    PaymentMethod: paymentIntent.payment_method_types?.[0] || 'card'
+                    PaymentMethod: paymentIntent.payment_method_types?.[0] || 'card',
+                    ...(eventId ? { EventId: eventId.toString(), EventTitle: eventTitle } : {})
                   }
                 );
               }

@@ -32,7 +32,15 @@ const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY ?
   loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY) : null;
 
 // Stripe Checkout Form Component
-const StripeCheckoutForm = ({ amount }: { amount: number }) => {
+const StripeCheckoutForm = ({ 
+  amount, 
+  eventId, 
+  eventTitle 
+}: { 
+  amount: number; 
+  eventId?: number | null;
+  eventTitle?: string; 
+}) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
@@ -47,10 +55,16 @@ const StripeCheckoutForm = ({ amount }: { amount: number }) => {
 
     setIsProcessing(true);
 
+    // Build the return URL with any event information as query parameters
+    let returnUrl = window.location.origin + '/payment-success';
+    if (eventId && eventTitle) {
+      returnUrl += `?eventId=${eventId}&eventTitle=${encodeURIComponent(eventTitle)}`;
+    }
+
     const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: window.location.origin + '/payment-success',
+        return_url: returnUrl,
       },
     });
 
@@ -68,7 +82,7 @@ const StripeCheckoutForm = ({ amount }: { amount: number }) => {
         title: "Payment Successful",
         description: "Thank you for your purchase!",
       });
-      window.location.href = '/payment-success';
+      // No need to manually redirect, the confirmPayment will handle it
     }
   };
 
@@ -210,7 +224,11 @@ export default function Checkout() {
                 </div>
               ) : clientSecret && stripePromise ? (
                 <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
-                  <StripeCheckoutForm amount={amount} />
+                  <StripeCheckoutForm 
+                    amount={amount} 
+                    eventId={eventId} 
+                    eventTitle={eventTitle}
+                  />
                 </Elements>
               ) : (
                 <div className="text-center py-4 text-red-500">
