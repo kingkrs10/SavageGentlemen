@@ -1461,11 +1461,15 @@ export default function AdminPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Events</SelectItem>
-                        {events.map((event) => (
-                          <SelectItem key={event.id} value={event.id.toString()}>
-                            {event.title}
-                          </SelectItem>
-                        ))}
+                        {events.length > 0 ? (
+                          events.map((event) => (
+                            <SelectItem key={event.id} value={event.id.toString()}>
+                              {event.title}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="none">No events available</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   )}
@@ -1626,18 +1630,22 @@ export default function AdminPage() {
                   <div className="grid gap-2">
                     <Label htmlFor="eventId">Event</Label>
                     <Select 
-                      value={ticketForm.eventId.toString()} 
+                      value={ticketForm.eventId ? ticketForm.eventId.toString() : "0"} 
                       onValueChange={(value) => setTicketForm({...ticketForm, eventId: parseInt(value)})}
                     >
                       <SelectTrigger id="eventId">
                         <SelectValue placeholder="Select event" />
                       </SelectTrigger>
                       <SelectContent>
-                        {events.map((event) => (
-                          <SelectItem key={event.id} value={event.id.toString()}>
-                            {event.title}
-                          </SelectItem>
-                        ))}
+                        {events.length > 0 ? (
+                          events.map((event) => (
+                            <SelectItem key={event.id} value={event.id.toString()}>
+                              {event.title}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="0">No events available</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
