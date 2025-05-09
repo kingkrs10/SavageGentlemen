@@ -1533,14 +1533,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // PayPal payment routes
+  // Duplicate routes for compatibility with both /api/payment and /payment paths
+  // PayPal setup with /api prefix
+  router.get("/api/payment/paypal-setup", async (req: Request, res: Response) => {
+    await loadPaypalDefault(req, res);
+  });
+  
+  // PayPal setup without /api prefix (for backward compatibility)
   router.get("/payment/paypal-setup", async (req: Request, res: Response) => {
     await loadPaypalDefault(req, res);
   });
   
+  // API prefixed PayPal order route
+  router.post("/api/payment/paypal-order", async (req: Request, res: Response) => {
+    await createPaypalOrder(req, res);
+  });
+  
+  // Non-prefixed PayPal order route (for backward compatibility)
   router.post("/payment/paypal-order", async (req: Request, res: Response) => {
     await createPaypalOrder(req, res);
   });
   
+  // API prefixed PayPal capture route
+  router.post("/api/payment/paypal-order/:orderID/capture", async (req: Request, res: Response) => {
+    await capturePaypalOrder(req, res);
+  });
+  
+  // Non-prefixed PayPal capture route (for backward compatibility)
   router.post("/payment/paypal-order/:orderID/capture", async (req: Request, res: Response) => {
     await capturePaypalOrder(req, res);
   });
@@ -1631,6 +1650,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Special endpoint for free tickets (0.00) - no payment processing required
+  // API prefixed endpoint
+  router.post("/api/tickets/free", authenticateUser, async (req: Request, res: Response) => {
+    const { eventId, eventTitle } = req.body;
+    const user = (req as any).user;
+    
+    // Handle free ticket claim logic (same as below)
+    try {
+      if (!eventId) {
+        return res.status(400).json({ message: "Event ID is required" });
+      }
+      
+      // Get the event to verify it exists and is free
+      const event = await storage.getEvent(Number(eventId));
+      
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      // Make sure the event price is actually zero
+      if (event.price > 0) {
+        return res.status(400).json({ 
+          message: "This endpoint is only for free tickets. Use payment endpoints for paid tickets." 
+        });
+      }
+      
+      // Create order record for the free ticket
+      const order = await storage.createOrder({
+        userId: user.id,
+        totalAmount: 0,
+        status: 'completed',
+        paymentMethod: 'free',
+        paymentId: `free-${Date.now()}`
+      });
+      
+      // Check if ticketId was provided in the request
+      let ticketType = 'standard';
+      let ticketName = 'General Admission';
+      let ticketPrice = 0;
+      let selectedTicket = null;
+      
+      if (req.body.ticketId) {
+        try {
+          selectedTicket = await storage.getTicket(Number(req.body.ticketId));
+          if (selectedTicket) {
+            ticketType = selectedTicket.name;
+            ticketName = selectedTicket.name;
+            ticketPrice = selectedTicket.price;
+            
+            // Make sure the ticket is actually free
+            if (ticketPrice > 0) {
+              return res.status(400).json({ 
+                message: "This endpoint is only for free tickets. Use payment endpoints for paid tickets." 
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Error fetching ticket:", err);
+          // Continue with default ticket type if there's an error
+        }
+      }
+      
+      // Create ticket record
+      const ticketData = {
+        orderId: order.id,
+        eventId: event.id,
+        ticketId: selectedTicket ? selectedTicket.id : null,
+        status: 'valid',
+        userId: user.id,
+        purchaseDate: new Date(),
+        qrCodeData: `EVENT-${event.id}-ORDER-${order.id}-${Date.now()}`,
+        ticketType: ticketType,
+        price: 0,
+        attendeeEmail: user.email || null,
+        attendeeName: user.displayName || user.username || null
+      };
+      
+      const ticket = await storage.createTicketPurchase(ticketData);
+      
+      // If user has email, send ticket confirmation
+      if (user.email) {
+        try {
+          await sendTicketEmail({
+            ticketId: ticket.id.toString(),
+            qrCodeDataUrl: ticket.qrCodeData,
+            eventName: event.title,
+            eventLocation: event.location,
+            eventDate: event.date,
+            ticketType: ticketName,
+            ticketPrice: 0,
+            purchaseDate: new Date()
+          }, user.email);
+        } catch (emailError) {
+          console.error("Failed to send ticket email:", emailError);
+          // Continue despite email failure
+        }
+      }
+      
+      // Track analytics - count as ticket sale for free event
+      try {
+        // Use the proper event analytics function
+        await storage.incrementEventTicketSales(event.id);
+      } catch (analyticsError) {
+        console.error("Error updating analytics:", analyticsError);
+        // Continue despite analytics failure
+      }
+      
+      return res.status(200).json({
+        success: true,
+        ticket: {
+          id: ticket.id,
+          eventId: ticket.eventId,
+          eventTitle: event.title,
+          status: ticket.status,
+          qrCodeData: ticket.qrCodeData
+        },
+        message: "Free ticket successfully claimed"
+      });
+    } catch (error) {
+      console.error("Error claiming free ticket:", error);
+      return res.status(500).json({ message: "Failed to claim free ticket" });
+    }
+  });
+  
+  // Non-prefixed endpoint (for backward compatibility)
   router.post("/tickets/free", authenticateUser, async (req: Request, res: Response) => {
     try {
       const { eventId, eventTitle } = req.body;
@@ -1752,7 +1895,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Stripe payment routes  
+  // Stripe payment routes
+  // API prefixed create-intent endpoint
+  router.post("/api/payment/create-intent", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const { 
+        items, 
+        amount, 
+        currency = "usd",
+        eventId,
+        eventTitle,
+        ticketId,
+        ticketName
+      } = req.body;
+      
+      if (!amount) {
+        return res.status(400).json({ message: "Amount is required" });
+      }
+      
+      // Build metadata object with all relevant information
+      const metadata: Record<string, string> = {
+        items: JSON.stringify(items || [])
+      };
+      
+      // Add event information to metadata if provided
+      if (eventId) {
+        metadata.eventId = eventId.toString();
+      }
+      
+      if (eventTitle) {
+        metadata.eventTitle = eventTitle;
+      }
+      
+      // Add ticket information to metadata if provided
+      if (ticketId) {
+        metadata.ticketId = ticketId.toString();
+      }
+      
+      if (ticketName) {
+        metadata.ticketName = ticketName;
+      }
+      
+      // Create a PaymentIntent with the order amount and currency
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency,
+        automatic_payment_methods: {
+          enabled: true,
+        },
+        metadata,
+      });
+      
+      return res.status(200).json({
+        clientSecret: paymentIntent.client_secret,
+      });
+    } catch (error: any) {
+      console.error("Error creating payment intent:", error);
+      return res.status(500).json({ 
+        message: error.message || "Error creating payment intent" 
+      });
+    }
+  });
+  
+  // Non-prefixed create-intent endpoint (for backward compatibility)
   router.post("/payment/create-intent", authenticateUser, async (req: Request, res: Response) => {
     try {
       const { 
