@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import * as icsLib from "ics";
+// import ics dynamically to avoid TypeScript errors
 import { saveAs } from "file-saver";
 
 interface TicketPurchase {
@@ -109,36 +109,44 @@ export default function MyTickets() {
     const hours = eventDate.getHours();
     const minutes = eventDate.getMinutes();
     
-    // Create an event that lasts 3 hours
-    const event = {
-      start: [year, month, day, hours, minutes],
-      duration: { hours: 3 },
-      title: ticket.event.title,
-      description: `Your ${ticket.ticketType} ticket for ${ticket.event.title}`,
-      location: ticket.event.location,
-      status: 'CONFIRMED',
-      busyStatus: 'BUSY',
-    };
-    
+    // Use dynamic import to avoid TypeScript issues
     import('ics').then(icsModule => {
+      // The event must be properly typed as any to avoid TypeScript errors
+      const event: any = {
+        start: [year, month, day, hours, minutes],
+        duration: { hours: 3 },
+        title: ticket.event.title,
+        description: `Your ${ticket.ticketType} ticket for ${ticket.event.title}`,
+        location: ticket.event.location,
+        status: 'CONFIRMED',
+        busyStatus: 'BUSY',
+      };
+      
       icsModule.createEvent(event, (error: any, value: any) => {
-      if (error) {
+        if (error) {
+          toast({
+            title: "Error",
+            description: "Failed to create calendar event",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        const blob = new Blob([value], { type: 'text/calendar;charset=utf-8' });
+        saveAs(blob, `${ticket.event?.title.replace(/\s+/g, '-').toLowerCase()}.ics`);
+        
         toast({
-          title: "Error",
-          description: "Failed to create calendar event",
-          variant: "destructive"
+          title: "Success!",
+          description: "Event saved to your calendar",
         });
-        return;
-      }
-      
-      const blob = new Blob([value], { type: 'text/calendar;charset=utf-8' });
-      saveAs(blob, `${ticket.event?.title.replace(/\s+/g, '-').toLowerCase()}.ics`);
-      
-      toast({
-        title: "Success!",
-        description: "Event saved to your calendar",
       });
-    });
+    }).catch(error => {
+      console.error("Error importing ics library:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load calendar module",
+        variant: "destructive"
+      });
     });
   };
 
