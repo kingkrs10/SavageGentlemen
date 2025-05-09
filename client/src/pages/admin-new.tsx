@@ -961,10 +961,12 @@ export default function AdminPage() {
     // Set the current ticket being edited
     setCurrentTicket(ticket);
     
+    console.log("Editing ticket:", ticket);
+    
     // Populate the form with the ticket's data
     setTicketForm({
       name: ticket.name,
-      description: '',
+      description: ticket.description || '',
       price: ticket.price,
       eventId: ticket.eventId,
       quantity: ticket.quantity,
