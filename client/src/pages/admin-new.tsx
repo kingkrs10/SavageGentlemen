@@ -731,7 +731,6 @@ export default function AdminPage() {
         endTime: eventForm.endTime || '',
         duration: eventForm.duration || 180,
         location: eventForm.location,
-        price: eventForm.price,
         imageUrl: eventForm.imageUrl,
         category: eventForm.category,
         featured: eventForm.featured,
