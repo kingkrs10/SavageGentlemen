@@ -28,8 +28,13 @@ if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
   console.warn('Missing Stripe public key');
 }
 
+// Force production mode for Stripe
 const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY ? 
-  loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY) : null;
+  loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY, {
+    stripeAccount: undefined, // Use the direct account
+    apiVersion: '2023-10-16',
+    locale: 'en' // English locale for payment UI
+  }) : null;
 
 // Stripe Checkout Form Component
 const StripeCheckoutForm = ({ 
@@ -223,7 +228,16 @@ export default function Checkout() {
                   <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
                 </div>
               ) : clientSecret && stripePromise ? (
-                <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
+                <Elements 
+                  stripe={stripePromise} 
+                  options={{ 
+                    clientSecret, 
+                    appearance: { theme: 'stripe' },
+                    locale: 'en',
+                    // Ensure always use production mode
+                    loader: 'always'
+                  }}
+                >
                   <StripeCheckoutForm 
                     amount={amount} 
                     eventId={eventId} 
