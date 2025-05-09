@@ -28,7 +28,7 @@ import {
 import { FaGoogle, FaMicrosoft, FaYahoo, FaApple, FaCalendarAlt } from "react-icons/fa";
 
 const EventDetail = () => {
-  const [_, params] = useRoute("/event/:id");
+  const [_, params] = useRoute("/events/:id");
   const { toast } = useToast();
   const eventId = params?.id;
   
