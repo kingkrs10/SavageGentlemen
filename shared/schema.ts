@@ -1,6 +1,7 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // Users schema
 export const users = pgTable("users", {
@@ -393,3 +394,33 @@ export const insertTicketScanSchema = createInsertSchema(ticketScans).omit({
 
 export type TicketScan = typeof ticketScans.$inferSelect;
 export type InsertTicketScan = z.infer<typeof insertTicketScanSchema>;
+
+// Password reset tokens schema
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  token: text("token").notNull().unique(),
+  userId: integer("user_id").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  used: boolean("used").default(false),
+});
+
+export const usersRelations = relations(users, ({ many }) => ({
+  passwordResetTokens: many(passwordResetTokens),
+}));
+
+export const passwordResetTokensRelations = relations(passwordResetTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [passwordResetTokens.userId],
+    references: [users.id],
+  }),
+}));
+
+export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTokens).pick({
+  token: true,
+  userId: true,
+  expiresAt: true,
+});
+
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;

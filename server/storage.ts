@@ -47,10 +47,17 @@ export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
   updateUserRole(id: number, role: string): Promise<User | undefined>;
+  updateUserPassword(id: number, newPassword: string): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
+  
+  // Password reset operations
+  storePasswordResetToken(userId: number, token: string, expiresAt: Date): Promise<void>;
+  getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
+  deletePasswordResetToken(token: string): Promise<boolean>;
   
   // Event operations
   getEvent(id: number): Promise<Event | undefined>;
@@ -887,6 +894,28 @@ export class DatabaseStorage implements IStorage {
         createdAt: new Date(),
         updatedAt: new Date()
       })
+      .returning();
+    return user;
+  }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    if (!email) return undefined;
+    
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email));
+    return user;
+  }
+  
+  async updateUserPassword(id: number, newPassword: string): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ 
+        password: newPassword,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, id))
       .returning();
     return user;
   }
