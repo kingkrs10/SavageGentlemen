@@ -73,7 +73,19 @@ function App() {
       }
     }
 
-    return () => clearTimeout(timer);
+    // Listen for custom event to open auth modal from password reset flow
+    const handleOpenAuthModal = (event: CustomEvent) => {
+      setShowAuthModal(true);
+      // If a tab is specified, we could handle it here
+      // const { tab } = event.detail;
+    };
+
+    window.addEventListener("sg:open-auth-modal", handleOpenAuthModal as EventListener);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("sg:open-auth-modal", handleOpenAuthModal as EventListener);
+    };
   }, []);
 
   const handleLogin = (userData: User) => {
