@@ -157,7 +157,7 @@ const Home = () => {
                 <p className="text-white/60 uppercase tracking-widest text-sm mb-6">Events will be announced soon</p>
                 <Button 
                   className="bg-primary hover:bg-primary/80 text-white uppercase tracking-widest px-6"
-                  onClick={() => window.location.href = '/events'}
+                  onClick={() => navigate('/events')}
                 >
                   Stay Updated
                 </Button>
