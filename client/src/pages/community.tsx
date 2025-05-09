@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { API_ROUTES } from "@/lib/constants";
 import { Camera, Image, Video, BarChart4, MapPin } from "lucide-react";
@@ -10,13 +10,49 @@ import { Card, CardContent } from "@/components/ui/card";
 import PostCard from "@/components/community/PostCard";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
 import { Post, User } from "@/lib/types";
 
 const Community = () => {
   const [postContent, setPostContent] = useState("");
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { currentUser, loading } = useAuth();
+  
+  // Get current user from localStorage (the app's primary auth method currently)
+  useEffect(() => {
+    const getUserData = () => {
+      setLoading(true);
+      try {
+        const userString = localStorage.getItem("user");
+        if (userString) {
+          const userData = JSON.parse(userString);
+          setCurrentUser(userData);
+        }
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getUserData();
+
+    // Listen for auth state changes
+    const handleAuthChange = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail && customEvent.detail.user) {
+        setCurrentUser(customEvent.detail.user);
+      } else {
+        setCurrentUser(null);
+      }
+    };
+
+    window.addEventListener('sg:auth:changed', handleAuthChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('sg:auth:changed', handleAuthChange as EventListener);
+    };
+  }, []);
   
   const { data: posts, isLoading } = useQuery<Post[]>({
     queryKey: [API_ROUTES.POSTS],
