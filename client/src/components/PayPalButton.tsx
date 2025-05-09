@@ -84,12 +84,17 @@ export default function PayPalButton({
     const orderData = await captureOrder(data.orderId);
     console.log("Capture result", orderData);
     
-    // Build the redirect URL with any event information
+    // Build the redirect URL with any event and ticket information
     let redirectUrl = '/payment-success?provider=paypal&order_id=' + data.orderId;
     
     // Add event information if available
     if (eventId && eventTitle) {
       redirectUrl += `&eventId=${eventId}&eventTitle=${encodeURIComponent(eventTitle)}`;
+      
+      // Add ticket information if available
+      if (ticketId && ticketName) {
+        redirectUrl += `&ticketId=${ticketId}&ticketName=${encodeURIComponent(ticketName)}`;
+      }
     }
     
     // Redirect to success page after successful payment

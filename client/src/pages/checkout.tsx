@@ -67,10 +67,15 @@ const StripeCheckoutForm = ({
 
     setIsProcessing(true);
 
-    // Build the return URL with any event information as query parameters
+    // Build the return URL with event and ticket information as query parameters
     let returnUrl = window.location.origin + '/payment-success';
     if (eventId && eventTitle) {
       returnUrl += `?eventId=${eventId}&eventTitle=${encodeURIComponent(eventTitle)}`;
+      
+      // Add ticket information if available
+      if (ticketId && ticketName) {
+        returnUrl += `&ticketId=${ticketId}&ticketName=${encodeURIComponent(ticketName)}`;
+      }
     }
 
     const { error } = await stripe.confirmPayment({
