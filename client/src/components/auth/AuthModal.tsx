@@ -106,11 +106,15 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
       const redirectPath = localStorage.getItem('sg:auth:redirect');
       if (redirectPath) {
         console.log('Redirecting after login to:', redirectPath);
-        // Wait a small amount of time to ensure state is updated before redirect
+        // Clear the redirect path from localStorage first to prevent loops
+        localStorage.removeItem('sg:auth:redirect');
+        
+        // Use setLocation for navigation to prevent page reload
         setTimeout(() => {
-          window.location.href = redirectPath;
-          // Clear the redirect path from localStorage
-          localStorage.removeItem('sg:auth:redirect');
+          // Update URL without triggering a full reload
+          window.history.pushState({}, '', redirectPath);
+          // Force a navigation event to update the UI
+          window.dispatchEvent(new PopStateEvent('popstate'));
         }, 500);
       }
     },
@@ -159,11 +163,15 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
       const redirectPath = localStorage.getItem('sg:auth:redirect');
       if (redirectPath) {
         console.log('Redirecting after registration to:', redirectPath);
-        // Wait a small amount of time to ensure state is updated before redirect
+        // Clear the redirect path from localStorage first to prevent loops
+        localStorage.removeItem('sg:auth:redirect');
+        
+        // Use setLocation for navigation to prevent page reload
         setTimeout(() => {
-          window.location.href = redirectPath;
-          // Clear the redirect path from localStorage
-          localStorage.removeItem('sg:auth:redirect');
+          // Update URL without triggering a full reload
+          window.history.pushState({}, '', redirectPath);
+          // Force a navigation event to update the UI
+          window.dispatchEvent(new PopStateEvent('popstate'));
         }, 500);
       }
     },
