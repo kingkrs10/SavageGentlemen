@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { getNormalizedImageUrl } from "@/lib/utils/image-utils";
 import {
   Select,
   SelectContent,
@@ -955,7 +956,7 @@ export default function AdminPage() {
                             <div className="h-12 w-12 overflow-hidden rounded border">
                               {product.imageUrl ? (
                                 <img 
-                                  src={product.imageUrl} 
+                                  src={getNormalizedImageUrl(product.imageUrl)} 
                                   alt={product.title} 
                                   className="h-full w-full object-cover" 
                                 />
@@ -1026,7 +1027,7 @@ export default function AdminPage() {
                             <div className="h-12 w-12 overflow-hidden rounded border">
                               {event.imageUrl ? (
                                 <img 
-                                  src={event.imageUrl} 
+                                  src={getNormalizedImageUrl(event.imageUrl)} 
                                   alt={event.title} 
                                   className="h-full w-full object-cover" 
                                 />
@@ -2141,7 +2142,7 @@ export default function AdminPage() {
                             <div className="h-12 w-12 overflow-hidden rounded border">
                               {livestream.thumbnailUrl ? (
                                 <img 
-                                  src={livestream.thumbnailUrl} 
+                                  src={getNormalizedImageUrl(livestream.thumbnailUrl)} 
                                   alt={livestream.title} 
                                   className="h-full w-full object-cover" 
                                 />
