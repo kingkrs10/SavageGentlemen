@@ -1491,9 +1491,18 @@ export default function AdminPage() {
                                   formData.append('relatedEntityId', currentEvent.id.toString());
                                 }
                                 
+                                // Can't use apiRequest directly with FormData
+                                // We need to manually add the auth headers
+                                const userId = currentUser?.id;
+                                const headers: HeadersInit = {};
+                                if (userId) {
+                                  headers['user-id'] = userId.toString();
+                                }
+                                
                                 const response = await fetch('/api/admin/uploads', {
                                   method: 'POST',
                                   body: formData,
+                                  headers
                                 });
                                 
                                 if (!response.ok) {

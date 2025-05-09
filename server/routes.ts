@@ -1,4 +1,14 @@
 import express, { type Express, Request, Response, NextFunction } from "express";
+import { User } from "@shared/schema";
+
+// Extend the Express Request interface to include user property
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User;
+    }
+  }
+}
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import WebSocket from "ws";
@@ -117,7 +127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Add user to request object
-      (req as any).user = user;
+      req.user = user;
       next();
     } catch (error) {
       console.error("Authentication error:", error);
@@ -127,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Admin authorization middleware
   const authorizeAdmin = (req: Request, res: Response, next: NextFunction) => {
-    const user = (req as any).user;
+    const user = req.user;
     
     console.log("Authorization check - user:", user);
     
@@ -147,7 +157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Moderator authorization middleware
   const authorizeModerator = (req: Request, res: Response, next: NextFunction) => {
-    const user = (req as any).user;
+    const user = req.user;
     
     if (!user || (user.role !== 'admin' && user.role !== 'moderator')) {
       return res.status(403).json({ message: "Moderator access required" });
