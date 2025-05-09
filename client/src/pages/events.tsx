@@ -42,11 +42,11 @@ const Events = () => {
     
     toast({
       title: "Processing",
-      description: "Redirecting to secure checkout..."
+      description: "Loading ticket options..."
     });
     
-    // Redirect to our checkout page with the event details
-    window.location.href = `/checkout?eventId=${eventId}&amount=${event.price}&currency=USD&title=${encodeURIComponent(event.title)}`;
+    // Navigate to the event detail page first to show tickets
+    window.location.href = `/event/${eventId}`;
   };
   
   const handleCategorySelect = (category: string) => {
