@@ -469,6 +469,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Internal server error" });
     }
   });
+  
+  // User tickets routes
+  router.get("/user/tickets", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user.id;
+      const purchasedTickets = await storage.getTicketPurchasesByUserId(userId);
+      
+      // Enhance ticket data with event information
+      const enhancedTickets = await Promise.all(
+        purchasedTickets.map(async (ticket) => {
+          const event = await storage.getEvent(ticket.eventId);
+          return {
+            ...ticket,
+            event: event || { title: "Unknown Event", date: new Date(), location: "Unknown" }
+          };
+        })
+      );
+      
+      return res.status(200).json(enhancedTickets);
+    } catch (err) {
+      console.error("Error fetching user tickets:", err);
+      return res.status(500).json({ message: "Failed to retrieve your tickets" });
+    }
+  });
 
   // Products routes
   router.get("/products", async (req: Request, res: Response) => {
