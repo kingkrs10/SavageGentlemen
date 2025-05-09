@@ -46,7 +46,7 @@ const Events = () => {
     });
     
     // Navigate to the event detail page first to show tickets
-    window.location.href = `/event/${eventId}`;
+    window.location.href = `/events/${eventId}`;
   };
   
   const handleCategorySelect = (category: string) => {
@@ -73,7 +73,7 @@ const Events = () => {
               <Badge variant="secondary" className="bg-primary text-white text-sm px-3 py-1 rounded-full mb-2 inline-block">
                 Featured
               </Badge>
-              <Link href={`/event/${featuredEvent.id}`}>
+              <Link href={`/events/${featuredEvent.id}`}>
                 <h2 className="text-3xl font-heading text-white hover:underline">{featuredEvent.title}</h2>
               </Link>
               <p className="text-lg text-gray-200 mb-2">{featuredEvent.description.length > 150 ? 
@@ -99,7 +99,7 @@ const Events = () => {
                 >
                   Get Tickets
                 </Button>
-                <Link href={`/event/${featuredEvent.id}`}>
+                <Link href={`/events/${featuredEvent.id}`}>
                   <Button variant="outline" className="border-white text-white hover:bg-white/20">
                     View Details
                   </Button>
