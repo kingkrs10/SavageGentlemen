@@ -441,21 +441,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Events routes
   router.get("/events", async (req: Request, res: Response) => {
     try {
+      console.log("Fetching all events...");
       // Use real data from database
       const events = await storage.getAllEvents();
-      return res.status(200).json(events);
+      console.log(`Successfully retrieved ${events?.length || 0} events`);
+      return res.status(200).json(events || []);
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching all events:", err);
       return res.status(500).json({ message: "Internal server error" });
     }
   });
 
   router.get("/events/featured", async (req: Request, res: Response) => {
     try {
+      console.log("Fetching featured events...");
       const events = await storage.getFeaturedEvents();
-      return res.status(200).json(events);
+      console.log(`Successfully retrieved ${events?.length || 0} featured events`);
+      return res.status(200).json(events || []);
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching featured events:", err);
       return res.status(500).json({ message: "Internal server error" });
     }
   });
