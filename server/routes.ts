@@ -1809,7 +1809,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                         eventLocation: event.location,
                         eventDate: event.date,
                         ticketType: ticket.ticketType,
-                        price: (paymentIntent.amount / 100).toFixed(2),
+                        ticketPrice: parseFloat((paymentIntent.amount / 100).toFixed(2)),
                         purchaseDate: new Date()
                       }, email);
                     }

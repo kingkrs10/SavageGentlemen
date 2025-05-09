@@ -7,6 +7,15 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// Helper function to remove /api prefix if present
+function normalizeUrl(url: string): string {
+  // If the URL starts with /api/, remove it
+  if (url.startsWith('/api/')) {
+    return url.substring(4); // Remove the first 4 characters (/api)
+  }
+  return url;
+}
+
 export async function apiRequest(
   method: string,
   url: string,
@@ -23,7 +32,8 @@ export async function apiRequest(
   let userId = null;
   try {
     const storedUser = localStorage.getItem("user");
-    console.log("API Request to:", url, "Method:", method);
+    const normalizedUrl = normalizeUrl(url);
+    console.log("API Request to:", normalizedUrl, "Method:", method);
     console.log("Stored user from localStorage:", storedUser);
     
     if (storedUser) {
@@ -47,7 +57,7 @@ export async function apiRequest(
   
   console.log("Request headers:", headers);
   
-  const res = await fetch(url, {
+  const res = await fetch(normalizeUrl(url), {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
@@ -78,7 +88,9 @@ export const getQueryFn: <T>(options: {
     
     try {
       const storedUser = localStorage.getItem("user");
-      console.log("Query to:", queryKey[0]);
+      const url = queryKey[0] as string;
+      const normalizedUrl = normalizeUrl(url);
+      console.log("Query to:", normalizedUrl, "(original:", url, ")");
       console.log("Stored user from localStorage:", storedUser);
       
       if (storedUser) {
@@ -101,13 +113,16 @@ export const getQueryFn: <T>(options: {
     
     console.log("Query headers:", headers);
     
-    const res = await fetch(queryKey[0] as string, {
+    const res = await fetch(normalizeUrl(queryKey[0] as string), {
       headers,
       credentials: "include",
     });
 
     if (!res.ok) {
-      console.log(`Query error (${res.status}) for ${queryKey[0]}`);
+      const url = queryKey[0] as string;
+      const normalizedUrl = normalizeUrl(url);
+      console.log(`Query error (${res.status}) for ${normalizedUrl} (original: ${url})`);
+      
       try {
         const errorData = await res.json();
         console.error(`Query Error (${res.status}):`, errorData);

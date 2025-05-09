@@ -81,12 +81,16 @@ const TicketQRCode: React.FC<TicketQRCodeProps> = ({
       }
       
       // Send the QR code via email
-      const response = await apiRequest('POST', '/api/tickets/email', {
+      const response = await apiRequest('POST', '/tickets/email', {
+        ticketId: id,
         orderId,
         email: userEmail,
-        qrCodeData: data,
+        qrCodeDataUrl: data,
         eventName: eventName || 'Untitled Event',
         ticketName: ticketName || 'Standard Ticket',
+        ticketPrice: price || 0,
+        eventDate: date || new Date(),
+        eventLocation: location || 'TBA',
         holderName: holderName || 'Ticket Holder'
       });
       
