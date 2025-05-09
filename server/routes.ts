@@ -1516,6 +1516,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Special endpoint for free tickets (0.00) - no payment processing required
+  router.post("/tickets/free", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const { eventId, eventTitle } = req.body;
+      const user = (req as any).user;
+      
+      if (!eventId) {
+        return res.status(400).json({ message: "Event ID is required" });
+      }
+      
+      // Get the event to verify it exists and is free
+      const event = await storage.getEvent(Number(eventId));
+      
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      // Make sure the event price is actually zero
+      if (event.price > 0) {
+        return res.status(400).json({ 
+          message: "This endpoint is only for free tickets. Use payment endpoints for paid tickets." 
+        });
+      }
+      
+      // Create order record for the free ticket
+      const order = await storage.createOrder({
+        userId: user.id,
+        totalAmount: 0,
+        status: 'completed',
+        paymentMethod: 'free',
+        paymentId: `free-${Date.now()}`
+      });
+      
+      // Create ticket record
+      const ticketData = {
+        orderId: order.id,
+        eventId: event.id,
+        status: 'valid',
+        userId: user.id,
+        purchaseDate: new Date(),
+        qrCodeData: `EVENT-${event.id}-ORDER-${order.id}-${Date.now()}`,
+        ticketType: 'standard'
+      };
+      
+      const ticket = await storage.createTicketPurchase(ticketData);
+      
+      // If user has email, send ticket confirmation
+      if (user.email) {
+        try {
+          await sendTicketEmail({
+            ticketId: ticket.id.toString(),
+            qrCodeData: ticket.qrCodeData,
+            eventName: event.title,
+            eventLocation: event.location,
+            eventDate: event.date,
+            ticketType: ticket.ticketType,
+            price: "0.00",
+            purchaseDate: new Date()
+          }, user.email);
+        } catch (emailError) {
+          console.error("Failed to send ticket email:", emailError);
+          // Continue despite email failure
+        }
+      }
+      
+      // Track analytics - count as ticket sale for free event
+      try {
+        const analyticsData = await storage.getEventAnalytics(event.id);
+        if (analyticsData) {
+          await storage.updateEventAnalytics(analyticsData.id, {
+            ticketSales: (analyticsData.ticketSales || 0) + 1
+          });
+        } else {
+          await storage.createEventAnalytics({
+            eventId: event.id,
+            ticketSales: 1
+          });
+        }
+      } catch (analyticsError) {
+        console.error("Error updating analytics:", analyticsError);
+      }
+      
+      return res.status(200).json({
+        success: true,
+        ticket: {
+          id: ticket.id,
+          eventId: ticket.eventId,
+          eventTitle: event.title,
+          status: ticket.status,
+          qrCodeData: ticket.qrCodeData
+        },
+        message: "Free ticket successfully claimed"
+      });
+    } catch (error) {
+      console.error("Error claiming free ticket:", error);
+      return res.status(500).json({ message: "Failed to claim free ticket" });
+    }
+  });
+
   // Stripe payment routes  
   router.post("/payment/create-intent", authenticateUser, async (req: Request, res: Response) => {
     try {

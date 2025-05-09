@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -113,8 +113,9 @@ export default function Checkout() {
   const [isLoading, setIsLoading] = useState(false);
   const [eventId, setEventId] = useState<number | null>(null);
   const [eventTitle, setEventTitle] = useState<string>('');
+  const [processingFreeTicket, setProcessingFreeTicket] = useState(false);
   const { toast } = useToast();
-  const [location] = useLocation();
+  const [, setLocation] = useLocation();
   
   // Get the params from the URL search params if available
   useEffect(() => {
@@ -145,47 +146,147 @@ export default function Checkout() {
     }
   }, [location]);
 
-  // Create PaymentIntent as soon as the page loads
+  // Handle free tickets (0.00 price) or Create PaymentIntent for paid tickets
   useEffect(() => {
-    const createPaymentIntent = async () => {
-      if (!stripePromise) {
-        console.error("Stripe not initialized");
+    const processTicket = async () => {
+      // If this is a free ticket (amount is 0), we'll claim it directly
+      if (amount === 0) {
+        setProcessingFreeTicket(true);
+        try {
+          const response = await apiRequest("POST", "/api/tickets/free", {
+            eventId: eventId,
+            eventTitle: eventTitle
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            toast({
+              title: "Free Ticket Claimed!",
+              description: "Your free ticket has been claimed successfully. Check your email for details.",
+            });
+            
+            // Redirect to the success page
+            setLocation(`/payment-success?eventId=${eventId}&eventTitle=${encodeURIComponent(eventTitle || '')}`);
+          } else {
+            throw new Error(data.message || "Failed to claim free ticket");
+          }
+        } catch (error) {
+          console.error("Error claiming free ticket:", error);
+          toast({
+            title: "Error",
+            description: "Could not claim free ticket. Please try again.",
+            variant: "destructive",
+          });
+        } finally {
+          setProcessingFreeTicket(false);
+        }
         return;
       }
       
-      setIsLoading(true);
-      try {
-        const response = await apiRequest("POST", "/api/payment/create-intent", { 
-          amount: amount,
-          currency: currency.toLowerCase(),
-          eventId: eventId,
-          eventTitle: eventTitle,
-          items: [{ 
-            id: eventId ? `event-ticket-${eventId}` : "sg-event-ticket", 
-            name: eventTitle || "Event Ticket",
-            quantity: 1 
-          }]
-        });
+      // For paid tickets, create a payment intent
+      if (amount > 0) {
+        if (!stripePromise) {
+          console.error("Stripe not initialized");
+          return;
+        }
         
-        const data = await response.json();
-        setClientSecret(data.clientSecret);
-      } catch (error) {
-        console.error("Error creating payment intent:", error);
-        toast({
-          title: "Error",
-          description: "Could not initialize payment. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
+        setIsLoading(true);
+        try {
+          const response = await apiRequest("POST", "/api/payment/create-intent", { 
+            amount: amount,
+            currency: currency.toLowerCase(),
+            eventId: eventId,
+            eventTitle: eventTitle,
+            items: [{ 
+              id: eventId ? `event-ticket-${eventId}` : "sg-event-ticket", 
+              name: eventTitle || "Event Ticket",
+              quantity: 1 
+            }]
+          });
+          
+          const data = await response.json();
+          setClientSecret(data.clientSecret);
+        } catch (error) {
+          console.error("Error creating payment intent:", error);
+          toast({
+            title: "Error",
+            description: "Could not initialize payment. Please try again.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoading(false);
+        }
       }
     };
 
-    if (amount > 0) {
-      createPaymentIntent();
-    }
-  }, [amount, currency, eventId, eventTitle, toast]);
+    processTicket();
+  }, [amount, currency, eventId, eventTitle, toast, setLocation]);
 
+  // Display a free ticket message when the amount is 0
+  if (amount === 0) {
+    return (
+      <div className="container max-w-md mx-auto py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Free Ticket</CardTitle>
+            <CardDescription>
+              {processingFreeTicket ? 'Processing your free ticket...' : 'Claim your free ticket for this event.'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold">Event Details</h3>
+              {eventTitle && (
+                <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-md my-2">
+                  <h4 className="font-medium">{eventTitle}</h4>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    1 × Free Event Ticket
+                  </div>
+                </div>
+              )}
+              <div className="flex justify-between mt-2">
+                <span>Ticket Price:</span>
+                <span>FREE</span>
+              </div>
+            </div>
+            
+            {processingFreeTicket ? (
+              <div className="flex flex-col items-center justify-center py-6">
+                <BrandLoader size="lg" />
+                <p className="mt-4 text-center text-gray-600 dark:text-gray-400">
+                  Processing your free ticket request...
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-6">
+                <div className="text-center mb-4">
+                  <h3 className="text-lg font-medium">Ready to Claim Your Free Ticket?</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mt-1">
+                    Click the button below to claim your free ticket to this event.
+                  </p>
+                </div>
+                <Button 
+                  className="w-full" 
+                  onClick={() => processTicket()}
+                  disabled={processingFreeTicket}
+                >
+                  Claim Free Ticket
+                </Button>
+              </div>
+            )}
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button variant="outline" onClick={() => window.history.back()}>
+              Back
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  // Regular checkout process for paid tickets
   return (
     <div className="container max-w-md mx-auto py-8">
       <Card>
