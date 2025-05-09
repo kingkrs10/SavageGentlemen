@@ -4,25 +4,21 @@ import { API_ROUTES, EVENT_CATEGORIES } from "@/lib/constants";
 import { Event } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, MapPin, Badge as BadgeIcon } from "lucide-react";
+import { Calendar, MapPin, Badge as BadgeIcon, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import EventCard from "@/components/home/EventCard";
 import BrandLoader from "@/components/ui/BrandLoader";
 import { useToast } from "@/hooks/use-toast";
 import { getNormalizedImageUrl } from "@/lib/utils/image-utils";
+import { Link } from "wouter";
+import AddToCalendarButton from "@/components/events/AddToCalendarButton";
 
 const Events = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const { toast } = useToast();
   
   const { data: events, isLoading, isError, error } = useQuery<Event[]>({
-    queryKey: [API_ROUTES.EVENTS],
-    onSuccess: (data) => {
-      console.log("Events data received successfully:", data);
-    },
-    onError: (err) => {
-      console.error("Error fetching events:", err);
-    }
+    queryKey: [API_ROUTES.EVENTS]
   });
   
   const filteredEvents = events?.filter(
@@ -77,8 +73,11 @@ const Events = () => {
               <Badge variant="secondary" className="bg-primary text-white text-sm px-3 py-1 rounded-full mb-2 inline-block">
                 Featured
               </Badge>
-              <h2 className="text-3xl font-heading text-white">{featuredEvent.title}</h2>
-              <p className="text-lg text-gray-200 mb-2">{featuredEvent.description}</p>
+              <Link href={`/event/${featuredEvent.id}`}>
+                <h2 className="text-3xl font-heading text-white hover:underline">{featuredEvent.title}</h2>
+              </Link>
+              <p className="text-lg text-gray-200 mb-2">{featuredEvent.description.length > 150 ? 
+                `${featuredEvent.description.substring(0, 150)}...` : featuredEvent.description}</p>
               <div className="flex items-center text-sm text-gray-300 mb-4">
                 <span className="flex items-center mr-4">
                   <Calendar className="w-4 h-4 mr-1" /> 
@@ -93,12 +92,26 @@ const Events = () => {
                   {featuredEvent.location}
                 </span>
               </div>
-              <Button 
-                className="bg-primary text-white hover:bg-red-800 transition"
-                onClick={() => handleGetTicket(featuredEvent.id)}
-              >
-                Get Tickets
-              </Button>
+              <div className="flex space-x-3">
+                <Button 
+                  className="bg-primary text-white hover:bg-red-800 transition"
+                  onClick={() => handleGetTicket(featuredEvent.id)}
+                >
+                  Get Tickets
+                </Button>
+                <Link href={`/event/${featuredEvent.id}`}>
+                  <Button variant="outline" className="border-white text-white hover:bg-white/20">
+                    View Details
+                  </Button>
+                </Link>
+                <AddToCalendarButton 
+                  event={featuredEvent} 
+                  variant="outline" 
+                  size="default" 
+                  className="border-white text-white hover:bg-white/20" 
+                  showText={false}
+                />
+              </div>
             </div>
           </>
         ) : (

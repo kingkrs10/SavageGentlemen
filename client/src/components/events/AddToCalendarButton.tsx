@@ -133,7 +133,7 @@ const AddToCalendarButton: React.FC<AddToCalendarButtonProps> = ({
   };
 
   // If set to show the one-click button, render a simpler version
-  if (showOneClickButton && size === 'sm') {
+  if (showOneClickButton && size === 'sm' && !showText) {
     return (
       <TooltipProvider>
         <Tooltip>
@@ -144,7 +144,7 @@ const AddToCalendarButton: React.FC<AddToCalendarButtonProps> = ({
               className={className}
               onClick={handleOneClick}
             >
-              <CalendarPlus className="h-4 w-4" />
+              <CalendarPlus className={`h-4 w-4 ${iconClassName}`} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
@@ -164,8 +164,8 @@ const AddToCalendarButton: React.FC<AddToCalendarButtonProps> = ({
         className={`flex items-center gap-2 ${className}`}
         onClick={handleOneClick}
       >
-        <CalendarPlus className="h-4 w-4" />
-        <span>Add to Calendar</span>
+        <CalendarPlus className={`h-4 w-4 ${iconClassName}`} />
+        {showText && <span>Add to Calendar</span>}
       </Button>
     );
   }
@@ -179,8 +179,8 @@ const AddToCalendarButton: React.FC<AddToCalendarButtonProps> = ({
           size={size}
           className={`flex items-center gap-2 ${className}`}
         >
-          <CalendarPlus className="h-4 w-4" />
-          <span>Add to Calendar</span>
+          <CalendarPlus className={`h-4 w-4 ${iconClassName}`} />
+          {showText && <span>Add to Calendar</span>}
           <ChevronDown className="h-4 w-4 ml-1" />
         </Button>
       </DropdownMenuTrigger>

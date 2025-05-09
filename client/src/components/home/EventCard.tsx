@@ -91,6 +91,9 @@ const EventCard = ({
                 variant="ghost" 
                 size="sm" 
                 className="text-white/70 hover:text-white" 
+                showText={true}
+                showOneClickButton={true}
+                oneClickProvider="google"
               />
             </div>
           </div>
