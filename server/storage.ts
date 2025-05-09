@@ -1864,6 +1864,54 @@ export class DatabaseStorage implements IStorage {
       .where(eq(tickets.eventId, eventId));
   }
   
+  // Ticket purchase operations
+  async createTicketPurchase(ticketPurchaseData: InsertTicketPurchase): Promise<TicketPurchase> {
+    const [ticketPurchase] = await db
+      .insert(ticketPurchases)
+      .values({
+        ...ticketPurchaseData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+      
+    return ticketPurchase;
+  }
+  
+  async getTicketPurchasesByUserId(userId: number): Promise<TicketPurchase[]> {
+    return await db
+      .select()
+      .from(ticketPurchases)
+      .where(eq(ticketPurchases.userId, userId))
+      .orderBy(desc(ticketPurchases.purchaseDate));
+  }
+  
+  async getTicketPurchasesByEventId(eventId: number): Promise<TicketPurchase[]> {
+    return await db
+      .select()
+      .from(ticketPurchases)
+      .where(eq(ticketPurchases.eventId, eventId))
+      .orderBy(desc(ticketPurchases.purchaseDate));
+  }
+  
+  async getTicketPurchase(id: number): Promise<TicketPurchase | undefined> {
+    const [ticketPurchase] = await db
+      .select()
+      .from(ticketPurchases)
+      .where(eq(ticketPurchases.id, id));
+      
+    return ticketPurchase;
+  }
+  
+  async getTicketPurchaseByQrCodeData(qrCodeData: string): Promise<TicketPurchase | undefined> {
+    const [ticketPurchase] = await db
+      .select()
+      .from(ticketPurchases)
+      .where(eq(ticketPurchases.qrCodeData, qrCodeData));
+      
+    return ticketPurchase;
+  }
+  
   // Discount code operations
   async createDiscountCode(discountCodeData: InsertDiscountCode): Promise<DiscountCode> {
     const [discountCode] = await db
