@@ -261,14 +261,28 @@ export default function Checkout() {
             <div className="space-y-3">
               <Button 
                 className="w-full"
-                onClick={() => setLocation("/login?redirect=/checkout")}
+                onClick={() => {
+                  // Preserve eventId and other params in the redirect
+                  const params = new URLSearchParams();
+                  if (eventId) params.append("eventId", eventId.toString());
+                  if (eventTitle) params.append("eventTitle", eventTitle);
+                  const redirectPath = `/checkout${params.toString() ? `?${params.toString()}` : ''}`;
+                  setLocation(`/login?redirect=${encodeURIComponent(redirectPath)}`);
+                }}
               >
                 Sign In
               </Button>
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={() => setLocation("/register?redirect=/checkout")}
+                onClick={() => {
+                  // Preserve eventId and other params in the redirect
+                  const params = new URLSearchParams();
+                  if (eventId) params.append("eventId", eventId.toString());
+                  if (eventTitle) params.append("eventTitle", eventTitle);
+                  const redirectPath = `/checkout${params.toString() ? `?${params.toString()}` : ''}`;
+                  setLocation(`/register?redirect=${encodeURIComponent(redirectPath)}`);
+                }}
               >
                 Create Account
               </Button>
