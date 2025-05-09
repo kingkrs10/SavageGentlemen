@@ -186,7 +186,8 @@ const StripeCheckoutForm = ({
             layout: 'tabs',
             defaultValues: {
               billingDetails: {
-                name: userData?.displayName || '',
+                name: userData?.displayName || 'Customer',
+                email: userData?.email || '',
               }
             },
             paymentMethodOrder: ['card']
@@ -771,6 +772,7 @@ export default function Checkout() {
                     eventTitle={eventTitle}
                     ticketId={ticketId}
                     ticketName={ticketName}
+                    userData={user}
                   />
                 </Elements>
               ) : (

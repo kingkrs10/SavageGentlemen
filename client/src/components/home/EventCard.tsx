@@ -25,7 +25,7 @@ const EventCard = ({
   if (variant === "horizontal") {
     return (
       <div className="event-card rounded-xl overflow-hidden shadow-lg flex flex-col md:flex-row group hover:shadow-xl transition-shadow duration-300">
-        <Link href={`/event/${id}`} className="block w-full md:w-1/3 h-48 md:h-auto relative">
+        <Link href={`/events/${id}`} className="block w-full md:w-1/3 h-48 md:h-auto relative">
           <LazyImage 
             src={getNormalizedImageUrl(imageUrl)}
             alt={title}
