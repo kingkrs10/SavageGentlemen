@@ -221,6 +221,19 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
                 >
                   {loginMutation.isPending ? "Loading..." : "Login"}
                 </Button>
+                <div className="text-sm text-center mt-2">
+                  <Button 
+                    variant="link" 
+                    className="text-blue-500 p-0 h-auto"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onClose();
+                      window.location.href = "/password-reset";
+                    }}
+                  >
+                    Forgot your password?
+                  </Button>
+                </div>
               </form>
             </Form>
           </TabsContent>
