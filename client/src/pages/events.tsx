@@ -14,8 +14,14 @@ const Events = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const { toast } = useToast();
   
-  const { data: events, isLoading } = useQuery<Event[]>({
+  const { data: events, isLoading, isError, error } = useQuery<Event[]>({
     queryKey: [API_ROUTES.EVENTS],
+    onSuccess: (data) => {
+      console.log("Events data received successfully:", data);
+    },
+    onError: (err) => {
+      console.error("Error fetching events:", err);
+    }
   });
   
   const filteredEvents = events?.filter(
@@ -137,6 +143,20 @@ const Events = () => {
         {isLoading ? (
           <div className="w-full h-[400px] flex items-center justify-center bg-gray-900/50 rounded-xl">
             <BrandLoader size="lg" message="Loading events..." />
+          </div>
+        ) : isError ? (
+          <div className="text-center py-8 bg-red-900/30 rounded-xl border border-red-700">
+            <BadgeIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold mb-2 text-red-500">ERROR LOADING EVENTS</h3>
+            <p className="text-gray-300 mb-2">
+              We're having trouble loading events at the moment.
+            </p>
+            <code className="text-xs text-gray-400 bg-black/30 p-2 rounded block max-w-md mx-auto overflow-auto">
+              {error instanceof Error ? error.message : 'Unknown error'}
+            </code>
+            <Button className="mt-4 bg-primary" onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
           </div>
         ) : filteredEvents && filteredEvents.length > 0 ? (
           filteredEvents.map((event) => (
