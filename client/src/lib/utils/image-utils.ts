@@ -12,10 +12,13 @@ export function getNormalizedImageUrl(url: string | null): string {
     return 'https://placehold.co/600x400/222222/FF4136?text=No+Image';
   }
 
-  // Handle local upload URLs (starting with /uploads/)
-  if (url.startsWith('/uploads/')) {
-    // Remove the leading slash to match our file system
-    return url.startsWith('/') ? url.substring(1) : url;
+  // Handle local upload URLs (containing uploads/)
+  if (url.includes('/uploads/')) {
+    // Extract the path relative to the uploads directory
+    const matches = url.match(/\/uploads\/([^?#]+)/);
+    if (matches && matches[1]) {
+      return `uploads/${matches[1]}`;
+    }
   }
 
   // Handle Google Drive file URLs
