@@ -39,6 +39,7 @@ import crypto from "crypto";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
 import { sendEmail, sendTicketEmail, sendOrderConfirmation, sendAdminNotification, sendWelcomeEmail, sendPasswordResetEmail } from "./email";
 import { analyticsRouter } from "./analytics-routes";
+import { emailMarketingRouter } from "./email-marketing-routes";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -751,6 +752,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       email: user.email
     });
   });
+  
+  // Register email marketing router (admin only)
+  router.use("/email-marketing", authenticateUser, authorizeAdmin, emailMarketingRouter);
   
   // Check if user has staff permissions (admin or moderator)
   router.get("/staff/me", authenticateUser, authorizeModerator, (req: Request, res: Response) => {
