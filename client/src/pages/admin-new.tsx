@@ -1712,6 +1712,31 @@ export default function AdminPage() {
                     <Plus className="mr-2 h-4 w-4" />
                     Add Ticket
                   </Button>
+                  
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="flex items-center bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800"
+                    onClick={() => navigate('/ticket-scanner')}
+                  >
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      width="16" 
+                      height="16" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="2" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      className="mr-2 h-4 w-4"
+                    >
+                      <rect width="14" height="14" x="5" y="5" rx="2" />
+                      <path d="M5 11h14"/>
+                      <path d="M11 5v14"/>
+                    </svg>
+                    Scan Tickets
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent>
