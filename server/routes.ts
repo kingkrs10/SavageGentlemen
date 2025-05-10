@@ -331,7 +331,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: guestId,
         password: guestId,
         isGuest: true,
-        displayName: `Guest-${Math.floor(Math.random() * 1000)}`
+        displayName: `Guest-${Math.floor(Math.random() * 1000)}`,
+        role: 'user' // Explicitly set role for guest users
       });
       
       return res.status(201).json({ 
@@ -375,7 +376,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             displayName: displayName,
             avatar: photoURL,
             isGuest: false,
-            email: email
+            email: email,
+            role: 'user' // Explicitly set user role for Firebase users
           });
           isNewUser = true;
         }
