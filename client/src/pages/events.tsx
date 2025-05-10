@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getNormalizedImageUrl } from "@/lib/utils/image-utils";
 import { Link } from "wouter";
 import AddToCalendarButton from "@/components/events/AddToCalendarButton";
+import ImageTest from "@/components/ui/ImageTest";
 
 const Events = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -151,6 +152,9 @@ const Events = () => {
           ))}
         </div>
       </div>
+
+      {/* Image Test for Debugging */}
+      <ImageTest />
 
       {/* Event List */}
       <div className="space-y-4 mb-8">
