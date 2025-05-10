@@ -3152,29 +3152,58 @@ export default function AdminPage() {
                               const formData = new FormData();
                               formData.append('file', file);
                               
-                              // Upload CSV
-                              fetch('/api/email-marketing/subscribers/import', {
-                                method: 'POST',
-                                body: formData
-                              })
-                              .then(response => response.json())
-                              .then(data => {
-                                toast({
-                                  title: "Import Successful",
-                                  description: `Imported ${data.imported} subscribers`
-                                });
-                                
-                                // Refresh subscribers list
-                                queryClient.invalidateQueries({queryKey: ["/api/email-marketing/subscribers"]});
-                              })
-                              .catch(error => {
+                              // Get user id from localStorage for authentication
+                              let userId = null;
+                              const storedUser = localStorage.getItem("user");
+                              if (storedUser) {
+                                const user = JSON.parse(storedUser);
+                                if (user && user.id) {
+                                  userId = user.id.toString();
+                                }
+                              }
+                              
+                              // Upload CSV with authentication
+                              const xhr = new XMLHttpRequest();
+                              xhr.open('POST', '/api/email-marketing/subscribers/import', true);
+                              
+                              // Add auth header
+                              if (userId) {
+                                xhr.setRequestHeader('user-id', userId);
+                              }
+                              
+                              // Handle response
+                              xhr.onload = function() {
+                                if (xhr.status === 200) {
+                                  const data = JSON.parse(xhr.responseText);
+                                  toast({
+                                    title: "Import Successful",
+                                    description: `Imported ${data.imported} subscribers`
+                                  });
+                                  
+                                  // Refresh subscribers list
+                                  queryClient.invalidateQueries({queryKey: ["/api/email-marketing/subscribers"]});
+                                } else {
+                                  toast({
+                                    title: "Import Failed",
+                                    description: "Failed to import subscribers",
+                                    variant: "destructive"
+                                  });
+                                  console.error("Import error:", xhr.statusText);
+                                }
+                              };
+                              
+                              // Handle errors
+                              xhr.onerror = function() {
                                 toast({
                                   title: "Import Failed",
-                                  description: "Failed to import subscribers",
+                                  description: "Network error occurred",
                                   variant: "destructive"
                                 });
-                                console.error("Import error:", error);
-                              });
+                                console.error("Network error during import");
+                              }
+                              
+                              // Send the form data
+                              xhr.send(formData);
                               
                               // Reset file input
                               e.target.value = '';
