@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, uuid, date, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, uuid, date, numeric, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -759,3 +759,149 @@ export type InsertProductVariant = z.infer<typeof insertProductVariantSchema>;
 
 export type InventoryHistory = typeof inventoryHistory.$inferSelect;
 export type InsertInventoryHistory = z.infer<typeof insertInventoryHistorySchema>;
+
+// Email Marketing Schemas
+// Email Marketing Lists
+export const emailLists = pgTable("email_lists", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Email Subscribers
+export const emailSubscribers = pgTable("email_subscribers", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  status: text("status").default("active"), // active, unsubscribed, bounced
+  source: text("source"), // registration, manual, import, etc.
+  userId: integer("user_id").references(() => users.id),
+  metadata: jsonb("metadata"), // Any additional data
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => {
+  return {
+    emailIdx: uniqueIndex("email_idx").on(table.email),
+  }
+});
+
+// Email Campaigns
+export const emailCampaigns = pgTable("email_campaigns", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  subject: text("subject").notNull(),
+  content: text("content").notNull(), // HTML content
+  status: text("status").default("draft"), // draft, scheduled, sent, cancelled
+  sentAt: timestamp("sent_at"),
+  scheduledFor: timestamp("scheduled_for"),
+  listId: integer("list_id").references(() => emailLists.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Relations between subscribers and lists (many-to-many)
+export const emailListSubscribers = pgTable("email_list_subscribers", {
+  id: serial("id").primaryKey(),
+  listId: integer("list_id").notNull().references(() => emailLists.id),
+  subscriberId: integer("subscriber_id").notNull().references(() => emailSubscribers.id),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => {
+  return {
+    listSubscriberIdx: uniqueIndex("list_subscriber_idx").on(table.listId, table.subscriberId),
+  }
+});
+
+// Email Campaign Statistics
+export const emailCampaignStats = pgTable("email_campaign_stats", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id").notNull().references(() => emailCampaigns.id),
+  sent: integer("sent").default(0),
+  delivered: integer("delivered").default(0),
+  opened: integer("opened").default(0),
+  clicked: integer("clicked").default(0),
+  bounced: integer("bounced").default(0),
+  unsubscribed: integer("unsubscribed").default(0),
+  complaints: integer("complaints").default(0),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Defining insertion schemas for email marketing entities
+export const insertEmailListSchema = createInsertSchema(emailLists)
+  .pick({
+    name: true,
+    description: true,
+  });
+
+export const insertEmailSubscriberSchema = createInsertSchema(emailSubscribers)
+  .pick({
+    email: true,
+    firstName: true,
+    lastName: true,
+    status: true,
+    source: true,
+    userId: true,
+    metadata: true,
+  })
+  .extend({
+    email: z.string().email('Invalid email format'),
+    status: z.enum(['active', 'unsubscribed', 'bounced']).default('active'),
+  });
+
+export const insertEmailCampaignSchema = createInsertSchema(emailCampaigns)
+  .pick({
+    name: true,
+    subject: true,
+    content: true,
+    status: true,
+    scheduledFor: true,
+    listId: true,
+  })
+  .extend({
+    status: z.enum(['draft', 'scheduled', 'sent', 'cancelled']).default('draft'),
+  });
+
+// Define email marketing relations
+export const emailListsRelations = relations(emailLists, ({ many }) => ({
+  subscribers: many(emailListSubscribers),
+  campaigns: many(emailCampaigns),
+}));
+
+export const emailSubscribersRelations = relations(emailSubscribers, ({ one, many }) => ({
+  user: one(users, {
+    fields: [emailSubscribers.userId],
+    references: [users.id],
+  }),
+  lists: many(emailListSubscribers),
+}));
+
+export const emailCampaignsRelations = relations(emailCampaigns, ({ one, many }) => ({
+  list: one(emailLists, {
+    fields: [emailCampaigns.listId],
+    references: [emailLists.id],
+  }),
+  stats: many(emailCampaignStats),
+}));
+
+export const emailListSubscribersRelations = relations(emailListSubscribers, ({ one }) => ({
+  list: one(emailLists, {
+    fields: [emailListSubscribers.listId],
+    references: [emailLists.id],
+  }),
+  subscriber: one(emailSubscribers, {
+    fields: [emailListSubscribers.subscriberId],
+    references: [emailSubscribers.id],
+  }),
+}));
+
+// Export email marketing types
+export type EmailList = typeof emailLists.$inferSelect;
+export type InsertEmailList = z.infer<typeof insertEmailListSchema>;
+
+export type EmailSubscriber = typeof emailSubscribers.$inferSelect;
+export type InsertEmailSubscriber = z.infer<typeof insertEmailSubscriberSchema>;
+
+export type EmailCampaign = typeof emailCampaigns.$inferSelect;
+export type InsertEmailCampaign = z.infer<typeof insertEmailCampaignSchema>;
