@@ -411,7 +411,10 @@ export default function Checkout() {
         
         setIsLoading(true);
         try {
-          const response = await apiRequest("POST", "/api/payment/create-intent", { 
+          console.log("Creating initial payment intent...");
+          
+          // Prepare the payload once
+          const paymentPayload = { 
             amount: amount,
             currency: currency.toLowerCase(),
             eventId: eventId,
@@ -423,22 +426,32 @@ export default function Checkout() {
               name: ticketName ? `${eventTitle} - ${ticketName}` : (eventTitle || "Event Ticket"),
               quantity: 1 
             }]
-          });
+          };
+          
+          // Try with API prefix first
+          let response = await apiRequest("POST", "/api/payment/create-intent", paymentPayload);
+          
+          // If that fails, try without the prefix
+          if (!response.ok && response.status !== 401) { // Don't retry if it's an auth error
+            console.log("API prefixed endpoint failed, trying non-prefixed endpoint...");
+            response = await apiRequest("POST", "/payment/create-intent", paymentPayload);
+          }
           
           if (response.ok) {
             const data = await response.json();
+            console.log("Payment intent created successfully");
             setClientSecret(data.clientSecret);
           } else if (response.status === 401) {
             // User is not authenticated, handled in the render method
             console.warn("Authentication required");
           } else {
-            throw new Error("Failed to create payment intent");
+            throw new Error("Failed to create payment intent on both endpoints");
           }
         } catch (error) {
           console.error("Error creating payment intent:", error);
           toast({
             title: "Error",
-            description: "Could not initialize payment. Please try again.",
+            description: "Could not initialize payment. Please try again or use a different payment method.",
             variant: "destructive",
           });
         } finally {
@@ -730,7 +743,7 @@ export default function Checkout() {
                 </div>
               ) : clientSecret ? (
                 <Elements 
-                  key={clientSecret} // Force re-create when client secret changes
+                  key={`stripe-elements-${clientSecret}-${Date.now()}`} // Force re-create with unique key every time
                   stripe={stripePromise} 
                   options={{ 
                     clientSecret,
@@ -782,14 +795,37 @@ export default function Checkout() {
                   </div>
                   <Button 
                     onClick={() => {
-                      // Try to reinitialize payment
+                      // Try to reinitialize payment with forced new client secret
+                      console.log("Retrying payment initialization...");
+                      
+                      // First reset the client secret to clear old state
+                      setClientSecret(null);
                       setIsLoading(true);
-                      // Force re-run of the payment intent creation
-                      setTimeout(() => {
+                      
+                      // Create a new payment intent with slight delay
+                      setTimeout(async () => {
                         if (user) {
-                          const createIntent = async () => {
-                            try {
-                              const response = await apiRequest("POST", "/api/payment/create-intent", { 
+                          try {
+                            console.log("Creating new payment intent...");
+                            // Try both endpoints - first with API prefix, then without if that fails
+                            let response = await apiRequest("POST", "/api/payment/create-intent", { 
+                              amount: amount,
+                              currency: currency.toLowerCase(),
+                              eventId: eventId,
+                              eventTitle: eventTitle,
+                              ticketId: ticketId,
+                              ticketName: ticketName,
+                              items: [{ 
+                                id: ticketId ? `event-ticket-${eventId}-${ticketId}` : (eventId ? `event-ticket-${eventId}` : "sg-event-ticket"), 
+                                name: ticketName ? `${eventTitle} - ${ticketName}` : (eventTitle || "Event Ticket"),
+                                quantity: 1 
+                              }]
+                            });
+                            
+                            // Try again with alternate endpoint if first one fails
+                            if (!response.ok) {
+                              console.log("First endpoint failed, trying alternate endpoint...");
+                              response = await apiRequest("POST", "/payment/create-intent", { 
                                 amount: amount,
                                 currency: currency.toLowerCase(),
                                 eventId: eventId,
@@ -802,29 +838,37 @@ export default function Checkout() {
                                   quantity: 1 
                                 }]
                               });
-                              
-                              if (response.ok) {
-                                const data = await response.json();
-                                setClientSecret(data.clientSecret);
-                                toast({
-                                  title: "Payment Initialized",
-                                  description: "You can now complete your payment.",
-                                });
-                              } else {
-                                throw new Error("Failed to create payment intent");
-                              }
-                            } catch (error) {
-                              console.error("Error creating payment intent:", error);
-                              toast({
-                                title: "Error",
-                                description: "Could not initialize payment. Please try again.",
-                                variant: "destructive",
-                              });
-                            } finally {
-                              setIsLoading(false);
                             }
-                          };
-                          createIntent();
+                            
+                            if (response.ok) {
+                              const data = await response.json();
+                              console.log("Payment intent created successfully, updating client secret");
+                              setClientSecret(data.clientSecret);
+                              toast({
+                                title: "Payment Initialized",
+                                description: "You can now complete your payment.",
+                              });
+                            } else {
+                              throw new Error("Failed to create payment intent on both endpoints");
+                            }
+                          } catch (error) {
+                            console.error("Error creating payment intent:", error);
+                            toast({
+                              title: "Error",
+                              description: "Could not initialize payment. Please try again or use a different payment method.",
+                              variant: "destructive",
+                            });
+                          } finally {
+                            setIsLoading(false);
+                          }
+                        } else {
+                          console.error("Cannot retry payment - no user data available");
+                          toast({
+                            title: "Error",
+                            description: "Please sign in to continue with payment.",
+                            variant: "destructive",
+                          });
+                          setIsLoading(false);
                         }
                       }, 1000);
                     }}
