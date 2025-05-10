@@ -1,0 +1,265 @@
+import { useState, useEffect } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from 'wouter';
+import { User } from '@/lib/types';
+import { apiRequest } from "@/lib/queryClient";
+
+// Initialize Stripe outside component to avoid recreation
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_TYooMQauvdEDq54NiTphI7jx';
+console.log(`Using Stripe key: ${stripeKey}`);
+const stripePromise = loadStripe(stripeKey);
+
+// Simple form component
+const CheckoutForm = ({ 
+  amount, 
+  eventId, 
+  eventTitle,
+  ticketId,
+  ticketName,
+  userData
+}: { 
+  amount: number; 
+  eventId?: number | null;
+  eventTitle?: string;
+  ticketId?: number | null;
+  ticketName?: string;
+  userData?: User | null;
+}) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [, setLocation] = useLocation();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!stripe || !elements) {
+      toast({
+        title: "Payment Form Not Ready",
+        description: "Please wait for the payment form to load completely and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      // Build the return URL
+      let returnUrl = window.location.origin + '/payment-success';
+      if (eventId && eventTitle) {
+        returnUrl += `?eventId=${eventId}&eventTitle=${encodeURIComponent(eventTitle)}`;
+        
+        if (ticketId && ticketName) {
+          returnUrl += `&ticketId=${ticketId}&ticketName=${encodeURIComponent(ticketName)}`;
+        }
+      }
+
+      // Try to process the payment
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: returnUrl,
+        },
+        redirect: 'if_required',
+      });
+
+      if (error) {
+        toast({
+          title: "Payment Failed",
+          description: error.message || "Payment could not be processed. Please try again.",
+          variant: "destructive",
+        });
+      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        // Payment succeeded without redirect
+        toast({
+          title: "Payment Successful",
+          description: "Thank you for your purchase! Your ticket has been confirmed.",
+        });
+        
+        // Manually redirect to success page
+        const params = new URLSearchParams();
+        if (eventId) params.append('eventId', eventId.toString());
+        if (eventTitle) params.append('eventTitle', encodeURIComponent(eventTitle));
+        if (ticketId) params.append('ticketId', ticketId.toString());
+        if (ticketName) params.append('ticketName', encodeURIComponent(ticketName));
+        
+        setLocation(`/payment-success?${params.toString()}`);
+      }
+    } catch (err) {
+      toast({
+        title: "Payment Error",
+        description: "An unexpected error occurred. Please try again or use a different payment method.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="mb-4">
+        <PaymentElement 
+          options={{
+            layout: 'tabs',
+            defaultValues: {
+              billingDetails: {
+                name: userData?.displayName || 'Customer',
+                email: userData?.email || '',
+              }
+            }
+          }}
+        />
+      </div>
+      
+      <Button 
+        disabled={isProcessing || !stripe} 
+        className="w-full" 
+        type="submit"
+      >
+        {isProcessing ? 'Processing...' : 'Pay with Card'}
+      </Button>
+      
+      <p className="text-xs text-gray-500 mt-2 text-center">
+        Your payment information is securely processed by Stripe.
+      </p>
+    </form>
+  );
+};
+
+// Main component that creates payment intent and renders Elements
+export default function SimpleStripeCheckout({ 
+  amount, 
+  eventId, 
+  eventTitle,
+  ticketId,
+  ticketName,
+  userData
+}: { 
+  amount: number; 
+  eventId?: number | null;
+  eventTitle?: string;
+  ticketId?: number | null;
+  ticketName?: string;
+  userData?: User | null;
+}) {
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+  
+  // Create payment intent on component mount
+  useEffect(() => {
+    const createIntent = async () => {
+      try {
+        // Try both endpoints - first with API prefix, then without if that fails
+        let response = await apiRequest("POST", "/api/payment/create-intent", { 
+          amount: amount,
+          currency: 'usd',
+          eventId: eventId,
+          eventTitle: eventTitle,
+          ticketId: ticketId,
+          ticketName: ticketName,
+          items: [{ 
+            id: ticketId ? `event-ticket-${eventId}-${ticketId}` : (eventId ? `event-ticket-${eventId}` : "sg-event-ticket"), 
+            name: ticketName ? `${eventTitle} - ${ticketName}` : (eventTitle || "Event Ticket"),
+            quantity: 1 
+          }]
+        });
+        
+        // Try again with alternate endpoint if first one fails
+        if (!response.ok) {
+          response = await apiRequest("POST", "/payment/create-intent", { 
+            amount: amount,
+            currency: 'usd',
+            eventId: eventId,
+            eventTitle: eventTitle,
+            ticketId: ticketId,
+            ticketName: ticketName,
+            items: [{ 
+              id: ticketId ? `event-ticket-${eventId}-${ticketId}` : (eventId ? `event-ticket-${eventId}` : "sg-event-ticket"), 
+              name: ticketName ? `${eventTitle} - ${ticketName}` : (eventTitle || "Event Ticket"),
+              quantity: 1 
+            }]
+          });
+        }
+        
+        if (response.ok) {
+          const data = await response.json();
+          setClientSecret(data.clientSecret);
+        } else {
+          throw new Error("Failed to create payment intent on both endpoints");
+        }
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Could not initialize payment. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    createIntent();
+  }, [amount, eventId, eventTitle, ticketId, ticketName, toast]);
+  
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+  
+  if (!clientSecret) {
+    return (
+      <div className="text-center py-6 space-y-4">
+        <div className="text-red-500 font-medium">
+          Could not initialize payment form.
+        </div>
+        <Button 
+          onClick={() => window.location.reload()}
+          variant="outline"
+        >
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+  
+  return (
+    <Elements 
+      key={`stripe-elements-${clientSecret}`}
+      stripe={stripePromise} 
+      options={{ 
+        clientSecret,
+        appearance: { 
+          theme: 'flat',
+          variables: {
+            colorPrimary: '#E91E63',
+            colorBackground: '#ffffff',
+            colorText: '#30313d',
+            colorDanger: '#df1b41',
+            fontFamily: 'Inter, system-ui, sans-serif',
+            spacingUnit: '4px',
+            borderRadius: '4px'
+          }
+        }
+      }}
+    >
+      <CheckoutForm 
+        amount={amount} 
+        eventId={eventId} 
+        eventTitle={eventTitle}
+        ticketId={ticketId}
+        ticketName={ticketName}
+        userData={userData}
+      />
+    </Elements>
+  );
+}

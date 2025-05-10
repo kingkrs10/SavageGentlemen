@@ -12,294 +12,18 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from 'wouter';
 import PayPalButton from '@/components/PayPalButton';
-import { loadStripe } from '@stripe/stripe-js';
-import {
-  Elements,
-  PaymentElement,
-  useStripe,
-  useElements,
-} from '@stripe/react-stripe-js';
+import SimpleStripeCheckout from '@/components/SimpleStripeCheckout';
 import { apiRequest } from "@/lib/queryClient";
 import BrandLoader from '@/components/ui/BrandLoader';
 import { User } from '@/lib/types';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// Make sure to call loadStripe outside of a component's render to avoid
-// recreating the Stripe object on every render.
-let stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
-
-// Check and log the Stripe key status for debugging
-if (!stripePublicKey) {
-  console.warn('Missing Stripe public key from environment. Using fallback key.');
-  // Fallback for development/testing - this is safe to expose as it's just a public test key
-  // This key won't work for actual charges but allows the form to render for testing
-  stripePublicKey = 'pk_test_TYooMQauvdEDq54NiTphI7jx';
-} else {
-  console.log('Stripe public key loaded from environment successfully');
-}
-
-// Log the key type for debugging (prod vs test)
-const isTestKey = stripePublicKey.startsWith('pk_test_');
-console.log(`Using ${isTestKey ? 'TEST' : 'PRODUCTION'} Stripe key: ${stripePublicKey}`);
-
-// Initialize Stripe with the key and allow loading of critical resources from Stripe
-const stripePromise = loadStripe(stripePublicKey, {
-  stripeAccount: undefined, // Use connected account if needed
-  apiVersion: undefined, // Use default API version
-  locale: 'auto', // Auto-detect locale
-});
-
-// Stripe Checkout Form Component
-const StripeCheckoutForm = ({ 
-  amount, 
-  eventId, 
-  eventTitle,
-  ticketId,
-  ticketName,
-  userData
-}: { 
-  amount: number; 
-  eventId?: number | null;
-  eventTitle?: string;
-  ticketId?: number | null;
-  ticketName?: string;
-  userData?: User | null;
-}) => {
-  const stripe = useStripe();
-  const elements = useElements();
-  const { toast } = useToast();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [stripeReady, setStripeReady] = useState(false);
-  const [, setLocation] = useLocation();
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Check if Stripe is available on mount
-  useEffect(() => {
-    if (!stripe) {
-      console.log("Stripe not yet loaded, waiting...");
-      
-      // Instead of just a 5-second timeout, set a repeating check with progressive feedback
-      let attempts = 0;
-      
-      const checkInterval = setInterval(() => {
-        attempts++;
-        console.log(`Stripe loading attempt ${attempts}`);
-        
-        // Attempt to forcibly clean Stripe if it's taking too long
-        if (attempts === 3) {
-          console.log("Stripe loading slow - checking DOM for Stripe elements");
-          
-          // See if Stripe iframe exists but JS is not connected
-          const stripeFrames = document.querySelectorAll('iframe[src*="js.stripe.com"]');
-          if (stripeFrames.length > 0) {
-            console.log("Found Stripe frames in DOM but JS API not connected");
-            
-            // Force "ready" state even though stripe object isn't ready
-            // This allows the user to at least see the button and try submitting
-            setStripeReady(true);
-          }
-        }
-        
-        // After 5 attempts (15 seconds), show toast message
-        if (attempts === 5) {
-          console.log("Stripe loading timeout reached");
-          toast({
-            title: "Payment form is taking longer than expected",
-            description: "Try clicking the 'Pay with Card' button anyway, or try a different payment method",
-            variant: "default",
-          });
-          
-          // Force ready state to allow user to attempt payment
-          setStripeReady(true);
-        }
-        
-        // Clear interval if we reach max attempts or if Stripe loads
-        if (attempts >= 6 || stripe) {
-          clearInterval(checkInterval);
-        }
-      }, 3000);
-      
-      // Store the interval ID for cleanup
-      timeoutRef.current = checkInterval as unknown as NodeJS.Timeout;
-    } else {
-      console.log("Stripe loaded successfully");
-      // Clear interval if Stripe loads successfully
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      
-      // Give elements a moment to render
-      setTimeout(() => {
-        setStripeReady(true);
-      }, 1000);
-    }
-    
-    // Cleanup interval on unmount
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [stripe, toast]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Verify Stripe and Elements are available
-    if (!stripe || !elements) {
-      console.error("Attempting payment without Stripe instance...");
-      
-      // Check if iframe exists but JS not connected
-      const stripeInstance = document.querySelector('iframe[title="Secure payment frame"]');
-      if (stripeInstance) {
-        console.log("Stripe iframe found, but JS API not connected");
-        toast({
-          title: "Payment System Not Ready",
-          description: "Please try submitting again in a few seconds.",
-        });
-      } else {
-        toast({
-          title: "Payment Form Not Loaded",
-          description: "Please wait for the payment form to load completely and try again.",
-          variant: "destructive",
-        });
-      }
-      return;
-    }
-
-    setIsProcessing(true);
-
-    try {
-      console.log("Processing payment with Stripe...");
-      
-      // Build the return URL with event and ticket information as query parameters
-      let returnUrl = window.location.origin + '/payment-success';
-      if (eventId && eventTitle) {
-        returnUrl += `?eventId=${eventId}&eventTitle=${encodeURIComponent(eventTitle)}`;
-        
-        // Add ticket information if available
-        if (ticketId && ticketName) {
-          returnUrl += `&ticketId=${ticketId}&ticketName=${encodeURIComponent(ticketName)}`;
-        }
-      }
-
-      // Try to process the payment
-      const { error, paymentIntent } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: returnUrl,
-        },
-        redirect: 'if_required',
-      });
-
-      if (error) {
-        console.error("Payment failed:", error);
-        toast({
-          title: "Payment Failed",
-          description: error.message || "Payment could not be processed. Please try again.",
-          variant: "destructive",
-        });
-      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-        // Payment succeeded without redirect
-        toast({
-          title: "Payment Successful",
-          description: "Thank you for your purchase! Your ticket has been confirmed.",
-        });
-        
-        // Manually redirect to success page
-        const params = new URLSearchParams();
-        if (eventId) params.append('eventId', eventId.toString());
-        if (eventTitle) params.append('eventTitle', encodeURIComponent(eventTitle));
-        if (ticketId) params.append('ticketId', ticketId.toString());
-        if (ticketName) params.append('ticketName', encodeURIComponent(ticketName));
-        
-        setLocation(`/payment-success?${params.toString()}`);
-      }
-    } catch (err) {
-      console.error("Unexpected error during payment:", err);
-      toast({
-        title: "Payment Error",
-        description: "An unexpected error occurred. Please try again or use a different payment method.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // Additional check for elements readiness (payment form fully loaded)
-  useEffect(() => {
-    // Set ready state when both Stripe and Elements are available
-    if (stripe && elements) {
-      // Mark as ready after a slight delay to ensure element is rendered
-      setTimeout(() => {
-        setStripeReady(true);
-      }, 500);
-    }
-  }, [stripe, elements]);
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Payment Element with options for better loading and error handling */}
-      <div className="mb-4">
-        <PaymentElement 
-          options={{
-            layout: 'tabs',
-            defaultValues: {
-              billingDetails: {
-                name: userData?.displayName || 'Customer',
-                email: userData?.email || '',
-              }
-            },
-            paymentMethodOrder: ['card']
-          }}
-          onChange={(event) => {
-            // Log payment element load status for debugging
-            if (event.complete) {
-              console.log("Payment element fully loaded and ready");
-              setStripeReady(true);
-            } else if (event.empty) {
-              console.log("Payment element is empty");
-            } else {
-              console.log("Payment element status:", event);
-            }
-          }}
-        />
-      </div>
-      
-      {/* Submit Button with loading and ready states */}
-      <div className="relative">
-        <Button 
-          disabled={isProcessing || !stripeReady} 
-          className="w-full" 
-          type="submit"
-        >
-          {isProcessing ? 'Processing...' : 'Pay with Card'}
-        </Button>
-        
-        {/* Show loading overlay if Stripe is not ready */}
-        {!stripeReady && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/70 rounded backdrop-blur-[2px] z-10">
-            <div className="text-sm text-muted-foreground flex items-center bg-background px-4 py-2 rounded-md shadow-sm">
-              <div className="mr-2 w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-              Loading payment form...
-            </div>
-          </div>
-        )}
-      </div>
-      
-      {/* Help text */}
-      <p className="text-xs text-gray-500 mt-2 text-center">
-        Your payment information is securely processed by Stripe.
-      </p>
-    </form>
-  );
-};
+// Stripe implementation has been moved to SimpleStripeCheckout component
 
 // Main Checkout Component
 export default function Checkout() {
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  // State for controlling the checkout process
   const [amount, setAmount] = useState(29.99);
   const [currency, setCurrency] = useState('USD');
   const [isLoading, setIsLoading] = useState(false);
@@ -461,72 +185,18 @@ export default function Checkout() {
     };
   }, [location]);
 
-  // Create PaymentIntent for paid tickets only
+  // No need to create payment intent here - it's handled in SimpleStripeCheckout component
   useEffect(() => {
-    const createPaymentIntent = async () => {
-      // Only process paid tickets automatically when the user is authenticated
-      if (amount > 0 && user) {
-        if (!stripePromise) {
-          console.error("Stripe not initialized");
-          return;
-        }
-        
-        setIsLoading(true);
-        try {
-          console.log("Creating initial payment intent...");
-          
-          // Prepare the payload once
-          const paymentPayload = { 
-            amount: amount,
-            currency: currency.toLowerCase(),
-            eventId: eventId,
-            eventTitle: eventTitle,
-            ticketId: ticketId,
-            ticketName: ticketName,
-            items: [{ 
-              id: ticketId ? `event-ticket-${eventId}-${ticketId}` : (eventId ? `event-ticket-${eventId}` : "sg-event-ticket"), 
-              name: ticketName ? `${eventTitle} - ${ticketName}` : (eventTitle || "Event Ticket"),
-              quantity: 1 
-            }]
-          };
-          
-          // Try with API prefix first
-          let response = await apiRequest("POST", "/api/payment/create-intent", paymentPayload);
-          
-          // If that fails, try without the prefix
-          if (!response.ok && response.status !== 401) { // Don't retry if it's an auth error
-            console.log("API prefixed endpoint failed, trying non-prefixed endpoint...");
-            response = await apiRequest("POST", "/payment/create-intent", paymentPayload);
-          }
-          
-          if (response.ok) {
-            const data = await response.json();
-            console.log("Payment intent created successfully");
-            setClientSecret(data.clientSecret);
-          } else if (response.status === 401) {
-            // User is not authenticated, handled in the render method
-            console.warn("Authentication required");
-          } else {
-            throw new Error("Failed to create payment intent on both endpoints");
-          }
-        } catch (error) {
-          console.error("Error creating payment intent:", error);
-          toast({
-            title: "Error",
-            description: "Could not initialize payment. Please try again or use a different payment method.",
-            variant: "destructive",
-          });
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    // Only attempt to create payment intent if we're done checking authentication
+    // Still set isLoading to false once authentication is done
     if (!checkingAuth) {
-      createPaymentIntent();
+      setIsLoading(false);
     }
-  }, [amount, currency, eventId, eventTitle, toast, user, checkingAuth]);
+  }, [checkingAuth]);
+  
+  // Function to handle the custom event
+  const handleCustomEvent = (event: CustomEvent) => {
+    // Custom event handling logic
+  };
 
   // Show auth required message if user is not authenticated and we're done checking
   if (!checkingAuth && !user) {
@@ -858,147 +528,17 @@ export default function Checkout() {
             </TabsList>
             
             <TabsContent value="card" className="mt-4">
-              {isLoading ? (
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-                </div>
-              ) : clientSecret ? (
-                <Elements 
-                  key={`stripe-elements-${clientSecret}-${new Date().getTime()}`} // Force re-create with unique key every time
-                  stripe={stripePromise} 
-                  options={{ 
-                    clientSecret,
-                    appearance: { 
-                      theme: 'flat', // Use simpler theme that loads faster
-                      variables: {
-                        colorPrimary: '#E91E63', // Brand color 
-                        colorBackground: '#ffffff',
-                        colorText: '#30313d',
-                        colorDanger: '#df1b41',
-                        fontFamily: 'Inter, system-ui, sans-serif',
-                        spacingUnit: '4px',
-                        borderRadius: '4px'
-                      },
-                      rules: {
-                        '.Label': {
-                          marginBottom: '8px',
-                          fontWeight: '500'
-                        },
-                        '.Input': {
-                          padding: '12px'
-                        },
-                        '.Button': {
-                          backgroundColor: '#E91E63',
-                          fontWeight: '600'
-                        }
-                      }
-                    },
-                    fonts: [{
-                      cssSrc: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap'
-                    }],
-                    locale: 'en',
-                    loader: 'always' // Always reload elements
-                  }}
-                >
-                  <StripeCheckoutForm 
-                    amount={amount} 
-                    eventId={eventId} 
-                    eventTitle={eventTitle}
-                    ticketId={ticketId}
-                    ticketName={ticketName}
-                    userData={user}
-                  />
-                </Elements>
-              ) : (
-                <div className="text-center py-6 space-y-4">
-                  <div className="text-red-500 font-medium">
-                    Could not initialize payment form.
-                  </div>
-                  <Button 
-                    onClick={() => {
-                      // Try to reinitialize payment with forced new client secret
-                      console.log("Retrying payment initialization...");
-                      
-                      // First reset the client secret to clear old state
-                      setClientSecret(null);
-                      setIsLoading(true);
-                      
-                      // Create a new payment intent with slight delay
-                      setTimeout(async () => {
-                        if (user) {
-                          try {
-                            console.log("Creating new payment intent...");
-                            // Try both endpoints - first with API prefix, then without if that fails
-                            let response = await apiRequest("POST", "/api/payment/create-intent", { 
-                              amount: amount,
-                              currency: currency.toLowerCase(),
-                              eventId: eventId,
-                              eventTitle: eventTitle,
-                              ticketId: ticketId,
-                              ticketName: ticketName,
-                              items: [{ 
-                                id: ticketId ? `event-ticket-${eventId}-${ticketId}` : (eventId ? `event-ticket-${eventId}` : "sg-event-ticket"), 
-                                name: ticketName ? `${eventTitle} - ${ticketName}` : (eventTitle || "Event Ticket"),
-                                quantity: 1 
-                              }]
-                            });
-                            
-                            // Try again with alternate endpoint if first one fails
-                            if (!response.ok) {
-                              console.log("First endpoint failed, trying alternate endpoint...");
-                              response = await apiRequest("POST", "/payment/create-intent", { 
-                                amount: amount,
-                                currency: currency.toLowerCase(),
-                                eventId: eventId,
-                                eventTitle: eventTitle,
-                                ticketId: ticketId,
-                                ticketName: ticketName,
-                                items: [{ 
-                                  id: ticketId ? `event-ticket-${eventId}-${ticketId}` : (eventId ? `event-ticket-${eventId}` : "sg-event-ticket"), 
-                                  name: ticketName ? `${eventTitle} - ${ticketName}` : (eventTitle || "Event Ticket"),
-                                  quantity: 1 
-                                }]
-                              });
-                            }
-                            
-                            if (response.ok) {
-                              const data = await response.json();
-                              console.log("Payment intent created successfully, updating client secret");
-                              setClientSecret(data.clientSecret);
-                              toast({
-                                title: "Payment Initialized",
-                                description: "You can now complete your payment.",
-                              });
-                            } else {
-                              throw new Error("Failed to create payment intent on both endpoints");
-                            }
-                          } catch (error) {
-                            console.error("Error creating payment intent:", error);
-                            toast({
-                              title: "Error",
-                              description: "Could not initialize payment. Please try again or use a different payment method.",
-                              variant: "destructive",
-                            });
-                          } finally {
-                            setIsLoading(false);
-                          }
-                        } else {
-                          console.error("Cannot retry payment - no user data available");
-                          toast({
-                            title: "Error",
-                            description: "Please sign in to continue with payment.",
-                            variant: "destructive",
-                          });
-                          setIsLoading(false);
-                        }
-                      }, 1000);
-                    }}
-                    variant="outline"
-                  >
-                    Try Again
-                  </Button>
-                </div>
-              )}
+              {/* Use our new simplified Stripe checkout component */}
+              <div className="mt-4">
+                <SimpleStripeCheckout
+                  amount={amount}
+                  eventId={eventId}
+                  eventTitle={eventTitle}
+                  ticketId={ticketId}
+                  ticketName={ticketName}
+                  userData={user}
+                />
+              </div>
             </TabsContent>
             
             <TabsContent value="paypal" className="mt-4">
