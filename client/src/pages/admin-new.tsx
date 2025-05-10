@@ -1289,6 +1289,12 @@ export default function AdminPage() {
                 <span>Inventory</span>
               </div>
             </TabsTrigger>
+            <TabsTrigger value="email-marketing">
+              <div className="flex items-center gap-1">
+                <MailIcon className="h-4 w-4" />
+                <span>Email Marketing</span>
+              </div>
+            </TabsTrigger>
             <TabsTrigger value="analytics">
               <div className="flex items-center gap-1">
                 <BarChart className="h-4 w-4" />
