@@ -13,12 +13,13 @@ export function getNormalizedImageUrl(url: string | null): string {
   }
 
   // Handle local upload URLs (containing uploads/)
-  if (url.includes('/uploads/')) {
-    // Extract the path relative to the uploads directory
-    const matches = url.match(/\/uploads\/([^?#]+)/);
-    if (matches && matches[1]) {
-      return `uploads/${matches[1]}`;
+  if (url.includes('uploads/')) {
+    // If it starts with a slash, remove it
+    if (url.startsWith('/')) {
+      return url.substring(1);
     }
+    // Otherwise return as is
+    return url;
   }
 
   // Handle Google Drive file URLs

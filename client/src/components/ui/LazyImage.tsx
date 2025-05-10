@@ -65,13 +65,19 @@ export function LazyImage({
 
   // Handle image load success
   const onLoad = () => {
-    console.log("Image loaded successfully:", normalizedSrc);
+    // Only show logs in development to avoid console spam in production
+    if (process.env.NODE_ENV !== 'production') {
+      console.log("Image loaded successfully:", normalizedSrc);
+    }
     setIsLoaded(true);
   };
 
   // Handle image load error
   const onError = () => {
-    console.error("Error loading image:", normalizedSrc);
+    // Only show error in development to avoid console spam in production
+    if (process.env.NODE_ENV !== 'production') {
+      console.error("Error loading image:", normalizedSrc);
+    }
     setError(true);
     setIsLoaded(true); // Mark as loaded even though it's an error
   };
