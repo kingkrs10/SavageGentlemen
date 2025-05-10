@@ -17,8 +17,8 @@ export default function TicketScannerPage() {
       try {
         setLoading(true);
         
-        // Make a direct API call to check access
-        const response = await fetch('/api/admin/me', {
+        // Make a direct API call to check access with staff endpoint
+        const response = await fetch('/api/staff/me', {
           headers: {
             // Get user ID from localStorage if available
             'user-id': localStorage.getItem('user') ? 
