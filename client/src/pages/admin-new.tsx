@@ -408,9 +408,6 @@ export default function AdminPage() {
     queryKey: ["/api/email-marketing/lists"],
     enabled: !!currentUser && currentUser?.role === 'admin',
     retry: 3,
-    onError: (error) => {
-      console.error("Error fetching email lists:", error);
-    }
   });
   
   // Fetch email subscribers
@@ -422,9 +419,6 @@ export default function AdminPage() {
     queryKey: ["/api/email-marketing/subscribers"],
     enabled: !!currentUser && currentUser?.role === 'admin',
     retry: 3,
-    onError: (error) => {
-      console.error("Error fetching email subscribers:", error);
-    }
   });
   
   // Filter tickets by selected event
@@ -2923,12 +2917,12 @@ export default function AdminPage() {
                                 {product.sku || 'N/A'}
                               </TableCell>
                               <TableCell>
-                                {product.stockLevel !== undefined ? (
+                                {product.stockLevel !== undefined && product.stockLevel !== null ? (
                                   <div className="flex items-center">
-                                    <span className={product.stockLevel < (product.lowStockThreshold || 5) ? 'text-red-500 font-medium' : ''}>
+                                    <span className={(product.stockLevel || 0) < (product.lowStockThreshold || 5) ? 'text-red-500 font-medium' : ''}>
                                       {product.stockLevel}
                                     </span>
-                                    {product.stockLevel < (product.lowStockThreshold || 5) && (
+                                    {(product.stockLevel || 0) < (product.lowStockThreshold || 5) && (
                                       <AlertTriangle className="h-4 w-4 text-red-500 ml-2" />
                                     )}
                                   </div>
@@ -3070,7 +3064,7 @@ export default function AdminPage() {
                     size="sm"
                     onClick={() => {
                       // Download subscribers as CSV
-                      if (!emailSubscribers || emailSubscribers.length === 0) {
+                      if (!emailSubscribers || !Array.isArray(emailSubscribers) || emailSubscribers.length === 0) {
                         toast({
                           title: "No subscribers",
                           description: "There are no subscribers to export",
@@ -3195,7 +3189,7 @@ export default function AdminPage() {
                           <h3 className="text-lg font-medium">Error loading subscribers</h3>
                           <p className="text-sm">Please try again later</p>
                         </div>
-                      ) : emailSubscribers && emailSubscribers.length > 0 ? (
+                      ) : (Array.isArray(emailSubscribers) && emailSubscribers.length > 0) ? (
                         <div className="rounded-md border overflow-hidden">
                           <Table>
                             <TableHeader>
@@ -3209,7 +3203,7 @@ export default function AdminPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {emailSubscribers.map(subscriber => (
+                              {Array.isArray(emailSubscribers) && emailSubscribers.map((subscriber: any) => (
                                 <TableRow key={subscriber.id}>
                                   <TableCell>{subscriber.email || '—'}</TableCell>
                                   <TableCell>
@@ -3320,7 +3314,7 @@ export default function AdminPage() {
                           <h3 className="text-lg font-medium">Error loading email lists</h3>
                           <p className="text-sm">Please try again later</p>
                         </div>
-                      ) : emailLists && emailLists.length > 0 ? (
+                      ) : (Array.isArray(emailLists) && emailLists.length > 0) ? (
                         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                           {emailLists.map((list: any) => (
                             <Card key={list.id}>
