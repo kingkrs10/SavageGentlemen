@@ -3204,8 +3204,8 @@ export default function AdminPage() {
                               const storedUser = localStorage.getItem("user");
                               if (storedUser) {
                                 const user = JSON.parse(storedUser);
-                                if (user && user.id) {
-                                  userId = user.id.toString();
+                                if (user && user.data && user.data.id) {
+                                  userId = user.data.id.toString();
                                 }
                               }
                               
