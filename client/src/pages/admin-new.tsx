@@ -837,11 +837,12 @@ export default function AdminPage() {
         endTime: '',
         duration: 180,
         location: '',
+        price: 0,
         imageUrl: '',
         category: 'concert',
         featured: false,
         organizerName: 'Savage Gentlemen',
-        organizerEmail: 'info@savagegentlemen.com'
+        organizerEmail: 'savgmen@gmail.com'
       });
       
       // Refresh events list
@@ -924,11 +925,12 @@ export default function AdminPage() {
       endTime: formattedEndTime,
       duration: event.duration || 180,
       location: event.location,
+      price: event.price || 0,
       imageUrl: event.imageUrl || '',
       category: event.category || 'concert',
       featured: event.featured || false,
       organizerName: event.organizerName || 'Savage Gentlemen',
-      organizerEmail: event.organizerEmail || 'info@savagegentlemen.com'
+      organizerEmail: event.organizerEmail || 'savgmen@gmail.com'
     });
     
     // Open the event dialog
