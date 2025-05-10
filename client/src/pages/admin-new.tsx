@@ -2173,7 +2173,7 @@ export default function AdminPage() {
                                   <Select 
                                     defaultValue={user.role} 
                                     onValueChange={(value) => handleChangeUserRole(user.id, value)}
-                                    disabled={currentUser && user.id === currentUser.id}
+                                    disabled={!!(currentUser && user.id === currentUser.id)}
                                   >
                                     <SelectTrigger className="h-8 w-[100px]">
                                       <SelectValue placeholder="Role" />
@@ -2188,8 +2188,8 @@ export default function AdminPage() {
                                     variant="ghost" 
                                     size="sm"
                                     onClick={() => handleDeleteUser(user.id)}
-                                    disabled={currentUser && user.id === currentUser.id}
-                                    title={currentUser && user.id === currentUser.id ? "Cannot delete your own account" : "Delete user"}
+                                    disabled={!!(currentUser && user.id === currentUser.id)}
+                                    title={!!(currentUser && user.id === currentUser.id) ? "Cannot delete your own account" : "Delete user"}
                                   >
                                     <Trash2 className="h-4 w-4 text-red-500" />
                                   </Button>
@@ -2271,7 +2271,7 @@ export default function AdminPage() {
                             <Select 
                               defaultValue={user.role} 
                               onValueChange={(value) => handleChangeUserRole(user.id, value)}
-                              disabled={currentUser && user.id === currentUser.id}
+                              disabled={!!(currentUser && user.id === currentUser.id)}
                             >
                               <SelectTrigger className="h-9 w-[120px]">
                                 <SelectValue placeholder="Role" />
@@ -2286,8 +2286,8 @@ export default function AdminPage() {
                               variant="outline" 
                               size="sm"
                               onClick={() => handleDeleteUser(user.id)}
-                              disabled={currentUser && user.id === currentUser.id}
-                              className={currentUser && user.id === currentUser.id ? "opacity-50 cursor-not-allowed" : ""}
+                              disabled={!!(currentUser && user.id === currentUser.id)}
+                              className={!!(currentUser && user.id === currentUser.id) ? "opacity-50 cursor-not-allowed" : ""}
                             >
                               <Trash2 className="h-4 w-4 mr-2 text-red-500" />
                               Delete
@@ -2931,8 +2931,8 @@ export default function AdminPage() {
                                 )}
                               </TableCell>
                               <TableCell>
-                                {product.stockLevel !== undefined ? (
-                                  product.stockLevel > 0 ? (
+                                {product.stockLevel !== undefined && product.stockLevel !== null ? (
+                                  (product.stockLevel || 0) > 0 ? (
                                     <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                                       In Stock
                                     </Badge>
@@ -2998,7 +2998,7 @@ export default function AdminPage() {
                       <h3 className="text-lg font-medium mb-4">Inventory Alerts</h3>
                       <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                         {products
-                          .filter(p => p.stockLevel !== undefined && p.stockLevel < (p.lowStockThreshold || 5))
+                          .filter(p => p.stockLevel !== undefined && p.stockLevel !== null && (p.stockLevel || 0) < (p.lowStockThreshold || 5))
                           .map(product => (
                             <Card key={`alert-${product.id}`} className="border-l-4 border-red-500">
                               <CardContent className="p-4">
@@ -3033,7 +3033,7 @@ export default function AdminPage() {
                             </Card>
                           ))}
                         
-                        {!products.some(p => p.stockLevel !== undefined && p.stockLevel < (p.lowStockThreshold || 5)) && (
+                        {!products.some(p => p.stockLevel !== undefined && p.stockLevel !== null && (p.stockLevel || 0) < (p.lowStockThreshold || 5)) && (
                           <div className="col-span-full py-6 text-center bg-gray-50 rounded-md border border-dashed">
                             <p className="text-sm text-muted-foreground">No low stock alerts at this time.</p>
                           </div>
