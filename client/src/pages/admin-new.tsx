@@ -3043,6 +3043,329 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="email-marketing">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle>Email Marketing</CardTitle>
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      // Download subscribers as CSV
+                      if (emailSubscribers.length === 0) {
+                        toast({
+                          title: "No subscribers",
+                          description: "There are no subscribers to export",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+
+                      // Prepare CSV download from subscribers
+                      window.location.href = "/api/email-marketing/subscribers/export";
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export CSV
+                  </Button>
+                  <Button 
+                    className="sg-btn"
+                    size="sm"
+                    onClick={() => {
+                      // Placeholder for create list or subscriber
+                      toast({
+                        title: "Create New List",
+                        description: "This feature will be available soon",
+                      });
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create New List
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="subscribers" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-6">
+                    <TabsTrigger value="subscribers">Subscribers</TabsTrigger>
+                    <TabsTrigger value="lists">Email Lists</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="subscribers">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-medium">All Subscribers</h3>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => {
+                              // Open file input for CSV upload
+                              const fileInput = document.getElementById('csv-file-input');
+                              if (fileInput) {
+                                fileInput.click();
+                              }
+                            }}
+                          >
+                            <Upload className="h-4 w-4 mr-2" />
+                            Import CSV
+                          </Button>
+                          <input 
+                            type="file" 
+                            id="csv-file-input" 
+                            accept=".csv" 
+                            className="hidden" 
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              
+                              // Create form data for upload
+                              const formData = new FormData();
+                              formData.append('file', file);
+                              
+                              // Upload CSV
+                              fetch('/api/email-marketing/subscribers/import', {
+                                method: 'POST',
+                                body: formData
+                              })
+                              .then(response => response.json())
+                              .then(data => {
+                                toast({
+                                  title: "Import Successful",
+                                  description: `Imported ${data.imported} subscribers`
+                                });
+                                
+                                // Refresh subscribers list
+                                queryClient.invalidateQueries({queryKey: ["/api/email-marketing/subscribers"]});
+                              })
+                              .catch(error => {
+                                toast({
+                                  title: "Import Failed",
+                                  description: "Failed to import subscribers",
+                                  variant: "destructive"
+                                });
+                                console.error("Import error:", error);
+                              });
+                              
+                              // Reset file input
+                              e.target.value = '';
+                            }}
+                          />
+                          <Button 
+                            size="sm" 
+                            onClick={() => {
+                              // Open dialog to add single subscriber
+                              toast({
+                                title: "Add Subscriber",
+                                description: "This feature will be available soon",
+                              });
+                            }}
+                          >
+                            <UserPlus className="h-4 w-4 mr-2" />
+                            Add Subscriber
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {emailSubscribersLoading ? (
+                        <div className="py-10 text-center">
+                          <div className="animate-spin h-12 w-12 mx-auto border-4 border-primary border-t-transparent rounded-full mb-4"></div>
+                          <h3 className="text-lg font-medium">Loading subscribers...</h3>
+                        </div>
+                      ) : emailSubscribersError ? (
+                        <div className="py-10 text-center text-red-500">
+                          <h3 className="text-lg font-medium">Error loading subscribers</h3>
+                          <p className="text-sm">Please try again later</p>
+                        </div>
+                      ) : emailSubscribers.length > 0 ? (
+                        <div className="rounded-md border overflow-hidden">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Email</TableHead>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Lists</TableHead>
+                                <TableHead>Joined</TableHead>
+                                <TableHead>Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {emailSubscribers.map(subscriber => (
+                                <TableRow key={subscriber.id}>
+                                  <TableCell>{subscriber.email}</TableCell>
+                                  <TableCell>
+                                    {subscriber.firstName && subscriber.lastName
+                                      ? `${subscriber.firstName} ${subscriber.lastName}`
+                                      : subscriber.firstName || subscriber.lastName || "—"
+                                    }
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant={subscriber.isActive ? "outline" : "secondary"} 
+                                          className={subscriber.isActive 
+                                                     ? "bg-green-50 text-green-700 border-green-200" 
+                                                     : "bg-yellow-50 text-yellow-700 border-yellow-200"}>
+                                      {subscriber.isActive ? "Active" : "Inactive"}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    {subscriber.lists && subscriber.lists.length > 0 
+                                      ? subscriber.lists.map(list => list.name).join(", ")
+                                      : "—"
+                                    }
+                                  </TableCell>
+                                  <TableCell>
+                                    {new Date(subscriber.createdAt).toLocaleDateString()}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-2">
+                                      <Button variant="ghost" size="icon" onClick={() => {
+                                        // Edit subscriber action
+                                        toast({
+                                          title: "Edit Subscriber",
+                                          description: "This feature will be available soon"
+                                        });
+                                      }}>
+                                        <Edit className="h-4 w-4" />
+                                        <span className="sr-only">Edit</span>
+                                      </Button>
+                                      <Button variant="ghost" size="icon" className="text-red-500" onClick={() => {
+                                        // Delete subscriber action
+                                        if (confirm("Are you sure you want to delete this subscriber?")) {
+                                          apiRequest('DELETE', `/api/email-marketing/subscribers/${subscriber.id}`)
+                                            .then(() => {
+                                              toast({
+                                                title: "Subscriber Deleted",
+                                                description: "Subscriber has been removed successfully"
+                                              });
+                                              // Refresh subscribers list
+                                              queryClient.invalidateQueries({queryKey: ["/api/email-marketing/subscribers"]});
+                                            })
+                                            .catch(err => {
+                                              toast({
+                                                title: "Error",
+                                                description: "Failed to delete subscriber",
+                                                variant: "destructive"
+                                              });
+                                              console.error("Delete error:", err);
+                                            });
+                                        }
+                                      }}>
+                                        <Trash className="h-4 w-4" />
+                                        <span className="sr-only">Delete</span>
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      ) : (
+                        <div className="py-10 text-center">
+                          <MailIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                          <h3 className="text-lg font-medium">No subscribers yet</h3>
+                          <p className="text-sm text-gray-500">
+                            Import subscribers via CSV or add them manually.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="lists">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-medium">Email Lists</h3>
+                        <Button 
+                          size="sm" 
+                          onClick={() => {
+                            // Create new list
+                            toast({
+                              title: "Create List",
+                              description: "This feature will be available soon"
+                            });
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          New List
+                        </Button>
+                      </div>
+                      
+                      {emailListsLoading ? (
+                        <div className="py-10 text-center">
+                          <div className="animate-spin h-12 w-12 mx-auto border-4 border-primary border-t-transparent rounded-full mb-4"></div>
+                          <h3 className="text-lg font-medium">Loading email lists...</h3>
+                        </div>
+                      ) : emailListsError ? (
+                        <div className="py-10 text-center text-red-500">
+                          <h3 className="text-lg font-medium">Error loading email lists</h3>
+                          <p className="text-sm">Please try again later</p>
+                        </div>
+                      ) : emailLists.length > 0 ? (
+                        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                          {emailLists.map(list => (
+                            <Card key={list.id}>
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-base">{list.name}</CardTitle>
+                                <CardDescription>{list.description || "No description"}</CardDescription>
+                              </CardHeader>
+                              <CardContent className="pb-2">
+                                <div className="flex justify-between items-center text-sm">
+                                  <span>Subscribers: <strong>{list.subscriberCount || 0}</strong></span>
+                                  <Badge variant="outline">{list.isActive ? "Active" : "Inactive"}</Badge>
+                                </div>
+                              </CardContent>
+                              <CardFooter className="flex justify-between">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    // View list subscribers
+                                    toast({
+                                      title: "View Subscribers",
+                                      description: "This feature will be available soon"
+                                    });
+                                  }}
+                                >
+                                  <ListChecks className="h-4 w-4 mr-2" />
+                                  View
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    // Send campaign to list
+                                    toast({
+                                      title: "Send Campaign",
+                                      description: "This feature will be available soon"
+                                    });
+                                  }}
+                                >
+                                  <Send className="h-4 w-4 mr-2" />
+                                  Send
+                                </Button>
+                              </CardFooter>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-10 text-center">
+                          <MailIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                          <h3 className="text-lg font-medium">No email lists yet</h3>
+                          <p className="text-sm text-gray-500">
+                            Create lists to organize your subscribers.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="analytics">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
