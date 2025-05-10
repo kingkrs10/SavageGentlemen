@@ -1187,8 +1187,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Ticket validation endpoint for QR code scanner
-  router.post("/admin/tickets/validate", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+  // Ticket validation endpoint for QR code scanner (accessible by both admins and moderators)
+  router.post("/admin/tickets/validate", authenticateUser, authorizeModerator, async (req: Request, res: Response) => {
     try {
       const { ticketId, orderId } = req.body;
       
