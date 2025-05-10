@@ -311,11 +311,18 @@ export default function AdminPage() {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
-        const user = JSON.parse(storedUser);
-        setCurrentUser(user);
-        console.log("User loaded from localStorage:", user);
+        const parsedData = JSON.parse(storedUser);
+        // Check if the data has the expected structure with a data property containing the user info
+        if (parsedData && parsedData.data) {
+          setCurrentUser(parsedData.data);
+          console.log("User loaded from localStorage:", parsedData);
+        } else {
+          console.error("Invalid user data structure:", parsedData);
+          navigate("/login");
+        }
       } catch (err) {
         console.error("Error parsing stored user:", err);
+        navigate("/login");
       }
     } else {
       // No user in localStorage, redirect to login
@@ -399,7 +406,11 @@ export default function AdminPage() {
     error: emailListsError
   } = useQuery<any[]>({
     queryKey: ["/api/email-marketing/lists"],
-    enabled: !!currentUser && (currentUser.role === 'admin'),
+    enabled: !!currentUser && currentUser?.role === 'admin',
+    retry: 3,
+    onError: (error) => {
+      console.error("Error fetching email lists:", error);
+    }
   });
   
   // Fetch email subscribers
@@ -409,7 +420,11 @@ export default function AdminPage() {
     error: emailSubscribersError
   } = useQuery<any[]>({
     queryKey: ["/api/email-marketing/subscribers"],
-    enabled: !!currentUser && (currentUser.role === 'admin'),
+    enabled: !!currentUser && currentUser?.role === 'admin',
+    retry: 3,
+    onError: (error) => {
+      console.error("Error fetching email subscribers:", error);
+    }
   });
   
   // Filter tickets by selected event
@@ -1253,24 +1268,26 @@ export default function AdminPage() {
           {currentUser && (
             <div className="flex items-center space-x-2">
               <div className="flex flex-col items-end">
-                <p className="text-sm font-medium">{currentUser.username}</p>
+                <p className="text-sm font-medium">{currentUser?.username || "User"}</p>
                 <p className="text-xs text-muted-foreground">
-                  {currentUser.role === "admin" 
+                  {currentUser?.role === "admin" 
                     ? "Administrator" 
-                    : currentUser.role === "moderator" 
+                    : currentUser?.role === "moderator" 
                     ? "Moderator" 
                     : "User"}
                 </p>
               </div>
               <Avatar>
                 <AvatarFallback>
-                  {currentUser.displayName 
+                  {currentUser?.displayName 
                     ? currentUser.displayName.split(" ").map(n => n[0]).join("").toUpperCase()
-                    : currentUser.username.slice(0, 2).toUpperCase()
+                    : currentUser?.username 
+                      ? currentUser.username.slice(0, 2).toUpperCase()
+                      : "U"
                   }
                 </AvatarFallback>
-                {currentUser.avatar && (
-                  <AvatarImage src={currentUser.avatar} alt={currentUser.username} />
+                {currentUser?.avatar && (
+                  <AvatarImage src={currentUser.avatar} alt={currentUser?.username || "User"} />
                 )}
               </Avatar>
             </div>
