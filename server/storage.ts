@@ -1485,10 +1485,10 @@ export class DatabaseStorage implements IStorage {
   async getAllProducts(): Promise<Product[]> {
     try {
       // First try to use select with drizzle which is safer
-      const products = await db.select().from(this.products);
+      const allProducts = await db.select().from(products);
       
       // Transform to ensure all expected fields exist
-      return products.map(product => ({
+      return allProducts.map(product => ({
         ...product,
         stockLevel: product.stockLevel ?? 0,
         sku: product.sku ?? '',
@@ -1523,14 +1523,14 @@ export class DatabaseStorage implements IStorage {
 
   async getFeaturedProducts(): Promise<Product[]> {
     try {
-      // First try to use select with drizzle which is safer
-      const products = await db
+      // Use imported products directly instead of this.products
+      const featuredProducts = await db
         .select()
-        .from(this.products)
-        .where(eq(this.products.featured, true));
+        .from(products)
+        .where(eq(products.featured, true));
       
       // Transform to ensure all expected fields exist
-      return products.map(product => ({
+      return featuredProducts.map(product => ({
         ...product,
         stockLevel: product.stockLevel ?? 0,
         sku: product.sku ?? '',
