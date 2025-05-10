@@ -3090,8 +3090,55 @@ export default function AdminPage() {
                         return;
                       }
 
-                      // Prepare CSV download from subscribers
-                      window.location.href = "/api/email-marketing/subscribers/export";
+                      // Get user id from localStorage for authentication
+                      let userId = null;
+                      const storedUser = localStorage.getItem("user");
+                      if (storedUser) {
+                        const user = JSON.parse(storedUser);
+                        if (user && user.data && user.data.id) {
+                          userId = user.data.id.toString();
+                        }
+                      }
+                      
+                      // Use authenticated fetch to download CSV
+                      toast({
+                        title: "Preparing CSV",
+                        description: "Your download will start in a moment...",
+                      });
+                      
+                      fetch("/api/email-marketing/subscribers/export", {
+                        headers: userId ? { 'user-id': userId } : {}
+                      })
+                      .then(response => {
+                        if (!response.ok) {
+                          throw new Error('Export failed');
+                        }
+                        return response.blob();
+                      })
+                      .then(blob => {
+                        // Create a download link for the blob
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `subscribers-${new Date().toISOString().slice(0,10)}.csv`;
+                        document.body.appendChild(link);
+                        link.click();
+                        window.URL.revokeObjectURL(url);
+                        link.remove();
+                        
+                        toast({
+                          title: "Export Successful",
+                          description: "Your subscriber data has been exported",
+                        });
+                      })
+                      .catch(error => {
+                        console.error("Export error:", error);
+                        toast({
+                          title: "Export Failed",
+                          description: "Could not export subscribers. Please try again.",
+                          variant: "destructive"
+                        });
+                      });
                     }}
                   >
                     <Download className="h-4 w-4 mr-2" />
