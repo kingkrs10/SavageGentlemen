@@ -63,7 +63,7 @@ function Router() {
   );
 }
 
-function App() {
+function AppContent() {
   // Only show splash screen on first visit to the site in this browser session
   const [showSplash, setShowSplash] = useState<boolean>(() => {
     // Check if we've shown the splash already this session
@@ -74,7 +74,9 @@ function App() {
     return true; // Default for SSR
   });
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  
+  // Get user from our new context
+  const { user, login, logout } = useUser();
 
   const guestLoginMutation = useMutation({
     mutationFn: async () => {
@@ -82,51 +84,9 @@ function App() {
       return res.json();
     },
     onSuccess: (data) => {
-      setUser(data);
-      localStorage.setItem("user", JSON.stringify(data));
-      // Dispatch auth changed event
-      window.dispatchEvent(new CustomEvent('sg:auth:changed', { detail: { user: data } }));
+      login(data);
     },
   });
-
-  // Validate the user session on initial load
-  useEffect(() => {
-    // Function to validate user session with server
-    const validateUserSession = async () => {
-      try {
-        // Only attempt validation if we have a stored user
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          // Parse the stored user
-          const parsedUser = JSON.parse(storedUser);
-          console.log("Validating user session:", parsedUser.username);
-          
-          // Validate the session with the server
-          const response = await apiRequest("GET", "/api/me");
-          
-          if (response.ok) {
-            // Session is valid, set the user state
-            const validatedUser = await response.json();
-            console.log("User session validated successfully");
-            setUser(validatedUser);
-          } else {
-            // Session is invalid, clear the user data
-            console.log("User session invalid, clearing local storage");
-            localStorage.removeItem("user");
-            setUser(null);
-          }
-        }
-      } catch (error) {
-        console.error("Error validating user session:", error);
-        // In case of error, clear the user data to be safe
-        localStorage.removeItem("user");
-        setUser(null);
-      }
-    };
-    
-    // Validate the user session
-    validateUserSession();
-  }, []);
 
   // Effect for splash screen
   useEffect(() => {
@@ -206,12 +166,9 @@ function App() {
   }, []);
 
   const handleLogin = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
+    // Use login from context
+    login(userData);
     setShowAuthModal(false);
-    
-    // Dispatch auth changed event
-    window.dispatchEvent(new CustomEvent('sg:auth:changed', { detail: { user: userData } }));
     
     // Check if there's a stored redirect path
     const redirectPath = localStorage.getItem('sg:auth:redirect');
@@ -272,10 +229,8 @@ function App() {
   };
 
   const handleLogout = () => {
-    setUser(null);
-    localStorage.removeItem("user");
-    // Dispatch auth changed event
-    window.dispatchEvent(new CustomEvent('sg:auth:changed', { detail: { user: null } }));
+    // Use the logout function from context
+    logout();
   };
 
   if (showSplash) {
@@ -313,6 +268,14 @@ function App() {
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
+  );
+}
+
+function App() {
+  return (
+    <UserProvider>
+      <AppContent />
+    </UserProvider>
   );
 }
 
