@@ -135,7 +135,7 @@ const EventDetail = () => {
     return format(date, 'EEEE, MMMM d, yyyy');
   };
 
-  const formatEventTime = (dateString: string | Date, timeString?: string) => {
+  const formatEventTime = (dateString: string | Date, timeString?: string | null) => {
     if (timeString) {
       return timeString;
     }
@@ -219,7 +219,7 @@ const EventDetail = () => {
     <>
       <SEOHead 
         title={`${event.title} | Savage Gentlemen Events`}
-        description={`Join us for ${event.title} at ${event.location} on ${formatEventDate(event.date)}. ${event.description.substring(0, 120)}...`}
+        description={`Join us for ${event.title} at ${event.location} on ${formatEventDate(event.date)}. ${event.description ? event.description.substring(0, 120) + '...' : 'Join us for this exciting event!'}`}
       />
 
       <div className="pt-6">
@@ -266,7 +266,7 @@ const EventDetail = () => {
             
             <div className="pt-4">
               <h2 className="text-xl font-semibold mb-2">About This Event</h2>
-              <p className="whitespace-pre-line">{event.description}</p>
+              <p className="whitespace-pre-line">{event.description || 'No description available.'}</p>
             </div>
             
             {event.organizerName && (

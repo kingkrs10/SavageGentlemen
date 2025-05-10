@@ -1475,30 +1475,78 @@ export class DatabaseStorage implements IStorage {
 
   // Product operations
   async getProduct(id: number): Promise<Product | undefined> {
-    const [product] = await db
-      .select()
-      .from(products)
-      .where(eq(products.id, id));
-    return product;
+    try {
+      // Use direct SQL to avoid schema inconsistency issues
+      const result = await db.execute(
+        sql`SELECT id, title, description, price, image_url as "imageUrl", 
+            category, sizes, featured, etsy_url as "etsyUrl", created_at as "createdAt", 
+            updated_at as "updatedAt" FROM products WHERE id = ${id}`
+      );
+      
+      if (result.rows.length === 0) {
+        return undefined;
+      }
+      
+      // Add default inventory fields
+      return {
+        ...(result.rows[0] as Product),
+        stockLevel: 0,
+        sku: '',
+        inStock: true,
+        lowStockThreshold: 5
+      };
+    } catch (error) {
+      console.error('Error in getProduct:', error);
+      return undefined;
+    }
   }
 
   async getAllProducts(): Promise<Product[]> {
     try {
-      // First try to use select with drizzle which is safer
-      const allProducts = await db.select().from(products);
+      // Skip trying to use select with drizzle ORM and go straight to SQL
+      // since we're having schema inconsistency issues
+      const result = await db.execute(
+        sql`SELECT id, title, description, price, image_url as "imageUrl", 
+            category, sizes, featured, etsy_url as "etsyUrl", created_at as "createdAt", 
+            updated_at as "updatedAt" FROM products`
+      );
       
-      // Transform to ensure all expected fields exist
-      return allProducts.map(product => ({
+      // Add default inventory fields that may not exist in the database
+      return (result.rows as Product[]).map(product => ({
         ...product,
-        stockLevel: product.stockLevel ?? 0,
-        sku: product.sku ?? '',
-        inStock: product.inStock ?? true,
-        lowStockThreshold: product.lowStockThreshold ?? 5
+        stockLevel: 0,
+        sku: '',
+        inStock: true,
+        lowStockThreshold: 5
       }));
     } catch (error) {
       console.error('Error in getAllProducts:', error);
+      return [];
+    }
+  }
+
+  async getFeaturedProducts(): Promise<Product[]> {
+    try {
+      // Skip trying to use select with drizzle ORM and go straight to SQL
+      // since we're having schema inconsistency issues
+      const result = await db.execute(
+        sql`SELECT id, title, description, price, image_url as "imageUrl", 
+            category, sizes, featured, etsy_url as "etsyUrl", created_at as "createdAt", 
+            updated_at as "updatedAt" FROM products WHERE featured = true`
+      );
       
-      // Fallback to basic SQL query that only selects columns we know exist
+      // Add default inventory fields that may not exist in the database
+      return (result.rows as Product[]).map(product => ({
+        ...product,
+        stockLevel: 0,
+        sku: '',
+        inStock: true,
+        lowStockThreshold: 5
+      }));
+    } catch (error) {
+      console.error('Error in getFeaturedProducts:', error);
+      
+      // Ultimate fallback - try to get all products and filter in memory
       try {
         const result = await db.execute(
           sql`SELECT id, title, description, price, image_url as "imageUrl", 
@@ -1506,79 +1554,18 @@ export class DatabaseStorage implements IStorage {
               updated_at as "updatedAt" FROM products`
         );
         
-        // Add default inventory fields
-        return (result.rows as Product[]).map(product => ({
-          ...product,
-          stockLevel: 0, 
-          sku: '',
-          inStock: true,
-          lowStockThreshold: 5
-        }));
-      } catch (fallbackError) {
-        console.error('Ultimate fallback error in getAllProducts:', fallbackError);
+        return (result.rows as Product[])
+          .filter(product => product.featured === true)
+          .map(product => ({
+            ...product,
+            stockLevel: 0,
+            sku: '',
+            inStock: true,
+            lowStockThreshold: 5
+          }));
+      } catch (ultimateFallbackError) {
+        console.error('Ultimate fallback error in getFeaturedProducts:', ultimateFallbackError);
         return [];
-      }
-    }
-  }
-
-  async getFeaturedProducts(): Promise<Product[]> {
-    try {
-      // Use imported products directly instead of this.products
-      const featuredProducts = await db
-        .select()
-        .from(products)
-        .where(eq(products.featured, true));
-      
-      // Transform to ensure all expected fields exist
-      return featuredProducts.map(product => ({
-        ...product,
-        stockLevel: product.stockLevel ?? 0,
-        sku: product.sku ?? '',
-        inStock: product.inStock ?? true,
-        lowStockThreshold: product.lowStockThreshold ?? 5
-      }));
-    } catch (error) {
-      console.error('Error in getFeaturedProducts:', error);
-      
-      // Fallback to basic SQL query that only selects columns we know exist
-      try {
-        const result = await db.execute(
-          sql`SELECT id, title, description, price, image_url as "imageUrl", 
-              category, sizes, featured, etsy_url as "etsyUrl", created_at as "createdAt", 
-              updated_at as "updatedAt" FROM products WHERE featured = true`
-        );
-        
-        // Add default inventory fields
-        return (result.rows as Product[]).map(product => ({
-          ...product,
-          stockLevel: 0,
-          sku: '',
-          inStock: true,
-          lowStockThreshold: 5
-        }));
-      } catch (fallbackError) {
-        // Ultimate fallback - get all products and filter in memory
-        try {
-          console.error('Fallback error in getFeaturedProducts:', fallbackError);
-          const result = await db.execute(
-            sql`SELECT id, title, description, price, image_url as "imageUrl", 
-                category, sizes, featured, etsy_url as "etsyUrl", created_at as "createdAt", 
-                updated_at as "updatedAt" FROM products`
-          );
-          
-          return (result.rows as Product[])
-            .filter(product => product.featured === true)
-            .map(product => ({
-              ...product,
-              stockLevel: 0,
-              sku: '',
-              inStock: true,
-              lowStockThreshold: 5
-            }));
-        } catch (ultimateFallbackError) {
-          console.error('Ultimate fallback error in getFeaturedProducts:', ultimateFallbackError);
-          return [];
-        }
       }
     }
   }
