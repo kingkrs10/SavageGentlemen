@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -71,16 +71,44 @@ const StripeCheckoutForm = ({
   const elements = useElements();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [stripeReady, setStripeReady] = useState(false);
   const [, setLocation] = useLocation();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check if Stripe is available on mount
   useEffect(() => {
     if (!stripe) {
       console.log("Stripe not yet loaded, waiting...");
+      
+      // Set a timeout to detect if Stripe is taking too long
+      timeoutRef.current = setTimeout(() => {
+        console.log("Stripe loading timeout reached");
+        toast({
+          title: "Payment form is taking longer than expected",
+          description: "If the form doesn't appear, try refreshing the page",
+          variant: "default",
+        });
+      }, 5000);
     } else {
       console.log("Stripe loaded successfully");
+      // Clear timeout if Stripe loads successfully
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
+      // Give elements a moment to render
+      setTimeout(() => {
+        setStripeReady(true);
+      }, 1000);
     }
-  }, [stripe]);
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [stripe, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,13 +195,14 @@ const StripeCheckoutForm = ({
     }
   };
 
-  // Check for Stripe readiness
-  const [stripeReady, setStripeReady] = useState(false);
-
+  // Additional check for elements readiness (payment form fully loaded)
   useEffect(() => {
-    // Set ready state when Stripe is available
+    // Set ready state when both Stripe and Elements are available
     if (stripe && elements) {
-      setStripeReady(true);
+      // Mark as ready after a slight delay to ensure element is rendered
+      setTimeout(() => {
+        setStripeReady(true);
+      }, 500);
     }
   }, [stripe, elements]);
 
@@ -218,8 +247,8 @@ const StripeCheckoutForm = ({
         
         {/* Show loading overlay if Stripe is not ready */}
         {!stripeReady && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded">
-            <div className="text-sm text-muted-foreground flex items-center">
+          <div className="absolute inset-0 flex items-center justify-center bg-background/70 rounded backdrop-blur-[2px] z-10">
+            <div className="text-sm text-muted-foreground flex items-center bg-background px-4 py-2 rounded-md shadow-sm">
               <div className="mr-2 w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
               Loading payment form...
             </div>
@@ -789,9 +818,10 @@ export default function Checkout() {
           </div>
           
           <Tabs defaultValue="card" className="mt-6">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="card">Credit Card</TabsTrigger>
               <TabsTrigger value="paypal">PayPal</TabsTrigger>
+              <TabsTrigger value="cashapp">Cash App</TabsTrigger>
             </TabsList>
             
             <TabsContent value="card" className="mt-4">
@@ -1029,6 +1059,66 @@ export default function Checkout() {
                 >
                   Refresh PayPal
                 </Button>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="cashapp" className="mt-4">
+              <div className="flex flex-col items-center space-y-4">
+                <div className="w-full p-4 rounded-md bg-gray-50 dark:bg-gray-800">
+                  <div className="text-center">
+                    <h3 className="text-lg font-semibold mb-2">Pay with Cash App</h3>
+                    <div className="mb-4">
+                      <div className="w-16 h-16 bg-[#00d632] rounded-xl flex items-center justify-center mx-auto">
+                        <span className="text-white text-2xl font-bold">$</span>
+                      </div>
+                    </div>
+                    <div className="border-t border-b border-border py-4 mb-4">
+                      <p className="font-medium">Total Amount: ${amount.toFixed(2)} {currency}</p>
+                      <p className="text-sm text-muted-foreground mt-1">Send payment to: <span className="font-medium">$SavageGentlemen</span></p>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="text-left p-3 bg-gray-100 dark:bg-gray-700 rounded-md">
+                        <h4 className="text-sm font-medium mb-1">How to pay:</h4>
+                        <ol className="text-sm list-decimal pl-5 space-y-1">
+                          <li>Open Cash App on your phone</li>
+                          <li>Tap the $ icon and enter ${amount.toFixed(2)}</li>
+                          <li>In the "To" field, enter: $SavageGentlemen</li>
+                          <li>Add note: "{eventTitle} - {ticketName || 'Ticket'}"</li>
+                          <li>Tap "Pay"</li>
+                        </ol>
+                      </div>
+                      <Button 
+                        className="w-full flex items-center justify-center gap-2" 
+                        variant="outline"
+                        onClick={() => {
+                          // Open Cash App if on mobile, or copy to clipboard if on desktop
+                          const cashAppUrl = `https://cash.app/$SavageGentlemen/${amount.toFixed(2)}`;
+                          
+                          // Try to open Cash App
+                          window.open(cashAppUrl, '_blank');
+                          
+                          // Also copy the $cashtag to clipboard as backup
+                          navigator.clipboard.writeText('$SavageGentlemen')
+                            .then(() => {
+                              toast({
+                                title: "Copied to clipboard",
+                                description: "$SavageGentlemen has been copied to your clipboard",
+                              });
+                            })
+                            .catch(err => {
+                              console.error("Could not copy text: ", err);
+                            });
+                        }}
+                      >
+                        <span>Open Cash App</span>
+                        <span className="h-5 w-5 text-[#00d632]">→</span>
+                      </Button>
+                      <div className="mt-4 text-sm text-gray-500">
+                        <p>After sending payment, please contact us with your payment confirmation to receive your ticket.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
