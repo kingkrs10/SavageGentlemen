@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cors from 'cors';
+import { securityHeaders, auditLogger, sanitizeInput } from './security/middleware';
 
 const app = express();
 
@@ -23,6 +24,16 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// Apply security headers
+app.use(securityHeaders);
+
+// Apply input sanitization
+app.use(sanitizeInput);
+
+// Add audit logging for sensitive operations
+app.use(auditLogger);
+
+// Parse JSON and URL-encoded bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -59,12 +70,34 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
-    res.status(status).json({ message });
-    throw err;
+    // Log the error with request context for troubleshooting
+    console.error(`[ERROR] ${new Date().toISOString()} | ${req.method} ${req.originalUrl} | Status: ${status} | ${message}`);
+    
+    if (err.stack && process.env.NODE_ENV !== 'production') {
+      console.error(err.stack);
+    }
+    
+    // Only send detailed error information in development
+    if (process.env.NODE_ENV === 'production') {
+      // In production, send generic messages for 500 errors to avoid leaking sensitive info
+      if (status >= 500) {
+        return res.status(status).json({ 
+          status: 'error',
+          message: 'Internal server error'
+        });
+      }
+    }
+    
+    // For 4xx errors, it's safe to send the actual error message
+    return res.status(status).json({ 
+      status: 'error',
+      message,
+      ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+    });
   });
 
   // importantly only setup vite in development and after

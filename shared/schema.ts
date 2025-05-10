@@ -20,17 +20,38 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-  displayName: true,
-  avatar: true,
-  isGuest: true,
-  role: true,
-  email: true,
-  firebaseId: true,
-  stripeCustomerId: true,
-  paypalCustomerId: true,
+// Extended user schema with validation
+export const insertUserSchema = createInsertSchema(users)
+  .pick({
+    username: true,
+    password: true,
+    displayName: true,
+    avatar: true,
+    isGuest: true,
+    role: true,
+    email: true,
+    firebaseId: true,
+    stripeCustomerId: true,
+    paypalCustomerId: true,
+  })
+  .extend({
+    username: z.string()
+      .min(3, 'Username must be at least 3 characters')
+      .max(20, 'Username must be at most 20 characters')
+      .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, underscores, and hyphens'),
+    password: z.string()
+      .min(8, 'Password must be at least 8 characters')
+      .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+      .regex(/[0-9]/, 'Password must contain at least one number'),
+    email: z.string().email('Invalid email format').nullish(),
+    role: z.enum(['user', 'admin', 'moderator']).default('user'),
+    displayName: z.string().min(1, 'Display name cannot be empty').nullish(),
+  });
+
+// Login schema for validation
+export const loginSchema = z.object({
+  username: z.string().min(1, 'Username is required'),
+  password: z.string().min(1, 'Password is required'),
 });
 
 // Events schema

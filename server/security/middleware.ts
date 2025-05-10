@@ -93,14 +93,6 @@ export const securityHeaders = helmet({
       upgradeInsecureRequests: []
     }
   },
-  // Enable XSS filter in browsers
-  xssFilter: true,
-  // Do not allow the page to be framed
-  frameguard: { action: 'deny' },
-  // Set strict MIME types
-  contentTypeNosniff: true,
-  // Disable Adobe Flash and PDF viewers
-  permittedCrossDomainPolicies: { permittedPolicies: 'none' },
   // Hide X-Powered-By header
   hidePoweredBy: true,
   // Set strict Transport Security for 1 year, including subdomains
@@ -108,7 +100,12 @@ export const securityHeaders = helmet({
     maxAge: 31536000,
     includeSubDomains: true,
     preload: true
-  }
+  },
+  // Do not allow the page to be framed
+  frameguard: { 
+    action: 'deny' 
+  },
+  // Additional security settings are managed by Helmet's defaults
 });
 
 /**

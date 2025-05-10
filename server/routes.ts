@@ -25,8 +25,10 @@ import {
   insertTicketSchema,
   insertDiscountCodeSchema,
   insertOrderSchema,
-  insertOrderItemSchema
+  insertOrderItemSchema,
+  loginSchema
 } from "@shared/schema";
+import { validateRequest, authRateLimiter } from "./security/middleware";
 import { ZodError } from "zod";
 import admin from "firebase-admin";
 import Stripe from "stripe";
@@ -210,38 +212,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.status(500).json({ message: "Internal server error" });
   };
 
-  // Auth routes
-  router.post("/auth/login", async (req: Request, res: Response) => {
-    try {
-      const { username, password } = req.body;
-      const user = await storage.getUserByUsername(username);
-      
-      if (!user || user.password !== password) {
-        return res.status(401).json({ message: "Invalid credentials" });
+  // Auth routes with rate limiting and validation
+  router.post(
+    "/auth/login", 
+    authRateLimiter, 
+    validateRequest(loginSchema), 
+    async (req: Request, res: Response) => {
+      try {
+        // The data is already validated by the middleware
+        const { username, password } = req.body;
+        
+        // Add a small delay to prevent timing attacks that could
+        // expose whether a username exists or not
+        await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 100));
+        
+        const user = await storage.getUserByUsername(username);
+        
+        if (!user || user.password !== password) {
+          return res.status(401).json({ 
+            status: 'error',
+            message: "Invalid username or password" 
+          });
+        }
+        
+        // Log successful logins for audit purposes
+        console.log(`[AUTH] Successful login: ${username} from IP ${req.ip || req.socket.remoteAddress || 'unknown'}`);
+        
+        return res.status(200).json({ 
+          status: 'success',
+          data: {
+            id: user.id, 
+            username: user.username, 
+            displayName: user.displayName,
+            avatar: user.avatar,
+            isGuest: user.isGuest,
+            role: user.role
+          }
+        });
+      } catch (err) {
+        return handleZodError(err, res);
       }
-      
-      return res.status(200).json({ 
-        id: user.id, 
-        username: user.username, 
-        displayName: user.displayName,
-        avatar: user.avatar,
-        isGuest: user.isGuest
-      });
-    } catch (err) {
-      return handleZodError(err, res);
     }
-  });
+  );
 
-  router.post("/auth/register", async (req: Request, res: Response) => {
-    try {
-      const userData = insertUserSchema.parse(req.body);
-      const existingUser = await storage.getUserByUsername(userData.username);
-      
-      if (existingUser) {
-        return res.status(409).json({ message: "Username already exists" });
-      }
-      
-      const user = await storage.createUser(userData);
+  router.post(
+    "/auth/register", 
+    authRateLimiter,
+    validateRequest(insertUserSchema),
+    async (req: Request, res: Response) => {
+      try {
+        // The data is already validated by the middleware
+        const userData = req.body;
+        
+        // Check for existing username
+        const existingUser = await storage.getUserByUsername(userData.username);
+        
+        if (existingUser) {
+          return res.status(409).json({ 
+            status: 'error',
+            message: "Username already exists" 
+          });
+        }
+        
+        // Check for existing email if provided
+        if (userData.email) {
+          const existingEmail = await storage.getUserByEmail(userData.email);
+          if (existingEmail) {
+            return res.status(409).json({ 
+              status: 'error',
+              message: "Email already in use" 
+            });
+          }
+        }
+        
+        const user = await storage.createUser(userData);
       
       // Send welcome email if email is provided
       if (userData.email) {
