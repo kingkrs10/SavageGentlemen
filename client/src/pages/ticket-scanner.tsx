@@ -11,30 +11,51 @@ export default function TicketScannerPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
   const [, navigate] = useLocation();
+  
+  // Get user data from context
+  const { user, isAdmin, isModerator } = useUser();
 
-  // Simple role check function - uses direct API call
+  // Check access with context and API call as backup
   useEffect(() => {
     const checkAccess = async () => {
       try {
         setLoading(true);
         
+        // First check using our context (fastest way)
+        if (user && (isAdmin || isModerator)) {
+          console.log("Role check successful from context:", { isAdmin, isModerator });
+          setIsAuthorized(true);
+          setLoading(false);
+          return;
+        }
+        
+        // Fallback to API call if context doesn't have user or role
+        console.log("Context check failed, trying API call");
+        
+        // Extract user ID from different formats in localStorage
+        let userId = '';
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser);
+          userId = parsed.id || 
+                  (parsed.data ? parsed.data.id : '') || 
+                  (parsed.status === 'success' && parsed.data ? parsed.data.id : '');
+        }
+        
         // Make a direct API call to check access with staff endpoint
         const response = await fetch('/api/staff/me', {
           headers: {
-            // Get user ID from localStorage if available
-            'user-id': localStorage.getItem('user') ? 
-              JSON.parse(localStorage.getItem('user') || '{}').id : 
-              ''
+            'user-id': userId
           }
         });
         
         // If response is successful, user is admin/moderator
         if (response.ok) {
           const userData = await response.json();
-          console.log("Admin access check successful:", userData);
+          console.log("Admin access check successful via API:", userData);
           setIsAuthorized(true);
         } else {
-          console.log("Admin access check failed");
+          console.log("Admin access check failed via API");
           setIsAuthorized(false);
         }
       } catch (error) {
@@ -46,7 +67,7 @@ export default function TicketScannerPage() {
     };
 
     checkAccess();
-  }, []);
+  }, [user, isAdmin, isModerator]);
 
   if (loading) {
     return (
