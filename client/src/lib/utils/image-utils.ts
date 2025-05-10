@@ -4,12 +4,18 @@
 
 /**
  * Converts various image URL formats to usable direct URLs
- * Handles special cases like Google Drive links
+ * Handles special cases like Google Drive links and local uploads
  */
 export function getNormalizedImageUrl(url: string | null): string {
   if (!url) {
     // Use a placeholder image from a reliable source
     return 'https://placehold.co/600x400/222222/FF4136?text=No+Image';
+  }
+
+  // Handle local upload URLs (starting with /uploads/)
+  if (url.startsWith('/uploads/')) {
+    // Remove the leading slash to match our file system
+    return url.startsWith('/') ? url.substring(1) : url;
   }
 
   // Handle Google Drive file URLs
