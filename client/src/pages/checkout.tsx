@@ -645,12 +645,22 @@ export default function Checkout() {
                   onClick={async () => {
                     setProcessingFreeTicket(true);
                     try {
-                      const response = await apiRequest("POST", "/api/tickets/free", {
+                      // Prepare payload once
+                      const freeTicketPayload = {
                         eventId: eventId,
                         eventTitle: eventTitle,
                         ticketId: ticketId,
                         ticketName: ticketName
-                      });
+                      };
+                      
+                      // First try with /api prefix
+                      let response = await apiRequest("POST", "/api/tickets/free", freeTicketPayload);
+                      
+                      // If that fails, try without the prefix
+                      if (!response.ok) {
+                        console.log("API prefixed free ticket endpoint failed, trying non-prefixed endpoint...");
+                        response = await apiRequest("POST", "/tickets/free", freeTicketPayload);
+                      }
                       
                       const data = await response.json();
                       
@@ -902,6 +912,16 @@ export default function Checkout() {
                       paypal-button::before {
                         content: "Pay with PayPal";
                       }
+                      
+                      paypal-button.error {
+                        background-color: #f5f5f5;
+                        color: #666;
+                        cursor: not-allowed;
+                      }
+                      
+                      paypal-button.error::before {
+                        content: "PayPal Unavailable";
+                      }
                     `
                   }} />
                   <PayPalButton 
@@ -917,6 +937,17 @@ export default function Checkout() {
                 <p className="text-sm text-gray-500 text-center">
                   Click the PayPal button above to complete your purchase securely with PayPal.
                 </p>
+                {/* Add retry button that reloads the page to force PayPal to reinitialize */}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => {
+                    window.location.reload();
+                  }}
+                >
+                  Refresh PayPal
+                </Button>
               </div>
             </TabsContent>
           </Tabs>
