@@ -85,6 +85,12 @@ export function LazyImage({
   // Compute object-fit style based on prop
   const objectFitClass = `object-${objectFit}`;
 
+  // Log image source for debugging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('LazyImage original src:', src);
+    console.log('LazyImage normalized src:', normalizedSrc);
+  }
+
   return (
     <div className="relative w-full h-full">
       {/* Show skeleton while loading */}

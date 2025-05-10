@@ -14,11 +14,11 @@ export function getNormalizedImageUrl(url: string | null): string {
 
   // Handle local upload URLs (containing uploads/)
   if (url.includes('uploads/')) {
-    // If it starts with a slash, remove it
-    if (url.startsWith('/')) {
-      return url.substring(1);
+    // Make sure it starts with a slash for correct path resolution
+    if (!url.startsWith('/')) {
+      return '/' + url;
     }
-    // Otherwise return as is
+    // Already has slash, return as is
     return url;
   }
 
