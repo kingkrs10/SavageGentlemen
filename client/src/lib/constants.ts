@@ -18,7 +18,7 @@ export const API_ROUTES = {
 // External URLs
 export const EXTERNAL_URLS = {
   ETSY_SHOP: "https://sgxmerch.etsy.com",
-  PRINTFUL_SHOP: "https://savagegentlemen.myshopify.com", // Replace with your actual Printful store URL
+  PRINTIFY_SHOP: "https://savagegentlemen.myshopify.com", // Your Printify-connected Shopify store
   FACEBOOK: "https://www.facebook.com/savagegentlemen",
   INSTAGRAM: "https://www.instagram.com/savagegentlemen",
   TWITTER: "https://www.twitter.com/savagegentlemen",

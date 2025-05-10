@@ -40,7 +40,7 @@ const SimpleProductCard = ({ product, onAddToCart }: {
             Buy on Etsy
           </Button>
           <a 
-            href={EXTERNAL_URLS.PRINTFUL_SHOP} 
+            href={product.printifyUrl || EXTERNAL_URLS.PRINTFUL_SHOP} 
             target="_blank" 
             rel="noopener noreferrer"
             className="w-full"
@@ -49,7 +49,7 @@ const SimpleProductCard = ({ product, onAddToCart }: {
               className="w-full bg-blue-600 text-white hover:bg-blue-700 transition flex items-center justify-center gap-2"
             >
               <ShoppingCart className="h-4 w-4" />
-              Similar on Printful
+              {product.printifyUrl ? 'Buy on Printify' : 'Similar on Printify'}
             </Button>
           </a>
         </div>
@@ -131,7 +131,7 @@ const Shop = () => {
             </a>
             <a href={EXTERNAL_URLS.PRINTFUL_SHOP} target="_blank" rel="noopener noreferrer">
               <Button className="bg-blue-600 text-white hover:bg-blue-700 transition">
-                Visit Printful Shop
+                Visit Printify Shop
               </Button>
             </a>
           </div>
@@ -233,11 +233,11 @@ const Shop = () => {
           </div>
           
           <div className="bg-gray-800 p-5 rounded-lg flex-1">
-            <h4 className="font-semibold text-lg mb-2">Printful Shop</h4>
+            <h4 className="font-semibold text-lg mb-2">Printify Shop</h4>
             <p className="text-gray-400 text-sm mb-4">Print-on-demand apparel and accessories</p>
             <a href={EXTERNAL_URLS.PRINTFUL_SHOP} target="_blank" rel="noopener noreferrer">
               <Button size="lg" className="bg-blue-600 text-white hover:bg-blue-700 transition w-full">
-                Shop on Printful
+                Shop on Printify
               </Button>
             </a>
           </div>

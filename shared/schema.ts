@@ -91,6 +91,7 @@ export const products = pgTable("products", {
   sizes: text("sizes").array(),
   featured: boolean("featured").default(false),
   etsyUrl: text("etsy_url"),
+  printifyUrl: text("printify_url"),
   // Inventory management fields
   sku: text("sku"), // Stock Keeping Unit for inventory tracking
   inStock: boolean("in_stock").default(true),
@@ -114,6 +115,7 @@ export const insertProductSchema = createInsertSchema(products).pick({
   sizes: true,
   featured: true,
   etsyUrl: true,
+  printifyUrl: true,
   // Inventory fields
   sku: true,
   inStock: true,
