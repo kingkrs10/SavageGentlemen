@@ -1,86 +1,53 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import TicketQRScanner from "@/components/TicketQRScanner";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
 import { apiRequest } from "@/lib/queryClient";
-import { User } from "@/lib/types";
 
 export default function TicketScannerPage() {
-  const { currentUser, loading: firebaseLoading } = useAuth();
-  const [localUser, setLocalUser] = useState<User | null>(null);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
   const [, navigate] = useLocation();
 
-  // Check stored user from localStorage
+  // Simple role check function - uses direct API call
   useEffect(() => {
-    const checkStoredUser = async () => {
+    const checkAccess = async () => {
       try {
-        // Check all possible localStorage keys for user data
-        let parsedUser = null;
+        setLoading(true);
         
-        // Log all localStorage items for debugging
-        console.log("All localStorage keys:", Object.keys(localStorage));
-        
-        // Try sgAppUser first
-        const sgAppUser = localStorage.getItem('sgAppUser');
-        if (sgAppUser) {
-          parsedUser = JSON.parse(sgAppUser);
-          console.log("Found user in sgAppUser:", parsedUser);
-        }
-        
-        // Try standard user key next
-        if (!parsedUser) {
-          const storedUser = localStorage.getItem('user');
-          if (storedUser) {
-            parsedUser = JSON.parse(storedUser);
-            console.log("Found user in 'user' key:", parsedUser);
+        // Make a direct API call to check access
+        const response = await fetch('/api/admin/me', {
+          headers: {
+            // Get user ID from localStorage if available
+            'user-id': localStorage.getItem('user') ? 
+              JSON.parse(localStorage.getItem('user') || '{}').id : 
+              ''
           }
-        }
+        });
         
-        // Finally try to verify with API regardless
-        const response = await apiRequest('GET', '/api/me');
+        // If response is successful, user is admin/moderator
         if (response.ok) {
           const userData = await response.json();
-          console.log("API verified user:", userData);
-          setLocalUser(userData);
-        } else if (parsedUser) {
-          // Use localStorage data if API fails but we found something
-          console.log("Using localStorage user data:", parsedUser);
-          setLocalUser(parsedUser);
+          console.log("Admin access check successful:", userData);
+          setIsAuthorized(true);
         } else {
-          console.log("No valid user data found");
-          setLocalUser(null);
+          console.log("Admin access check failed");
+          setIsAuthorized(false);
         }
       } catch (error) {
-        console.error("Error checking stored user:", error);
-        setLocalUser(null);
+        console.error("Error checking admin access:", error);
+        setIsAuthorized(false);
       } finally {
         setLoading(false);
       }
     };
 
-    checkStoredUser();
+    checkAccess();
   }, []);
 
-  // Debug auth state
-  useEffect(() => {
-    console.log("Auth state:", { 
-      firebaseUser: currentUser,
-      localUser,
-      firebaseRole: currentUser?.role, 
-      localRole: localUser?.role 
-    });
-  }, [currentUser, localUser]);
-
-  // Check if user is admin or moderator from either Firebase or local auth
-  const isAuthorized = 
-    (currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator')) ||
-    (localUser && (localUser.role === 'admin' || localUser.role === 'moderator'));
-
-  if (loading || firebaseLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-[80vh]">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />

@@ -752,6 +752,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
+  // Check if user has staff permissions (admin or moderator)
+  router.get("/staff/me", authenticateUser, authorizeModerator, (req: Request, res: Response) => {
+    const user = (req as any).user;
+    return res.status(200).json({
+      id: user.id,
+      username: user.username,
+      displayName: user.displayName,
+      avatar: user.avatar,
+      role: user.role,
+      email: user.email
+    });
+  });
+  
   // Livestream management
   router.post("/admin/livestreams", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
