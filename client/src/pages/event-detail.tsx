@@ -236,12 +236,13 @@ const EventDetail = () => {
         {/* Event Image */}
         <div className="w-full h-[300px] md:h-[400px] rounded-lg overflow-hidden mb-6 bg-gray-800 relative">
           <LazyImage 
-            src={getNormalizedImageUrl(event.imageUrl)} 
+            src={event.imageUrl || ''} 
             alt={event.title} 
-            className="w-full h-full object-contain" 
+            className="w-full h-full" 
             fallbackSrc={SGFlyerLogoPng}
             placeholderColor="#1f2937"
             loadingClassName="w-full h-full bg-gray-800 animate-pulse"
+            objectFit="contain"
           />
           {/* Add subtle gradient at the bottom for better text visibility */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none">

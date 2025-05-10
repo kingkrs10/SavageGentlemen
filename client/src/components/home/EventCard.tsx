@@ -2,7 +2,6 @@ import { Calendar, MapPin, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { getNormalizedImageUrl } from "@/lib/utils/image-utils";
 import { Event } from "@/lib/types";
 import SGFlyerLogoPng from "@assets/SGFLYERLOGO.png";
 import AddToCalendarButton from "@/components/events/AddToCalendarButton";
@@ -27,12 +26,13 @@ const EventCard = ({
       <div className="event-card rounded-xl overflow-hidden shadow-lg flex flex-col md:flex-row group hover:shadow-xl transition-shadow duration-300">
         <Link href={`/events/${id}`} className="block w-full md:w-1/3 h-48 md:h-auto relative">
           <LazyImage 
-            src={getNormalizedImageUrl(imageUrl)}
+            src={imageUrl}
             alt={title}
-            className="w-full h-full object-cover"
+            className="w-full h-full"
             fallbackSrc={SGFlyerLogoPng}
             placeholderColor="#1f2937"
             loadingClassName="w-full h-full bg-gray-800 animate-pulse"
+            objectFit="contain"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent">
             {/* Subtle gradient overlay to improve visibility */}
@@ -110,12 +110,13 @@ const EventCard = ({
       <Link href={`/events/${id}`} className="block relative">
         <div className="w-full h-48">
           <LazyImage 
-            src={getNormalizedImageUrl(imageUrl)}
+            src={imageUrl}
             alt={title}
-            className="w-full h-full object-cover"
+            className="w-full h-full"
             fallbackSrc={SGFlyerLogoPng}
             placeholderColor="#1f2937"
             loadingClassName="w-full h-full bg-gray-800 animate-pulse"
+            objectFit="contain"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent">
             {/* Subtle gradient overlay to improve visibility */}

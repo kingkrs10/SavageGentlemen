@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getNormalizedImageUrl } from "@/lib/utils/image-utils";
 
 interface LazyImageProps {
   src: string;
@@ -8,6 +9,7 @@ interface LazyImageProps {
   fallbackSrc?: string;
   loadingClassName?: string;
   placeholderColor?: string;
+  objectFit?: "cover" | "contain" | "fill" | "none" | "scale-down";
 }
 
 /**
@@ -16,6 +18,7 @@ interface LazyImageProps {
  * - Shows a skeleton loader during loading
  * - Provides fallback for failed images
  * - Uses native browser lazy loading
+ * - Automatically handles image URL normalization
  */
 export function LazyImage({
   src,
@@ -23,12 +26,16 @@ export function LazyImage({
   className = "",
   fallbackSrc,
   loadingClassName = "",
-  placeholderColor = "bg-gray-800"
+  placeholderColor = "bg-gray-800",
+  objectFit = "cover"
 }: LazyImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
   const [inView, setInView] = useState(false);
+  
+  // Properly normalize the image URL
+  const normalizedSrc = getNormalizedImageUrl(src);
   
   // Use Intersection Observer to detect when image is in viewport
   useEffect(() => {
@@ -58,19 +65,22 @@ export function LazyImage({
 
   // Handle image load success
   const onLoad = () => {
-    console.log("Image loaded successfully:", src);
+    console.log("Image loaded successfully:", normalizedSrc);
     setIsLoaded(true);
   };
 
   // Handle image load error
   const onError = () => {
-    console.error("Error loading image:", src);
+    console.error("Error loading image:", normalizedSrc);
     setError(true);
     setIsLoaded(true); // Mark as loaded even though it's an error
   };
 
+  // Compute object-fit style based on prop
+  const objectFitClass = `object-${objectFit}`;
+
   return (
-    <div className="relative">
+    <div className="relative w-full h-full">
       {/* Show skeleton while loading */}
       {!isLoaded && (
         <Skeleton 
@@ -81,9 +91,9 @@ export function LazyImage({
       {/* The actual image */}
       <img
         ref={imgRef}
-        src={error && fallbackSrc ? fallbackSrc : (inView ? src : "")}
+        src={error && fallbackSrc ? fallbackSrc : (inView ? normalizedSrc : "")}
         alt={alt}
-        className={`${className} ${isLoaded ? "opacity-100" : "opacity-0"} transition-opacity duration-300`}
+        className={`${className} ${objectFitClass} ${isLoaded ? "opacity-100" : "opacity-0"} transition-opacity duration-300`}
         onLoad={onLoad}
         onError={onError}
         loading="lazy"
