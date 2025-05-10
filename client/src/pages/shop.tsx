@@ -40,7 +40,7 @@ const SimpleProductCard = ({ product, onAddToCart }: {
             Buy on Etsy
           </Button>
           <a 
-            href={product.printifyUrl || EXTERNAL_URLS.PRINTFUL_SHOP} 
+            href={product.printifyUrl || EXTERNAL_URLS.PRINTIFY_SHOP} 
             target="_blank" 
             rel="noopener noreferrer"
             className="w-full"
@@ -129,7 +129,7 @@ const Shop = () => {
                 Visit Etsy Shop
               </Button>
             </a>
-            <a href={EXTERNAL_URLS.PRINTFUL_SHOP} target="_blank" rel="noopener noreferrer">
+            <a href={EXTERNAL_URLS.PRINTIFY_SHOP} target="_blank" rel="noopener noreferrer">
               <Button className="bg-blue-600 text-white hover:bg-blue-700 transition">
                 Visit Printify Shop
               </Button>
@@ -235,7 +235,7 @@ const Shop = () => {
           <div className="bg-gray-800 p-5 rounded-lg flex-1">
             <h4 className="font-semibold text-lg mb-2">Printify Shop</h4>
             <p className="text-gray-400 text-sm mb-4">Print-on-demand apparel and accessories</p>
-            <a href={EXTERNAL_URLS.PRINTFUL_SHOP} target="_blank" rel="noopener noreferrer">
+            <a href={EXTERNAL_URLS.PRINTIFY_SHOP} target="_blank" rel="noopener noreferrer">
               <Button size="lg" className="bg-blue-600 text-white hover:bg-blue-700 transition w-full">
                 Shop on Printify
               </Button>
