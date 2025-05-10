@@ -13,14 +13,21 @@ const SimpleProductCard = ({ product, onAddToCart }: {
   product: Product; 
   onAddToCart: (id: number) => void;
 }) => {
-  // Always use SG Flyer Logo for now to avoid CORS issues
+  // Use product image when available, fallback to logo
+  const imageUrl = product.imageUrl || SGFlyerLogoPng;
+  
   return (
     <div className="bg-gray-900 rounded-lg overflow-hidden shadow-lg border border-gray-800">
       <div className="relative h-48 bg-gray-800 flex items-center justify-center">
         <img 
-          src={SGFlyerLogoPng} 
+          src={imageUrl} 
           alt={product.title} 
-          className="h-32 w-32 object-contain"
+          className="h-full w-full object-contain p-2"
+          onError={(e) => {
+            // If image fails to load, use the logo as fallback
+            e.currentTarget.src = SGFlyerLogoPng;
+            e.currentTarget.className = "h-32 w-32 object-contain";
+          }}
         />
       </div>
       <div className="p-4">
@@ -31,25 +38,18 @@ const SimpleProductCard = ({ product, onAddToCart }: {
             {product.sizes && product.sizes.join(", ")}
           </span>
         </div>
-        <div className="grid grid-cols-1 gap-2 mt-3">
-          <Button 
-            className="w-full bg-primary text-white hover:bg-red-800 transition flex items-center justify-center gap-2"
-            onClick={() => onAddToCart(product.id)}
-          >
-            <ShoppingCart className="h-4 w-4" />
-            Buy on Etsy
-          </Button>
+        <div className="mt-3">
           <a 
             href={product.printifyUrl || EXTERNAL_URLS.PRINTIFY_SHOP} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="w-full"
+            className="w-full block"
           >
             <Button 
               className="w-full bg-blue-600 text-white hover:bg-blue-700 transition flex items-center justify-center gap-2"
             >
               <ShoppingCart className="h-4 w-4" />
-              {product.printifyUrl ? 'Buy on Printify' : 'Similar on Printify'}
+              Buy Now
             </Button>
           </a>
         </div>
@@ -96,10 +96,10 @@ const Shop = () => {
     const product = products.find(p => p.id === productId);
     if (product) {
       toast({
-        title: "Opening Etsy shop",
-        description: `Redirecting to ${product.title} on Etsy`
+        title: "Opening Printify shop",
+        description: `Redirecting to ${product.title} on Printify`
       });
-      window.open(product.etsyUrl || EXTERNAL_URLS.ETSY_SHOP, "_blank");
+      window.open(product.printifyUrl || EXTERNAL_URLS.PRINTIFY_SHOP, "_blank");
     }
   };
   
@@ -118,17 +118,12 @@ const Shop = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
         <div className="absolute bottom-0 left-0 p-6">
-          <Badge className="bg-primary text-white text-sm px-3 py-1 rounded-full mb-2 inline-block">
+          <Badge className="bg-blue-600 text-white text-sm px-3 py-1 rounded-full mb-2 inline-block">
             Shop Now
           </Badge>
           <h2 className="text-3xl font-heading text-white">SG Merch Collection</h2>
           <p className="text-lg text-gray-200 mb-4">Caribbean-inspired clothing and accessories</p>
           <div className="flex flex-wrap gap-3">
-            <a href={EXTERNAL_URLS.ETSY_SHOP} target="_blank" rel="noopener noreferrer">
-              <Button className="bg-primary text-white hover:bg-red-800 transition">
-                Visit Etsy Shop
-              </Button>
-            </a>
             <a href={EXTERNAL_URLS.PRINTIFY_SHOP} target="_blank" rel="noopener noreferrer">
               <Button className="bg-blue-600 text-white hover:bg-blue-700 transition">
                 Visit Printify Shop
@@ -218,23 +213,13 @@ const Shop = () => {
       
       {/* Shop Options */}
       <div className="bg-gray-900 rounded-lg p-6 text-center">
-        <h3 className="text-xl font-semibold mb-3">Shop Our Collections</h3>
-        <p className="text-gray-400 mb-4">Choose where you'd like to shop for Savage Gentlemen merch</p>
+        <h3 className="text-xl font-semibold mb-3">Shop Our Collection</h3>
+        <p className="text-gray-400 mb-4">Visit our print-on-demand shop for the latest Savage Gentlemen merch</p>
         
-        <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6">
-          <div className="bg-gray-800 p-5 rounded-lg flex-1">
-            <h4 className="font-semibold text-lg mb-2">Etsy Shop</h4>
-            <p className="text-gray-400 text-sm mb-4">Handcrafted items and exclusive designs</p>
-            <a href={EXTERNAL_URLS.ETSY_SHOP} target="_blank" rel="noopener noreferrer">
-              <Button size="lg" className="bg-primary text-white hover:bg-red-800 transition w-full">
-                Shop on Etsy
-              </Button>
-            </a>
-          </div>
-          
-          <div className="bg-gray-800 p-5 rounded-lg flex-1">
+        <div className="mt-6 max-w-md mx-auto">
+          <div className="bg-gray-800 p-5 rounded-lg">
             <h4 className="font-semibold text-lg mb-2">Printify Shop</h4>
-            <p className="text-gray-400 text-sm mb-4">Print-on-demand apparel and accessories</p>
+            <p className="text-gray-400 text-sm mb-4">Premium quality apparel and accessories</p>
             <a href={EXTERNAL_URLS.PRINTIFY_SHOP} target="_blank" rel="noopener noreferrer">
               <Button size="lg" className="bg-blue-600 text-white hover:bg-blue-700 transition w-full">
                 Shop on Printify
