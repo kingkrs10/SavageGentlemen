@@ -256,7 +256,7 @@ export default function AdminPage() {
     category: 'concert',
     featured: false,
     organizerName: 'Savage Gentlemen',
-    organizerEmail: 'info@savagegentlemen.com'
+    organizerEmail: 'savgmen@gmail.com'
   });
   
   // State for ticket form

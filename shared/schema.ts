@@ -69,7 +69,7 @@ export const events = pgTable("events", {
   category: text("category"),
   featured: boolean("featured").default(false),
   organizerName: text("organizer_name").default("Savage Gentlemen"),
-  organizerEmail: text("organizer_email").default("info@savagegentlemen.com"),
+  organizerEmail: text("organizer_email").default("savgmen@gmail.com"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
