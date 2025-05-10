@@ -392,6 +392,26 @@ export default function AdminPage() {
     enabled: !!currentUser,
   });
   
+  // Fetch email marketing lists
+  const {
+    data: emailLists = [],
+    isLoading: emailListsLoading,
+    error: emailListsError
+  } = useQuery<any[]>({
+    queryKey: ["/api/email-marketing/lists"],
+    enabled: !!currentUser && (currentUser.role === 'admin'),
+  });
+  
+  // Fetch email subscribers
+  const {
+    data: emailSubscribers = [],
+    isLoading: emailSubscribersLoading,
+    error: emailSubscribersError
+  } = useQuery<any[]>({
+    queryKey: ["/api/email-marketing/subscribers"],
+    enabled: !!currentUser && (currentUser.role === 'admin'),
+  });
+  
   // Filter tickets by selected event
   const displayedTickets = selectedEventId && selectedEventId !== "all"
     ? tickets.filter(ticket => ticket.eventId === parseInt(selectedEventId))
