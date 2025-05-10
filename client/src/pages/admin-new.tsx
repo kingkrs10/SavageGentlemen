@@ -3053,7 +3053,7 @@ export default function AdminPage() {
                     size="sm"
                     onClick={() => {
                       // Download subscribers as CSV
-                      if (emailSubscribers.length === 0) {
+                      if (!emailSubscribers || emailSubscribers.length === 0) {
                         toast({
                           title: "No subscribers",
                           description: "There are no subscribers to export",
@@ -3178,7 +3178,7 @@ export default function AdminPage() {
                           <h3 className="text-lg font-medium">Error loading subscribers</h3>
                           <p className="text-sm">Please try again later</p>
                         </div>
-                      ) : emailSubscribers.length > 0 ? (
+                      ) : emailSubscribers && emailSubscribers.length > 0 ? (
                         <div className="rounded-md border overflow-hidden">
                           <Table>
                             <TableHeader>
@@ -3194,11 +3194,11 @@ export default function AdminPage() {
                             <TableBody>
                               {emailSubscribers.map(subscriber => (
                                 <TableRow key={subscriber.id}>
-                                  <TableCell>{subscriber.email}</TableCell>
+                                  <TableCell>{subscriber.email || '—'}</TableCell>
                                   <TableCell>
-                                    {subscriber.firstName && subscriber.lastName
+                                    {(subscriber.firstName && subscriber.lastName)
                                       ? `${subscriber.firstName} ${subscriber.lastName}`
-                                      : subscriber.firstName || subscriber.lastName || "—"
+                                      : (subscriber.firstName || subscriber.lastName || "—")
                                     }
                                   </TableCell>
                                   <TableCell>
@@ -3210,13 +3210,13 @@ export default function AdminPage() {
                                     </Badge>
                                   </TableCell>
                                   <TableCell>
-                                    {subscriber.lists && subscriber.lists.length > 0 
-                                      ? subscriber.lists.map(list => list.name).join(", ")
+                                    {(subscriber.lists && Array.isArray(subscriber.lists) && subscriber.lists.length > 0)
+                                      ? subscriber.lists.map((list: any) => list.name || 'Unnamed List').join(", ")
                                       : "—"
                                     }
                                   </TableCell>
                                   <TableCell>
-                                    {new Date(subscriber.createdAt).toLocaleDateString()}
+                                    {subscriber.createdAt ? new Date(subscriber.createdAt).toLocaleDateString() : '—'}
                                   </TableCell>
                                   <TableCell>
                                     <div className="flex items-center gap-2">
@@ -3303,12 +3303,12 @@ export default function AdminPage() {
                           <h3 className="text-lg font-medium">Error loading email lists</h3>
                           <p className="text-sm">Please try again later</p>
                         </div>
-                      ) : emailLists.length > 0 ? (
+                      ) : emailLists && emailLists.length > 0 ? (
                         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                          {emailLists.map(list => (
+                          {emailLists.map((list: any) => (
                             <Card key={list.id}>
                               <CardHeader className="pb-2">
-                                <CardTitle className="text-base">{list.name}</CardTitle>
+                                <CardTitle className="text-base">{list.name || "Untitled List"}</CardTitle>
                                 <CardDescription>{list.description || "No description"}</CardDescription>
                               </CardHeader>
                               <CardContent className="pb-2">
