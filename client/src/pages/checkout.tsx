@@ -643,6 +643,25 @@ export default function Checkout() {
                 <Button 
                   className="w-full" 
                   onClick={async () => {
+                    // Basic validation before proceeding
+                    if (!user) {
+                      toast({
+                        title: "Authentication Required",
+                        description: "Please sign in to claim your free ticket.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    
+                    if (!eventId || !ticketId) {
+                      toast({
+                        title: "Invalid Ticket",
+                        description: "The ticket information is incomplete. Please try again.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    
                     setProcessingFreeTicket(true);
                     try {
                       // Prepare payload once
@@ -662,12 +681,16 @@ export default function Checkout() {
                         response = await apiRequest("POST", "/tickets/free", freeTicketPayload);
                       }
                       
-                      const data = await response.json();
+                      if (!response.ok) {
+                        throw new Error("Server error processing free ticket");
+                      }
                       
+                      const data = await response.json();
                       if (data.success) {
                         toast({
                           title: "Free Ticket Claimed!",
                           description: "Your free ticket has been claimed successfully. Check your email for details.",
+                          variant: "default",
                         });
                         
                         // Redirect to the success page with event and ticket details
@@ -677,24 +700,35 @@ export default function Checkout() {
                         if (ticketId) redirectParams.append('ticketId', ticketId.toString());
                         if (ticketName) redirectParams.append('ticketName', encodeURIComponent(ticketName));
                         
-                        setLocation(`/payment-success?${redirectParams.toString()}`);
+                        // Add a short delay before redirect to ensure toast is seen
+                        setTimeout(() => {
+                          setLocation(`/payment-success?${redirectParams.toString()}`);
+                        }, 1500);
                       } else {
                         throw new Error(data.message || "Failed to claim free ticket");
                       }
                     } catch (error) {
                       console.error("Error claiming free ticket:", error);
+                      const errorMessage = error instanceof Error ? error.message : "Could not claim free ticket. Please try again.";
                       toast({
                         title: "Error",
-                        description: "Could not claim free ticket. Please try again.",
+                        description: errorMessage,
                         variant: "destructive",
                       });
                     } finally {
                       setProcessingFreeTicket(false);
                     }
                   }}
-                  disabled={processingFreeTicket}
+                  disabled={processingFreeTicket || !user}
                 >
-                  Claim Free Ticket
+                  {processingFreeTicket ? (
+                    <>
+                      <span className="animate-pulse">Processing</span>
+                      <span className="ml-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                    </>
+                  ) : (
+                    "Claim Free Ticket"
+                  )}
                 </Button>
               </div>
             )}
@@ -718,6 +752,20 @@ export default function Checkout() {
           <CardDescription>
             Complete your purchase using your preferred payment method.
           </CardDescription>
+          {eventTitle && (
+            <div className="mt-3 pt-3 border-t border-border">
+              <h3 className="text-sm font-medium text-muted-foreground">Order Summary</h3>
+              <div className="mt-2">
+                <div className="flex justify-between items-start py-1">
+                  <div>
+                    <p className="font-medium">{eventTitle}</p>
+                    {ticketName && <p className="text-sm text-muted-foreground">{ticketName}</p>}
+                  </div>
+                  <p className="font-bold">${amount.toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <div className="mb-4">
@@ -912,6 +960,30 @@ export default function Checkout() {
                       paypal-button::before {
                         content: "Pay with PayPal";
                       }
+
+                      paypal-button.loading::before {
+                        content: "Processing...";
+                      }
+                      
+                      paypal-button.loading::after {
+                        content: "";
+                        position: absolute;
+                        top: 50%;
+                        right: 15px;
+                        transform: translateY(-50%);
+                        width: 16px;
+                        height: 16px;
+                        border: 2px solid rgba(255,255,255,0.3);
+                        border-radius: 50%;
+                        border-top-color: #fff;
+                        animation: paypal-button-spinner 0.8s linear infinite;
+                      }
+
+                      @keyframes paypal-button-spinner {
+                        to {
+                          transform: translateY(-50%) rotate(360deg);
+                        }
+                      }
                       
                       paypal-button.error {
                         background-color: #f5f5f5;
@@ -943,7 +1015,16 @@ export default function Checkout() {
                   size="sm" 
                   className="mt-2"
                   onClick={() => {
-                    window.location.reload();
+                    // Add loading class to PayPal button
+                    const paypalButton = document.getElementById('paypal-button');
+                    if (paypalButton) {
+                      paypalButton.classList.add('loading');
+                    }
+                    
+                    // Wait a moment before reloading to show the loading state
+                    setTimeout(() => {
+                      window.location.reload();
+                    }, 800);
                   }}
                 >
                   Refresh PayPal
