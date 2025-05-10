@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
 import { apiRequest } from "@/lib/queryClient";
+import { useUser } from "@/context/UserContext";
 
 export default function TicketScannerPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);

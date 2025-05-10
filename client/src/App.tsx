@@ -256,7 +256,7 @@ function AppContent() {
                 <Router />
               </ErrorBoundary>
             </main>
-            <BottomNavigation user={user} />
+            <BottomNavigation />
             <AuthModal
               isOpen={showAuthModal}
               onClose={() => setShowAuthModal(false)}

@@ -3,12 +3,17 @@ import { useLocation, Link } from "wouter";
 import { Home, CalendarDays, ShoppingBag, Video, Users, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { User } from "@/lib/types";
+import { useUser } from "@/context/UserContext";
 
 interface BottomNavigationProps {
   user?: User | null;
 }
 
-const BottomNavigation = ({ user }: BottomNavigationProps) => {
+const BottomNavigation = ({ user: propUser }: BottomNavigationProps) => {
+  // Get user from context if not provided as prop
+  const { user: contextUser } = useUser();
+  // Use prop user if available, otherwise use context user
+  const user = propUser || contextUser;
   const [location] = useLocation();
 
   // Default navigation items

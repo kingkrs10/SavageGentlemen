@@ -12,6 +12,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import LogoImage from "@/assets/SGFLYERLOGO.png";
+import { useUser } from "@/context/UserContext";
 
 interface HeaderProps {
   user: UserType | null;
@@ -19,7 +20,20 @@ interface HeaderProps {
   onLogout: () => void;
 }
 
-const Header = ({ user, onProfileClick, onLogout }: HeaderProps) => {
+const Header = ({ user: propUser, onProfileClick, onLogout }: HeaderProps) => {
+  // Get user from context if not provided as prop
+  const { user: contextUser, logout } = useUser();
+  // Use prop user if available, otherwise use context user
+  const user = propUser || contextUser;
+  
+  // Use context logout if no handler provided
+  const handleLogout = () => {
+    if (onLogout) {
+      onLogout();
+    } else {
+      logout();
+    }
+  };
   return (
     <header className="sticky top-0 z-50 bg-black border-b border-white/10 dark:bg-black dark:border-white/10 light:bg-white light:border-black/10">
       <div className="container mx-auto px-4 flex flex-col">
@@ -96,7 +110,7 @@ const Header = ({ user, onProfileClick, onLogout }: HeaderProps) => {
                   )}
                   {user.role === "admin" && <DropdownMenuSeparator className="dark:bg-white/10 light:bg-black/10" />}
                   <DropdownMenuItem 
-                    onClick={onLogout}
+                    onClick={handleLogout}
                     className="dark:hover:bg-white/5 dark:focus:bg-white/5 light:hover:bg-black/5 light:focus:bg-black/5"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
