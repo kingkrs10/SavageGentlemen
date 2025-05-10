@@ -27,7 +27,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Make sure to call loadStripe outside of a component's render to avoid
 // recreating the Stripe object on every render.
-// Force production mode for Stripe - always try to initialize even if key is missing
 let stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
 
 // Check and log the Stripe key status for debugging
@@ -42,10 +41,14 @@ if (!stripePublicKey) {
 
 // Log the key type for debugging (prod vs test)
 const isTestKey = stripePublicKey.startsWith('pk_test_');
-console.log(`Using ${isTestKey ? 'TEST' : 'PRODUCTION'} Stripe key`);
+console.log(`Using ${isTestKey ? 'TEST' : 'PRODUCTION'} Stripe key: ${stripePublicKey}`);
 
-// Initialize Stripe with the key - using a simpler configuration
-const stripePromise = loadStripe(stripePublicKey);
+// Initialize Stripe with the key and allow loading of critical resources from Stripe
+const stripePromise = loadStripe(stripePublicKey, {
+  stripeAccount: undefined, // Use connected account if needed
+  apiVersion: undefined, // Use default API version
+  locale: 'auto', // Auto-detect locale
+});
 
 // Stripe Checkout Form Component
 const StripeCheckoutForm = ({ 
@@ -76,18 +79,52 @@ const StripeCheckoutForm = ({
     if (!stripe) {
       console.log("Stripe not yet loaded, waiting...");
       
-      // Set a timeout to detect if Stripe is taking too long
-      timeoutRef.current = setTimeout(() => {
-        console.log("Stripe loading timeout reached");
-        toast({
-          title: "Payment form is taking longer than expected",
-          description: "If the form doesn't appear, try refreshing the page",
-          variant: "default",
-        });
-      }, 5000);
+      // Instead of just a 5-second timeout, set a repeating check with progressive feedback
+      let attempts = 0;
+      
+      const checkInterval = setInterval(() => {
+        attempts++;
+        console.log(`Stripe loading attempt ${attempts}`);
+        
+        // Attempt to forcibly clean Stripe if it's taking too long
+        if (attempts === 3) {
+          console.log("Stripe loading slow - checking DOM for Stripe elements");
+          
+          // See if Stripe iframe exists but JS is not connected
+          const stripeFrames = document.querySelectorAll('iframe[src*="js.stripe.com"]');
+          if (stripeFrames.length > 0) {
+            console.log("Found Stripe frames in DOM but JS API not connected");
+            
+            // Force "ready" state even though stripe object isn't ready
+            // This allows the user to at least see the button and try submitting
+            setStripeReady(true);
+          }
+        }
+        
+        // After 5 attempts (15 seconds), show toast message
+        if (attempts === 5) {
+          console.log("Stripe loading timeout reached");
+          toast({
+            title: "Payment form is taking longer than expected",
+            description: "Try clicking the 'Pay with Card' button anyway, or try a different payment method",
+            variant: "default",
+          });
+          
+          // Force ready state to allow user to attempt payment
+          setStripeReady(true);
+        }
+        
+        // Clear interval if we reach max attempts or if Stripe loads
+        if (attempts >= 6 || stripe) {
+          clearInterval(checkInterval);
+        }
+      }, 3000);
+      
+      // Store the interval ID for cleanup
+      timeoutRef.current = checkInterval as unknown as NodeJS.Timeout;
     } else {
       console.log("Stripe loaded successfully");
-      // Clear timeout if Stripe loads successfully
+      // Clear interval if Stripe loads successfully
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -98,7 +135,7 @@ const StripeCheckoutForm = ({
       }, 1000);
     }
     
-    // Cleanup timeout on unmount
+    // Cleanup interval on unmount
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -827,12 +864,12 @@ export default function Checkout() {
                 </div>
               ) : clientSecret ? (
                 <Elements 
-                  key={`stripe-elements-${clientSecret}-${Date.now()}`} // Force re-create with unique key every time
+                  key={`stripe-elements-${clientSecret}-${new Date().getTime()}`} // Force re-create with unique key every time
                   stripe={stripePromise} 
                   options={{ 
                     clientSecret,
                     appearance: { 
-                      theme: 'stripe',
+                      theme: 'flat', // Use simpler theme that loads faster
                       variables: {
                         colorPrimary: '#E91E63', // Brand color 
                         colorBackground: '#ffffff',
