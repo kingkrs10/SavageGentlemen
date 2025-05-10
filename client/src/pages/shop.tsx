@@ -15,30 +15,19 @@ const SimpleProductCard = ({ product, onAddToCart }: {
 }) => {
   // Use product image when available, fallback to logo
   const imageUrl = product.imageUrl || SGFlyerLogoPng;
+  const [imgError, setImgError] = useState(false);
   
   return (
-    <div className="bg-gray-900 rounded-lg overflow-hidden shadow-lg border border-gray-800">
-      <div className="relative h-48 bg-gray-800 flex items-center justify-center">
+    <div className="group bg-black rounded-xl overflow-hidden shadow-xl border border-gray-800 transition-all hover:border-primary hover:shadow-primary/20">
+      <div className="relative h-72 bg-gray-900 flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-50 transition-opacity z-10"></div>
         <img 
-          src={imageUrl} 
+          src={!imgError ? imageUrl : SGFlyerLogoPng} 
           alt={product.title} 
-          className="h-full w-full object-contain p-2"
-          onError={(e) => {
-            // If image fails to load, use the logo as fallback
-            e.currentTarget.src = SGFlyerLogoPng;
-            e.currentTarget.className = "h-32 w-32 object-contain";
-          }}
+          className="h-full w-full object-contain p-4 transition-transform group-hover:scale-105"
+          onError={() => setImgError(true)}
         />
-      </div>
-      <div className="p-4">
-        <h3 className="font-semibold text-white">{product.title}</h3>
-        <div className="flex justify-between items-center mt-2">
-          <span className="text-primary font-bold">${(product.price / 100).toFixed(2)}</span>
-          <span className="text-xs text-gray-400">
-            {product.sizes && product.sizes.join(", ")}
-          </span>
-        </div>
-        <div className="mt-3">
+        <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-full group-hover:translate-y-0 transition-transform z-20">
           <a 
             href={product.printifyUrl || EXTERNAL_URLS.PRINTIFY_SHOP} 
             target="_blank" 
@@ -46,12 +35,21 @@ const SimpleProductCard = ({ product, onAddToCart }: {
             className="w-full block"
           >
             <Button 
-              className="w-full bg-blue-600 text-white hover:bg-blue-700 transition flex items-center justify-center gap-2"
+              className="w-full bg-primary hover:bg-red-800 text-white font-bold uppercase tracking-wider transition flex items-center justify-center gap-2"
             >
               <ShoppingCart className="h-4 w-4" />
               Buy Now
             </Button>
           </a>
+        </div>
+      </div>
+      <div className="p-5">
+        <h3 className="font-bold text-lg text-white mb-2 group-hover:text-primary transition-colors">{product.title}</h3>
+        <div className="flex justify-between items-center">
+          <span className="text-primary font-bold text-xl">${(product.price / 100).toFixed(2)}</span>
+          <span className="text-sm text-gray-400 uppercase tracking-wider">
+            {product.sizes && product.sizes.join(" · ")}
+          </span>
         </div>
       </div>
     </div>
@@ -110,52 +108,53 @@ const Shop = () => {
   return (
     <div className="pb-20">
       {/* Featured Collection */}
-      <div className="relative rounded-xl overflow-hidden mb-6 shadow-lg">
-        <img 
-          src={SGFlyerLogoPng} 
-          alt="SG Flyer Logo" 
-          className="w-full h-64 object-contain bg-gray-900 p-8"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
-        <div className="absolute bottom-0 left-0 p-6">
-          <Badge className="bg-blue-600 text-white text-sm px-3 py-1 rounded-full mb-2 inline-block">
-            Shop Now
-          </Badge>
-          <h2 className="text-3xl font-heading text-white">SG Merch Collection</h2>
-          <p className="text-lg text-gray-200 mb-4">Caribbean-inspired clothing and accessories</p>
-          <div className="flex flex-wrap gap-3">
-            <a href={EXTERNAL_URLS.PRINTIFY_SHOP} target="_blank" rel="noopener noreferrer">
-              <Button className="bg-blue-600 text-white hover:bg-blue-700 transition">
-                Visit Printify Shop
-              </Button>
-            </a>
-          </div>
+      <div className="relative overflow-hidden mb-8 shadow-2xl border-b-4 border-primary">
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10"></div>
+        <div className="bg-black h-[300px] flex flex-col items-center justify-center relative">
+          <img 
+            src={SGFlyerLogoPng} 
+            alt="SG Logo" 
+            className="w-40 h-40 object-contain mb-2 relative z-20"
+          />
+          <h1 className="text-5xl md:text-6xl font-bold tracking-wider text-white uppercase text-center relative z-20 mb-0">
+            SAVAGE GENTLEMEN
+          </h1>
+          <p className="text-xl text-gray-300 tracking-wide uppercase mt-2 relative z-20">
+            MERCHANDISE • COLLECTION
+          </p>
+        </div>
+        
+        <div className="absolute bottom-0 left-0 right-0 p-6 z-20 flex justify-center">
+          <a href={EXTERNAL_URLS.PRINTIFY_SHOP} target="_blank" rel="noopener noreferrer" className="w-full max-w-xs">
+            <Button className="bg-primary hover:bg-red-800 text-white transition w-full text-lg py-6 uppercase tracking-wider font-bold">
+              SHOP COLLECTION
+            </Button>
+          </a>
         </div>
       </div>
 
       {/* Category Filter */}
-      <div className="bg-gray-900 rounded-lg p-4 mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-semibold">Shop Categories</h3>
+      <div className="max-w-5xl mx-auto mb-10 px-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-2xl font-bold uppercase tracking-wide">Product Categories</h3>
           <Button 
             variant="link" 
-            className="text-sm text-primary p-0 h-auto"
+            className="text-primary hover:text-red-700 font-medium p-0 h-auto transition-colors uppercase"
             onClick={() => setSelectedCategory("all")}
           >
-            Reset
+            View All
           </Button>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-3">
           {PRODUCT_CATEGORIES.map((category) => (
             <Button
               key={category.id}
               variant={selectedCategory === category.id ? "default" : "outline"}
               className={
                 selectedCategory === category.id 
-                  ? "bg-primary text-white" 
-                  : "bg-gray-800 text-white hover:bg-gray-700"
+                  ? "bg-primary text-white border-primary hover:bg-red-800 transition-colors" 
+                  : "border-gray-600 text-white hover:border-white hover:bg-transparent transition-colors"
               }
-              size="sm"
               onClick={() => handleCategorySelect(category.id)}
             >
               {category.label}
@@ -164,47 +163,45 @@ const Shop = () => {
         </div>
       </div>
 
-      {/* Debug Info */}
+      {/* Debug Info - Hidden in production */}
       {error && (
-        <div className="bg-red-900 text-white p-4 rounded-lg mb-4">
-          <AlertCircle className="h-6 w-6 inline-block mr-2" />
-          <span className="font-semibold">Error loading products:</span>
-          <p className="mt-1">{error}</p>
-        </div>
-      )}
-      
-      {products.length > 0 && (
-        <div className="bg-blue-900 text-white p-4 rounded-lg mb-4">
-          <p className="font-semibold">Products Loaded:</p>
-          <p>Total products: {products.length}</p>
-          <p>Categories: {Array.from(new Set(products.map(p => p.category))).join(', ')}</p>
+        <div className="max-w-5xl mx-auto px-4 mb-6">
+          <div className="bg-red-900/80 backdrop-blur text-white p-5 rounded-lg border border-red-700">
+            <div className="flex items-center">
+              <AlertCircle className="h-6 w-6 mr-3 text-red-300" />
+              <span className="font-bold text-lg">Unable to load products</span>
+            </div>
+            <p className="mt-2 text-red-200">{error}</p>
+          </div>
         </div>
       )}
       
       {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="max-w-6xl mx-auto px-4 mb-20">
         {loading ? (
-          <>
-            <Skeleton className="h-64 rounded-lg bg-gray-800" />
-            <Skeleton className="h-64 rounded-lg bg-gray-800" />
-            <Skeleton className="h-64 rounded-lg bg-gray-800" />
-          </>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <Skeleton className="h-[400px] rounded-lg bg-gray-800/50 backdrop-blur" />
+            <Skeleton className="h-[400px] rounded-lg bg-gray-800/50 backdrop-blur" />
+            <Skeleton className="h-[400px] rounded-lg bg-gray-800/50 backdrop-blur" />
+          </div>
         ) : filteredProducts.length > 0 ? (
-          filteredProducts.map((product) => (
-            <SimpleProductCard 
-              key={product.id} 
-              product={product} 
-              onAddToCart={handleAddToCart}
-            />
-          ))
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredProducts.map((product) => (
+              <SimpleProductCard 
+                key={product.id} 
+                product={product} 
+                onAddToCart={handleAddToCart}
+              />
+            ))}
+          </div>
         ) : (
-          <div className="text-center py-8 col-span-full">
-            <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No Products Found</h3>
-            <p className="text-gray-400">
+          <div className="text-center py-16 border border-gray-800 rounded-xl bg-gray-900/50 backdrop-blur">
+            <ShoppingBag className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-2xl font-bold mb-3">No Products Found</h3>
+            <p className="text-gray-400 max-w-md mx-auto">
               {products.length > 0 
-                ? "There are no products matching your filter. Try changing your selection."
-                : "There are no products available. Products may not be loading from the database."
+                ? "There are no products matching the selected category. Please try a different category."
+                : "Our product catalog is currently being updated. Please check back soon."
               }
             </p>
           </div>
@@ -212,19 +209,38 @@ const Shop = () => {
       </div>
       
       {/* Shop Options */}
-      <div className="bg-gray-900 rounded-lg p-6 text-center">
-        <h3 className="text-xl font-semibold mb-3">Shop Our Collection</h3>
-        <p className="text-gray-400 mb-4">Visit our print-on-demand shop for the latest Savage Gentlemen merch</p>
-        
-        <div className="mt-6 max-w-md mx-auto">
-          <div className="bg-gray-800 p-5 rounded-lg">
-            <h4 className="font-semibold text-lg mb-2">Printify Shop</h4>
-            <p className="text-gray-400 text-sm mb-4">Premium quality apparel and accessories</p>
-            <a href={EXTERNAL_URLS.PRINTIFY_SHOP} target="_blank" rel="noopener noreferrer">
-              <Button size="lg" className="bg-blue-600 text-white hover:bg-blue-700 transition w-full">
-                Shop on Printify
+      <div className="bg-black py-20 border-t-4 border-primary relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/70"></div>
+        <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
+          <div className="inline-block mb-6">
+            <img 
+              src={SGFlyerLogoPng}
+              alt="SG Logo" 
+              className="w-20 h-20 mx-auto object-contain"
+            />
+          </div>
+          <h3 className="text-3xl font-bold uppercase tracking-wider mb-4">EXCLUSIVE COLLECTION</h3>
+          <p className="text-gray-300 text-lg mb-10 max-w-2xl mx-auto">
+            Discover our complete collection of premium Caribbean-inspired clothing and accessories on our official Printify store.
+          </p>
+          
+          <div className="flex flex-col items-center">
+            <a 
+              href={EXTERNAL_URLS.PRINTIFY_SHOP} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="w-full max-w-sm"
+            >
+              <Button 
+                size="lg" 
+                className="bg-primary hover:bg-red-800 text-white text-lg uppercase tracking-wider font-bold py-7 w-full"
+              >
+                SHOP COMPLETE COLLECTION
               </Button>
             </a>
+            <p className="mt-4 text-gray-400 text-sm">
+              All products are designed exclusively by Savage Gentlemen
+            </p>
           </div>
         </div>
       </div>
