@@ -33,9 +33,11 @@ export function LazyImage({
   const [error, setError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
   const [inView, setInView] = useState(false);
+  const [attemptedFallback, setAttemptedFallback] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState<string | null>(null);
   
   // Properly normalize the image URL
-  const normalizedSrc = getNormalizedImageUrl(src);
+  const normalizedSrc = currentSrc || getNormalizedImageUrl(src);
   
   // Use Intersection Observer to detect when image is in viewport
   useEffect(() => {
@@ -63,6 +65,14 @@ export function LazyImage({
     };
   }, []);
 
+  // Reset component state when src changes
+  useEffect(() => {
+    setIsLoaded(false);
+    setError(false);
+    setAttemptedFallback(false);
+    setCurrentSrc(null);
+  }, [src]);
+
   // Handle image load success
   const onLoad = () => {
     // Only show logs in development to avoid console spam in production
@@ -78,6 +88,21 @@ export function LazyImage({
     if (process.env.NODE_ENV !== 'production') {
       console.error("Error loading image:", normalizedSrc);
     }
+    
+    // Try alternative URL formats if this is a local upload and we haven't tried fallbacks yet
+    if (src?.includes('uploads/') && !attemptedFallback) {
+      setAttemptedFallback(true);
+      
+      // If URL has a leading slash, try without; if it doesn't have one, try with it
+      const alternativeSrc = src.startsWith('/') ? src.substring(1) : `/${src}`;
+      setCurrentSrc(alternativeSrc);
+      
+      if (process.env.NODE_ENV !== 'production') {
+        console.log("Trying alternative image URL format:", alternativeSrc);
+      }
+      return;
+    }
+    
     setError(true);
     setIsLoaded(true); // Mark as loaded even though it's an error
   };

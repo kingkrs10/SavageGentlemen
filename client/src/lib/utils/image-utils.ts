@@ -14,7 +14,8 @@ export function getNormalizedImageUrl(url: string | null): string {
 
   // Handle local upload URLs (containing uploads/)
   if (url.includes('uploads/')) {
-    // Make sure it starts with a slash for correct path resolution
+    // Make sure URL has the correct format to work with our static file server
+    // Keep leading slash if it exists, add it if it doesn't
     if (!url.startsWith('/')) {
       return '/' + url;
     }
