@@ -71,7 +71,7 @@ const TicketQRScanner: React.FC = () => {
       }
       
       // Validate the ticket with the server
-      const response = await apiRequest('POST', '/admin/tickets/validate', {
+      const response = await apiRequest('POST', '/api/admin/tickets/validate', {
         orderId,
         ticketId
       });

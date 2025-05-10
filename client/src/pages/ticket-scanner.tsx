@@ -26,7 +26,7 @@ export default function TicketScannerPage() {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <h1 className="text-2xl font-bold mb-6">Access Denied</h1>
-        <p className="mb-6">You need admin privileges to access the ticket scanner.</p>
+        <p className="mb-6">You need admin or moderator privileges to access the ticket scanner.</p>
         <Button 
           onClick={() => navigate('/admin')}
           variant="default"
