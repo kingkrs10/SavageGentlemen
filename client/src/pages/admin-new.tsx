@@ -1546,7 +1546,20 @@ export default function AdminPage() {
                       }
                     />
                   </div>
-                  {/* Price field removed - use tickets for pricing */}
+                  <div className="grid gap-2">
+                    <Label htmlFor="price">Base Price (for display)</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Enter base price (e.g. 20.00)"
+                      value={eventForm.price}
+                      onChange={(e) => 
+                        setEventForm({ ...eventForm, price: parseFloat(e.target.value) || 0 })
+                      }
+                    />
+                  </div>
                   <div className="grid gap-2">
                     <Label htmlFor="imageUrl">Image URL or Upload</Label>
                     <div className="flex flex-col gap-3">
