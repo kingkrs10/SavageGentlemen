@@ -13,9 +13,10 @@ import NotFound from "@/pages/not-found";
 import { Skeleton } from "@/components/ui/skeleton";
 import BrandLoader from "@/components/ui/BrandLoader";
 
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { User } from "@/lib/types";
+import { UserProvider, useUser } from "@/context/UserContext";
 
 // Lazily load pages for code splitting
 const Home = lazy(() => import("@/pages/home"));
