@@ -30,6 +30,7 @@ const Admin = lazy(() => import("@/pages/admin-new"));
 const PasswordReset = lazy(() => import("@/pages/password-reset"));
 const AnalyticsDashboard = lazy(() => import("@/pages/analytics-dashboard"));
 const MyTickets = lazy(() => import("@/pages/my-tickets"));
+const TicketScanner = lazy(() => import("@/pages/ticket-scanner"));
 
 function Router() {
   return (
@@ -54,6 +55,7 @@ function Router() {
         <Route path="/password-reset" component={PasswordReset} />
         <Route path="/analytics" component={AnalyticsDashboard} />
         <Route path="/my-tickets" component={MyTickets} />
+        <Route path="/ticket-scanner" component={TicketScanner} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
