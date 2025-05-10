@@ -44,12 +44,8 @@ if (!stripePublicKey) {
 const isTestKey = stripePublicKey.startsWith('pk_test_');
 console.log(`Using ${isTestKey ? 'TEST' : 'PRODUCTION'} Stripe key`);
 
-// Initialize Stripe with the key
-const stripePromise = loadStripe(stripePublicKey, {
-  stripeAccount: undefined, // Use the direct account
-  apiVersion: '2023-10-16',
-  locale: 'en' // English locale for payment UI
-});
+// Initialize Stripe with the key - using a simpler configuration
+const stripePromise = loadStripe(stripePublicKey);
 
 // Stripe Checkout Form Component
 const StripeCheckoutForm = ({ 
@@ -1074,7 +1070,7 @@ export default function Checkout() {
                     </div>
                     <div className="border-t border-b border-border py-4 mb-4">
                       <p className="font-medium">Total Amount: ${amount.toFixed(2)} {currency}</p>
-                      <p className="text-sm text-muted-foreground mt-1">Send payment to: <span className="font-medium">$SavageGentlemen</span></p>
+                      <p className="text-sm text-muted-foreground mt-1">Send payment to: <span className="font-medium">$SavageGentlem3n</span></p>
                     </div>
                     <div className="space-y-4">
                       <div className="text-left p-3 bg-gray-100 dark:bg-gray-700 rounded-md">
@@ -1082,7 +1078,7 @@ export default function Checkout() {
                         <ol className="text-sm list-decimal pl-5 space-y-1">
                           <li>Open Cash App on your phone</li>
                           <li>Tap the $ icon and enter ${amount.toFixed(2)}</li>
-                          <li>In the "To" field, enter: $SavageGentlemen</li>
+                          <li>In the "To" field, enter: $SavageGentlem3n</li>
                           <li>Add note: "{eventTitle} - {ticketName || 'Ticket'}"</li>
                           <li>Tap "Pay"</li>
                         </ol>
@@ -1092,17 +1088,17 @@ export default function Checkout() {
                         variant="outline"
                         onClick={() => {
                           // Open Cash App if on mobile, or copy to clipboard if on desktop
-                          const cashAppUrl = `https://cash.app/$SavageGentlemen/${amount.toFixed(2)}`;
+                          const cashAppUrl = `https://cash.app/$SavageGentlem3n/${amount.toFixed(2)}`;
                           
                           // Try to open Cash App
                           window.open(cashAppUrl, '_blank');
                           
                           // Also copy the $cashtag to clipboard as backup
-                          navigator.clipboard.writeText('$SavageGentlemen')
+                          navigator.clipboard.writeText('$SavageGentlem3n')
                             .then(() => {
                               toast({
                                 title: "Copied to clipboard",
-                                description: "$SavageGentlemen has been copied to your clipboard",
+                                description: "$SavageGentlem3n has been copied to your clipboard",
                               });
                             })
                             .catch(err => {
