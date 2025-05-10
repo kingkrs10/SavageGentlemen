@@ -31,13 +31,28 @@ const SimpleProductCard = ({ product, onAddToCart }: {
             {product.sizes && product.sizes.join(", ")}
           </span>
         </div>
-        <Button 
-          className="w-full bg-primary text-white hover:bg-red-800 transition mt-3 flex items-center justify-center gap-2"
-          onClick={() => onAddToCart(product.id)}
-        >
-          <ShoppingCart className="h-4 w-4" />
-          Buy on Etsy
-        </Button>
+        <div className="grid grid-cols-1 gap-2 mt-3">
+          <Button 
+            className="w-full bg-primary text-white hover:bg-red-800 transition flex items-center justify-center gap-2"
+            onClick={() => onAddToCart(product.id)}
+          >
+            <ShoppingCart className="h-4 w-4" />
+            Buy on Etsy
+          </Button>
+          <a 
+            href={EXTERNAL_URLS.PRINTFUL_SHOP} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="w-full"
+          >
+            <Button 
+              className="w-full bg-blue-600 text-white hover:bg-blue-700 transition flex items-center justify-center gap-2"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Similar on Printful
+            </Button>
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -108,11 +123,18 @@ const Shop = () => {
           </Badge>
           <h2 className="text-3xl font-heading text-white">SG Merch Collection</h2>
           <p className="text-lg text-gray-200 mb-4">Caribbean-inspired clothing and accessories</p>
-          <a href={EXTERNAL_URLS.ETSY_SHOP} target="_blank" rel="noopener noreferrer">
-            <Button className="bg-primary text-white hover:bg-red-800 transition">
-              Visit Etsy Shop
-            </Button>
-          </a>
+          <div className="flex flex-wrap gap-3">
+            <a href={EXTERNAL_URLS.ETSY_SHOP} target="_blank" rel="noopener noreferrer">
+              <Button className="bg-primary text-white hover:bg-red-800 transition">
+                Visit Etsy Shop
+              </Button>
+            </a>
+            <a href={EXTERNAL_URLS.PRINTFUL_SHOP} target="_blank" rel="noopener noreferrer">
+              <Button className="bg-blue-600 text-white hover:bg-blue-700 transition">
+                Visit Printful Shop
+              </Button>
+            </a>
+          </div>
         </div>
       </div>
 
@@ -194,15 +216,32 @@ const Shop = () => {
         )}
       </div>
       
-      {/* Bottom CTA */}
+      {/* Shop Options */}
       <div className="bg-gray-900 rounded-lg p-6 text-center">
-        <h3 className="text-xl font-semibold mb-3">Can't find what you're looking for?</h3>
-        <p className="text-gray-400 mb-4">Visit our full Etsy shop for more products and options</p>
-        <a href={EXTERNAL_URLS.ETSY_SHOP} target="_blank" rel="noopener noreferrer">
-          <Button size="lg" className="bg-primary text-white hover:bg-red-800 transition">
-            Browse Full Etsy Shop
-          </Button>
-        </a>
+        <h3 className="text-xl font-semibold mb-3">Shop Our Collections</h3>
+        <p className="text-gray-400 mb-4">Choose where you'd like to shop for Savage Gentlemen merch</p>
+        
+        <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6">
+          <div className="bg-gray-800 p-5 rounded-lg flex-1">
+            <h4 className="font-semibold text-lg mb-2">Etsy Shop</h4>
+            <p className="text-gray-400 text-sm mb-4">Handcrafted items and exclusive designs</p>
+            <a href={EXTERNAL_URLS.ETSY_SHOP} target="_blank" rel="noopener noreferrer">
+              <Button size="lg" className="bg-primary text-white hover:bg-red-800 transition w-full">
+                Shop on Etsy
+              </Button>
+            </a>
+          </div>
+          
+          <div className="bg-gray-800 p-5 rounded-lg flex-1">
+            <h4 className="font-semibold text-lg mb-2">Printful Shop</h4>
+            <p className="text-gray-400 text-sm mb-4">Print-on-demand apparel and accessories</p>
+            <a href={EXTERNAL_URLS.PRINTFUL_SHOP} target="_blank" rel="noopener noreferrer">
+              <Button size="lg" className="bg-blue-600 text-white hover:bg-blue-700 transition w-full">
+                Shop on Printful
+              </Button>
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );
