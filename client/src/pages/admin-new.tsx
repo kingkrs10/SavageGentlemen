@@ -290,6 +290,7 @@ export default function AdminPage() {
     const queryParams = getSubscriberFilterParams(overrides);
     // Update the params state to trigger a new query
     setSubscriberParams(queryParams);
+    console.log("Applied filters:", queryParams);
   };
   
   const [emailListForm, setEmailListForm] = useState({
@@ -494,6 +495,13 @@ export default function AdminPage() {
   
   // Create subscriber filter params state
   const [subscriberParams, setSubscriberParams] = useState({});
+  
+  // Log subscriber data when it changes
+  useEffect(() => {
+    if (emailSubscribers) {
+      console.log("Email subscribers data:", emailSubscribers);
+    }
+  }, [emailSubscribers]);
   
   // Fetch email subscribers with filter parameters
   const {
@@ -4003,8 +4011,8 @@ export default function AdminPage() {
                                                 title: "Subscriber Deleted",
                                                 description: "Subscriber has been removed successfully"
                                               });
-                                              // Refresh subscribers list
-                                              queryClient.invalidateQueries({queryKey: ["/api/email-marketing/subscribers"]});
+                                              // Refresh subscribers list with current filters
+                                              setSubscriberParams({...subscriberParams});
                                             })
                                             .catch(err => {
                                               toast({
