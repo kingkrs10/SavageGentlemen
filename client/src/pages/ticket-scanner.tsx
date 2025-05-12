@@ -37,13 +37,12 @@ export default function TicketScannerPage() {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
           const parsed = JSON.parse(storedUser);
-          userId = parsed.id || 
-                  (parsed.data ? parsed.data.id : '') || 
-                  (parsed.status === 'success' && parsed.data ? parsed.data.id : '');
+          userId = parsed.data?.id?.toString() || '';
+          console.log("Extracted userId for staff check:", userId);
         }
         
         // Make a direct API call to check access with staff endpoint
-        const response = await fetch('/api/staff/me', {
+        const response = await apiRequest('GET', '/api/staff/me', null, {
           headers: {
             'user-id': userId
           }
