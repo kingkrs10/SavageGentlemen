@@ -552,20 +552,30 @@ export default function AdminPage() {
   const {
     data: users = [],
     isLoading: usersLoading,
-    error: usersError
+    error: usersError,
+    isError: isUsersError
   } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
     enabled: !!currentUser,
+    onSuccess: (data) => console.log("Users loaded successfully:", data?.length),
+    onError: (error) => console.error("Error loading users:", error),
+    retry: 3,
+    refetchOnWindowFocus: false
   });
   
   // Fetch all tickets
   const {
     data: tickets = [],
     isLoading: ticketsLoading,
-    error: ticketsError
+    error: ticketsError,
+    isError: isTicketsError
   } = useQuery<Ticket[]>({
     queryKey: ["/api/admin/tickets"],
     enabled: !!currentUser,
+    onSuccess: (data) => console.log("Tickets loaded successfully:", data?.length),
+    onError: (error) => console.error("Error loading tickets:", error),
+    retry: 3,
+    refetchOnWindowFocus: false
   });
   
   // Fetch orders
@@ -1876,31 +1886,31 @@ export default function AdminPage() {
             )}
           </div>
 
-          <Tabs defaultValue="events" className="space-y-6">
-            <TabsList>
-            <TabsTrigger value="events">Events</TabsTrigger>
-            <TabsTrigger value="tickets">Tickets</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="livestreams">Livestreams</TabsTrigger>
-            <TabsTrigger value="inventory">
-              <div className="flex items-center gap-1">
-                <Package className="h-4 w-4" />
-                <span>Inventory</span>
-              </div>
-            </TabsTrigger>
-            <TabsTrigger value="email-marketing">
-              <div className="flex items-center gap-1">
-                <MailIcon className="h-4 w-4" />
-                <span>Email Marketing</span>
-              </div>
-            </TabsTrigger>
-            <TabsTrigger value="analytics">
-              <div className="flex items-center gap-1">
-                <BarChart className="h-4 w-4" />
-                <span>Analytics</span>
-              </div>
-            </TabsTrigger>
-          </TabsList>
+          <Tabs defaultValue="events" className="space-y-6" onValueChange={(value) => console.log("Tab changed to:", value)}>
+            <TabsList className="mb-4 flex flex-wrap">
+              <TabsTrigger value="events">Events</TabsTrigger>
+              <TabsTrigger value="tickets">Tickets</TabsTrigger>
+              <TabsTrigger value="users">Users</TabsTrigger>
+              <TabsTrigger value="livestreams">Livestreams</TabsTrigger>
+              <TabsTrigger value="inventory">
+                <div className="flex items-center gap-1">
+                  <Package className="h-4 w-4" />
+                  <span>Inventory</span>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger value="email-marketing">
+                <div className="flex items-center gap-1">
+                  <MailIcon className="h-4 w-4" />
+                  <span>Email Marketing</span>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger value="analytics">
+                <div className="flex items-center gap-1">
+                  <BarChart className="h-4 w-4" />
+                  <span>Analytics</span>
+                </div>
+              </TabsTrigger>
+            </TabsList>
           
           <TabsContent value="events">
             <Card>
