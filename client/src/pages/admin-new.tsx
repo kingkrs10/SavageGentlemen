@@ -263,15 +263,15 @@ export default function AdminPage() {
       queryParams.search = overrides.search;
     }
     
-    if (subscriberStatusFilter && !('status' in overrides)) {
+    if (subscriberStatusFilter && subscriberStatusFilter !== 'all' && !('status' in overrides)) {
       queryParams.status = subscriberStatusFilter;
-    } else if (overrides.status !== null && overrides.status) {
+    } else if (overrides.status !== null && overrides.status && overrides.status !== 'all') {
       queryParams.status = overrides.status;
     }
     
-    if (subscriberListFilter && !('listId' in overrides)) {
+    if (subscriberListFilter && subscriberListFilter !== 'all' && !('listId' in overrides)) {
       queryParams.listId = subscriberListFilter;
-    } else if (overrides.listId !== null && overrides.listId) {
+    } else if (overrides.listId !== null && overrides.listId && overrides.listId !== 'all') {
       queryParams.listId = overrides.listId;
     }
     
@@ -3873,7 +3873,7 @@ export default function AdminPage() {
                               <SelectValue placeholder="Filter by status" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">All statuses</SelectItem>
+                              <SelectItem value="all">All statuses</SelectItem>
                               <SelectItem value="active">Active</SelectItem>
                               <SelectItem value="unsubscribed">Unsubscribed</SelectItem>
                               <SelectItem value="bounced">Bounced</SelectItem>
@@ -3890,7 +3890,7 @@ export default function AdminPage() {
                               <SelectValue placeholder="Filter by list" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">All lists</SelectItem>
+                              <SelectItem value="all">All lists</SelectItem>
                               {emailLists && emailLists.map((list: any) => (
                                 <SelectItem key={list.id} value={list.id.toString()}>
                                   {list.name}
