@@ -523,9 +523,11 @@ emailMarketingRouter.post(
         console.error("Error analyzing file:", error);
       }
       
-      // Process CSV file with more forgiving options
+      // Process CSV file using a more reliable approach
       const results: any[] = [];
-      const parserOptions = {
+      
+      // Simpler parse options without causing TypeScript errors
+      const parserOptions: any = {
         columns: true,
         skip_empty_lines: true,
         trim: true,
@@ -533,25 +535,82 @@ emailMarketingRouter.post(
         relax_quotes: true,
         relax_column_count: true,
         bom: true, // Handle BOM explicitly
-        encoding: 'utf8',
-        comment: '#', // Skip lines that start with #
-        from_line: 1 // Start from the first line
+        comment: '#' // Skip lines that start with #
       };
       
       console.log("Starting CSV parsing with options:", parserOptions);
       
-      const parser = fs
-        .createReadStream(filePath)
-        .pipe(parse(parserOptions));
+      // Fallback to basic CSV parsing if advanced parsing fails
+      try {
+        // Try parsing the file directly first as a simpler approach
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        console.log(`Read file contents (first 100 chars): ${fileContent.substring(0, 100)}...`);
         
-      // Add error handlers to parser stream
-      parser.on('error', (error) => {
-        console.error("CSV parsing error:", error);
-      });
-      
-      parser.on('skip', (error) => {
-        console.warn("Skipped line in CSV:", error.message);
-      });
+        // Import all records at once instead of streaming for better error handling
+        const records = await new Promise<any[]>((resolve, reject) => {
+          parse(fileContent, parserOptions, (err, output) => {
+            if (err) {
+              console.error("Error parsing CSV:", err);
+              reject(err);
+            } else {
+              console.log(`Successfully parsed ${output.length} records`);
+              resolve(output);
+            }
+          });
+        });
+        
+        // Successfully parsed records, add them to results
+        results.push(...records);
+        console.log(`Added ${records.length} records to results`);
+      } catch (error) {
+        console.error("Failed to parse CSV file directly:", error);
+        
+        // Try fallback method with streaming parser
+        try {
+          console.log("Attempting fallback CSV parsing method with streaming...");
+          const fileStream = fs.createReadStream(filePath, { encoding: 'utf8' });
+          
+          // Add error handler to the file stream
+          fileStream.on('error', (streamError) => {
+            console.error("Error reading CSV file stream:", streamError);
+          });
+          
+          // Use a simpler parser configuration
+          const fallbackParser = parse({
+            columns: true,
+            skip_empty_lines: true
+          });
+          
+          // Add error handlers to parser stream
+          fallbackParser.on('error', (parserError) => {
+            console.error("CSV parsing error in fallback:", parserError);
+          });
+          
+          const parser = fileStream.pipe(fallbackParser);
+          
+          // Process records in a safer way
+          for await (const record of parser) {
+            if (record && typeof record === 'object') {
+              results.push(record);
+            }
+          }
+          
+          console.log(`Fallback parser processed ${results.length} records`);
+          
+          if (results.length === 0) {
+            return res.status(400).json({
+              message: "Could not parse CSV file",
+              error: "The file format is not recognized as valid CSV"
+            });
+          }
+        } catch (fallbackError) {
+          console.error("Fallback CSV parsing also failed:", fallbackError);
+          return res.status(500).json({
+            message: "CSV parsing failed with all methods",
+            error: "Please check the CSV file format and try again"
+          });
+        }
+      }
       
       try {
         // Get a preview of the headers if available
