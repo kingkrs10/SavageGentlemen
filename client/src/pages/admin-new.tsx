@@ -3821,12 +3821,25 @@ export default function AdminPage() {
                             <div className="flex flex-col gap-2">
                               <Button 
                                 variant="outline" 
-                                size="sm" 
+                                size="sm"
+                                className="sg-btn-outline"
                                 onClick={() => {
                                   // Open file input for CSV upload
-                                  const fileInput = document.getElementById('csv-file-input');
+                                  console.log("Import CSV button clicked");
+                                  const fileInput = document.getElementById('csv-file-input') as HTMLInputElement;
                                   if (fileInput) {
+                                    fileInput.value = ""; // Clear any previous selection
                                     fileInput.click();
+                                    toast({
+                                      title: "Select CSV File",
+                                      description: "Choose a CSV file to import subscribers",
+                                    });
+                                  } else {
+                                    toast({
+                                      title: "Error",
+                                      description: "File input element not found",
+                                      variant: "destructive"
+                                    });
                                   }
                                 }}
                               >
@@ -3900,11 +3913,17 @@ export default function AdminPage() {
                             <input 
                               type="file" 
                               id="csv-file-input" 
-                              accept=".csv" 
+                              name="csv-file-input"
+                              accept=".csv,text/csv,application/csv,application/vnd.ms-excel" 
                               className="hidden" 
                               onChange={(e) => {
+                                console.log("File input changed");
                                 const file = e.target.files?.[0];
-                                if (!file) return;
+                                if (!file) {
+                                  console.log("No file selected");
+                                  return;
+                                }
+                                console.log("File selected:", file.name, file.type, file.size);
                                 
                                 // Create form data for upload
                                 const formData = new FormData();
@@ -4291,8 +4310,13 @@ export default function AdminPage() {
                       <div className="flex justify-between items-center">
                         <h3 className="text-lg font-medium">Email Lists</h3>
                         <Button 
-                          size="sm" 
-                          onClick={() => setListFormOpen(true)}
+                          size="sm"
+                          className="sg-btn" 
+                          onClick={() => {
+                            // Open the create list dialog
+                            setEmailListForm({ name: '', description: '', isActive: true });
+                            setListFormOpen(true);
+                          }}
                         >
                           <Plus className="h-4 w-4 mr-2" />
                           New List
