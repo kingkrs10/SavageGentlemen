@@ -236,6 +236,76 @@ export default function AdminPage() {
   const [, navigate] = useLocation();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string>("");
+  const [pageError, setPageError] = useState<string | null>(null);
+  
+  // Generic error handler for admin API calls
+  const handleApiError = (action: string, error: any) => {
+    console.error(`Error ${action}:`, error);
+    
+    // Show toast notification
+    toast({
+      title: "Operation Failed",
+      description: `Failed to ${action.toLowerCase()}. Please try again.`,
+      variant: "destructive"
+    });
+    
+    // Set page error if it's a critical action
+    if (action.includes("load") || action.includes("authentication")) {
+      setPageError(`Failed to ${action.toLowerCase()}. Please refresh or try again later.`);
+    }
+  };
+  
+  // Check if user is logged in and is admin on component mount
+  useEffect(() => {
+    const checkUserAuth = async () => {
+      try {
+        // Get the current user from localStorage
+        const storedUser = localStorage.getItem("user");
+        
+        if (storedUser) {
+          // Parse the stored user
+          const user = JSON.parse(storedUser);
+          
+          // Handle both formats: { data: { ... } } and direct { ... }
+          const userData = user.data || user;
+          
+          // Set the current user
+          setCurrentUser(userData);
+          
+          // Log for debugging
+          console.log("Admin page loaded with user:", userData);
+          console.log("User role:", userData.role);
+          
+          try {
+            // Verify the user role with the server
+            const response = await apiRequest("GET", "/api/admin/me");
+            if (response.ok) {
+              console.log("User confirmed as admin by server");
+              // Ensure we're using the latest user data from the server
+              const adminData = await response.json();
+              setCurrentUser(adminData);
+            }
+          } catch (apiError) {
+            // Don't throw the user out of the admin page if the API call fails
+            // as long as they have a valid role in localStorage
+            console.error("Error verifying admin status with server:", apiError);
+          }
+        } else {
+          console.log("No user found in localStorage");
+          toast({
+            title: "Authentication Required",
+            description: "You must be logged in to view this page",
+            variant: "destructive"
+          });
+          navigate("/");
+        }
+      } catch (error) {
+        handleApiError("checking user authentication", error);
+      }
+    };
+    
+    checkUserAuth();
+  }, [navigate, toast]);
   
   // Form states
   const [userForm, setUserForm] = useState({
@@ -1754,45 +1824,60 @@ export default function AdminPage() {
   // Render main component
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-            <p className="text-muted-foreground">
-              Manage your products, events, users, and more.
-            </p>
+      {pageError ? (
+        <div className="p-6 bg-destructive/10 rounded-lg border border-destructive">
+          <div className="flex items-center gap-3 mb-4">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+            <h2 className="text-xl font-semibold">Error Loading Admin Dashboard</h2>
           </div>
-          {currentUser && (
-            <div className="flex items-center space-x-2">
-              <div className="flex flex-col items-end">
-                <p className="text-sm font-medium">{currentUser?.username || "User"}</p>
-                <p className="text-xs text-muted-foreground">
-                  {currentUser?.role === "admin" 
-                    ? "Administrator" 
-                    : currentUser?.role === "moderator" 
-                    ? "Moderator" 
-                    : "User"}
-                </p>
-              </div>
-              <Avatar>
-                <AvatarFallback>
-                  {currentUser?.displayName 
-                    ? currentUser.displayName.split(" ").map(n => n[0]).join("").toUpperCase()
-                    : currentUser?.username 
-                      ? currentUser.username.slice(0, 2).toUpperCase()
-                      : "U"
-                  }
-                </AvatarFallback>
-                {currentUser?.avatar && (
-                  <AvatarImage src={currentUser.avatar} alt={currentUser?.username || "User"} />
-                )}
-              </Avatar>
-            </div>
-          )}
+          <p className="mb-4">{pageError}</p>
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.reload()}
+          >
+            Refresh Page
+          </Button>
         </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+              <p className="text-muted-foreground">
+                Manage your products, events, users, and more.
+              </p>
+            </div>
+            {currentUser && (
+              <div className="flex items-center space-x-2">
+                <div className="flex flex-col items-end">
+                  <p className="text-sm font-medium">{currentUser?.username || "User"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {currentUser?.role === "admin" 
+                      ? "Administrator" 
+                      : currentUser?.role === "moderator" 
+                      ? "Moderator" 
+                      : "User"}
+                  </p>
+                </div>
+                <Avatar>
+                  <AvatarFallback>
+                    {currentUser?.displayName 
+                      ? currentUser.displayName.split(" ").map(n => n[0]).join("").toUpperCase()
+                      : currentUser?.username 
+                        ? currentUser.username.slice(0, 2).toUpperCase()
+                        : "U"
+                    }
+                  </AvatarFallback>
+                  {currentUser?.avatar && (
+                    <AvatarImage src={currentUser.avatar} alt={currentUser?.username || "User"} />
+                  )}
+                </Avatar>
+              </div>
+            )}
+          </div>
 
-        <Tabs defaultValue="events" className="space-y-6">
-          <TabsList>
+          <Tabs defaultValue="events" className="space-y-6">
+            <TabsList>
             <TabsTrigger value="events">Events</TabsTrigger>
             <TabsTrigger value="tickets">Tickets</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
