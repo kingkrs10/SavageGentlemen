@@ -338,6 +338,10 @@ emailMarketingRouter.post(
         }));
       
       try {
+        // Get a preview of the headers if available
+        let csvHeaders: string[] = [];
+        
+        // Handle each record from the CSV
         for await (const record of parser) {
           // Skip empty records or invalid types
           if (!record || typeof record !== 'object') {
@@ -345,8 +349,28 @@ emailMarketingRouter.post(
             continue;
           }
           
-          // Log record for debugging
-          console.log("Processing CSV record:", record);
+          // Get the headers from the first record
+          if (results.length === 0) {
+            csvHeaders = Object.keys(record);
+            console.log("CSV Headers:", csvHeaders);
+            
+            // Detect format and log information about it
+            const isEventTicketFormat = csvHeaders.some(header => 
+              header.includes('Event') || 
+              header.includes('Ticket') || 
+              header.includes('Code') || 
+              header.includes('Entitlement')
+            );
+            
+            if (isEventTicketFormat) {
+              console.log("Detected event ticket CSV format, will look for attendee/buyer email fields");
+            }
+          }
+          
+          // Log record for debugging (but only the first few to avoid console spam)
+          if (results.length < 2) {
+            console.log("Processing CSV record:", record);
+          }
           
           // Safely extract values with multiple possible column names
           const getField = (fieldNames: string[]): string => {

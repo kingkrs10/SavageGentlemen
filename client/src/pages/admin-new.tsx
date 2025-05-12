@@ -15,6 +15,12 @@ import {
 } from "@/components/ui/select";
 import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { 
@@ -3190,36 +3196,69 @@ export default function AdminPage() {
                               <Upload className="h-4 w-4 mr-2" />
                               Import CSV
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                // Generate a template CSV
-                                const headers = "email,firstName,lastName,source\n";
-                                const row1 = "subscriber@example.com,John,Doe,website\n";
-                                const row2 = "another@example.com,Jane,Smith,event\n";
-                                const csvContent = headers + row1 + row2;
-                                
-                                // Create and download the template file
-                                const blob = new Blob([csvContent], { type: 'text/csv' });
-                                const url = window.URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.setAttribute('hidden', '');
-                                a.setAttribute('href', url);
-                                a.setAttribute('download', 'subscribers-template.csv');
-                                document.body.appendChild(a);
-                                a.click();
-                                document.body.removeChild(a);
-                                
-                                toast({
-                                  title: "Template Downloaded",
-                                  description: "A CSV template has been downloaded. Use this format for best results."
-                                });
-                              }}
-                            >
-                              <Download className="h-4 w-4 mr-2" />
-                              Download Template
-                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                >
+                                  <Download className="h-4 w-4 mr-2" />
+                                  Download Template
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                <DropdownMenuItem onClick={() => {
+                                  // Standard subscriber template
+                                  const headers = "email,firstName,lastName,source\n";
+                                  const row1 = "subscriber@example.com,John,Doe,website\n";
+                                  const row2 = "another@example.com,Jane,Smith,event\n";
+                                  const csvContent = headers + row1 + row2;
+                                  
+                                  // Create and download
+                                  const blob = new Blob([csvContent], { type: 'text/csv' });
+                                  const url = window.URL.createObjectURL(blob);
+                                  const a = document.createElement('a');
+                                  a.setAttribute('hidden', '');
+                                  a.setAttribute('href', url);
+                                  a.setAttribute('download', 'subscribers-template.csv');
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  document.body.removeChild(a);
+                                  
+                                  toast({
+                                    title: "Standard Template Downloaded",
+                                    description: "Basic subscriber template with email, name and source fields."
+                                  });
+                                }}>
+                                  Standard Format
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => {
+                                  // Event ticket format template
+                                  const headers = "Event name,Event date,Buyer first name,Buyer last name,Buyer email,Ticket type\n";
+                                  const row1 = "Rhythm in Riddim,2025-06-15,John,Doe,john.doe@example.com,General Admission\n";
+                                  const row2 = "Rhythm in Riddim,2025-06-15,Jane,Smith,jane.smith@example.com,VIP\n";
+                                  const csvContent = headers + row1 + row2;
+                                  
+                                  // Create and download
+                                  const blob = new Blob([csvContent], { type: 'text/csv' });
+                                  const url = window.URL.createObjectURL(blob);
+                                  const a = document.createElement('a');
+                                  a.setAttribute('hidden', '');
+                                  a.setAttribute('href', url);
+                                  a.setAttribute('download', 'event-attendees-template.csv');
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  document.body.removeChild(a);
+                                  
+                                  toast({
+                                    title: "Event Attendees Template Downloaded",
+                                    description: "Template for importing event attendees with buyer information."
+                                  });
+                                }}>
+                                  Event Attendees Format
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                           <input 
                             type="file" 
