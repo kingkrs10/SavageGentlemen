@@ -454,6 +454,14 @@ emailMarketingRouter.post(
   "/subscribers/import", 
   upload.single("file"),
   async (req: Request, res: Response) => {
+    // Authentication check for production
+    if (!req.headers['user-id'] && !req.headers.authorization) {
+      console.error("Authentication failed for CSV import: No user-id or authorization header");
+      return res.status(401).json({ 
+        message: "Authentication required", 
+        error: "You must be logged in to upload files" 
+      });
+    }
     try {
       console.log("CSV Import request received:", {
         body: req.body,
@@ -616,8 +624,9 @@ emailMarketingRouter.post(
         // Get a preview of the headers if available
         let csvHeaders: string[] = [];
         
-        // Handle each record from the CSV
-        for await (const record of parser) {
+        // Process the already parsed records from results array
+        // instead of reading from parser since we already stored them
+        for (const record of results) {
           // Skip empty records or invalid types
           if (!record || typeof record !== 'object') {
             console.log("Skipping invalid record:", record);
