@@ -293,10 +293,55 @@ export default function AdminPage() {
     console.log("Applied filters:", queryParams);
   };
   
+  // Function to handle creating a new email list
+  const handleCreateList = async () => {
+    // Validate inputs
+    if (!emailListForm.name.trim()) {
+      toast({
+        title: "Missing information",
+        description: "Please provide a name for the list",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      const response = await apiRequest('POST', '/api/email-marketing/lists', emailListForm);
+      
+      if (response.ok) {
+        const data = await response.json();
+        toast({
+          title: "List Created",
+          description: `Successfully created "${emailListForm.name}" list`,
+        });
+        
+        // Reset form and close dialog
+        setEmailListForm({ name: '', description: '', isActive: true });
+        setListFormOpen(false);
+        
+        // Refresh lists
+        queryClient.invalidateQueries({queryKey: ["/api/email-marketing/lists"]});
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to create list");
+      }
+    } catch (error) {
+      console.error("Error creating list:", error);
+      toast({
+        title: "List Creation Failed",
+        description: error instanceof Error ? error.message : "Failed to create email list",
+        variant: "destructive"
+      });
+    }
+  };
+  
   const [emailListForm, setEmailListForm] = useState({
     name: '',
-    description: ''
+    description: '',
+    isActive: true
   });
+  
+  const [listFormOpen, setListFormOpen] = useState(false);
   
   const [emailSubscriberForm, setEmailSubscriberForm] = useState({
     email: '',
@@ -4052,13 +4097,7 @@ export default function AdminPage() {
                         <h3 className="text-lg font-medium">Email Lists</h3>
                         <Button 
                           size="sm" 
-                          onClick={() => {
-                            // Create new list
-                            toast({
-                              title: "Create List",
-                              description: "This feature will be available soon"
-                            });
-                          }}
+                          onClick={() => setListFormOpen(true)}
                         >
                           <Plus className="h-4 w-4 mr-2" />
                           New List
