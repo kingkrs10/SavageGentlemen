@@ -107,18 +107,6 @@ const Header = ({ user: propUser, onProfileClick, onLogout }: HeaderProps) => {
                     </DropdownMenuItem>
                   <DropdownMenuSeparator className="dark:bg-white/10 light:bg-black/10" />
                   
-                  {/* Profile settings menu item */}
-                  <DropdownMenuItem 
-                    className="dark:hover:bg-white/5 dark:focus:bg-white/5 light:hover:bg-black/5 light:focus:bg-black/5"
-                    asChild
-                  >
-                    <a href="/profile">
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span className="uppercase text-xs tracking-widest">Settings</span>
-                    </a>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="dark:bg-white/10 light:bg-black/10" />
-                  
                   {/* Always show admin link for testing */}
                   <DropdownMenuItem 
                     className="dark:hover:bg-white/5 dark:focus:bg-white/5 light:hover:bg-black/5 light:focus:bg-black/5"
