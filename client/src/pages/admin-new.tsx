@@ -248,6 +248,10 @@ export default function AdminPage() {
   });
   
   // Email marketing states
+  const [subscriberSearch, setSubscriberSearch] = useState("");
+  const [subscriberStatusFilter, setSubscriberStatusFilter] = useState("");
+  const [subscriberListFilter, setSubscriberListFilter] = useState("");
+  
   const [emailListForm, setEmailListForm] = useState({
     name: '',
     description: ''
