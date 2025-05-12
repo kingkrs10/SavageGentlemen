@@ -288,9 +288,8 @@ export default function AdminPage() {
   // Function to apply current filters and refresh subscriber list
   const applySubscriberFilters = (overrides: Record<string, any> = {}) => {
     const queryParams = getSubscriberFilterParams(overrides);
-    queryClient.invalidateQueries({
-      queryKey: ["/api/email-marketing/subscribers", queryParams]
-    });
+    // Update the params state to trigger a new query
+    setSubscriberParams(queryParams);
   };
   
   const [emailListForm, setEmailListForm] = useState({
@@ -493,13 +492,16 @@ export default function AdminPage() {
     retry: 3,
   });
   
-  // Fetch email subscribers
+  // Create subscriber filter params state
+  const [subscriberParams, setSubscriberParams] = useState({});
+  
+  // Fetch email subscribers with filter parameters
   const {
     data: emailSubscribers = { subscribers: [] },
     isLoading: emailSubscribersLoading,
     error: emailSubscribersError
   } = useQuery<{subscribers: any[]}>({
-    queryKey: ["/api/email-marketing/subscribers"],
+    queryKey: ["/api/email-marketing/subscribers", subscriberParams],
     enabled: !!currentUser && currentUser?.role === 'admin',
     retry: 3,
   });
@@ -3794,8 +3796,8 @@ export default function AdminPage() {
                                         });
                                       }
                                       
-                                      // Refresh subscribers list
-                                      queryClient.invalidateQueries({queryKey: ["/api/email-marketing/subscribers"]});
+                                      // Refresh subscribers list with current filters
+                                      setSubscriberParams({...subscriberParams}); // This will trigger a re-fetch with current params
                                     } catch (error) {
                                       console.error("Import error:", error);
                                       toast({
