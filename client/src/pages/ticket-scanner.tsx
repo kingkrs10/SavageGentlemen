@@ -43,9 +43,7 @@ export default function TicketScannerPage() {
         
         // Make a direct API call to check access with staff endpoint
         const response = await apiRequest('GET', '/api/staff/me', null, {
-          headers: {
-            'user-id': userId
-          }
+          headers: { 'user-id': userId }
         });
         
         // If response is successful, user is admin/moderator

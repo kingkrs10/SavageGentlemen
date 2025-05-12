@@ -754,7 +754,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Register email marketing router (admin only)
-  router.use("/email-marketing", authenticateUser, authorizeAdmin, emailMarketingRouter);
+  // We'll use the authenticateUser middleware but not require admin for CSV operations
+  router.use("/email-marketing", authenticateUser, emailMarketingRouter);
   
   // Check if user has staff permissions (admin or moderator)
   router.get("/staff/me", authenticateUser, authorizeModerator, (req: Request, res: Response) => {

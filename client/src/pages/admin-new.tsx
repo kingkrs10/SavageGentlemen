@@ -3097,6 +3097,7 @@ export default function AdminPage() {
                         const user = JSON.parse(storedUser);
                         if (user && user.data && user.data.id) {
                           userId = user.data.id.toString();
+                          console.log("Found user ID for CSV export:", userId);
                         }
                       }
                       
@@ -3105,6 +3106,8 @@ export default function AdminPage() {
                         title: "Preparing CSV",
                         description: "Your download will start in a moment...",
                       });
+                      
+                      console.log("Starting CSV export with user ID:", userId);
                       
                       fetch("/api/email-marketing/subscribers/export", {
                         headers: userId ? { 'user-id': userId } : {}
@@ -3206,6 +3209,7 @@ export default function AdminPage() {
                                 const user = JSON.parse(storedUser);
                                 if (user && user.data && user.data.id) {
                                   userId = user.data.id.toString();
+                                  console.log("Found user ID for CSV import:", userId);
                                 }
                               }
                               
@@ -3216,6 +3220,7 @@ export default function AdminPage() {
                               // Add auth header
                               if (userId) {
                                 xhr.setRequestHeader('user-id', userId);
+                                console.log("Added user-id header for CSV import:", userId);
                               }
                               
                               // Handle response

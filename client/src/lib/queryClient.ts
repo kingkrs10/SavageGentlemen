@@ -22,9 +22,10 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
+  options?: { headers?: Record<string, string> }
 ): Promise<Response> {
   // Get the current user from localStorage
-  let headers: Record<string, string> = {};
+  let headers: Record<string, string> = options?.headers || {};
   
   if (data) {
     headers["Content-Type"] = "application/json";
