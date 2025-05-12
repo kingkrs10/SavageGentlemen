@@ -3565,236 +3565,319 @@ export default function AdminPage() {
                   
                   <TabsContent value="subscribers">
                     <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h3 className="text-lg font-medium">All Subscribers</h3>
-                        <div className="flex items-center gap-2">
-                          <div className="flex flex-col gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => {
-                                // Open file input for CSV upload
-                                const fileInput = document.getElementById('csv-file-input');
-                                if (fileInput) {
-                                  fileInput.click();
-                                }
-                              }}
-                            >
-                              <Upload className="h-4 w-4 mr-2" />
-                              Import CSV
-                            </Button>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                >
-                                  <Download className="h-4 w-4 mr-2" />
-                                  Download Template
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent>
-                                <DropdownMenuItem onClick={() => {
-                                  // Standard subscriber template
-                                  const headers = "email,firstName,lastName,source\n";
-                                  const row1 = "subscriber@example.com,John,Doe,website\n";
-                                  const row2 = "another@example.com,Jane,Smith,event\n";
-                                  const csvContent = headers + row1 + row2;
-                                  
-                                  // Create and download
-                                  const blob = new Blob([csvContent], { type: 'text/csv' });
-                                  const url = window.URL.createObjectURL(blob);
-                                  const a = document.createElement('a');
-                                  a.setAttribute('hidden', '');
-                                  a.setAttribute('href', url);
-                                  a.setAttribute('download', 'subscribers-template.csv');
-                                  document.body.appendChild(a);
-                                  a.click();
-                                  document.body.removeChild(a);
-                                  
-                                  toast({
-                                    title: "Standard Template Downloaded",
-                                    description: "Basic subscriber template with email, name and source fields."
-                                  });
-                                }}>
-                                  Standard Format
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => {
-                                  // Event ticket format template
-                                  const headers = "Event name,Event date,Buyer first name,Buyer last name,Buyer email,Ticket type\n";
-                                  const row1 = "Rhythm in Riddim,2025-06-15,John,Doe,john.doe@example.com,General Admission\n";
-                                  const row2 = "Rhythm in Riddim,2025-06-15,Jane,Smith,jane.smith@example.com,VIP\n";
-                                  const csvContent = headers + row1 + row2;
-                                  
-                                  // Create and download
-                                  const blob = new Blob([csvContent], { type: 'text/csv' });
-                                  const url = window.URL.createObjectURL(blob);
-                                  const a = document.createElement('a');
-                                  a.setAttribute('hidden', '');
-                                  a.setAttribute('href', url);
-                                  a.setAttribute('download', 'event-attendees-template.csv');
-                                  document.body.appendChild(a);
-                                  a.click();
-                                  document.body.removeChild(a);
-                                  
-                                  toast({
-                                    title: "Event Attendees Template Downloaded",
-                                    description: "Template for importing event attendees with buyer information."
-                                  });
-                                }}>
-                                  Event Attendees Format
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                          <input 
-                            type="file" 
-                            id="csv-file-input" 
-                            accept=".csv" 
-                            className="hidden" 
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (!file) return;
-                              
-                              // Create form data for upload
-                              const formData = new FormData();
-                              formData.append('file', file);
-                              
-                              // Get user id from localStorage for authentication
-                              let userId = null;
-                              const storedUser = localStorage.getItem("user");
-                              if (storedUser) {
-                                const user = JSON.parse(storedUser);
-                                if (user && user.data && user.data.id) {
-                                  userId = user.data.id.toString();
-                                  console.log("Found user ID for CSV import:", userId);
-                                }
-                              }
-                              
-                              // Show loading toast
-                              toast({
-                                title: "Processing CSV",
-                                description: "Please wait while we process your file...",
-                              });
-                              
-                              try {
-                                // Create a plaintext CSV with proper headers to avoid BOM issues
-                                const reader = new FileReader();
+                      <div className="flex flex-col space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-lg font-medium">All Subscribers</h3>
+                          <div className="flex items-center gap-2">
+                            <div className="flex flex-col gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => {
+                                  // Open file input for CSV upload
+                                  const fileInput = document.getElementById('csv-file-input');
+                                  if (fileInput) {
+                                    fileInput.click();
+                                  }
+                                }}
+                              >
+                                <Upload className="h-4 w-4 mr-2" />
+                                Import CSV
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                  >
+                                    <Download className="h-4 w-4 mr-2" />
+                                    Download Template
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                  <DropdownMenuItem onClick={() => {
+                                    // Standard subscriber template
+                                    const headers = "email,firstName,lastName,source\n";
+                                    const row1 = "subscriber@example.com,John,Doe,website\n";
+                                    const row2 = "another@example.com,Jane,Smith,event\n";
+                                    const csvContent = headers + row1 + row2;
+                                    
+                                    // Create and download
+                                    const blob = new Blob([csvContent], { type: 'text/csv' });
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.setAttribute('hidden', '');
+                                    a.setAttribute('href', url);
+                                    a.setAttribute('download', 'subscribers-template.csv');
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                    
+                                    toast({
+                                      title: "Standard Template Downloaded",
+                                      description: "Basic subscriber template with email, name and source fields."
+                                    });
+                                  }}>
+                                    Standard Format
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => {
+                                    // Event ticket format template
+                                    const headers = "Event name,Event date,Buyer first name,Buyer last name,Buyer email,Ticket type\n";
+                                    const row1 = "Rhythm in Riddim,2025-06-15,John,Doe,john.doe@example.com,General Admission\n";
+                                    const row2 = "Rhythm in Riddim,2025-06-15,Jane,Smith,jane.smith@example.com,VIP\n";
+                                    const csvContent = headers + row1 + row2;
+                                    
+                                    // Create and download
+                                    const blob = new Blob([csvContent], { type: 'text/csv' });
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.setAttribute('hidden', '');
+                                    a.setAttribute('href', url);
+                                    a.setAttribute('download', 'event-attendees-template.csv');
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                    
+                                    toast({
+                                      title: "Event Attendees Template Downloaded",
+                                      description: "Template for importing event attendees with buyer information."
+                                    });
+                                  }}>
+                                    Event Attendees Format
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                            <input 
+                              type="file" 
+                              id="csv-file-input" 
+                              accept=".csv" 
+                              className="hidden" 
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
                                 
-                                reader.onload = async (event) => {
-                                  if (!event.target?.result) {
+                                // Create form data for upload
+                                const formData = new FormData();
+                                formData.append('file', file);
+                                
+                                // Get user id from localStorage for authentication
+                                let userId = null;
+                                const storedUser = localStorage.getItem("user");
+                                if (storedUser) {
+                                  const user = JSON.parse(storedUser);
+                                  if (user && user.data && user.data.id) {
+                                    userId = user.data.id.toString();
+                                    console.log("Found user ID for CSV import:", userId);
+                                  }
+                                }
+                                
+                                // Show loading toast
+                                toast({
+                                  title: "Processing CSV",
+                                  description: "Please wait while we process your file...",
+                                });
+                                
+                                try {
+                                  // Create a plaintext CSV with proper headers to avoid BOM issues
+                                  const reader = new FileReader();
+                                  
+                                  reader.onload = async (event) => {
+                                    if (!event.target?.result) {
+                                      toast({
+                                        title: "Import Failed",
+                                        description: "Could not read the CSV file",
+                                        variant: "destructive"
+                                      });
+                                      return;
+                                    }
+                                    
+                                    try {
+                                      // Get the raw CSV text
+                                      const csvText = event.target.result as string;
+                                      console.log("CSV preview (first 100 chars):", csvText.substring(0, 100));
+                                      
+                                      // Create a clean file without BOM markers
+                                      const cleanCsv = csvText.replace(/^\uFEFF/, ''); // Remove BOM if present
+                                      const blob = new Blob([cleanCsv], { type: 'text/csv' });
+                                      const cleanFormData = new FormData();
+                                      cleanFormData.append('file', blob, 'subscribers.csv');
+                                      
+                                      // Use fetch for better error handling
+                                      const response = await fetch('/api/email-marketing/subscribers/import', {
+                                        method: 'POST',
+                                        headers: userId ? { 'user-id': userId } : {},
+                                        body: cleanFormData
+                                      });
+                                      
+                                      if (!response.ok) {
+                                        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                                      }
+                                      
+                                      const data = await response.json();
+                                      
+                                      // Display more detailed feedback based on result
+                                      if (data.imported > 0) {
+                                        // Success or partial success
+                                        toast({
+                                          title: `Import ${data.errors > 0 ? 'Partially' : ''} Successful`,
+                                          description: `Imported ${data.imported} subscribers. ${data.skipped || 0} skipped. ${data.errors} errors.`,
+                                          variant: data.errors > 0 ? "destructive" : "default",
+                                        });
+                                      } else if (data.errors > 0) {
+                                        // Complete failure with error summary
+                                        toast({
+                                          title: `Import Failed`,
+                                          description: data.errorSummary || `${data.errors} errors occurred during import.`,
+                                          variant: "destructive",
+                                        });
+                                        
+                                        // If there's a suggested fix, show it in a separate toast
+                                        if (data.suggestedFix) {
+                                          setTimeout(() => {
+                                            toast({
+                                              title: "Suggestion",
+                                              description: data.suggestedFix,
+                                            });
+                                          }, 1000);
+                                        }
+                                      } else {
+                                        // No imports, no errors (just skips)
+                                        toast({
+                                          title: `No New Subscribers`,
+                                          description: `All ${data.skipped} entries were already in the database.`,
+                                        });
+                                      }
+                                      
+                                      // Refresh subscribers list
+                                      queryClient.invalidateQueries({queryKey: ["/api/email-marketing/subscribers"]});
+                                    } catch (error) {
+                                      console.error("Import error:", error);
+                                      toast({
+                                        title: "Import Failed",
+                                        description: error instanceof Error ? error.message : "Failed to import subscribers",
+                                        variant: "destructive"
+                                      });
+                                    }
+                                  };
+                                  
+                                  reader.onerror = () => {
                                     toast({
                                       title: "Import Failed",
                                       description: "Could not read the CSV file",
                                       variant: "destructive"
                                     });
-                                    return;
-                                  }
+                                  };
                                   
-                                  try {
-                                    // Get the raw CSV text
-                                    const csvText = event.target.result as string;
-                                    console.log("CSV preview (first 100 chars):", csvText.substring(0, 100));
-                                    
-                                    // Create a clean file without BOM markers
-                                    const cleanCsv = csvText.replace(/^\uFEFF/, ''); // Remove BOM if present
-                                    const blob = new Blob([cleanCsv], { type: 'text/csv' });
-                                    const cleanFormData = new FormData();
-                                    cleanFormData.append('file', blob, 'subscribers.csv');
-                                    
-                                    // Use fetch for better error handling
-                                    const response = await fetch('/api/email-marketing/subscribers/import', {
-                                      method: 'POST',
-                                      headers: userId ? { 'user-id': userId } : {},
-                                      body: cleanFormData
-                                    });
-                                    
-                                    if (!response.ok) {
-                                      throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-                                    }
-                                    
-                                    const data = await response.json();
-                                    
-                                    // Display more detailed feedback based on result
-                                    if (data.imported > 0) {
-                                      // Success or partial success
-                                      toast({
-                                        title: `Import ${data.errors > 0 ? 'Partially' : ''} Successful`,
-                                        description: `Imported ${data.imported} subscribers. ${data.skipped || 0} skipped. ${data.errors} errors.`,
-                                        variant: data.errors > 0 ? "destructive" : "default",
-                                      });
-                                    } else if (data.errors > 0) {
-                                      // Complete failure with error summary
-                                      toast({
-                                        title: `Import Failed`,
-                                        description: data.errorSummary || `${data.errors} errors occurred during import.`,
-                                        variant: "destructive",
-                                      });
-                                      
-                                      // If there's a suggested fix, show it in a separate toast
-                                      if (data.suggestedFix) {
-                                        setTimeout(() => {
-                                          toast({
-                                            title: "Suggestion",
-                                            description: data.suggestedFix,
-                                          });
-                                        }, 1000);
-                                      }
-                                    } else {
-                                      // No imports, no errors (just skips)
-                                      toast({
-                                        title: `No New Subscribers`,
-                                        description: `All ${data.skipped} entries were already in the database.`,
-                                      });
-                                    }
-                                    
-                                    // Refresh subscribers list
-                                    queryClient.invalidateQueries({queryKey: ["/api/email-marketing/subscribers"]});
-                                  } catch (error) {
-                                    console.error("Import error:", error);
-                                    toast({
-                                      title: "Import Failed",
-                                      description: error instanceof Error ? error.message : "Failed to import subscribers",
-                                      variant: "destructive"
-                                    });
-                                  }
-                                };
-                                
-                                reader.onerror = () => {
+                                  // Read the file as text
+                                  reader.readAsText(file);
+                                } catch (error) {
+                                  console.error("Import setup error:", error);
                                   toast({
                                     title: "Import Failed",
-                                    description: "Could not read the CSV file",
+                                    description: "Failed to process CSV file",
                                     variant: "destructive"
                                   });
-                                };
-                                
-                                // Read the file as text
-                                reader.readAsText(file);
-                              } catch (error) {
-                                console.error("Import setup error:", error);
+                                } finally {
+                                  // Reset file input
+                                  e.target.value = '';
+                                }
+                              }}
+                            />
+                            <Button 
+                              size="sm" 
+                              onClick={() => {
+                                // Open dialog to add single subscriber
                                 toast({
-                                  title: "Import Failed",
-                                  description: "Failed to process CSV file",
-                                  variant: "destructive"
+                                  title: "Add Subscriber",
+                                  description: "This feature will be available soon",
                                 });
-                              } finally {
-                                // Reset file input
-                                e.target.value = '';
-                              }
-                            }}
-                          />
-                          <Button 
-                            size="sm" 
-                            onClick={() => {
-                              // Open dialog to add single subscriber
-                              toast({
-                                title: "Add Subscriber",
-                                description: "This feature will be available soon",
+                              }}
+                            >
+                              <UserPlus className="h-4 w-4 mr-2" />
+                              Add Subscriber
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {/* Search and Filter Section */}
+                        <div className="flex flex-wrap gap-2">
+                          <div className="relative flex-1 min-w-[200px]">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <input
+                              type="text"
+                              placeholder="Search by email or name..."
+                              className="pl-8 pr-4 py-2 w-full rounded-md border border-input text-sm"
+                              value={subscriberSearch || ""}
+                              onChange={(e) => setSubscriberSearch(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  // Refresh subscribers with search term
+                                  queryClient.invalidateQueries({
+                                    queryKey: ["/api/email-marketing/subscribers", { search: subscriberSearch }]
+                                  });
+                                }
+                              }}
+                            />
+                          </div>
+                          <Select 
+                            value={subscriberStatusFilter || ""}
+                            onValueChange={(value) => {
+                              setSubscriberStatusFilter(value);
+                              // Refresh subscribers with status filter
+                              queryClient.invalidateQueries({
+                                queryKey: ["/api/email-marketing/subscribers", { status: value }]
                               });
                             }}
                           >
-                            <UserPlus className="h-4 w-4 mr-2" />
-                            Add Subscriber
+                            <SelectTrigger className="w-[200px]">
+                              <SelectValue placeholder="Filter by status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">All statuses</SelectItem>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="unsubscribed">Unsubscribed</SelectItem>
+                              <SelectItem value="bounced">Bounced</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Select
+                            value={subscriberListFilter || ""}
+                            onValueChange={(value) => {
+                              setSubscriberListFilter(value);
+                              // Refresh subscribers with list filter
+                              queryClient.invalidateQueries({
+                                queryKey: ["/api/email-marketing/subscribers", { listId: value }]
+                              });
+                            }}
+                          >
+                            <SelectTrigger className="w-[200px]">
+                              <SelectValue placeholder="Filter by list" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">All lists</SelectItem>
+                              {emailLists && emailLists.map((list: any) => (
+                                <SelectItem key={list.id} value={list.id.toString()}>
+                                  {list.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-9"
+                            onClick={() => {
+                              // Reset all filters
+                              setSubscriberSearch("");
+                              setSubscriberStatusFilter("");
+                              setSubscriberListFilter("");
+                              // Refresh subscribers with no filters
+                              queryClient.invalidateQueries({
+                                queryKey: ["/api/email-marketing/subscribers"]
+                              });
+                            }}
+                          >
+                            Reset Filters
                           </Button>
                         </div>
                       </div>
