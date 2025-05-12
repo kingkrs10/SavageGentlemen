@@ -22,79 +22,131 @@ import path from "path";
 
 export const emailMarketingRouter = Router();
 
-// Configure multer for CSV file uploads
+// Configure multer for CSV file uploads - IMPROVED VERSION
+// Use a directory path that will definitely work in both development and production
 const uploadsDir = path.join(process.cwd(), "uploads");
+console.log("Current working directory:", process.cwd());
+console.log("Configured uploads directory:", uploadsDir);
 
-// Create uploads directory if it doesn't exist
+// Create uploads directory if it doesn't exist with robust error handling
 try {
   if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
+    fs.mkdirSync(uploadsDir, { recursive: true, mode: 0o755 }); // Set proper permissions
     console.log("Created uploads directory at:", uploadsDir);
-  }
-} catch (error) {
-  console.error("Error creating uploads directory:", error);
-}
-
-// Configure multer storage
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadsDir);
-  },
-  filename: function (req, file, cb) {
-    // Create a unique filename
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const fileExtension = path.extname(file.originalname) || '.csv';
-    cb(null, file.fieldname + '-' + uniqueSuffix + fileExtension);
-  }
-});
-
-const upload = multer({ 
-  storage: storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    // Accept more file types that might be interpreted as CSV
-    const acceptableTypes = [
-      'text/csv', 
-      'application/csv',
-      'application/vnd.ms-excel',
-      'text/plain',
-      'text/x-csv',
-      'application/x-csv', 
-      'text/comma-separated-values', 
-      'text/x-comma-separated-values',
-      'application/octet-stream'  // Some browsers/systems use this generic type
-    ];
-    
-    const acceptableSuffixes = ['.csv', '.txt'];
-    const fileExtension = path.extname(file.originalname).toLowerCase();
-    
-    console.log("Received file upload:", {
-      originalname: file.originalname,
-      mimetype: file.mimetype,
-      extension: fileExtension,
-      fieldname: file.fieldname,
-      encoding: file.encoding
-    });
-    
-    // Accept files with matching mime type or extension
-    if (acceptableTypes.includes(file.mimetype) || acceptableSuffixes.includes(fileExtension)) {
-      console.log("Accepting file:", file.originalname, file.mimetype);
-      cb(null, true);
-    } else {
-      // Still accept the file if it has .csv extension even if mimetype is wrong
-      // This helps with browsers that send incorrect mime types
-      if (fileExtension === '.csv') {
-        console.log("Accepting file with .csv extension despite mimetype:", file.mimetype);
-        cb(null, true);
-      } else {
-        console.warn("Rejecting file:", file.originalname, file.mimetype);
-        cb(null, false); // Changed to not throw an error, just reject silently
+  } else {
+    // Check directory permissions and try to ensure they're set correctly
+    try {
+      fs.accessSync(uploadsDir, fs.constants.R_OK | fs.constants.W_OK);
+      console.log("Uploads directory exists and has proper permissions");
+    } catch (permErr) {
+      console.error("Uploads directory permissions issue:", permErr);
+      // Try to fix permissions
+      try {
+        fs.chmodSync(uploadsDir, 0o755);
+        console.log("Updated uploads directory permissions");
+      } catch (chmodErr) {
+        console.error("Failed to update permissions:", chmodErr);
       }
     }
   }
+} catch (error) {
+  console.error("Error creating/checking uploads directory:", error);
+}
+
+// Configure multer storage with enhanced logging
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    console.log("Multer setting destination to:", uploadsDir);
+    // Double check directory exists at the time of upload
+    if (!fs.existsSync(uploadsDir)) {
+      try {
+        fs.mkdirSync(uploadsDir, { recursive: true, mode: 0o755 });
+        console.log("Created uploads directory on-demand during upload");
+      } catch (mkdirError) {
+        console.error("Failed to create uploads directory during upload:", mkdirError);
+      }
+    }
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    // Create a unique filename with better randomness
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 15);
+    const fileExtension = path.extname(file.originalname) || '.csv';
+    const newFilename = `csv-${timestamp}-${randomSuffix}${fileExtension}`;
+    
+    console.log("Generated filename for upload:", newFilename);
+    cb(null, newFilename);
+  }
 });
+
+// Configure multer with memory fallback if disk storage fails
+let upload;
+try {
+  upload = multer({ 
+    storage: storage,
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB limit
+    },
+    fileFilter: (req, file, cb) => {
+      // Accept even more file types that might be interpreted as CSV
+      const acceptableTypes = [
+        'text/csv', 
+        'application/csv',
+        'application/vnd.ms-excel',
+        'text/plain',
+        'text/x-csv',
+        'application/x-csv', 
+        'text/comma-separated-values', 
+        'text/x-comma-separated-values',
+        'application/octet-stream',  // Some browsers/systems use this generic type
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // Excel mimetype
+        '*/*',  // Accept any mimetype as a last resort
+        ''   // Even empty mimetype
+      ];
+      
+      // Accept any text-based or empty mimetype 
+      if (file.mimetype.startsWith('text/') || !file.mimetype) {
+        console.log("Accepting text-based file:", file.originalname);
+        cb(null, true);
+        return;
+      }
+      
+      const acceptableSuffixes = ['.csv', '.txt', '.text'];
+      const fileExtension = path.extname(file.originalname).toLowerCase();
+      
+      console.log("Received file upload:", {
+        originalname: file.originalname,
+        mimetype: file.mimetype,
+        extension: fileExtension,
+        fieldname: file.fieldname,
+        encoding: file.encoding,
+        headers: req.headers['content-type']
+      });
+      
+      // Accept almost anything since we'll validate the content later
+      // This is a very permissive approach to work around browser/platform inconsistencies
+      if (acceptableTypes.includes(file.mimetype) || 
+          acceptableSuffixes.includes(fileExtension) || 
+          file.originalname.toLowerCase().includes('csv')) {
+        console.log("Accepting file:", file.originalname, file.mimetype);
+        cb(null, true);
+      } else {
+        console.log("Accepting file anyway despite unrecognized type:", file.mimetype);
+        cb(null, true); // Accept anyway and validate content later
+      }
+    }
+  });
+  console.log("Multer configuration successful");
+} catch (multerError) {
+  console.error("Failed to configure multer with disk storage:", multerError);
+  // Fallback to memory storage
+  upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }
+  });
+  console.log("Configured multer with memory storage fallback");
+}
 
 // Common error handler for Zod validation
 const handleZodError = (err: unknown, res: Response) => {
