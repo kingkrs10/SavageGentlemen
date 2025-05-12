@@ -524,18 +524,33 @@ emailMarketingRouter.post(
       method: req.method
     });
     
-    // More lenient authentication check for production
+    // Super permissive authentication check (especially for production)
+    // Log authentication information for debugging
+    console.log("CSV import authentication headers:", {
+      userId: req.headers['user-id'] || 'not provided',
+      authorization: req.headers.authorization ? 'provided' : 'not provided',
+      hasAuthObject: !!(req as any).user,
+      cookies: req.cookies ? Object.keys(req.cookies).length : 0,
+      hasSessionId: !!req.cookies?.sessionId,
+      method: req.method,
+      contentType: req.headers['content-type']
+    });
+    
     // Accept any form of authentication as valid
     const hasAnyAuth = !!req.headers['user-id'] || 
                        !!req.headers.authorization || 
-                       !!(req as any).user;
+                       !!(req as any).user ||
+                       !!req.cookies?.sessionId;
     
+    // Skip auth check in development
     if (!hasAnyAuth && process.env.NODE_ENV === 'production') {
       console.error("Authentication completely missing for CSV import");
       return res.status(401).json({ 
         message: "Authentication required", 
         error: "You must be logged in to upload files"
       });
+    } else if (!hasAnyAuth) {
+      console.warn("No authentication found but continuing in development mode");
     }
     
     // Log file info if available
@@ -574,7 +589,25 @@ emailMarketingRouter.post(
       if (req.file.buffer) {
         // Handle in-memory buffer (from multer memory storage)
         console.log("Processing CSV from memory buffer");
-        csvData = req.file.buffer.toString('utf8');
+        
+        // Check for BOM marker in buffer
+        const hasBOM = req.file.buffer.length >= 3 && 
+                       req.file.buffer[0] === 0xEF && 
+                       req.file.buffer[1] === 0xBB && 
+                       req.file.buffer[2] === 0xBF;
+                       
+        if (hasBOM) {
+          console.log("CSV file has BOM marker, handling appropriately");
+          // Skip the BOM marker (first 3 bytes)
+          csvData = req.file.buffer.slice(3).toString('utf8');
+        } else {
+          console.log("No BOM marker detected in memory buffer");
+          csvData = req.file.buffer.toString('utf8');
+        }
+        
+        // Additional logging for troubleshooting
+        console.log(`Read ${csvData.length} bytes from memory buffer`);
+        console.log(`CSV preview (first 100 chars): ${csvData.substring(0, 100)}`);
       } else if (req.file.path) {
         // Handle on-disk file
         const filePath = req.file.path;
