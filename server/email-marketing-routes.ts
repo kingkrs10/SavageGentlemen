@@ -145,7 +145,7 @@ emailMarketingRouter.delete("/lists/:id", async (req: Request, res: Response) =>
  * Get subscribers
  */
 emailMarketingRouter.get("/subscribers", async (req: Request, res: Response) => {
-  const { search, status, page = "1", limit = "50" } = req.query;
+  const { search, status, listId, page = "1", limit = "50" } = req.query;
   
   try {
     let query = db.select().from(emailSubscribers);
@@ -163,6 +163,41 @@ emailMarketingRouter.get("/subscribers", async (req: Request, res: Response) => 
       query = query.where(eq(emailSubscribers.status, status as string));
     }
     
+    // Filter by list membership
+    if (listId) {
+      // Join with email_list_subscribers to filter by list
+      query = db
+        .select({
+          id: emailSubscribers.id,
+          email: emailSubscribers.email,
+          firstName: emailSubscribers.firstName,
+          lastName: emailSubscribers.lastName,
+          status: emailSubscribers.status,
+          source: emailSubscribers.source,
+          createdAt: emailSubscribers.createdAt,
+          updatedAt: emailSubscribers.updatedAt
+        })
+        .from(emailSubscribers)
+        .innerJoin(
+          emailListSubscribers,
+          eq(emailSubscribers.id, emailListSubscribers.subscriberId)
+        )
+        .where(eq(emailListSubscribers.listId, Number(listId)));
+        
+      // Apply other filters to the joined query
+      if (search) {
+        query = query.where(
+          sql`${emailSubscribers.email} ILIKE ${'%' + search + '%'} OR 
+              ${emailSubscribers.firstName} ILIKE ${'%' + search + '%'} OR 
+              ${emailSubscribers.lastName} ILIKE ${'%' + search + '%'}`
+        );
+      }
+      
+      if (status) {
+        query = query.where(eq(emailSubscribers.status, status as string));
+      }
+    }
+    
     // Apply pagination
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
@@ -174,9 +209,52 @@ emailMarketingRouter.get("/subscribers", async (req: Request, res: Response) => 
       .orderBy(emailSubscribers.email);
     
     // Get total count for pagination
-    const [{ count }] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(emailSubscribers);
+    let countQuery;
+    
+    if (listId) {
+      // If filtering by list, count only subscribers in that list
+      countQuery = db
+        .select({ count: sql<number>`count(*)` })
+        .from(emailSubscribers)
+        .innerJoin(
+          emailListSubscribers,
+          eq(emailSubscribers.id, emailListSubscribers.subscriberId)
+        )
+        .where(eq(emailListSubscribers.listId, Number(listId)));
+        
+      // Apply other filters to the count query
+      if (search) {
+        countQuery = countQuery.where(
+          sql`${emailSubscribers.email} ILIKE ${'%' + search + '%'} OR 
+              ${emailSubscribers.firstName} ILIKE ${'%' + search + '%'} OR 
+              ${emailSubscribers.lastName} ILIKE ${'%' + search + '%'}`
+        );
+      }
+      
+      if (status) {
+        countQuery = countQuery.where(eq(emailSubscribers.status, status as string));
+      }
+    } else {
+      // Standard count query without list filter
+      countQuery = db
+        .select({ count: sql<number>`count(*)` })
+        .from(emailSubscribers);
+        
+      // Apply basic filters
+      if (search) {
+        countQuery = countQuery.where(
+          sql`${emailSubscribers.email} ILIKE ${'%' + search + '%'} OR 
+              ${emailSubscribers.firstName} ILIKE ${'%' + search + '%'} OR 
+              ${emailSubscribers.lastName} ILIKE ${'%' + search + '%'}`
+        );
+      }
+      
+      if (status) {
+        countQuery = countQuery.where(eq(emailSubscribers.status, status as string));
+      }
+    }
+    
+    const [{ count }] = await countQuery;
     
     res.json({
       subscribers,

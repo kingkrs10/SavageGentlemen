@@ -3816,9 +3816,15 @@ export default function AdminPage() {
                               onChange={(e) => setSubscriberSearch(e.target.value)}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
-                                  // Refresh subscribers with search term
+                                  // Build query parameters with all active filters
+                                  const queryParams: any = {};
+                                  if (subscriberStatusFilter) queryParams.status = subscriberStatusFilter;
+                                  if (e.target.value) queryParams.search = e.target.value;
+                                  if (subscriberListFilter) queryParams.listId = subscriberListFilter;
+                                  
+                                  // Refresh subscribers with all filters
                                   queryClient.invalidateQueries({
-                                    queryKey: ["/api/email-marketing/subscribers", { search: subscriberSearch }]
+                                    queryKey: ["/api/email-marketing/subscribers", queryParams]
                                   });
                                 }
                               }}
@@ -3828,9 +3834,16 @@ export default function AdminPage() {
                             value={subscriberStatusFilter || ""}
                             onValueChange={(value) => {
                               setSubscriberStatusFilter(value);
-                              // Refresh subscribers with status filter
+                              
+                              // Build query parameters with all active filters
+                              const queryParams: any = {};
+                              if (value) queryParams.status = value;
+                              if (subscriberSearch) queryParams.search = subscriberSearch;
+                              if (subscriberListFilter) queryParams.listId = subscriberListFilter;
+                              
+                              // Refresh subscribers with all filters
                               queryClient.invalidateQueries({
-                                queryKey: ["/api/email-marketing/subscribers", { status: value }]
+                                queryKey: ["/api/email-marketing/subscribers", queryParams]
                               });
                             }}
                           >
@@ -3848,9 +3861,16 @@ export default function AdminPage() {
                             value={subscriberListFilter || ""}
                             onValueChange={(value) => {
                               setSubscriberListFilter(value);
-                              // Refresh subscribers with list filter
+                              
+                              // Build query parameters with all active filters
+                              const queryParams: any = {};
+                              if (subscriberStatusFilter) queryParams.status = subscriberStatusFilter;
+                              if (subscriberSearch) queryParams.search = subscriberSearch;
+                              if (value) queryParams.listId = value;
+                              
+                              // Refresh subscribers with all filters
                               queryClient.invalidateQueries({
-                                queryKey: ["/api/email-marketing/subscribers", { listId: value }]
+                                queryKey: ["/api/email-marketing/subscribers", queryParams]
                               });
                             }}
                           >
@@ -3875,9 +3895,16 @@ export default function AdminPage() {
                               setSubscriberSearch("");
                               setSubscriberStatusFilter("");
                               setSubscriberListFilter("");
+                              
                               // Refresh subscribers with no filters
                               queryClient.invalidateQueries({
-                                queryKey: ["/api/email-marketing/subscribers"]
+                                queryKey: ["/api/email-marketing/subscribers", {}]
+                              });
+                              
+                              // Show toast to confirm filters reset
+                              toast({
+                                title: "Filters Reset",
+                                description: "Showing all subscribers"
                               });
                             }}
                           >
