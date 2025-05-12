@@ -3175,20 +3175,52 @@ export default function AdminPage() {
                       <div className="flex justify-between items-center">
                         <h3 className="text-lg font-medium">All Subscribers</h3>
                         <div className="flex items-center gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => {
-                              // Open file input for CSV upload
-                              const fileInput = document.getElementById('csv-file-input');
-                              if (fileInput) {
-                                fileInput.click();
-                              }
-                            }}
-                          >
-                            <Upload className="h-4 w-4 mr-2" />
-                            Import CSV
-                          </Button>
+                          <div className="flex flex-col gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => {
+                                // Open file input for CSV upload
+                                const fileInput = document.getElementById('csv-file-input');
+                                if (fileInput) {
+                                  fileInput.click();
+                                }
+                              }}
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              Import CSV
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                // Generate a template CSV
+                                const headers = "email,firstName,lastName,source\n";
+                                const row1 = "subscriber@example.com,John,Doe,website\n";
+                                const row2 = "another@example.com,Jane,Smith,event\n";
+                                const csvContent = headers + row1 + row2;
+                                
+                                // Create and download the template file
+                                const blob = new Blob([csvContent], { type: 'text/csv' });
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.setAttribute('hidden', '');
+                                a.setAttribute('href', url);
+                                a.setAttribute('download', 'subscribers-template.csv');
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                
+                                toast({
+                                  title: "Template Downloaded",
+                                  description: "A CSV template has been downloaded. Use this format for best results."
+                                });
+                              }}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download Template
+                            </Button>
+                          </div>
                           <input 
                             type="file" 
                             id="csv-file-input" 

@@ -359,14 +359,53 @@ emailMarketingRouter.post(
             return '';
           };
           
-          // Normalize CSV column names with extensive fallbacks
+          // Try to find any email in the record by checking common buyer fields
+          let email = '';
+          
+          // First try standard email fields
+          email = getField(['email', 'Email', 'EMAIL', 'e-mail', 'E-mail', 'E-Mail']);
+          
+          // If no email found, try to look for buyer email or attendee email fields
+          if (!email) {
+            email = getField([
+              'Buyer email', 'buyer email', 'BuyerEmail', 'buyerEmail', 
+              'Attendee email', 'attendee email', 'AttendeeEmail', 'attendeeEmail',
+              'Customer email', 'customer email', 'CustomerEmail', 'customerEmail'
+            ]);
+          }
+          
+          // Extract first name, both standard format and from buyer info
+          const firstName = getField([
+            'firstName', 'first_name', 'FirstName', 'First Name', 'firstname', 'FIRSTNAME',
+            'Buyer first name', 'buyer first name', 'BuyerFirstName', 'buyerFirstName',
+            'Attendee first name', 'attendee first name'
+          ]);
+          
+          // Extract last name, both standard format and from buyer info
+          const lastName = getField([
+            'lastName', 'last_name', 'LastName', 'Last Name', 'lastname', 'LASTNAME',
+            'Buyer last name', 'buyer last name', 'BuyerLastName', 'buyerLastName',
+            'Attendee last name', 'attendee last name'
+          ]);
+            
+          // If we have a buyer name but no email, we can't create a subscriber
+          if (!email && (firstName || lastName)) {
+            console.log("Found name but no email:", { firstName, lastName });
+          }
+          
+          // Build the subscriber object
           const subscriber = {
-            email: getField(['email', 'Email', 'EMAIL', 'e-mail', 'E-mail', 'E-Mail']),
-            firstName: getField(['firstName', 'first_name', 'FirstName', 'First Name', 'firstname', 'FIRSTNAME']),
-            lastName: getField(['lastName', 'last_name', 'LastName', 'Last Name', 'lastname', 'LASTNAME']),
+            email,
+            firstName,
+            lastName,
             status: 'active',
-            source: 'import',
+            source: getField(['source', 'Source']) || 'import',
           };
+          
+          // Log to help identify available fields in the CSV
+          if (results.length < 3) {
+            console.log("CSV Record Keys:", Object.keys(record));
+          }
           
           // Validate email
           if (!subscriber.email || !subscriber.email.includes('@')) {
