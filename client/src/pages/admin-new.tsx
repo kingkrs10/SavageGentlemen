@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Plus, Pencil, Trash, Users, Tag, Layers, Activity, BarChart, Eye, EyeOff, Search, Package, ArrowUp, ArrowDown, AlertTriangle, MailIcon, Upload, Download, UserPlus, Send, ListChecks, Edit as EditIcon, Mail, FileText } from "lucide-react";
+import { Plus, Pencil, Trash, Users, Tag, Layers, Activity, BarChart, Eye, EyeOff, Search, Package, ArrowUp, ArrowDown, AlertTriangle, MailIcon, Upload, Download, UserPlus, Send, ListChecks, Edit as EditIcon, Mail, FileText, MoreVertical } from "lucide-react";
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from "recharts";
@@ -3413,9 +3413,10 @@ export default function AdminPage() {
               </CardHeader>
               <CardContent>
                 <Tabs defaultValue="subscribers" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsList className="grid w-full grid-cols-3 mb-6">
                     <TabsTrigger value="subscribers">Subscribers</TabsTrigger>
                     <TabsTrigger value="lists">Email Lists</TabsTrigger>
+                    <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="subscribers">
@@ -3842,6 +3843,143 @@ export default function AdminPage() {
                           <h3 className="text-lg font-medium">No email lists yet</h3>
                           <p className="text-sm text-gray-500">
                             Create lists to organize your subscribers.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="campaigns">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-medium">Email Campaigns</h3>
+                        <Button 
+                          size="sm" 
+                          onClick={handleCreateCampaign}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          New Campaign
+                        </Button>
+                      </div>
+                      
+                      {emailCampaignsLoading ? (
+                        <div className="py-10 text-center">
+                          <div className="animate-spin h-12 w-12 mx-auto border-4 border-primary border-t-transparent rounded-full mb-4"></div>
+                          <h3 className="text-lg font-medium">Loading campaigns...</h3>
+                        </div>
+                      ) : emailCampaignsError ? (
+                        <div className="py-10 text-center">
+                          <AlertTriangle className="h-12 w-12 mx-auto text-amber-500 mb-4" />
+                          <h3 className="text-lg font-medium">Error loading campaigns</h3>
+                          <p className="text-sm text-gray-500">
+                            Please try again later.
+                          </p>
+                        </div>
+                      ) : emailCampaigns && emailCampaigns.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                          {emailCampaigns.map((campaign: any) => (
+                            <Card key={campaign.id} className="overflow-hidden">
+                              <CardHeader className="pb-3">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <CardTitle className="text-base font-medium truncate">{campaign.name}</CardTitle>
+                                    <CardDescription className="text-xs truncate">{campaign.subject}</CardDescription>
+                                  </div>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                        <span className="sr-only">Open menu</span>
+                                        <MoreVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => handleEditCampaign(campaign)}>
+                                        <Pencil className="mr-2 h-4 w-4" />
+                                        <span>Edit</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => {
+                                        setEditingCampaign(campaign);
+                                        setSendTestEmailOpen(true);
+                                      }}>
+                                        <Mail className="mr-2 h-4 w-4" />
+                                        <span>Send Test</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleSendCampaign(campaign.id)}>
+                                        <Send className="mr-2 h-4 w-4" />
+                                        <span>Send Campaign</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleDeleteCampaign(campaign.id)}>
+                                        <Trash className="mr-2 h-4 w-4" />
+                                        <span>Delete</span>
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              </CardHeader>
+                              <CardContent className="pb-2">
+                                <div className="flex justify-between items-center text-sm mb-2">
+                                  <span>List: <strong>{campaign.listName || 'Unknown'}</strong></span>
+                                  <Badge variant={
+                                    campaign.status === 'sent' ? 'success' : 
+                                    campaign.status === 'scheduled' ? 'warning' : 
+                                    'outline'
+                                  }>
+                                    {campaign.status === 'draft' ? 'Draft' : 
+                                     campaign.status === 'scheduled' ? 'Scheduled' : 
+                                     campaign.status === 'sent' ? 'Sent' : campaign.status}
+                                  </Badge>
+                                </div>
+                                {campaign.status === 'sent' && (
+                                  <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                                    <div className="text-center">
+                                      <div className="font-medium">{campaign.sentCount || 0}</div>
+                                      <div>Sent</div>
+                                    </div>
+                                    <div className="text-center">
+                                      <div className="font-medium">{campaign.openCount || 0}</div>
+                                      <div>Opened</div>
+                                    </div>
+                                    <div className="text-center">
+                                      <div className="font-medium">{campaign.clickCount || 0}</div>
+                                      <div>Clicks</div>
+                                    </div>
+                                  </div>
+                                )}
+                                {campaign.status === 'scheduled' && (
+                                  <div className="text-xs text-muted-foreground">
+                                    Scheduled for: {new Date(campaign.scheduledFor).toLocaleString()}
+                                  </div>
+                                )}
+                              </CardContent>
+                              <CardFooter className="flex justify-between">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditCampaign(campaign)}
+                                >
+                                  <EditIcon className="h-4 w-4 mr-2" />
+                                  Edit
+                                </Button>
+                                {campaign.status === 'draft' && (
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={() => handleSendCampaign(campaign.id)}
+                                  >
+                                    <Send className="h-4 w-4 mr-2" />
+                                    Send
+                                  </Button>
+                                )}
+                              </CardFooter>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-10 text-center">
+                          <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                          <h3 className="text-lg font-medium">No campaigns yet</h3>
+                          <p className="text-sm text-gray-500">
+                            Create your first email campaign to engage with your subscribers.
                           </p>
                         </div>
                       )}
