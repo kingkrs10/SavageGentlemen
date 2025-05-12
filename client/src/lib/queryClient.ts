@@ -31,47 +31,80 @@ export async function apiRequest(
     headers["Content-Type"] = "application/json";
   }
   
-  // Add user-id header if available in localStorage
+  // Add authentication headers from all possible sources
   let userId = null;
   let authToken = null;
   try {
-    const storedUser = localStorage.getItem("user");
     const normalizedUrl = normalizeUrl(url);
     console.log("API Request to:", normalizedUrl, "Method:", method);
     
+    // STEP 1: Try to get user ID and token from localStorage user object (primary source)
+    const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      const user = JSON.parse(storedUser);
-      
-      // Handle both data formats: { data: { id: ... } } and direct { id: ... }
-      const userData = user.data || user;
-      
-      if (userData && userData.id) {
-        userId = userData.id.toString();
-        headers["user-id"] = userId;
+      try {
+        const user = JSON.parse(storedUser);
         
-        // Set Authorization header if token exists
-        if (userData.token) {
-          authToken = userData.token;
-          headers["Authorization"] = `Bearer ${authToken}`;
-        }
+        // Handle both data formats: { data: { id: ... } } and direct { id: ... }
+        const userData = user.data || user;
         
-        // Try to get token from sessionStorage as fallback
-        if (!authToken) {
-          const sessionToken = sessionStorage.getItem("authToken");
-          if (sessionToken) {
-            headers["Authorization"] = `Bearer ${sessionToken}`;
+        if (userData && userData.id) {
+          userId = userData.id.toString();
+          headers["user-id"] = userId;
+          
+          // Set Authorization header if token exists in user object
+          if (userData.token) {
+            authToken = userData.token;
+            headers["Authorization"] = `Bearer ${authToken}`;
+            console.log("Using token from user object in localStorage");
           }
         }
-        
-        console.log("Added auth headers for user:", userId);
-      } else {
-        console.log("Missing user ID in stored user object");
+      } catch (parseError) {
+        console.error("Error parsing user from localStorage:", parseError);
       }
+    }
+    
+    // STEP 2: If no token yet, try standalone authToken in localStorage
+    if (!authToken) {
+      const localAuthToken = localStorage.getItem("authToken");
+      if (localAuthToken) {
+        authToken = localAuthToken;
+        headers["Authorization"] = `Bearer ${localAuthToken}`;
+        console.log("Using authToken from localStorage");
+      }
+    }
+    
+    // STEP 3: If still no token, try sessionStorage
+    if (!authToken) {
+      const sessionToken = sessionStorage.getItem("authToken");
+      if (sessionToken) {
+        authToken = sessionToken;
+        headers["Authorization"] = `Bearer ${sessionToken}`;
+        console.log("Using token from sessionStorage");
+      }
+    }
+    
+    // STEP 4: If we have a Firebase token, try that
+    if (!authToken) {
+      const firebaseToken = localStorage.getItem("firebaseToken");
+      if (firebaseToken) {
+        authToken = firebaseToken;
+        headers["Authorization"] = `Bearer ${firebaseToken}`;
+        console.log("Using Firebase token");
+      }
+    }
+    
+    // Log outcome of authentication gathering
+    if (userId) {
+      console.log("Added user-id header for user:", userId);
+    }
+    
+    if (authToken) {
+      console.log("Added Authorization header (token found)");
     } else {
-      console.log("No user found in localStorage");
+      console.log("No authentication token available from any source");
     }
   } catch (error) {
-    console.error("Error parsing stored user:", error);
+    console.error("Error setting up authentication headers:", error);
   }
   
   console.log("Request headers:", headers);
@@ -102,51 +135,88 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    // Add user-id header if available in localStorage
+    // Add authentication headers from all possible sources
     let headers: Record<string, string> = {};
     let userId = null;
     let authToken = null;
     
     try {
-      const storedUser = localStorage.getItem("user");
       const url = queryKey[0] as string;
       const normalizedUrl = normalizeUrl(url);
       console.log("Query to:", normalizedUrl, "(original:", url, ")");
       
+      // STEP 1: Try to get user ID and token from localStorage user object (primary source)
+      const storedUser = localStorage.getItem("user");
       if (storedUser) {
-        const user = JSON.parse(storedUser);
-        
-        // Handle both data formats: { data: { id: ... } } and direct { id: ... }
-        const userData = user.data || user;
-        
-        if (userData && userData.id) {
-          userId = userData.id.toString();
-          headers["user-id"] = userId;
+        try {
+          const user = JSON.parse(storedUser);
           
-          // Set Authorization header if token exists
-          if (userData.token) {
-            authToken = userData.token;
-            headers["Authorization"] = `Bearer ${authToken}`;
-          }
+          // Handle both data formats: { data: { id: ... } } and direct { id: ... }
+          const userData = user.data || user;
           
-          // Try to get token from sessionStorage as fallback
-          if (!authToken) {
-            const sessionToken = sessionStorage.getItem("authToken");
-            if (sessionToken) {
-              headers["Authorization"] = `Bearer ${sessionToken}`;
+          if (userData && userData.id) {
+            userId = userData.id.toString();
+            headers["user-id"] = userId;
+            
+            // Set Authorization header if token exists in user object
+            if (userData.token) {
+              authToken = userData.token;
+              headers["Authorization"] = `Bearer ${authToken}`;
+              console.log("Using token from user object in localStorage");
+            }
+            
+            // Log role if available (helpful for debugging permission issues)
+            if (userData.role) {
+              console.log("User role:", userData.role);
             }
           }
-          
-          console.log("Added auth headers for user:", userId);
-          console.log("User role:", userData.role);
-        } else {
-          console.log("Missing user ID in stored user object");
+        } catch (parseError) {
+          console.error("Error parsing user from localStorage:", parseError);
         }
+      }
+      
+      // STEP 2: If no token yet, try standalone authToken in localStorage
+      if (!authToken) {
+        const localAuthToken = localStorage.getItem("authToken");
+        if (localAuthToken) {
+          authToken = localAuthToken;
+          headers["Authorization"] = `Bearer ${localAuthToken}`;
+          console.log("Using authToken from localStorage");
+        }
+      }
+      
+      // STEP 3: If still no token, try sessionStorage
+      if (!authToken) {
+        const sessionToken = sessionStorage.getItem("authToken");
+        if (sessionToken) {
+          authToken = sessionToken;
+          headers["Authorization"] = `Bearer ${sessionToken}`;
+          console.log("Using token from sessionStorage");
+        }
+      }
+      
+      // STEP 4: If we have a Firebase token, try that
+      if (!authToken) {
+        const firebaseToken = localStorage.getItem("firebaseToken");
+        if (firebaseToken) {
+          authToken = firebaseToken;
+          headers["Authorization"] = `Bearer ${firebaseToken}`;
+          console.log("Using Firebase token");
+        }
+      }
+      
+      // Log outcome of authentication gathering
+      if (userId) {
+        console.log("Added user-id header for user:", userId);
+      }
+      
+      if (authToken) {
+        console.log("Added Authorization header (token found)");
       } else {
-        console.log("No user found in localStorage");
+        console.log("No authentication token available from any source");
       }
     } catch (error) {
-      console.error("Error parsing stored user:", error);
+      console.error("Error setting up authentication headers:", error);
     }
     
     console.log("Query headers:", headers);
