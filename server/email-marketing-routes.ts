@@ -35,14 +35,42 @@ try {
   console.error("Error creating uploads directory:", error);
 }
 
+// Configure multer storage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    // Create a unique filename
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const fileExtension = path.extname(file.originalname) || '.csv';
+    cb(null, file.fieldname + '-' + uniqueSuffix + fileExtension);
+  }
+});
+
 const upload = multer({ 
-  dest: uploadsDir, 
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
   fileFilter: (req, file, cb) => {
-    // Accept only CSV files
-    if (file.mimetype === "text/csv" || file.originalname.endsWith(".csv")) {
+    // Accept more file types that might be interpreted as CSV
+    const acceptableTypes = [
+      'text/csv', 
+      'application/csv',
+      'application/vnd.ms-excel',
+      'text/plain'
+    ];
+    
+    const acceptableSuffixes = ['.csv', '.txt'];
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+    
+    if (acceptableTypes.includes(file.mimetype) || acceptableSuffixes.includes(fileExtension)) {
+      console.log("Accepting file:", file.originalname, file.mimetype);
       cb(null, true);
     } else {
-      cb(null, false);
+      console.log("Rejecting file:", file.originalname, file.mimetype);
+      cb(new Error('Only CSV files are allowed'), false);
     }
   }
 });
