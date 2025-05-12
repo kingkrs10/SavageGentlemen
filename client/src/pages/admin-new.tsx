@@ -4133,11 +4133,13 @@ export default function AdminPage() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => {
-                                    // View list subscribers
-                                    toast({
-                                      title: "View Subscribers",
-                                      description: "This feature will be available soon"
+                                    // View list subscribers - set filter to show only subscribers for this list
+                                    setSelectedListId(list.id);
+                                    setSubscriberParams({
+                                      ...subscriberParams,
+                                      listId: list.id.toString()
                                     });
+                                    setActiveTab("subscribers");
                                   }}
                                 >
                                   <ListChecks className="h-4 w-4 mr-2" />
@@ -4147,11 +4149,17 @@ export default function AdminPage() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => {
-                                    // Send campaign to list
-                                    toast({
-                                      title: "Send Campaign",
-                                      description: "This feature will be available soon"
+                                    // Set up a new campaign for this list
+                                    setEditingCampaign(null);
+                                    setCampaignForm({
+                                      name: '',
+                                      subject: '',
+                                      content: '',
+                                      listId: list.id.toString(),
+                                      status: 'draft',
+                                      scheduledFor: ''
                                     });
+                                    setCampaignFormOpen(true);
                                   }}
                                 >
                                   <Send className="h-4 w-4 mr-2" />
