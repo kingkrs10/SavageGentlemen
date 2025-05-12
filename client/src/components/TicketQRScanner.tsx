@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import QrReader from 'react-qr-scanner';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { CheckCircle, XCircle, RefreshCw, TicketIcon } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 interface TicketInfo {
   ticketId: number;
@@ -19,56 +19,60 @@ interface TicketInfo {
 }
 
 const TicketQRScanner: React.FC = () => {
-  const [scanning, setScanning] = useState<boolean>(false);
-  const [scannedData, setScannedData] = useState<string | null>(null);
+  const [ticketCode, setTicketCode] = useState<string>('');
   const [ticketInfo, setTicketInfo] = useState<TicketInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const { toast } = useToast();
+  const inputRef = useRef<HTMLInputElement>(null);
   
-  // Start scanning when component mounts
   useEffect(() => {
-    // Delay starting the scanner to avoid browser issues
-    const timer = setTimeout(() => {
-      startScanning();
-    }, 1000);
-    
-    return () => clearTimeout(timer);
+    // Focus input on component mount
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   }, []);
   
-  const startScanning = () => {
-    setScanning(true);
-    setScannedData(null);
+  const resetScanner = () => {
+    setTicketCode('');
     setTicketInfo(null);
     setError(null);
-  };
-  
-  const stopScanning = () => {
-    setScanning(false);
-  };
-  
-  const handleScan = async (data: { text: string } | null) => {
-    // Only process if we have data and it's not already being processed
-    if (!data || !data.text || loading || scannedData === data.text) return;
     
-    setScannedData(data.text);
+    // Re-focus the input
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 0);
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!ticketCode.trim()) {
+      setError('Please enter a ticket code');
+      return;
+    }
+    
     setLoading(true);
-    stopScanning();
+    setError(null);
     
     try {
       // Parse the ticket identifier (SGX-TIX-orderId-ticketId)
-      const parts = data.text.split('-');
+      const parts = ticketCode.split('-');
       
       if (parts.length !== 4 || parts[0] !== 'SGX' || parts[1] !== 'TIX') {
-        throw new Error('Invalid QR code format');
+        throw new Error('Invalid ticket format. Expected format: SGX-TIX-orderId-ticketId');
       }
       
       const orderId = parseInt(parts[2]);
       const ticketId = parseInt(parts[3]);
       
       if (isNaN(orderId) || isNaN(ticketId)) {
-        throw new Error('Invalid ticket identifier');
+        throw new Error('Invalid ticket identifier. Order ID and Ticket ID must be numbers.');
       }
+      
+      console.log('Validating ticket:', { orderId, ticketId });
       
       // Validate the ticket with the server
       const response = await apiRequest('POST', '/api/admin/tickets/validate', {
@@ -77,7 +81,8 @@ const TicketQRScanner: React.FC = () => {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to validate ticket');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to validate ticket');
       }
       
       const result = await response.json();
@@ -113,12 +118,6 @@ const TicketQRScanner: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-  
-  const handleError = (err: any) => {
-    console.error('QR Scanner Error:', err);
-    setError('Camera error. Please check permissions and try again.');
-    setScanning(false);
   };
   
   const renderStatusCard = () => {
@@ -176,7 +175,7 @@ const TicketQRScanner: React.FC = () => {
           </div>
         </CardContent>
         <CardFooter>
-          <Button onClick={startScanning} className="w-full">
+          <Button onClick={resetScanner} className="w-full">
             Scan Another Ticket
           </Button>
         </CardFooter>
@@ -194,46 +193,43 @@ const TicketQRScanner: React.FC = () => {
           </Alert>
         )}
         
-        {scanning ? (
-          <div className="relative">
-            <QrReader
-              delay={500}
-              style={{ width: '100%' }}
-              onError={handleError}
-              onScan={handleScan}
-              constraints={{
-                video: {
-                  facingMode: 'environment'
-                }
-              }}
-            />
-            <div className="absolute top-2 right-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={stopScanning}
-                className="bg-white/80 hover:bg-white"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        ) : (
-          !ticketInfo && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Ticket Scanner</CardTitle>
-                <CardDescription>
-                  Scan QR codes to validate event tickets
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex justify-center p-8">
-                <Button onClick={startScanning} className="sg-btn" disabled={loading}>
-                  {loading ? 'Processing...' : 'Start Scanning'}
+        {!ticketInfo && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Ticket Scanner</CardTitle>
+              <CardDescription>
+                Enter the ticket code from the QR code
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Input
+                    ref={inputRef}
+                    type="text"
+                    placeholder="SGX-TIX-123-456"
+                    value={ticketCode}
+                    onChange={(e) => setTicketCode(e.target.value)}
+                    className="w-full"
+                    autoFocus
+                    autoComplete="off"
+                    disabled={loading}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Type or paste the ticket code that appears in the QR code
+                  </p>
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full flex items-center justify-center" 
+                  disabled={loading || !ticketCode.trim()}
+                >
+                  <TicketIcon className="mr-2 h-4 w-4" />
+                  {loading ? 'Validating...' : 'Validate Ticket'}
                 </Button>
-              </CardContent>
-            </Card>
-          )
+              </form>
+            </CardContent>
+          </Card>
         )}
         
         {renderStatusCard()}
