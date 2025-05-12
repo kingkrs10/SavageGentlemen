@@ -1,0 +1,86 @@
+admin:1 Refused to load the script 'https://replit.com/public/js/replit-dev-banner.js' because it violates the following Content Security Policy directive: "script-src 'self' 'unsafe-inline' https://js.stripe.com https://www.paypal.com". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback.
+
+index-ROVDJE2Y.js:164 Loading SplashScreen component
+index-ROVDJE2Y.js:1594 Application starting...
+index-ROVDJE2Y.js:204 Stored user from localStorage: {"status":"success","data":{"status":"success","data":{"id":8,"username":"Krs","displayName":"Krs","avatar":null,"isGuest":false,"role":"admin"}}}
+index-ROVDJE2Y.js:204 Parsed user: Object
+index-ROVDJE2Y.js:41 API Request to: /api/me Method: GET
+index-ROVDJE2Y.js:41 No authentication token available from any source
+index-ROVDJE2Y.js:41 Request headers: Object
+admin:1 <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes">
+api/me:1 
+            
+            
+           Failed to load resource: the server responded with a status of 401 ()
+admin-new-DeWaVGzb.js:91 Admin page loaded with user: Object
+admin-new-DeWaVGzb.js:91 User role: undefined
+index-ROVDJE2Y.js:41 API Request to: /api/admin/me Method: GET
+index-ROVDJE2Y.js:41 No authentication token available from any source
+index-ROVDJE2Y.js:41 Request headers: Object
+admin-new-DeWaVGzb.js:91 User loaded from localStorage: Object
+index-ROVDJE2Y.js:41 Query to: /api/products (original: /api/products )
+index-ROVDJE2Y.js:41 No authentication token available from any source
+index-ROVDJE2Y.js:41 Query headers: Object
+index-ROVDJE2Y.js:41 Query to: /api/events (original: /api/events )
+index-ROVDJE2Y.js:41 No authentication token available from any source
+index-ROVDJE2Y.js:41 Query headers: Object
+admin-new-DeWaVGzb.js:91 Email subscribers data: Object
+index-ROVDJE2Y.js:41 API Error (401): Object
+Au @ index-ROVDJE2Y.js:41
+index-ROVDJE2Y.js:204 Error validating user session: TypeError: Failed to execute 'text' on 'Response': body stream already read
+    at Rb (index-ROVDJE2Y.js:41:86242)
+    at Au (index-ROVDJE2Y.js:41:87844)
+    at async index-ROVDJE2Y.js:204:28716
+(anonymous) @ index-ROVDJE2Y.js:204
+index-ROVDJE2Y.js:41 Query to: /api/admin/orders (original: /api/admin/orders )
+index-ROVDJE2Y.js:41 No authentication token available from any source
+index-ROVDJE2Y.js:41 Query headers: Object
+index-ROVDJE2Y.js:41 Query to: /api/livestreams (original: /api/livestreams )
+index-ROVDJE2Y.js:41 No authentication token available from any source
+index-ROVDJE2Y.js:41 Query headers: Object
+index-ROVDJE2Y.js:41 Query to: /api/analytics/dashboard (original: /api/analytics/dashboard )
+index-ROVDJE2Y.js:41 No authentication token available from any source
+index-ROVDJE2Y.js:41 Query headers: Object
+admin-new-DeWaVGzb.js:91 Email subscribers data: Object
+api/admin/me:1 
+            
+            
+           Failed to load resource: the server responded with a status of 401 ()
+index-ROVDJE2Y.js:41 API Error (401): Object
+Au @ index-ROVDJE2Y.js:41
+admin-new-DeWaVGzb.js:91 Error verifying admin status with server: TypeError: Failed to execute 'text' on 'Response': body stream already read
+    at Rb (index-ROVDJE2Y.js:41:86242)
+    at Au (index-ROVDJE2Y.js:41:87844)
+    at async admin-new-DeWaVGzb.js:91:25996
+(anonymous) @ admin-new-DeWaVGzb.js:91
+api/admin/orders:1 
+            
+            
+           Failed to load resource: the server responded with a status of 401 ()
+index-ROVDJE2Y.js:41 Query error (401) for /api/admin/orders (original: /api/admin/orders)
+index-ROVDJE2Y.js:41 Query Error (401): Object
+(anonymous) @ index-ROVDJE2Y.js:41
+admin-new-DeWaVGzb.js:91 Email subscribers data: Object
+admin-new-DeWaVGzb.js:91 Email subscribers data: Object
+admin-new-DeWaVGzb.js:91 Email subscribers data: Object
+admin-new-DeWaVGzb.js:91 Email subscribers data: Object
+admin-new-DeWaVGzb.js:91 Email subscribers data: Object
+admin-new-DeWaVGzb.js:91 Tab changed to: email-marketing
+admin-new-DeWaVGzb.js:91 Import CSV button clicked
+admin-new-DeWaVGzb.js:91 Email subscribers data: Object
+admin-new-DeWaVGzb.js:97 File input changed
+admin-new-DeWaVGzb.js:97 File selected: RIRattendees.csv text/csv 6165
+admin-new-DeWaVGzb.js:91 Email subscribers data: Object
+admin-new-DeWaVGzb.js:97 CSV preview (first 100 chars): "Event name","Event date","Issue date","Type","Code","Status","Entitlement","Buyer first name","Buye
+admin-new-DeWaVGzb.js:97 Uploading CSV with headers: Object
+api/email-marketing/subscribers/import:1 
+            
+            
+           Failed to load resource: the server responded with a status of 401 ()
+admin-new-DeWaVGzb.js:97 Import error: Error: Server returned 401: 
+    at R.onload (admin-new-DeWaVGzb.js:97:2262)
+R.onload @ admin-new-DeWaVGzb.js:97
+admin-new-DeWaVGzb.js:91 Email subscribers data: Object
+admin-new-DeWaVGzb.js:91 Email subscribers data: Object
+admin-new-DeWaVGzb.js:91 Email subscribers data: Object
+admin-new-DeWaVGzb.js:91 Email subscribers data: Object
