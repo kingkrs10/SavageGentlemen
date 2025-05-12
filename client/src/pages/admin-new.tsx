@@ -4617,9 +4617,11 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>)
+      </div>
+      )}
       
-      {/* Create New Email List Dialog */}
+      
+      {/* Create New Email List Dialog - Make sure this stays outside the conditional */}
       <Dialog open={listFormOpen} onOpenChange={setListFormOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
