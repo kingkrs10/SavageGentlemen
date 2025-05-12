@@ -251,6 +251,47 @@ export default function AdminPage() {
   const [subscriberSearch, setSubscriberSearch] = useState("");
   const [subscriberStatusFilter, setSubscriberStatusFilter] = useState("");
   const [subscriberListFilter, setSubscriberListFilter] = useState("");
+
+  // Helper function to build combined query parameters for subscriber filtering
+  const getSubscriberFilterParams = (overrides: Record<string, any> = {}) => {
+    const queryParams: Record<string, any> = {};
+    
+    // Add current filter values (if they're not explicitly overridden or nullified)
+    if (subscriberSearch && !('search' in overrides)) {
+      queryParams.search = subscriberSearch;
+    } else if (overrides.search !== null && overrides.search) {
+      queryParams.search = overrides.search;
+    }
+    
+    if (subscriberStatusFilter && !('status' in overrides)) {
+      queryParams.status = subscriberStatusFilter;
+    } else if (overrides.status !== null && overrides.status) {
+      queryParams.status = overrides.status;
+    }
+    
+    if (subscriberListFilter && !('listId' in overrides)) {
+      queryParams.listId = subscriberListFilter;
+    } else if (overrides.listId !== null && overrides.listId) {
+      queryParams.listId = overrides.listId;
+    }
+    
+    // Remove any null or undefined values from final query params
+    Object.keys(overrides).forEach(key => {
+      if (overrides[key] === null || overrides[key] === undefined) {
+        delete queryParams[key];
+      }
+    });
+    
+    return queryParams;
+  };
+  
+  // Function to apply current filters and refresh subscriber list
+  const applySubscriberFilters = (overrides: Record<string, any> = {}) => {
+    const queryParams = getSubscriberFilterParams(overrides);
+    queryClient.invalidateQueries({
+      queryKey: ["/api/email-marketing/subscribers", queryParams]
+    });
+  };
   
   const [emailListForm, setEmailListForm] = useState({
     name: '',
@@ -3816,16 +3857,7 @@ export default function AdminPage() {
                               onChange={(e) => setSubscriberSearch(e.target.value)}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
-                                  // Build query parameters with all active filters
-                                  const queryParams: any = {};
-                                  if (subscriberStatusFilter) queryParams.status = subscriberStatusFilter;
-                                  if (e.target.value) queryParams.search = e.target.value;
-                                  if (subscriberListFilter) queryParams.listId = subscriberListFilter;
-                                  
-                                  // Refresh subscribers with all filters
-                                  queryClient.invalidateQueries({
-                                    queryKey: ["/api/email-marketing/subscribers", queryParams]
-                                  });
+                                  applySubscriberFilters();
                                 }
                               }}
                             />
@@ -3834,17 +3866,7 @@ export default function AdminPage() {
                             value={subscriberStatusFilter || ""}
                             onValueChange={(value) => {
                               setSubscriberStatusFilter(value);
-                              
-                              // Build query parameters with all active filters
-                              const queryParams: any = {};
-                              if (value) queryParams.status = value;
-                              if (subscriberSearch) queryParams.search = subscriberSearch;
-                              if (subscriberListFilter) queryParams.listId = subscriberListFilter;
-                              
-                              // Refresh subscribers with all filters
-                              queryClient.invalidateQueries({
-                                queryKey: ["/api/email-marketing/subscribers", queryParams]
-                              });
+                              applySubscriberFilters({ status: value });
                             }}
                           >
                             <SelectTrigger className="w-[200px]">
@@ -3861,17 +3883,7 @@ export default function AdminPage() {
                             value={subscriberListFilter || ""}
                             onValueChange={(value) => {
                               setSubscriberListFilter(value);
-                              
-                              // Build query parameters with all active filters
-                              const queryParams: any = {};
-                              if (subscriberStatusFilter) queryParams.status = subscriberStatusFilter;
-                              if (subscriberSearch) queryParams.search = subscriberSearch;
-                              if (value) queryParams.listId = value;
-                              
-                              // Refresh subscribers with all filters
-                              queryClient.invalidateQueries({
-                                queryKey: ["/api/email-marketing/subscribers", queryParams]
-                              });
+                              applySubscriberFilters({ listId: value });
                             }}
                           >
                             <SelectTrigger className="w-[200px]">
@@ -3897,8 +3909,10 @@ export default function AdminPage() {
                               setSubscriberListFilter("");
                               
                               // Refresh subscribers with no filters
-                              queryClient.invalidateQueries({
-                                queryKey: ["/api/email-marketing/subscribers", {}]
+                              applySubscriberFilters({
+                                search: null,
+                                status: null,
+                                listId: null
                               });
                               
                               // Show toast to confirm filters reset
