@@ -1905,7 +1905,7 @@ export default function AdminPage() {
             {currentUser && (
               <div className="flex items-center space-x-2">
                 <div className="flex flex-col items-end">
-                  <p className="text-sm font-medium">{currentUser?.username || "User"}</p>
+                  <p className="text-sm font-medium">{currentUser?.displayName || currentUser?.username || "Logged In"}</p>
                   <p className="text-xs text-muted-foreground">
                     {currentUser?.role === "admin" 
                       ? "Administrator" 
@@ -1924,7 +1924,7 @@ export default function AdminPage() {
                     }
                   </AvatarFallback>
                   {currentUser?.avatar && (
-                    <AvatarImage src={currentUser.avatar} alt={currentUser?.username || "User"} />
+                    <AvatarImage src={currentUser.avatar} alt={currentUser?.displayName || currentUser?.username || "Logged In"} />
                   )}
                 </Avatar>
               </div>

@@ -76,14 +76,21 @@ const Header = ({ user: propUser, onProfileClick, onLogout }: HeaderProps) => {
                     className="rounded-none hover:bg-transparent hover:text-primary"
                   >
                     <Avatar className="h-8 w-8 ring-1 dark:ring-white/20 light:ring-black/20">
-                      <AvatarImage src={user.avatar} alt={user.displayName} />
-                      <AvatarFallback>{user.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
+                      <AvatarImage src={user.avatar} alt={user.displayName || user.username || "Logged In"} />
+                      <AvatarFallback>
+                        {user.displayName 
+                          ? user.displayName.charAt(0).toUpperCase()
+                          : user.username
+                            ? user.username.charAt(0).toUpperCase()
+                            : "U"
+                        }
+                      </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 dark:bg-black dark:border-white/10 light:bg-white light:border-black/10">
                   <DropdownMenuLabel className="uppercase text-xs tracking-widest">
-                    {user.displayName} {user.isGuest && "(Guest)"}
+                    {user.displayName || user.username || "Logged In"} {user.isGuest && "(Guest)"}
                     {user.role === "admin" && " (Admin)"}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="dark:bg-white/10 light:bg-black/10" />
