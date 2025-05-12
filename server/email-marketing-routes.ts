@@ -140,10 +140,14 @@ try {
   console.log("Multer configuration successful");
 } catch (multerError) {
   console.error("Failed to configure multer with disk storage:", multerError);
-  // Fallback to memory storage
+  // Fallback to memory storage with permissive filter
   upload = multer({ 
     storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 }
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+      console.log("Memory storage fallback accepting file:", file.originalname);
+      cb(null, true); // Accept all files when using memory storage
+    }
   });
   console.log("Configured multer with memory storage fallback");
 }
