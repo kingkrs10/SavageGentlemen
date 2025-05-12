@@ -501,25 +501,36 @@ emailMarketingRouter.delete("/subscribers/:id", async (req: Request, res: Respon
 
 /**
  * Import subscribers from CSV
+ * Enhanced for production environment reliability
  */
 emailMarketingRouter.post(
   "/subscribers/import", 
   upload.single("file"),
   async (req: Request, res: Response) => {
     // Enhanced authentication check with detailed logging
-    console.log("CSV Import authentication headers:", {
+    console.log("CSV Import environment:", process.env.NODE_ENV || 'development');
+    console.log("CSV Import request details:", {
       userId: req.headers['user-id'],
       hasAuthHeader: !!req.headers.authorization,
       contentType: req.headers['content-type'],
-      cookie: req.headers.cookie ? 'Present' : 'Missing'
+      hasBody: !!req.body,
+      hasFile: !!req.file,
+      cookie: req.headers.cookie ? 'Present' : 'Missing',
+      url: req.url,
+      method: req.method
     });
     
-    // If in production, ensure it has proper authentication
-    if (process.env.NODE_ENV === 'production' && !req.headers['user-id'] && !req.headers.authorization) {
-      console.error("Authentication failed for CSV import: No user-id or authorization header");
+    // More lenient authentication check for production
+    // Accept any form of authentication as valid
+    const hasAnyAuth = !!req.headers['user-id'] || 
+                       !!req.headers.authorization || 
+                       !!(req as any).user;
+    
+    if (!hasAnyAuth && process.env.NODE_ENV === 'production') {
+      console.error("Authentication completely missing for CSV import");
       return res.status(401).json({ 
         message: "Authentication required", 
-        error: "You must be logged in to upload files" 
+        error: "You must be logged in to upload files"
       });
     }
     
@@ -528,7 +539,11 @@ emailMarketingRouter.post(
       console.log("CSV file received:", {
         filename: req.file.originalname,
         size: req.file.size,
-        mimetype: req.file.mimetype
+        mimetype: req.file.mimetype,
+        path: req.file.path || 'No path (memory storage)',
+        fieldname: req.file.fieldname,
+        encoding: req.file.encoding,
+        buffer: req.file.buffer ? `Buffer (${req.file.buffer.length} bytes)` : 'No buffer'
       });
     } else {
       console.error("No file in the request");
@@ -536,6 +551,7 @@ emailMarketingRouter.post(
     
     try {
       // Starting CSV import process
+      console.log("Starting CSV import process");
       
       if (!req.file) {
         return res.status(400).json({ 
@@ -545,27 +561,56 @@ emailMarketingRouter.post(
       }
       
       const listId = req.body.listId ? Number(req.body.listId) : null;
-      const filePath = req.file.path;
+      console.log("Target list ID:", listId);
       
-      // Detailed file verification
-      console.log("Verifying uploaded file:", {
-        path: filePath,
-        exists: fs.existsSync(filePath),
-        stats: fs.existsSync(filePath) ? fs.statSync(filePath) : null
-      });
+      let csvContent;
+      let csvData: string;
       
-      // Verify file exists
-      if (!fs.existsSync(filePath)) {
-        console.error(`CSV Import failed: File does not exist at path ${filePath}`);
-        return res.status(500).json({ 
-          message: "File upload failed",
-          error: "The file was received but could not be saved. Check server permissions."
+      // Handle both on-disk files and in-memory buffers
+      if (req.file.buffer) {
+        // Handle in-memory buffer (from multer memory storage)
+        console.log("Processing CSV from memory buffer");
+        csvData = req.file.buffer.toString('utf8');
+      } else if (req.file.path) {
+        // Handle on-disk file
+        const filePath = req.file.path;
+        
+        // Detailed file verification
+        const fileExists = fs.existsSync(filePath);
+        console.log("Verifying uploaded file:", {
+          path: filePath,
+          exists: fileExists,
+          stats: fileExists ? fs.statSync(filePath) : null
+        });
+        
+        // Verify file exists
+        if (!fileExists) {
+          console.error(`CSV Import failed: File does not exist at path ${filePath}`);
+          return res.status(500).json({ 
+            message: "File upload failed",
+            error: "The file was received but could not be saved. Check server permissions."
+          });
+        }
+        
+        // Read file content
+        try {
+          csvData = fs.readFileSync(filePath, 'utf8');
+        } catch (readError) {
+          console.error("Error reading CSV file:", readError);
+          return res.status(500).json({
+            message: "File read error",
+            error: "Could not read the uploaded file. Please try again."
+          });
+        }
+      } else {
+        return res.status(400).json({
+          message: "Invalid file upload",
+          error: "The file was not properly uploaded. Please try again."
         });
       }
       
-      // Check file size
-      const stats = fs.statSync(filePath);
-      if (stats.size === 0) {
+      // Check if we have valid CSV data
+      if (!csvData || csvData.trim().length === 0) {
         console.error("CSV Import failed: Empty file uploaded");
         return res.status(400).json({
           message: "Empty file uploaded",
@@ -573,25 +618,7 @@ emailMarketingRouter.post(
         });
       }
       
-      // Read the first few bytes to check for BOM and encoding issues
-      try {
-        const fileBuffer = fs.readFileSync(filePath, { encoding: null });
-        console.log("File analysis:", {
-          size: fileBuffer.length,
-          firstBytes: fileBuffer.length > 0 ? fileBuffer.slice(0, Math.min(20, fileBuffer.length)).toString('hex') : 'empty',
-          hasUtf8Bom: fileBuffer.length >= 3 && 
-            fileBuffer[0] === 0xEF && 
-            fileBuffer[1] === 0xBB && 
-            fileBuffer[2] === 0xBF
-        });
-      } catch (error) {
-        console.error("Error analyzing file:", error);
-      }
-      
-      // Process CSV file using a more reliable approach
-      const results: any[] = [];
-      
-      // Simpler parse options without causing TypeScript errors
+      // Define CSV parsing options
       const parserOptions: any = {
         columns: true,
         skip_empty_lines: true,
@@ -605,15 +632,17 @@ emailMarketingRouter.post(
       
       console.log("Starting CSV parsing with options:", parserOptions);
       
-      // Fallback to basic CSV parsing if advanced parsing fails
+      // Process CSV data with error handling
+      let records: any[] = [];
+      let fileName = req.file?.originalname || 'unknown.csv';
+      
       try {
-        // Try parsing the file directly first as a simpler approach
-        const fileContent = fs.readFileSync(filePath, 'utf8');
-        console.log(`Read file contents (first 100 chars): ${fileContent.substring(0, 100)}...`);
+        console.log(`Processing CSV content from string, length: ${csvData.length}`);
+        console.log(`CSV preview (first 100 chars): ${csvData.substring(0, 100)}...`);
         
         // Import all records at once instead of streaming for better error handling
-        const records = await new Promise<any[]>((resolve, reject) => {
-          parse(fileContent, parserOptions, (err, output) => {
+        records = await new Promise<any[]>((resolve, reject) => {
+          parse(csvData, parserOptions, (err, output) => {
             if (err) {
               console.error("Error parsing CSV:", err);
               reject(err);
