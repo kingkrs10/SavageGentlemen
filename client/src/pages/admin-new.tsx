@@ -496,13 +496,6 @@ export default function AdminPage() {
   // Create subscriber filter params state
   const [subscriberParams, setSubscriberParams] = useState({});
   
-  // Log subscriber data when it changes
-  useEffect(() => {
-    if (emailSubscribers) {
-      console.log("Email subscribers data:", emailSubscribers);
-    }
-  }, [emailSubscribers]);
-  
   // Fetch email subscribers with filter parameters
   const {
     data: emailSubscribers = { subscribers: [] },
@@ -513,6 +506,13 @@ export default function AdminPage() {
     enabled: !!currentUser && currentUser?.role === 'admin',
     retry: 3,
   });
+  
+  // Log subscriber data when it changes
+  useEffect(() => {
+    if (emailSubscribers) {
+      console.log("Email subscribers data:", emailSubscribers);
+    }
+  }, [emailSubscribers]);
   
   // Fetch email campaigns
   const {
