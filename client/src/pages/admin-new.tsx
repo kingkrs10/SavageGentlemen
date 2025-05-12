@@ -1602,7 +1602,13 @@ export default function AdminPage() {
   };
 
   {/* Campaign Form Dialog */}
-  <Dialog open={campaignFormOpen} onOpenChange={setCampaignFormOpen}>
+  <Dialog 
+    open={campaignFormOpen} 
+    onOpenChange={(open) => {
+      console.log("Dialog open state changing to:", open);
+      setCampaignFormOpen(open);
+    }}
+  >
     <DialogContent className="max-w-md">
       <DialogHeader>
         <DialogTitle>{editingCampaign ? 'Edit Campaign' : 'Create Campaign'}</DialogTitle>
@@ -4194,7 +4200,10 @@ export default function AdminPage() {
                         <h3 className="text-lg font-medium">Email Campaigns</h3>
                         <Button 
                           size="sm" 
-                          onClick={handleCreateCampaign}
+                          onClick={() => {
+                            console.log("New Campaign button clicked");
+                            handleCreateCampaign();
+                          }}
                         >
                           <Plus className="h-4 w-4 mr-2" />
                           New Campaign
