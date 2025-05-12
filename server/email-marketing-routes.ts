@@ -821,9 +821,9 @@ emailMarketingRouter.post("/campaigns/send", async (req: Request, res: Response)
   try {
     const { campaignId, testEmails, isTest = false } = req.body;
     
-    if (!campaignId && !testEmails) {
+    if (!campaignId) {
       return res.status(400).json({ 
-        message: "Either campaignId or testEmails are required" 
+        message: "Campaign ID is required" 
       });
     }
     
@@ -837,15 +837,35 @@ emailMarketingRouter.post("/campaigns/send", async (req: Request, res: Response)
       return res.status(404).json({ message: "Campaign not found" });
     }
     
+    // If it's already sent and not a test, don't send again
+    if (campaign.status === 'sent' && !isTest) {
+      return res.status(400).json({ 
+        message: "Campaign has already been sent" 
+      });
+    }
+    
+    // Ensure the campaign has a list associated with it
+    if (!campaign.listId && !isTest) {
+      return res.status(400).json({ 
+        message: "Campaign must be associated with an email list" 
+      });
+    }
+    
     // If test email, send to test recipients only
     if (isTest && testEmails && testEmails.length > 0) {
       const testResults = [];
       
       for (const email of testEmails) {
+        // Add personalization in test emails
+        const personalizedContent = campaign.content
+          .replace(/{{email}}/g, email)
+          .replace(/{{firstName}}/g, 'Test')
+          .replace(/{{lastName}}/g, 'User');
+        
         const success = await sendEmail({
           to: email,
           subject: `[TEST] ${campaign.subject}`,
-          html: campaign.content,
+          html: personalizedContent,
         });
         
         testResults.push({
@@ -887,8 +907,79 @@ emailMarketingRouter.post("/campaigns/send", async (req: Request, res: Response)
       });
     }
     
-    // Here we would implement a proper email sending queue
-    // For now, we'll return the list of subscribers that would receive the campaign
+    // Create email campaign stats record if it doesn't exist
+    const [existingStats] = await db
+      .select()
+      .from(emailCampaignStats)
+      .where(eq(emailCampaignStats.campaignId, campaign.id));
+    
+    if (!existingStats) {
+      await db
+        .insert(emailCampaignStats)
+        .values({
+          campaignId: campaign.id
+        });
+    }
+    
+    // Process sending emails to subscribers in batches
+    const batchSize = 50; // SendGrid recommends not sending too many emails at once
+    const results = {
+      successCount: 0,
+      failureCount: 0,
+      totalCount: subscribers.length
+    };
+    
+    // Process in batches to avoid overwhelming the server or email service
+    for (let i = 0; i < subscribers.length; i += batchSize) {
+      const batch = subscribers.slice(i, i + batchSize);
+      
+      // Process each subscriber in the batch
+      const batchPromises = batch.map(async (subscriber) => {
+        try {
+          // Apply simple personalization
+          let personalizedContent = campaign.content;
+          
+          // Replace placeholders with subscriber data
+          if (subscriber.email) {
+            personalizedContent = personalizedContent.replace(/{{email}}/g, subscriber.email);
+          }
+          
+          if (subscriber.firstName) {
+            personalizedContent = personalizedContent.replace(/{{firstName}}/g, subscriber.firstName);
+          } else {
+            personalizedContent = personalizedContent.replace(/{{firstName}}/g, '');
+          }
+          
+          if (subscriber.lastName) {
+            personalizedContent = personalizedContent.replace(/{{lastName}}/g, subscriber.lastName);
+          } else {
+            personalizedContent = personalizedContent.replace(/{{lastName}}/g, '');
+          }
+          
+          // Send personalized email
+          const success = await sendEmail({
+            to: subscriber.email,
+            subject: campaign.subject,
+            html: personalizedContent,
+          });
+          
+          if (success) {
+            results.successCount++;
+          } else {
+            results.failureCount++;
+          }
+          
+          return success;
+        } catch (error) {
+          console.error(`Error sending to ${subscriber.email}:`, error);
+          results.failureCount++;
+          return false;
+        }
+      });
+      
+      // Wait for the batch to finish before processing the next one
+      await Promise.all(batchPromises);
+    }
     
     // Update campaign status
     await db
@@ -899,14 +990,190 @@ emailMarketingRouter.post("/campaigns/send", async (req: Request, res: Response)
       })
       .where(eq(emailCampaigns.id, campaign.id));
     
+    // Update campaign stats
+    await db
+      .update(emailCampaignStats)
+      .set({
+        sent: results.totalCount,
+        delivered: results.successCount,
+        bounced: results.failureCount
+      })
+      .where(eq(emailCampaignStats.campaignId, campaign.id));
+    
     return res.status(200).json({
-      message: `Campaign would be sent to ${subscribers.length} subscribers`,
-      campaign,
-      subscriberCount: subscribers.length
+      message: `Campaign sent to ${subscribers.length} subscribers`,
+      campaign: {
+        ...campaign,
+        status: "sent",
+        sentAt: new Date()
+      },
+      stats: results
     });
   } catch (error) {
     console.error("Error sending campaign:", error);
     res.status(500).json({ message: "Failed to send campaign" });
+  }
+});
+
+/**
+ * Get all campaigns
+ */
+emailMarketingRouter.get("/campaigns", async (req: Request, res: Response) => {
+  try {
+    const campaigns = await db
+      .select({
+        campaign: emailCampaigns,
+        listName: emailLists.name
+      })
+      .from(emailCampaigns)
+      .leftJoin(emailLists, eq(emailCampaigns.listId, emailLists.id))
+      .orderBy(emailCampaigns.createdAt);
+    
+    res.json(campaigns.map(row => ({
+      ...row.campaign,
+      listName: row.listName
+    })));
+  } catch (error) {
+    console.error("Error fetching campaigns:", error);
+    res.status(500).json({ message: "Failed to fetch campaigns" });
+  }
+});
+
+/**
+ * Create new campaign
+ */
+emailMarketingRouter.post("/campaigns", async (req: Request, res: Response) => {
+  try {
+    const validatedData = insertEmailCampaignSchema.parse(req.body);
+    
+    // If listId is provided, validate it exists
+    if (validatedData.listId) {
+      const [list] = await db
+        .select()
+        .from(emailLists)
+        .where(eq(emailLists.id, validatedData.listId));
+      
+      if (!list) {
+        return res.status(400).json({ message: "Selected email list does not exist" });
+      }
+    }
+    
+    const [newCampaign] = await db
+      .insert(emailCampaigns)
+      .values(validatedData)
+      .returning();
+    
+    res.status(201).json(newCampaign);
+  } catch (error) {
+    handleZodError(error, res);
+  }
+});
+
+/**
+ * Get campaign by ID
+ */
+emailMarketingRouter.get("/campaigns/:id", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  
+  try {
+    const [campaign] = await db
+      .select()
+      .from(emailCampaigns)
+      .where(eq(emailCampaigns.id, Number(id)));
+    
+    if (!campaign) {
+      return res.status(404).json({ message: "Campaign not found" });
+    }
+    
+    res.json(campaign);
+  } catch (error) {
+    console.error("Error fetching campaign:", error);
+    res.status(500).json({ message: "Failed to fetch campaign" });
+  }
+});
+
+/**
+ * Update campaign
+ */
+emailMarketingRouter.put("/campaigns/:id", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  
+  try {
+    // First check if the campaign exists
+    const [existingCampaign] = await db
+      .select()
+      .from(emailCampaigns)
+      .where(eq(emailCampaigns.id, Number(id)));
+    
+    if (!existingCampaign) {
+      return res.status(404).json({ message: "Campaign not found" });
+    }
+    
+    // Don't allow updating campaigns that are already sent
+    if (existingCampaign.status === 'sent') {
+      return res.status(400).json({ 
+        message: "Cannot update a campaign that has already been sent" 
+      });
+    }
+    
+    const validatedData = insertEmailCampaignSchema.parse(req.body);
+    
+    // If listId is provided, validate it exists
+    if (validatedData.listId) {
+      const [list] = await db
+        .select()
+        .from(emailLists)
+        .where(eq(emailLists.id, validatedData.listId));
+      
+      if (!list) {
+        return res.status(400).json({ message: "Selected email list does not exist" });
+      }
+    }
+    
+    const [updatedCampaign] = await db
+      .update(emailCampaigns)
+      .set(validatedData)
+      .where(eq(emailCampaigns.id, Number(id)))
+      .returning();
+    
+    res.json(updatedCampaign);
+  } catch (error) {
+    handleZodError(error, res);
+  }
+});
+
+/**
+ * Delete campaign
+ */
+emailMarketingRouter.delete("/campaigns/:id", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  
+  try {
+    // First check if the campaign exists
+    const [existingCampaign] = await db
+      .select()
+      .from(emailCampaigns)
+      .where(eq(emailCampaigns.id, Number(id)));
+    
+    if (!existingCampaign) {
+      return res.status(404).json({ message: "Campaign not found" });
+    }
+    
+    // Don't allow deleting campaigns that are already sent
+    if (existingCampaign.status === 'sent') {
+      return res.status(400).json({ 
+        message: "Cannot delete a campaign that has already been sent" 
+      });
+    }
+    
+    await db
+      .delete(emailCampaigns)
+      .where(eq(emailCampaigns.id, Number(id)));
+    
+    res.json({ message: "Campaign deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting campaign:", error);
+    res.status(500).json({ message: "Failed to delete campaign" });
   }
 });
 
