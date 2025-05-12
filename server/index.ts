@@ -14,12 +14,16 @@ const corsOptions = {
         'https://sgxmedia.com',
         'https://www.sgxmedia.com',
         /\.sgxmedia\.com$/,
-        /\.replit\.app$/
+        /\.replit\.app$/,
+        // Allow all during development, even in production mode
+        ...(true ? ['http://localhost:3000', 'http://localhost:5000', /localhost/, /127.0.0.1/] : [])
       ] 
     : true, // Allow all origins in development
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'user-id']
+  allowedHeaders: ['Content-Type', 'Authorization', 'user-id', 'X-Firebase-Token'],
+  exposedHeaders: ['Content-Length', 'Date'],
+  maxAge: 86400 // 24 hours
 };
 
 app.use(cors(corsOptions));

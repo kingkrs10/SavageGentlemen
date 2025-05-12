@@ -104,6 +104,8 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     // Add user-id header if available in localStorage
     let headers: Record<string, string> = {};
+    let userId = null;
+    let authToken = null;
     
     try {
       const storedUser = localStorage.getItem("user");
@@ -118,8 +120,24 @@ export const getQueryFn: <T>(options: {
         const userData = user.data || user;
         
         if (userData && userData.id) {
-          headers["user-id"] = userData.id.toString();
-          console.log("Added user-id header:", userData.id);
+          userId = userData.id.toString();
+          headers["user-id"] = userId;
+          
+          // Set Authorization header if token exists
+          if (userData.token) {
+            authToken = userData.token;
+            headers["Authorization"] = `Bearer ${authToken}`;
+          }
+          
+          // Try to get token from sessionStorage as fallback
+          if (!authToken) {
+            const sessionToken = sessionStorage.getItem("authToken");
+            if (sessionToken) {
+              headers["Authorization"] = `Bearer ${sessionToken}`;
+            }
+          }
+          
+          console.log("Added auth headers for user:", userId);
           console.log("User role:", userData.role);
         } else {
           console.log("Missing user ID in stored user object");

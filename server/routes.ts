@@ -115,27 +115,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Authentication middleware
   const authenticateUser = async (req: Request, res: Response, next: NextFunction) => {
-    const userId = req.headers['user-id'];
+    // Try Authorization header first (for production)
+    const authHeader = req.headers['authorization'];
+    let userId = req.headers['user-id'];
+    let user = null;
     
-    if (!userId) {
+    console.log("Authenticating request:", {
+      path: req.path,
+      userId: userId,
+      hasAuthHeader: !!authHeader
+    });
+    
+    // If we have an Authorization header, try to validate it
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        // Get the token
+        const token = authHeader.split(' ')[1];
+        
+        // Verify using Firebase Admin (if token exists)
+        if (token && token !== 'undefined' && token !== 'null') {
+          try {
+            const decodedToken = await admin.auth().verifyIdToken(token);
+            console.log("Firebase token verified:", decodedToken.uid);
+            
+            // Look up user by firebase uid
+            const userByFirebase = await storage.getUserByFirebaseId(decodedToken.uid);
+            if (userByFirebase) {
+              user = userByFirebase;
+              console.log("User authenticated via Firebase token:", user.id);
+            }
+          } catch (fbError) {
+            console.error("Firebase token verification failed:", fbError);
+          }
+        }
+      } catch (tokenError) {
+        console.error("Error processing auth token:", tokenError);
+      }
+    }
+    
+    // If we couldn't authenticate via token, try user-id header as fallback
+    if (!user && userId) {
+      try {
+        const id = parseInt(userId as string);
+        user = await storage.getUser(id);
+        
+        if (user) {
+          console.log("User authenticated via user-id header:", user.id);
+        }
+      } catch (userIdError) {
+        console.error("Error authenticating with user-id:", userIdError);
+      }
+    }
+    
+    // If we still don't have a user, authentication failed
+    if (!user) {
+      console.log("Authentication failed for request:", req.path);
       return res.status(401).json({ message: "Authentication required" });
     }
     
-    try {
-      const id = parseInt(userId as string);
-      const user = await storage.getUser(id);
-      
-      if (!user) {
-        return res.status(401).json({ message: "User not found" });
-      }
-      
-      // Add user to request object
-      req.user = user;
-      next();
-    } catch (error) {
-      console.error("Authentication error:", error);
-      return res.status(500).json({ message: "Authentication error" });
-    }
+    // Add user to request object
+    req.user = user;
+    next();
   };
   
   // Endpoint to check if user is logged in (for session validation)

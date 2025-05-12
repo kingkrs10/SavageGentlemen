@@ -556,12 +556,20 @@ export default function AdminPage() {
     isError: isUsersError
   } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
-    enabled: !!currentUser,
-    onSuccess: (data) => console.log("Users loaded successfully:", data?.length),
-    onError: (error) => console.error("Error loading users:", error),
+    enabled: !!currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator'),
     retry: 3,
     refetchOnWindowFocus: false
   });
+  
+  // Log user data/errors for debugging
+  useEffect(() => {
+    if (users && users.length > 0) {
+      console.log("Users loaded successfully:", users.length);
+    }
+    if (isUsersError) {
+      console.error("Error loading users:", usersError);
+    }
+  }, [users, isUsersError, usersError]);
   
   // Fetch all tickets
   const {
@@ -571,12 +579,20 @@ export default function AdminPage() {
     isError: isTicketsError
   } = useQuery<Ticket[]>({
     queryKey: ["/api/admin/tickets"],
-    enabled: !!currentUser,
-    onSuccess: (data) => console.log("Tickets loaded successfully:", data?.length),
-    onError: (error) => console.error("Error loading tickets:", error),
+    enabled: !!currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator'),
     retry: 3,
     refetchOnWindowFocus: false
   });
+  
+  // Log ticket data/errors for debugging
+  useEffect(() => {
+    if (tickets && tickets.length > 0) {
+      console.log("Tickets loaded successfully:", tickets.length);
+    }
+    if (isTicketsError) {
+      console.error("Error loading tickets:", ticketsError);
+    }
+  }, [tickets, isTicketsError, ticketsError]);
   
   // Fetch orders
   const {

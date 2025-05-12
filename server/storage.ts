@@ -1325,6 +1325,23 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
   
+  async getUserByFirebaseId(firebaseId: string): Promise<User | undefined> {
+    if (!firebaseId) return undefined;
+    
+    try {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.firebaseId, firebaseId));
+      
+      console.log("Found user by Firebase ID:", firebaseId, user?.id || "none");
+      return user;
+    } catch (error) {
+      console.error("Error finding user by Firebase ID:", error);
+      return undefined;
+    }
+  }
+  
   async updateUserPassword(id: number, newPassword: string): Promise<User | undefined> {
     const [user] = await db
       .update(users)
