@@ -3926,7 +3926,7 @@ export default function AdminPage() {
                                       cleanFormData.append('file', blob, 'subscribers.csv');
                                       
                                       // Use fetch for better error handling with enhanced authentication
-                                      // Get Firebase token if available
+                                      // Prepare headers with proper authentication
                                       let headers: Record<string, string> = {};
                                       
                                       // Add user-id header
@@ -3934,11 +3934,36 @@ export default function AdminPage() {
                                         headers['user-id'] = userId;
                                       }
                                       
-                                      // Try to get Authorization header from localStorage if available
+                                      // Try to get Authorization header from localStorage or sessionStorage
                                       try {
-                                        const authToken = localStorage.getItem('authToken');
-                                        if (authToken) {
-                                          headers['Authorization'] = `Bearer ${authToken}`;
+                                        // Check token from user object first (most reliable)
+                                        const storedUser = localStorage.getItem("user");
+                                        if (storedUser) {
+                                          const user = JSON.parse(storedUser);
+                                          const userData = user.data || user;
+                                          
+                                          if (userData && userData.token) {
+                                            headers['Authorization'] = `Bearer ${userData.token}`;
+                                            console.log("Using token from user object");
+                                          }
+                                        }
+                                        
+                                        // Fallback to authToken in localStorage if no token in user object
+                                        if (!headers['Authorization']) {
+                                          const authToken = localStorage.getItem('authToken');
+                                          if (authToken) {
+                                            headers['Authorization'] = `Bearer ${authToken}`;
+                                            console.log("Using token from localStorage");
+                                          }
+                                        }
+                                        
+                                        // Fallback to sessionStorage as last resort
+                                        if (!headers['Authorization']) {
+                                          const sessionToken = sessionStorage.getItem('authToken');
+                                          if (sessionToken) {
+                                            headers['Authorization'] = `Bearer ${sessionToken}`;
+                                            console.log("Using token from sessionStorage");
+                                          }
                                         }
                                       } catch (e) {
                                         console.error("Could not retrieve auth token:", e);
