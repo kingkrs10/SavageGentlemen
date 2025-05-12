@@ -766,6 +766,7 @@ export const emailLists = pgTable("email_lists", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -833,6 +834,7 @@ export const insertEmailListSchema = createInsertSchema(emailLists)
   .pick({
     name: true,
     description: true,
+    isActive: true,
   });
 
 export const insertEmailSubscriberSchema = createInsertSchema(emailSubscribers)

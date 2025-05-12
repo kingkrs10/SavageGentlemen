@@ -4509,6 +4509,72 @@ export default function AdminPage() {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* Create New Email List Dialog */}
+      <Dialog open={listFormOpen} onOpenChange={setListFormOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Email List</DialogTitle>
+            <DialogDescription>
+              Create a new list to organize your email subscribers.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="list-name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="list-name"
+                value={emailListForm.name}
+                onChange={(e) => setEmailListForm({...emailListForm, name: e.target.value})}
+                className="col-span-3"
+                placeholder="My Event Subscribers"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="list-description" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="list-description"
+                value={emailListForm.description || ''}
+                onChange={(e) => setEmailListForm({...emailListForm, description: e.target.value})}
+                className="col-span-3"
+                placeholder="Optional description for this list"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="list-active" className="text-right">
+                Active
+              </Label>
+              <div className="col-span-3 flex items-center space-x-2">
+                <Checkbox 
+                  id="list-active" 
+                  checked={emailListForm.isActive} 
+                  onCheckedChange={(checked) => 
+                    setEmailListForm({...emailListForm, isActive: Boolean(checked)})
+                  }
+                />
+                <label
+                  htmlFor="list-active"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  List is active and available for campaigns
+                </label>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setListFormOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateList}>
+              Create List
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
