@@ -1543,7 +1543,14 @@ export default function AdminPage() {
     }
     
     try {
+      // Show loading toast
+      toast({
+        title: "Processing",
+        description: "Saving campaign...",
+      });
+      
       let response;
+      console.log("Submitting campaign form:", campaignForm);
       
       if (editingCampaign) {
         // Update existing campaign
@@ -1552,6 +1559,8 @@ export default function AdminPage() {
           `/api/email-marketing/campaigns/${editingCampaign.id}`,
           campaignForm
         );
+        
+        console.log("Campaign update response:", response);
         
         toast({
           title: "Campaign Updated",
@@ -1564,6 +1573,8 @@ export default function AdminPage() {
           '/api/email-marketing/campaigns',
           campaignForm
         );
+        
+        console.log("Campaign creation response:", response);
         
         toast({
           title: "Campaign Created",
@@ -1676,9 +1687,17 @@ export default function AdminPage() {
     }
     
     try {
+      // Show loading toast
+      toast({
+        title: "Processing Request",
+        description: "Preparing to send campaign...",
+      });
+      
       const response = await apiRequest('POST', '/api/email-marketing/campaigns/send', {
         campaignId
       });
+      
+      console.log("Campaign send response:", response);
       
       toast({
         title: "Campaign Sent",
@@ -1689,11 +1708,21 @@ export default function AdminPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/email-marketing/campaigns"] });
       
     } catch (error: any) {
+      console.error("Campaign send error:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to send campaign",
         variant: "destructive"
       });
+      
+      // Check for specific authentication errors
+      if (error.message && error.message.includes("401")) {
+        toast({
+          title: "Authentication Error",
+          description: "Please try logging out and back in to refresh your session",
+          variant: "destructive"
+        });
+      }
     }
   };
 
