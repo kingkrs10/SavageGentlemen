@@ -43,11 +43,14 @@ export async function apiRequest(
       const user = JSON.parse(storedUser);
       console.log("Parsed user:", user);
       
-      if (user && user.data && user.data.id) {
-        userId = user.data.id.toString();
+      // Handle both data formats: { data: { id: ... } } and direct { id: ... }
+      const userData = user.data || user;
+      
+      if (userData && userData.id) {
+        userId = userData.id.toString();
         headers["user-id"] = userId;
         console.log("Added user-id header:", userId);
-        console.log("User role:", user.data.role);
+        console.log("User role:", userData.role);
       } else {
         console.log("Missing user ID in stored user object");
       }
@@ -94,16 +97,17 @@ export const getQueryFn: <T>(options: {
       const url = queryKey[0] as string;
       const normalizedUrl = normalizeUrl(url);
       console.log("Query to:", normalizedUrl, "(original:", url, ")");
-      console.log("Stored user from localStorage:", storedUser);
       
       if (storedUser) {
         const user = JSON.parse(storedUser);
-        console.log("Parsed user:", user);
         
-        if (user && user.data && user.data.id) {
-          headers["user-id"] = user.data.id.toString();
-          console.log("Added user-id header:", user.data.id);
-          console.log("User role:", user.data.role);
+        // Handle both data formats: { data: { id: ... } } and direct { id: ... }
+        const userData = user.data || user;
+        
+        if (userData && userData.id) {
+          headers["user-id"] = userData.id.toString();
+          console.log("Added user-id header:", userData.id);
+          console.log("User role:", userData.role);
         } else {
           console.log("Missing user ID in stored user object");
         }

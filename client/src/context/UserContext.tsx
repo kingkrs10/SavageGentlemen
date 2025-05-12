@@ -36,7 +36,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           console.log("Parsed user:", parsedUser);
           
           // Temporarily set the user from localStorage
-          setUser(parsedUser.data || parsedUser);
+          // Handle both formats: { data: { ... } } and direct { ... }
+          const userData = parsedUser.data || parsedUser;
+          setUser(userData);
           
           // Validate the session with the server
           try {
