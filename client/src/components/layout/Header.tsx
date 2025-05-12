@@ -1,4 +1,4 @@
-import { Search, User, LogOut, LayoutDashboard, Ticket } from "lucide-react";
+import { Search, User, LogOut, LayoutDashboard, Ticket, Settings, MoreVertical } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { User as UserType } from "@/lib/types";
 import {
@@ -76,7 +76,9 @@ const Header = ({ user: propUser, onProfileClick, onLogout }: HeaderProps) => {
                     className="rounded-none hover:bg-transparent hover:text-primary"
                   >
                     <Avatar className="h-8 w-8 ring-1 dark:ring-white/20 light:ring-black/20">
-                      <AvatarImage src={user.avatar} alt={user.displayName || user.username || "Logged In"} />
+                      {user.avatar ? (
+                        <AvatarImage src={user.avatar} alt={user.displayName || user.username || "Logged In"} />
+                      ) : null}
                       <AvatarFallback>
                         {user.displayName 
                           ? user.displayName.charAt(0).toUpperCase()
@@ -103,6 +105,18 @@ const Header = ({ user: propUser, onProfileClick, onLogout }: HeaderProps) => {
                         <span className="uppercase text-xs tracking-widest">My Tickets</span>
                       </a>
                     </DropdownMenuItem>
+                  <DropdownMenuSeparator className="dark:bg-white/10 light:bg-black/10" />
+                  
+                  {/* Profile settings menu item */}
+                  <DropdownMenuItem 
+                    className="dark:hover:bg-white/5 dark:focus:bg-white/5 light:hover:bg-black/5 light:focus:bg-black/5"
+                    asChild
+                  >
+                    <a href="/profile">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span className="uppercase text-xs tracking-widest">Settings</span>
+                    </a>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator className="dark:bg-white/10 light:bg-black/10" />
                   
                   {/* Always show admin link for testing */}
