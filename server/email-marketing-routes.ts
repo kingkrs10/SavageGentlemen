@@ -59,18 +59,39 @@ const upload = multer({
       'text/csv', 
       'application/csv',
       'application/vnd.ms-excel',
-      'text/plain'
+      'text/plain',
+      'text/x-csv',
+      'application/x-csv', 
+      'text/comma-separated-values', 
+      'text/x-comma-separated-values',
+      'application/octet-stream'  // Some browsers/systems use this generic type
     ];
     
     const acceptableSuffixes = ['.csv', '.txt'];
     const fileExtension = path.extname(file.originalname).toLowerCase();
     
+    console.log("Received file upload:", {
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      extension: fileExtension,
+      fieldname: file.fieldname,
+      encoding: file.encoding
+    });
+    
+    // Accept files with matching mime type or extension
     if (acceptableTypes.includes(file.mimetype) || acceptableSuffixes.includes(fileExtension)) {
       console.log("Accepting file:", file.originalname, file.mimetype);
       cb(null, true);
     } else {
-      console.log("Rejecting file:", file.originalname, file.mimetype);
-      cb(new Error('Only CSV files are allowed'), false);
+      // Still accept the file if it has .csv extension even if mimetype is wrong
+      // This helps with browsers that send incorrect mime types
+      if (fileExtension === '.csv') {
+        console.log("Accepting file with .csv extension despite mimetype:", file.mimetype);
+        cb(null, true);
+      } else {
+        console.warn("Rejecting file:", file.originalname, file.mimetype);
+        cb(null, false); // Changed to not throw an error, just reject silently
+      }
     }
   }
 });
@@ -439,8 +460,16 @@ emailMarketingRouter.post(
         file: req.file ? {
           originalname: req.file.originalname,
           path: req.file.path,
-          size: req.file.size
-        } : "No file"
+          size: req.file.size,
+          mimetype: req.file.mimetype,
+          fieldname: req.file.fieldname
+        } : "No file",
+        headers: {
+          contentType: req.headers['content-type'],
+          userAgent: req.headers['user-agent'],
+          userId: req.headers['user-id'],
+          hasAuth: !!req.headers.authorization
+        }
       });
       
       if (!req.file) {
@@ -453,27 +482,76 @@ emailMarketingRouter.post(
       const listId = req.body.listId ? Number(req.body.listId) : null;
       const filePath = req.file.path;
       
+      // Detailed file verification
+      console.log("Verifying uploaded file:", {
+        path: filePath,
+        exists: fs.existsSync(filePath),
+        stats: fs.existsSync(filePath) ? fs.statSync(filePath) : null
+      });
+      
       // Verify file exists
       if (!fs.existsSync(filePath)) {
+        console.error(`CSV Import failed: File does not exist at path ${filePath}`);
         return res.status(500).json({ 
           message: "File upload failed",
           error: "The file was received but could not be saved. Check server permissions."
         });
       }
       
+      // Check file size
+      const stats = fs.statSync(filePath);
+      if (stats.size === 0) {
+        console.error("CSV Import failed: Empty file uploaded");
+        return res.status(400).json({
+          message: "Empty file uploaded",
+          error: "The uploaded file contains no data"
+        });
+      }
+      
+      // Read the first few bytes to check for BOM and encoding issues
+      try {
+        const fileBuffer = fs.readFileSync(filePath, { encoding: null });
+        console.log("File analysis:", {
+          size: fileBuffer.length,
+          firstBytes: fileBuffer.length > 0 ? fileBuffer.slice(0, Math.min(20, fileBuffer.length)).toString('hex') : 'empty',
+          hasUtf8Bom: fileBuffer.length >= 3 && 
+            fileBuffer[0] === 0xEF && 
+            fileBuffer[1] === 0xBB && 
+            fileBuffer[2] === 0xBF
+        });
+      } catch (error) {
+        console.error("Error analyzing file:", error);
+      }
+      
       // Process CSV file with more forgiving options
       const results: any[] = [];
+      const parserOptions = {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true,
+        skip_records_with_error: true,
+        relax_quotes: true,
+        relax_column_count: true,
+        bom: true, // Handle BOM explicitly
+        encoding: 'utf8',
+        comment: '#', // Skip lines that start with #
+        from_line: 1 // Start from the first line
+      };
+      
+      console.log("Starting CSV parsing with options:", parserOptions);
+      
       const parser = fs
         .createReadStream(filePath)
-        .pipe(parse({
-          columns: true,
-          skip_empty_lines: true,
-          trim: true,
-          skip_records_with_error: true,
-          relax_quotes: true,
-          relax_column_count: true,
-          bom: true // Handle BOM explicitly
-        }));
+        .pipe(parse(parserOptions));
+        
+      // Add error handlers to parser stream
+      parser.on('error', (error) => {
+        console.error("CSV parsing error:", error);
+      });
+      
+      parser.on('skip', (error) => {
+        console.warn("Skipped line in CSV:", error.message);
+      });
       
       try {
         // Get a preview of the headers if available
