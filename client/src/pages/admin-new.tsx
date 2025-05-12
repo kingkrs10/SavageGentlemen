@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Plus, Pencil, Trash, Users, Tag, Layers, Activity, BarChart, Eye, EyeOff, Search, Package, ArrowUp, ArrowDown, AlertTriangle, MailIcon, Upload, Download, UserPlus, Send, ListChecks, Edit as EditIcon } from "lucide-react";
+import { Plus, Pencil, Trash, Users, Tag, Layers, Activity, BarChart, Eye, EyeOff, Search, Package, ArrowUp, ArrowDown, AlertTriangle, MailIcon, Upload, Download, UserPlus, Send, ListChecks, Edit as EditIcon, Mail, FileText } from "lucide-react";
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from "recharts";
@@ -249,6 +249,21 @@ export default function AdminPage() {
   const [selectedSubscriberId, setSelectedSubscriberId] = useState<number | null>(null);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   
+  // Email campaign state
+  const [campaignFormOpen, setCampaignFormOpen] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState<any>(null);
+  const [campaignForm, setCampaignForm] = useState({
+    name: '',
+    subject: '',
+    content: '',
+    listId: '',
+    status: 'draft',
+    scheduledFor: ''
+  });
+  const [sendTestEmailOpen, setSendTestEmailOpen] = useState(false);
+  const [testEmails, setTestEmails] = useState('');
+  const [isTestSending, setIsTestSending] = useState(false);
+  
   const [livestreamForm, setLivestreamForm] = useState({
     title: '',
     description: '',
@@ -424,6 +439,17 @@ export default function AdminPage() {
     error: emailSubscribersError
   } = useQuery<any[]>({
     queryKey: ["/api/email-marketing/subscribers"],
+    enabled: !!currentUser && currentUser?.role === 'admin',
+    retry: 3,
+  });
+  
+  // Fetch email campaigns
+  const {
+    data: emailCampaigns = [],
+    isLoading: emailCampaignsLoading,
+    error: emailCampaignsError
+  } = useQuery<any[]>({
+    queryKey: ["/api/email-marketing/campaigns"],
     enabled: !!currentUser && currentUser?.role === 'admin',
     retry: 3,
   });
