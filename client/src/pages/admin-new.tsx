@@ -3947,7 +3947,7 @@ export default function AdminPage() {
                           <h3 className="text-lg font-medium">Error loading subscribers</h3>
                           <p className="text-sm">Please try again later</p>
                         </div>
-                      ) : (emailSubscribers && emailSubscribers.subscribers && Array.isArray(emailSubscribers.subscribers) && emailSubscribers.subscribers.length > 0) ? (
+                      ) : (emailSubscribers?.subscribers?.length > 0) ? (
                         <div className="rounded-md border overflow-hidden">
                           <Table>
                             <TableHeader>
@@ -3961,7 +3961,7 @@ export default function AdminPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {emailSubscribers && emailSubscribers.subscribers && Array.isArray(emailSubscribers.subscribers) && emailSubscribers.subscribers.map((subscriber: any) => (
+                              {emailSubscribers?.subscribers?.map((subscriber: any) => (
                                 <TableRow key={subscriber.id}>
                                   <TableCell>{subscriber.email || '—'}</TableCell>
                                   <TableCell>
