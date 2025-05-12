@@ -929,8 +929,9 @@ emailMarketingRouter.post(
       
       try {
         // Clean up the temporary file
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
+        if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+          console.log("Temporary file deleted:", req.file.path);
         }
       } catch (cleanupError) {
         console.error("Error cleaning up temp file:", cleanupError);
