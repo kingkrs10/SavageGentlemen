@@ -215,6 +215,22 @@ interface AnalyticsData {
   }>;
 }
 
+interface Campaign {
+  id: number;
+  name: string;
+  subject: string;
+  content: string;
+  listId: number;
+  status: string; // draft, scheduled, sent
+  scheduledFor?: Date | string | null;
+  sentAt?: Date | string | null;
+  createdAt?: Date | string | null;
+  updatedAt?: Date | string | null;
+  sentCount?: number;
+  openCount?: number;
+  clickCount?: number;
+}
+
 export default function AdminPage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
@@ -1280,6 +1296,206 @@ export default function AdminPage() {
         title: "Error",
         description: "Network error while trying to delete user. Please try again.",
         variant: "destructive",
+      });
+    }
+  };
+  
+  // Email campaign handlers
+  const handleCreateCampaign = () => {
+    // Reset form and clear any editing state
+    setCampaignForm({
+      name: '',
+      subject: '',
+      content: '',
+      listId: '',
+      status: 'draft',
+      scheduledFor: ''
+    });
+    setEditingCampaign(null);
+    setCampaignFormOpen(true);
+  };
+  
+  const handleEditCampaign = (campaign: any) => {
+    // Set the campaign being edited
+    setEditingCampaign(campaign);
+    
+    // Populate the form with campaign data
+    setCampaignForm({
+      name: campaign.name,
+      subject: campaign.subject,
+      content: campaign.content,
+      listId: campaign.listId ? campaign.listId.toString() : '',
+      status: campaign.status,
+      scheduledFor: campaign.scheduledFor ? new Date(campaign.scheduledFor).toISOString().split('T')[0] : ''
+    });
+    
+    setCampaignFormOpen(true);
+  };
+  
+  const handleCampaignFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate form
+    if (!campaignForm.name || !campaignForm.subject || !campaignForm.content || !campaignForm.listId) {
+      toast({
+        title: "Missing fields",
+        description: "Please fill out all required fields (name, subject, content, and list)",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      let response;
+      
+      if (editingCampaign) {
+        // Update existing campaign
+        response = await apiRequest(
+          'PUT',
+          `/api/email-marketing/campaigns/${editingCampaign.id}`,
+          campaignForm
+        );
+        
+        toast({
+          title: "Campaign Updated",
+          description: "The email campaign has been updated successfully"
+        });
+      } else {
+        // Create new campaign
+        response = await apiRequest(
+          'POST',
+          '/api/email-marketing/campaigns',
+          campaignForm
+        );
+        
+        toast({
+          title: "Campaign Created",
+          description: "New email campaign has been created successfully"
+        });
+      }
+      
+      // Reset form and close dialog
+      setCampaignForm({
+        name: '',
+        subject: '',
+        content: '',
+        listId: '',
+        status: 'draft',
+        scheduledFor: ''
+      });
+      setCampaignFormOpen(false);
+      setEditingCampaign(null);
+      
+      // Refresh campaigns list
+      queryClient.invalidateQueries({ queryKey: ["/api/email-marketing/campaigns"] });
+      
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save campaign",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleDeleteCampaign = async (campaignId: number) => {
+    if (!confirm("Are you sure you want to delete this campaign?")) {
+      return;
+    }
+    
+    try {
+      await apiRequest('DELETE', `/api/email-marketing/campaigns/${campaignId}`);
+      
+      toast({
+        title: "Campaign Deleted",
+        description: "The email campaign has been deleted successfully"
+      });
+      
+      // Refresh campaigns list
+      queryClient.invalidateQueries({ queryKey: ["/api/email-marketing/campaigns"] });
+      
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete campaign",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleSendTestEmail = async () => {
+    if (!testEmails) {
+      toast({
+        title: "No test emails",
+        description: "Please enter at least one test email address",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!editingCampaign) {
+      toast({
+        title: "No campaign selected",
+        description: "Please select a campaign to test",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsTestSending(true);
+    
+    try {
+      const emailList = testEmails.split(',').map(e => e.trim()).filter(e => e);
+      
+      // Send test email
+      const response = await apiRequest('POST', '/api/email-marketing/campaigns/send', {
+        campaignId: editingCampaign.id,
+        testEmails: emailList,
+        isTest: true
+      });
+      
+      toast({
+        title: "Test Emails Sent",
+        description: `Test emails have been sent to ${emailList.length} recipients`
+      });
+      
+      setSendTestEmailOpen(false);
+      setTestEmails('');
+      
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send test emails",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTestSending(false);
+    }
+  };
+  
+  const handleSendCampaign = async (campaignId: number) => {
+    if (!confirm("Are you sure you want to send this campaign to all subscribers in the selected list?")) {
+      return;
+    }
+    
+    try {
+      const response = await apiRequest('POST', '/api/email-marketing/campaigns/send', {
+        campaignId
+      });
+      
+      toast({
+        title: "Campaign Sent",
+        description: "The email campaign has been queued for delivery"
+      });
+      
+      // Refresh campaigns list
+      queryClient.invalidateQueries({ queryKey: ["/api/email-marketing/campaigns"] });
+      
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send campaign",
+        variant: "destructive"
       });
     }
   };
