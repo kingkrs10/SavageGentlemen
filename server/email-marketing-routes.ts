@@ -525,12 +525,53 @@ emailMarketingRouter.post(
         // Non-fatal error, continue
       }
       
-      // Send results summary
+      // Analyze the results to provide better feedback
+      const errors = results.filter(r => r.status === 'error');
+      const imported = results.filter(r => r.status === 'imported').length;
+      const skipped = results.filter(r => r.status === 'skipped').length;
+      
+      let errorSummary = '';
+      let suggestedFix = '';
+      
+      // Check if all errors are the same type (like missing email)
+      if (errors.length > 0) {
+        // Count error types
+        const errorTypes: Record<string, number> = {};
+        errors.forEach(error => {
+          if (error.message) {
+            errorTypes[error.message] = (errorTypes[error.message] || 0) + 1;
+          }
+        });
+        
+        // Find most common error
+        let mostCommonError = '';
+        let maxCount = 0;
+        
+        for (const [errorMessage, count] of Object.entries(errorTypes)) {
+          if (count > maxCount) {
+            mostCommonError = errorMessage;
+            maxCount = count;
+          }
+        }
+        
+        if (mostCommonError && maxCount > errors.length * 0.7) { // If 70% of errors are the same type
+          errorSummary = `Most errors (${maxCount} of ${errors.length}) are: ${mostCommonError}`;
+          
+          // Suggest a fix based on the error type
+          if (mostCommonError.includes('email')) {
+            suggestedFix = 'Try downloading our Event Attendees template to see the expected format. Look for "Buyer email" or similar column in your CSV.';
+          }
+        }
+      }
+      
+      // Send results summary with enhanced feedback
       const summary = {
         total: results.length,
-        imported: results.filter(r => r.status === 'imported').length,
-        skipped: results.filter(r => r.status === 'skipped').length,
-        errors: results.filter(r => r.status === 'error').length,
+        imported,
+        skipped,
+        errors: errors.length,
+        errorSummary: errorSummary || undefined,
+        suggestedFix: suggestedFix || undefined,
         details: results
       };
       

@@ -3327,10 +3327,39 @@ export default function AdminPage() {
                                     }
                                     
                                     const data = await response.json();
-                                    toast({
-                                      title: "Import Successful",
-                                      description: `Imported ${data.imported} subscribers. ${data.skipped || 0} skipped, ${data.errors || 0} errors.`
-                                    });
+                                    
+                                    // Display more detailed feedback based on result
+                                    if (data.imported > 0) {
+                                      // Success or partial success
+                                      toast({
+                                        title: `Import ${data.errors > 0 ? 'Partially' : ''} Successful`,
+                                        description: `Imported ${data.imported} subscribers. ${data.skipped || 0} skipped. ${data.errors} errors.`,
+                                        variant: data.errors > 0 ? "warning" : "default",
+                                      });
+                                    } else if (data.errors > 0) {
+                                      // Complete failure with error summary
+                                      toast({
+                                        title: `Import Failed`,
+                                        description: data.errorSummary || `${data.errors} errors occurred during import.`,
+                                        variant: "destructive",
+                                      });
+                                      
+                                      // If there's a suggested fix, show it in a separate toast
+                                      if (data.suggestedFix) {
+                                        setTimeout(() => {
+                                          toast({
+                                            title: "Suggestion",
+                                            description: data.suggestedFix,
+                                          });
+                                        }, 1000);
+                                      }
+                                    } else {
+                                      // No imports, no errors (just skips)
+                                      toast({
+                                        title: `No New Subscribers`,
+                                        description: `All ${data.skipped} entries were already in the database.`,
+                                      });
+                                    }
                                     
                                     // Refresh subscribers list
                                     queryClient.invalidateQueries({queryKey: ["/api/email-marketing/subscribers"]});
