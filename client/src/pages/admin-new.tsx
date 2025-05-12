@@ -4617,7 +4617,7 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
+      </div>)
       
       {/* Create New Email List Dialog */}
       <Dialog open={listFormOpen} onOpenChange={setListFormOpen}>
