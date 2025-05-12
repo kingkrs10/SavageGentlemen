@@ -33,15 +33,14 @@ export async function apiRequest(
   
   // Add user-id header if available in localStorage
   let userId = null;
+  let authToken = null;
   try {
     const storedUser = localStorage.getItem("user");
     const normalizedUrl = normalizeUrl(url);
     console.log("API Request to:", normalizedUrl, "Method:", method);
-    console.log("Stored user from localStorage:", storedUser);
     
     if (storedUser) {
       const user = JSON.parse(storedUser);
-      console.log("Parsed user:", user);
       
       // Handle both data formats: { data: { id: ... } } and direct { id: ... }
       const userData = user.data || user;
@@ -49,8 +48,22 @@ export async function apiRequest(
       if (userData && userData.id) {
         userId = userData.id.toString();
         headers["user-id"] = userId;
-        console.log("Added user-id header:", userId);
-        console.log("User role:", userData.role);
+        
+        // Set Authorization header if token exists
+        if (userData.token) {
+          authToken = userData.token;
+          headers["Authorization"] = `Bearer ${authToken}`;
+        }
+        
+        // Try to get token from sessionStorage as fallback
+        if (!authToken) {
+          const sessionToken = sessionStorage.getItem("authToken");
+          if (sessionToken) {
+            headers["Authorization"] = `Bearer ${sessionToken}`;
+          }
+        }
+        
+        console.log("Added auth headers for user:", userId);
       } else {
         console.log("Missing user ID in stored user object");
       }
