@@ -42,11 +42,11 @@ export async function apiRequest(
       const user = JSON.parse(storedUser);
       console.log("Parsed user:", user);
       
-      if (user && user.id) {
-        userId = user.id.toString();
+      if (user && user.data && user.data.id) {
+        userId = user.data.id.toString();
         headers["user-id"] = userId;
         console.log("Added user-id header:", userId);
-        console.log("User role:", user.role);
+        console.log("User role:", user.data.role);
       } else {
         console.log("Missing user ID in stored user object");
       }
@@ -99,10 +99,10 @@ export const getQueryFn: <T>(options: {
         const user = JSON.parse(storedUser);
         console.log("Parsed user:", user);
         
-        if (user && user.id) {
-          headers["user-id"] = user.id.toString();
-          console.log("Added user-id header:", user.id);
-          console.log("User role:", user.role);
+        if (user && user.data && user.data.id) {
+          headers["user-id"] = user.data.id.toString();
+          console.log("Added user-id header:", user.data.id);
+          console.log("User role:", user.data.role);
         } else {
           console.log("Missing user ID in stored user object");
         }
