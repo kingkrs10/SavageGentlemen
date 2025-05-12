@@ -23,8 +23,20 @@ import path from "path";
 export const emailMarketingRouter = Router();
 
 // Configure multer for CSV file uploads
+const uploadsDir = path.join(process.cwd(), "uploads");
+
+// Create uploads directory if it doesn't exist
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log("Created uploads directory at:", uploadsDir);
+  }
+} catch (error) {
+  console.error("Error creating uploads directory:", error);
+}
+
 const upload = multer({ 
-  dest: "uploads/", 
+  dest: uploadsDir, 
   fileFilter: (req, file, cb) => {
     // Accept only CSV files
     if (file.mimetype === "text/csv" || file.originalname.endsWith(".csv")) {
@@ -394,12 +406,32 @@ emailMarketingRouter.post(
   upload.single("file"),
   async (req: Request, res: Response) => {
     try {
+      console.log("CSV Import request received:", {
+        body: req.body,
+        file: req.file ? {
+          originalname: req.file.originalname,
+          path: req.file.path,
+          size: req.file.size
+        } : "No file"
+      });
+      
       if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
+        return res.status(400).json({ 
+          message: "No file uploaded", 
+          error: "Make sure you've selected a valid CSV file and the form includes 'file' field"
+        });
       }
       
       const listId = req.body.listId ? Number(req.body.listId) : null;
       const filePath = req.file.path;
+      
+      // Verify file exists
+      if (!fs.existsSync(filePath)) {
+        return res.status(500).json({ 
+          message: "File upload failed",
+          error: "The file was received but could not be saved. Check server permissions."
+        });
+      }
       
       // Process CSV file with more forgiving options
       const results: any[] = [];
