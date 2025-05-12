@@ -4348,24 +4348,55 @@ export default function AdminPage() {
                                 </div>
                               </CardContent>
                               <CardFooter className="flex justify-between">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    // View list subscribers - set filter to show only subscribers for this list
-                                    setSelectedListId(list.id);
-                                    // Update filter params to show only this list's subscribers
-                                    setSubscriberParams({
-                                      ...subscriberParams,
-                                      listId: list.id.toString()
-                                    });
-                                    // Switch to subscribers tab
-                                    setEmailMarketingTab("subscribers");
-                                  }}
-                                >
-                                  <ListChecks className="h-4 w-4 mr-2" />
-                                  View
-                                </Button>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      // View list subscribers - set filter to show only subscribers for this list
+                                      setSelectedListId(list.id);
+                                      // Update filter params to show only this list's subscribers
+                                      setSubscriberParams({
+                                        ...subscriberParams,
+                                        listId: list.id.toString()
+                                      });
+                                      // Switch to subscribers tab
+                                      setEmailMarketingTab("subscribers");
+                                    }}
+                                  >
+                                    <ListChecks className="h-4 w-4 mr-2" />
+                                    View
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-red-500 border-red-200 hover:bg-red-50"
+                                    onClick={() => {
+                                      if (confirm(`Are you sure you want to delete the list "${list.name}"? This cannot be undone.`)) {
+                                        apiRequest('DELETE', `/api/email-marketing/lists/${list.id}`)
+                                          .then(() => {
+                                            toast({
+                                              title: "List Deleted",
+                                              description: "The email list has been deleted successfully"
+                                            });
+                                            // Refresh the email lists
+                                            queryClient.invalidateQueries({ queryKey: ['/api/email-marketing/lists'] });
+                                          })
+                                          .catch(err => {
+                                            toast({
+                                              title: "Error",
+                                              description: "Failed to delete the email list",
+                                              variant: "destructive"
+                                            });
+                                            console.error("Delete error:", err);
+                                          });
+                                      }
+                                    }}
+                                  >
+                                    <Trash className="h-4 w-4 mr-2" />
+                                    Delete
+                                  </Button>
+                                </div>
                                 <Button
                                   variant="outline"
                                   size="sm"
