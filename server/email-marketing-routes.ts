@@ -323,104 +323,144 @@ emailMarketingRouter.post(
       const listId = req.body.listId ? Number(req.body.listId) : null;
       const filePath = req.file.path;
       
-      // Process CSV file
+      // Process CSV file with more forgiving options
       const results: any[] = [];
       const parser = fs
         .createReadStream(filePath)
         .pipe(parse({
           columns: true,
           skip_empty_lines: true,
-          trim: true
+          trim: true,
+          skip_records_with_error: true,
+          relax_quotes: true,
+          relax_column_count: true,
+          bom: true // Handle BOM explicitly
         }));
       
-      for await (const record of parser) {
-        // Normalize CSV column names
-        const subscriber = {
-          email: record.email || record.Email || record.EMAIL,
-          firstName: record.firstName || record.first_name || record.FirstName || record["First Name"],
-          lastName: record.lastName || record.last_name || record.LastName || record["Last Name"],
-          status: 'active',
-          source: 'import',
-        };
-        
-        // Validate email
-        if (!subscriber.email || !subscriber.email.includes('@')) {
-          results.push({
-            email: subscriber.email,
-            status: 'error',
-            message: 'Invalid email format'
-          });
-          continue;
-        }
-        
-        try {
-          // Check if subscriber already exists
-          const [existingSubscriber] = await db
-            .select()
-            .from(emailSubscribers)
-            .where(eq(emailSubscribers.email, subscriber.email));
-          
-          if (existingSubscriber) {
-            results.push({
-              email: subscriber.email,
-              status: 'skipped',
-              message: 'Email already exists'
-            });
-            
-            // If list ID provided, add existing subscriber to list
-            if (listId) {
-              const [existingRelation] = await db
-                .select()
-                .from(emailListSubscribers)
-                .where(
-                  and(
-                    eq(emailListSubscribers.listId, listId),
-                    eq(emailListSubscribers.subscriberId, existingSubscriber.id)
-                  )
-                );
-                
-              if (!existingRelation) {
-                await db.insert(emailListSubscribers).values({
-                  listId,
-                  subscriberId: existingSubscriber.id,
-                });
-              }
-            }
-            
+      try {
+        for await (const record of parser) {
+          // Skip empty records or invalid types
+          if (!record || typeof record !== 'object') {
+            console.log("Skipping invalid record:", record);
             continue;
           }
           
-          // Create new subscriber
-          const [newSubscriber] = await db
-            .insert(emailSubscribers)
-            .values(subscriber)
-            .returning();
+          // Log record for debugging
+          console.log("Processing CSV record:", record);
           
-          // Add to list if provided
-          if (listId) {
-            await db.insert(emailListSubscribers).values({
-              listId,
-              subscriberId: newSubscriber.id,
+          // Safely extract values with multiple possible column names
+          const getField = (fieldNames: string[]): string => {
+            for (const name of fieldNames) {
+              const value = record[name];
+              if (value !== undefined && value !== null && value !== '') {
+                return String(value).trim();
+              }
+            }
+            return '';
+          };
+          
+          // Normalize CSV column names with extensive fallbacks
+          const subscriber = {
+            email: getField(['email', 'Email', 'EMAIL', 'e-mail', 'E-mail', 'E-Mail']),
+            firstName: getField(['firstName', 'first_name', 'FirstName', 'First Name', 'firstname', 'FIRSTNAME']),
+            lastName: getField(['lastName', 'last_name', 'LastName', 'Last Name', 'lastname', 'LASTNAME']),
+            status: 'active',
+            source: 'import',
+          };
+          
+          // Validate email
+          if (!subscriber.email || !subscriber.email.includes('@')) {
+            results.push({
+              email: subscriber.email || '[empty]',
+              status: 'error',
+              message: 'Invalid email format'
             });
+            continue;
           }
           
-          results.push({
-            email: subscriber.email,
-            status: 'imported',
-            message: 'Successfully imported'
-          });
-        } catch (error) {
-          console.error(`Error importing subscriber ${subscriber.email}:`, error);
-          results.push({
-            email: subscriber.email,
-            status: 'error',
-            message: 'Database error'
-          });
+          try {
+            // Check if subscriber already exists
+            const [existingSubscriber] = await db
+              .select()
+              .from(emailSubscribers)
+              .where(eq(emailSubscribers.email, subscriber.email));
+            
+            if (existingSubscriber) {
+              results.push({
+                email: subscriber.email,
+                status: 'skipped',
+                message: 'Email already exists'
+              });
+              
+              // If list ID provided, add existing subscriber to list
+              if (listId) {
+                const [existingRelation] = await db
+                  .select()
+                  .from(emailListSubscribers)
+                  .where(
+                    and(
+                      eq(emailListSubscribers.listId, listId),
+                      eq(emailListSubscribers.subscriberId, existingSubscriber.id)
+                    )
+                  );
+                  
+                if (!existingRelation) {
+                  await db.insert(emailListSubscribers).values({
+                    listId,
+                    subscriberId: existingSubscriber.id,
+                  });
+                }
+              }
+              
+              continue;
+            }
+            
+            // Create new subscriber
+            const [newSubscriber] = await db
+              .insert(emailSubscribers)
+              .values(subscriber)
+              .returning();
+            
+            // Add to list if provided
+            if (listId) {
+              await db.insert(emailListSubscribers).values({
+                listId,
+                subscriberId: newSubscriber.id,
+              });
+            }
+            
+            results.push({
+              email: subscriber.email,
+              status: 'imported',
+              message: 'Successfully imported'
+            });
+          } catch (error) {
+            console.error(`Error importing subscriber ${subscriber.email}:`, error);
+            results.push({
+              email: subscriber.email,
+              status: 'error',
+              message: 'Database error'
+            });
+          }
         }
+      } catch (parseError) {
+        console.error("CSV parsing error:", parseError);
+        results.push({
+          email: 'CSV parsing error',
+          status: 'error',
+          message: parseError instanceof Error ? parseError.message : 'Failed to parse CSV file'
+        });
       }
       
-      // Clean up the temporary file
-      fs.unlinkSync(filePath);
+      try {
+        // Clean up the temporary file
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (cleanupError) {
+        console.error("Error cleaning up temp file:", cleanupError);
+        // Non-fatal error, continue
+      }
       
       // Send results summary
       const summary = {
@@ -431,10 +471,14 @@ emailMarketingRouter.post(
         details: results
       };
       
+      console.log("CSV import summary:", summary);
       res.status(200).json(summary);
     } catch (error) {
       console.error("Error importing subscribers:", error);
-      res.status(500).json({ message: "Failed to import subscribers" });
+      res.status(500).json({ 
+        message: "Failed to import subscribers",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   }
 );

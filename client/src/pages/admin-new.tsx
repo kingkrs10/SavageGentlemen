@@ -3213,52 +3213,87 @@ export default function AdminPage() {
                                 }
                               }
                               
-                              // Upload CSV with authentication
-                              const xhr = new XMLHttpRequest();
-                              xhr.open('POST', '/api/email-marketing/subscribers/import', true);
+                              // Show loading toast
+                              toast({
+                                title: "Processing CSV",
+                                description: "Please wait while we process your file...",
+                              });
                               
-                              // Add auth header
-                              if (userId) {
-                                xhr.setRequestHeader('user-id', userId);
-                                console.log("Added user-id header for CSV import:", userId);
-                              }
-                              
-                              // Handle response
-                              xhr.onload = function() {
-                                if (xhr.status === 200) {
-                                  const data = JSON.parse(xhr.responseText);
-                                  toast({
-                                    title: "Import Successful",
-                                    description: `Imported ${data.imported} subscribers`
-                                  });
+                              try {
+                                // Create a plaintext CSV with proper headers to avoid BOM issues
+                                const reader = new FileReader();
+                                
+                                reader.onload = async (event) => {
+                                  if (!event.target?.result) {
+                                    toast({
+                                      title: "Import Failed",
+                                      description: "Could not read the CSV file",
+                                      variant: "destructive"
+                                    });
+                                    return;
+                                  }
                                   
-                                  // Refresh subscribers list
-                                  queryClient.invalidateQueries({queryKey: ["/api/email-marketing/subscribers"]});
-                                } else {
+                                  try {
+                                    // Get the raw CSV text
+                                    const csvText = event.target.result as string;
+                                    console.log("CSV preview (first 100 chars):", csvText.substring(0, 100));
+                                    
+                                    // Create a clean file without BOM markers
+                                    const cleanCsv = csvText.replace(/^\uFEFF/, ''); // Remove BOM if present
+                                    const blob = new Blob([cleanCsv], { type: 'text/csv' });
+                                    const cleanFormData = new FormData();
+                                    cleanFormData.append('file', blob, 'subscribers.csv');
+                                    
+                                    // Use fetch for better error handling
+                                    const response = await fetch('/api/email-marketing/subscribers/import', {
+                                      method: 'POST',
+                                      headers: userId ? { 'user-id': userId } : {},
+                                      body: cleanFormData
+                                    });
+                                    
+                                    if (!response.ok) {
+                                      throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                                    }
+                                    
+                                    const data = await response.json();
+                                    toast({
+                                      title: "Import Successful",
+                                      description: `Imported ${data.imported} subscribers. ${data.skipped || 0} skipped, ${data.errors || 0} errors.`
+                                    });
+                                    
+                                    // Refresh subscribers list
+                                    queryClient.invalidateQueries({queryKey: ["/api/email-marketing/subscribers"]});
+                                  } catch (error) {
+                                    console.error("Import error:", error);
+                                    toast({
+                                      title: "Import Failed",
+                                      description: error instanceof Error ? error.message : "Failed to import subscribers",
+                                      variant: "destructive"
+                                    });
+                                  }
+                                };
+                                
+                                reader.onerror = () => {
                                   toast({
                                     title: "Import Failed",
-                                    description: "Failed to import subscribers",
+                                    description: "Could not read the CSV file",
                                     variant: "destructive"
                                   });
-                                  console.error("Import error:", xhr.statusText);
-                                }
-                              };
-                              
-                              // Handle errors
-                              xhr.onerror = function() {
+                                };
+                                
+                                // Read the file as text
+                                reader.readAsText(file);
+                              } catch (error) {
+                                console.error("Import setup error:", error);
                                 toast({
                                   title: "Import Failed",
-                                  description: "Network error occurred",
+                                  description: "Failed to process CSV file",
                                   variant: "destructive"
                                 });
-                                console.error("Network error during import");
+                              } finally {
+                                // Reset file input
+                                e.target.value = '';
                               }
-                              
-                              // Send the form data
-                              xhr.send(formData);
-                              
-                              // Reset file input
-                              e.target.value = '';
                             }}
                           />
                           <Button 
