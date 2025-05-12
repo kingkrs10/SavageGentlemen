@@ -495,10 +495,10 @@ export default function AdminPage() {
   
   // Fetch email subscribers
   const {
-    data: emailSubscribers = [],
+    data: emailSubscribers = { subscribers: [] },
     isLoading: emailSubscribersLoading,
     error: emailSubscribersError
-  } = useQuery<any[]>({
+  } = useQuery<{subscribers: any[]}>({
     queryKey: ["/api/email-marketing/subscribers"],
     enabled: !!currentUser && currentUser?.role === 'admin',
     retry: 3,
@@ -3937,7 +3937,7 @@ export default function AdminPage() {
                           <h3 className="text-lg font-medium">Error loading subscribers</h3>
                           <p className="text-sm">Please try again later</p>
                         </div>
-                      ) : (Array.isArray(emailSubscribers) && emailSubscribers.length > 0) ? (
+                      ) : (emailSubscribers && emailSubscribers.subscribers && Array.isArray(emailSubscribers.subscribers) && emailSubscribers.subscribers.length > 0) ? (
                         <div className="rounded-md border overflow-hidden">
                           <Table>
                             <TableHeader>
@@ -3951,7 +3951,7 @@ export default function AdminPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {Array.isArray(emailSubscribers) && emailSubscribers.map((subscriber: any) => (
+                              {emailSubscribers && emailSubscribers.subscribers && Array.isArray(emailSubscribers.subscribers) && emailSubscribers.subscribers.map((subscriber: any) => (
                                 <TableRow key={subscriber.id}>
                                   <TableCell>{subscriber.email || '—'}</TableCell>
                                   <TableCell>
