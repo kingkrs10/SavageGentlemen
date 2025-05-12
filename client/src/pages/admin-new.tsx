@@ -251,6 +251,7 @@ export default function AdminPage() {
   const [subscriberSearch, setSubscriberSearch] = useState("");
   const [subscriberStatusFilter, setSubscriberStatusFilter] = useState("");
   const [subscriberListFilter, setSubscriberListFilter] = useState("");
+  const [emailMarketingTab, setEmailMarketingTab] = useState("subscribers");
 
   // Helper function to build combined query parameters for subscriber filtering
   const getSubscriberFilterParams = (overrides: Record<string, any> = {}) => {
@@ -3656,7 +3657,11 @@ export default function AdminPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="subscribers" className="w-full">
+                <Tabs 
+                  value={emailMarketingTab} 
+                  onValueChange={(value) => setEmailMarketingTab(value)}
+                  className="w-full"
+                >
                   <TabsList className="grid w-full grid-cols-3 mb-6">
                     <TabsTrigger value="subscribers">Subscribers</TabsTrigger>
                     <TabsTrigger value="lists">Email Lists</TabsTrigger>
@@ -4135,11 +4140,13 @@ export default function AdminPage() {
                                   onClick={() => {
                                     // View list subscribers - set filter to show only subscribers for this list
                                     setSelectedListId(list.id);
+                                    // Update filter params to show only this list's subscribers
                                     setSubscriberParams({
                                       ...subscriberParams,
                                       listId: list.id.toString()
                                     });
-                                    setActiveTab("subscribers");
+                                    // Switch to subscribers tab
+                                    setEmailMarketingTab("subscribers");
                                   }}
                                 >
                                   <ListChecks className="h-4 w-4 mr-2" />
