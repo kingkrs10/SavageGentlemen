@@ -459,7 +459,8 @@ emailMarketingRouter.post(
       userId: req.headers['user-id'],
       hasAuthHeader: !!req.headers.authorization,
       contentType: req.headers['content-type'],
-      cookie: req.headers.cookie ? 'Present' : 'Missing'
+      cookie: req.headers.cookie ? 'Present' : 'Missing',
+      sessionId: req.sessionID || 'No session'
     });
     
     // If in production, ensure it has proper authentication
@@ -481,9 +482,8 @@ emailMarketingRouter.post(
     } else {
       console.error("No file in the request");
     }
-    
     try {
-      // Starting CSV import process
+      // We've already logged file and header information above
       
       if (!req.file) {
         return res.status(400).json({ 

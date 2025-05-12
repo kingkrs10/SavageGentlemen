@@ -3925,11 +3925,32 @@ export default function AdminPage() {
                                       const cleanFormData = new FormData();
                                       cleanFormData.append('file', blob, 'subscribers.csv');
                                       
-                                      // Use fetch for better error handling
+                                      // Use fetch for better error handling with enhanced authentication
+                                      // Get Firebase token if available
+                                      let headers: Record<string, string> = {};
+                                      
+                                      // Add user-id header
+                                      if (userId) {
+                                        headers['user-id'] = userId;
+                                      }
+                                      
+                                      // Try to get Authorization header from localStorage if available
+                                      try {
+                                        const authToken = localStorage.getItem('authToken');
+                                        if (authToken) {
+                                          headers['Authorization'] = `Bearer ${authToken}`;
+                                        }
+                                      } catch (e) {
+                                        console.error("Could not retrieve auth token:", e);
+                                      }
+                                      
+                                      console.log("Uploading CSV with headers:", headers);
+                                      
                                       const response = await fetch('/api/email-marketing/subscribers/import', {
                                         method: 'POST',
-                                        headers: userId ? { 'user-id': userId } : {},
-                                        body: cleanFormData
+                                        headers: headers,
+                                        body: cleanFormData,
+                                        credentials: 'include' // Include cookies if available
                                       });
                                       
                                       if (!response.ok) {
