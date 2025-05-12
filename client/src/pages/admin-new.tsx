@@ -3961,11 +3961,14 @@ export default function AdminPage() {
                                     }
                                   </TableCell>
                                   <TableCell>
-                                    <Badge variant={subscriber.isActive ? "outline" : "secondary"} 
-                                          className={subscriber.isActive 
-                                                     ? "bg-green-50 text-green-700 border-green-200" 
-                                                     : "bg-yellow-50 text-yellow-700 border-yellow-200"}>
-                                      {subscriber.isActive ? "Active" : "Inactive"}
+                                    <Badge variant="outline" 
+                                          className={
+                                            subscriber.status === 'active' ? "bg-green-50 text-green-700 border-green-200" : 
+                                            subscriber.status === 'unsubscribed' ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
+                                            subscriber.status === 'bounced' ? "bg-red-50 text-red-700 border-red-200" :
+                                            "bg-gray-50 text-gray-700 border-gray-200"
+                                          }>
+                                      {subscriber.status ? subscriber.status.charAt(0).toUpperCase() + subscriber.status.slice(1) : "Unknown"}
                                     </Badge>
                                   </TableCell>
                                   <TableCell>
