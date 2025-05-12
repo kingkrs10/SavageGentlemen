@@ -3790,11 +3790,9 @@ export default function AdminPage() {
                     className="sg-btn"
                     size="sm"
                     onClick={() => {
-                      // Placeholder for create list or subscriber
-                      toast({
-                        title: "Create New List",
-                        description: "This feature will be available soon",
-                      });
+                      // Open the create list dialog
+                      setEmailListForm({ name: '', description: '', isActive: true });
+                      setListFormOpen(true);
                     }}
                   >
                     <Plus className="h-4 w-4 mr-2" />
