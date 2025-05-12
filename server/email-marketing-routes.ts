@@ -671,6 +671,7 @@ emailMarketingRouter.post(
       
       // Process CSV data with error handling
       let records: any[] = [];
+      let results: any[] = []; // Initialize results array
       let fileName = req.file?.originalname || 'unknown.csv';
       
       try {
@@ -691,7 +692,7 @@ emailMarketingRouter.post(
         });
         
         // Successfully parsed records, add them to results
-        results.push(...records);
+        results = [...records]; // Set results equal to records
         console.log(`Added ${records.length} records to results`);
       } catch (error) {
         console.error("Failed to parse CSV file directly:", error);
@@ -699,7 +700,11 @@ emailMarketingRouter.post(
         // Try fallback method with streaming parser
         try {
           console.log("Attempting fallback CSV parsing method with streaming...");
-          const fileStream = fs.createReadStream(filePath, { encoding: 'utf8' });
+          if (!req.file.path) {
+            throw new Error("No file path available for streaming fallback");
+          }
+          const fallbackFilePath = req.file.path;
+          const fileStream = fs.createReadStream(fallbackFilePath, { encoding: 'utf8' });
           
           // Add error handler to the file stream
           fileStream.on('error', (streamError) => {
