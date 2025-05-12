@@ -1500,6 +1500,150 @@ export default function AdminPage() {
     }
   };
 
+  {/* Campaign Form Dialog */}
+  <Dialog open={campaignFormOpen} onOpenChange={setCampaignFormOpen}>
+    <DialogContent className="max-w-md">
+      <DialogHeader>
+        <DialogTitle>{editingCampaign ? 'Edit Campaign' : 'Create Campaign'}</DialogTitle>
+        <DialogDescription>
+          {editingCampaign ? 'Update campaign details' : 'Add a new email campaign for your subscribers'}
+        </DialogDescription>
+      </DialogHeader>
+      
+      <form onSubmit={handleCampaignFormSubmit} className="space-y-4">
+        <div className="grid gap-4">
+          <div className="grid gap-2">
+            <label htmlFor="name" className="text-sm font-medium">Campaign Name</label>
+            <input 
+              type="text" 
+              id="name"
+              value={campaignForm.name}
+              onChange={e => setCampaignForm({...campaignForm, name: e.target.value})}
+              className="border rounded-md p-2 text-sm"
+              placeholder="May 2025 Newsletter"
+              required
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <label htmlFor="subject" className="text-sm font-medium">Email Subject</label>
+            <input 
+              type="text" 
+              id="subject"
+              value={campaignForm.subject}
+              onChange={e => setCampaignForm({...campaignForm, subject: e.target.value})}
+              className="border rounded-md p-2 text-sm"
+              placeholder="Special Discount Inside!"
+              required
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <label htmlFor="content" className="text-sm font-medium">Email Content</label>
+            <textarea 
+              id="content"
+              value={campaignForm.content}
+              onChange={e => setCampaignForm({...campaignForm, content: e.target.value})}
+              className="border rounded-md p-2 h-32 text-sm resize-none"
+              placeholder="Enter the content of your email here..."
+              required
+            />
+            <p className="text-xs text-muted-foreground">HTML formatting supported. Use tags like &lt;h1&gt;, &lt;p&gt;, etc.</p>
+          </div>
+          
+          <div className="grid gap-2">
+            <label htmlFor="listId" className="text-sm font-medium">Email List</label>
+            <select 
+              id="listId"
+              value={campaignForm.listId}
+              onChange={e => setCampaignForm({...campaignForm, listId: e.target.value})}
+              className="border rounded-md p-2 text-sm"
+              required
+            >
+              <option value="">Select a list</option>
+              {emailLists && emailLists.map((list: any) => (
+                <option key={list.id} value={list.id}>{list.name}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="grid gap-2">
+            <label htmlFor="status" className="text-sm font-medium">Status</label>
+            <select 
+              id="status"
+              value={campaignForm.status}
+              onChange={e => setCampaignForm({...campaignForm, status: e.target.value})}
+              className="border rounded-md p-2 text-sm"
+            >
+              <option value="draft">Draft</option>
+              <option value="scheduled">Scheduled</option>
+            </select>
+          </div>
+          
+          {campaignForm.status === 'scheduled' && (
+            <div className="grid gap-2">
+              <label htmlFor="scheduledFor" className="text-sm font-medium">Schedule Date</label>
+              <input 
+                type="date" 
+                id="scheduledFor"
+                value={campaignForm.scheduledFor}
+                onChange={e => setCampaignForm({...campaignForm, scheduledFor: e.target.value})}
+                className="border rounded-md p-2 text-sm"
+                min={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+          )}
+        </div>
+        
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => setCampaignFormOpen(false)}>Cancel</Button>
+          <Button type="submit">{editingCampaign ? 'Update Campaign' : 'Create Campaign'}</Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
+  </Dialog>
+  
+  {/* Test Email Dialog */}
+  <Dialog open={sendTestEmailOpen} onOpenChange={setSendTestEmailOpen}>
+    <DialogContent className="max-w-md">
+      <DialogHeader>
+        <DialogTitle>Send Test Email</DialogTitle>
+        <DialogDescription>
+          Send a test version of this campaign to check how it looks
+        </DialogDescription>
+      </DialogHeader>
+      
+      <div className="space-y-4 py-4">
+        <div className="grid gap-2">
+          <label htmlFor="testEmails" className="text-sm font-medium">Test Email Addresses</label>
+          <input 
+            type="text" 
+            id="testEmails"
+            value={testEmails}
+            onChange={e => setTestEmails(e.target.value)}
+            className="border rounded-md p-2 text-sm"
+            placeholder="email@example.com, another@example.com"
+          />
+          <p className="text-xs text-muted-foreground">Separate multiple emails with commas</p>
+        </div>
+      </div>
+      
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={() => setSendTestEmailOpen(false)}>Cancel</Button>
+        <Button onClick={handleSendTestEmail} disabled={isTestSending}>
+          {isTestSending ? (
+            <>
+              <div className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+              Sending...
+            </>
+          ) : (
+            'Send Test Email'
+          )}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+
   // Render main component
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
@@ -3577,7 +3721,7 @@ export default function AdminPage() {
                                       toast({
                                         title: `Import ${data.errors > 0 ? 'Partially' : ''} Successful`,
                                         description: `Imported ${data.imported} subscribers. ${data.skipped || 0} skipped. ${data.errors} errors.`,
-                                        variant: data.errors > 0 ? "warning" : "default",
+                                        variant: data.errors > 0 ? "destructive" : "default",
                                       });
                                     } else if (data.errors > 0) {
                                       // Complete failure with error summary
@@ -3920,8 +4064,8 @@ export default function AdminPage() {
                                 <div className="flex justify-between items-center text-sm mb-2">
                                   <span>List: <strong>{campaign.listName || 'Unknown'}</strong></span>
                                   <Badge variant={
-                                    campaign.status === 'sent' ? 'success' : 
-                                    campaign.status === 'scheduled' ? 'warning' : 
+                                    campaign.status === 'sent' ? 'default' : 
+                                    campaign.status === 'scheduled' ? 'secondary' : 
                                     'outline'
                                   }>
                                     {campaign.status === 'draft' ? 'Draft' : 
