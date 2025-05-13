@@ -1,0 +1,150 @@
+/checkout?eventId=1&ticketId=1&amount=0&currency=USD&title=Rhythm%20in%20Riddim:1 Refused to load the script 'https://replit.com/public/js/replit-dev-banner.js' because it violates the following Content Security Policy directive: "script-src 'self' 'unsafe-inline' https://js.stripe.com https://www.paypal.com". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback.
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'self' <URL>".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'self' <URL>".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'self' <URL>".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'self' <URL>".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'self' <URL>".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'self' <URL>".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'self' <URL>".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'self' <URL>".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'self' <URL>".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'self' <URL>".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'self' <URL>".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'self' <URL>".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'self' <URL>".
+
+/api/me:1 
+            
+            
+           Failed to load resource: the server responded with a status of 401 ()
+hook.js:608 API Error (401): Object
+overrideMethod @ hook.js:608
+hook.js:608 Error validating user session: TypeError: Failed to execute 'text' on 'Response': body stream already read
+    at Rb (index-6l-XbxfY.js:41:86242)
+    at Au (index-6l-XbxfY.js:41:87844)
+    at async index-6l-XbxfY.js:204:28716
+overrideMethod @ hook.js:608
+/api/me:1 
+            
+            
+           Failed to load resource: the server responded with a status of 401 ()
+hook.js:608 API Error (401): Object
+overrideMethod @ hook.js:608
+hook.js:608 Error fetching user data: TypeError: Failed to execute 'text' on 'Response': body stream already read
+    at Rb (index-6l-XbxfY.js:41:86242)
+    at Au (index-6l-XbxfY.js:41:87844)
+    at async u (checkout-BNWZnUcJ.js:2:11575)
+overrideMethod @ hook.js:608
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'none'".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'none'".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'none'".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'none'".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'none'".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'none'".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'none'".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'none'".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'none'".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'none'".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'none'".
+
+Refused to load the font '<URL>' because it violates the following Content Security Policy directive: "font-src 'none'".
+
+m.stripe.network/inner.html#url=https%3A%2F%2Fsavgent.replit.app%2Fcheckout%3FeventId%3D1%26ticketId%3D1%26amount%3D0%26currency%3DUSD%26title%3DRhythm%2520in%2520Riddim&title=Home%20%7C%20Savage%20Gentlemen%20Lifestyle%20%7C%20SGX%20Media&referrer=&muid=ec452913-6554-43ad-ae69-7251a9337a9f338ce1&sid=NA&version=6&preview=false&__shared_params__[version]=basil:1 Refused to load the font 'data:font/woff2;base64,d09GMgABAAAAARKPABEAAAADjbwAARG3AAUAAAABEhwAAABzAAAAfQAAAAAAAAAAG4HSGBylaAZgAIkKCGIJgnMREAqJoziIyQUSgfk4ATYCJAOXTAuXUAAEIAWMIAe1AQyFHVuPU7MCIkXu7q36jWGYkWwF8TmifSsBF6S3fEOcwzJR9Lmdo1UHleIXP/HC2JYUM+gOCgqq/Tmp7P//////////35hMwraS2XaS7S79bIEWEBQQRdDzO0VAM+gWvUo5JUkpL+om5dx2qq8kPpgeOC5X67qd8lK7yVxHlVSvGs3wDWZxw3aH8roW42Pe58JmQmLiYTk42EoDD0RP+4ML1fr5eEJmyVUjMe7hDrZw7+hsYogvMzL4/BSROWRbw9W40xd57aeOcpB4kfh2PYrHGq12UZmKkBIND+htcx2p5/Edbd8hgy+EtIxMmoDrrdFJb6pXcVwHLGEP6ZBShZtenwrsHJKQEuE5Vuhs...7gQPudGVPUoxuMeBcZY7wXnVbC/FX5fT8BcE0CQPj+q3zeB9zZSANbq33CGyej+JODw5sja55dGgDKNj5prOqjHpj553Vrq0QECJmJ7mpZhLUm6tz67hZZKxd0GGabamzsYzNRYSxKx7G5t/mY19Y8+BxvMPyjGBM3z38y97h5QeCTWekstb7P536NDowW5Zw5c6Ks1X5uvTiuyaMt4neMUWXMWlNgV8hjhz7jvW5MmUseBY4du3PQK/aQkyLlbrTUH2Vl5ltL8kxHydyVWSuqoxd8Qgid3QDvNk9HvAMehmj4B3Gd00F/5T+cT/+EVfwF8b/FZuZ/74SD+dlFj3f75vz98whFV59pAgAbfADonQd2w8eFH1KtYYd1WBEi2IBjSXDQYXj4bZvTeuHQ0W02vJIFQRGEQQXSkiInLjo5vh3Uvh3PAZenGHkecBvWi6FYA/8udbt46PHE4flI8ZiBpkJQCFKmGZdnmet+UM7bW3pFVG0eGZPbBgRsu5JM' because it violates the following Content Security Policy directive: "font-src https://m.stripe.network https://fonts.gstatic.com".
+
+m.stripe.network/inner.html#url=https%3A%2F%2Fsavgent.replit.app%2Fcheckout%3FeventId%3D1%26ticketId%3D1%26amount%3D0%26currency%3DUSD%26title%3DRhythm%2520in%2520Riddim&title=Home%20%7C%20Savage%20Gentlemen%20Lifestyle%20%7C%20SGX%20Media&referrer=&muid=ec452913-6554-43ad-ae69-7251a9337a9f338ce1&sid=NA&version=6&preview=false&__shared_params__[version]=basil:1 Refused to load the font 'data:font/woff2;base64,d09GMgABAAAAARWHABEAAAADfFgAARSvAAUAAAABFRQAAABzAAAAfAAAAAAAAAAAG4HODhylaAZgAIkKCFYJgnMREAqJhXSIrDASgfk4ATYCJAOXTAuXUAAEIAWMIAe1AQyEEVuYQrMDisndfbZZDKqCKmwebfOQLiLX3vgBIw97eJbZNbzgrUXVZNYL6G2TR0DthDzVbma9zCz7//////////9fl0xEZ9LZOcnOJCVQIA2Esbrov1CMyt1QymJOZSamWFYmJnUjrtpSknRJukX/tmz7Vg99q1br9zJoVbwNN1I1lC3YKRtL9aHrAAOkjMAMslYrgmlCvd5THZJNydSc5LgxKuqTploCBm9GapOtNKud9rNQjpOYX1CpXKg8Xq+WcG9oxo6Jr9Fud1Q/bvJObccPkN0h5QieQ1JZTo8KfIqJI88NtPWaIIFOiPhp0uov75Msq1alJN2U2rpkDjvC67duYu1iZJV7wkZn...2bcybdanNJNMpO0HWfUwvLrKs377iORwAt3mIzzJ/7D+xJu31nBewCIG4Z3+/AA/MJYNAXNsO1Nd83Ftj49QaX8PvNojFMLi74VPYmlZANgPH+Tzw6mhW8lSvg3yALtjoJZ4/cGHWTS9KklGIu8RSlwmTURiNxj4yqkvB259bxzg03GRTUkVyI34QllH4a19bykdu0Lsmy6oMro/gpZhP5qkHEHA/79vffaRawpPlf0rtNsZDb3X2kx2XH5Z37PnG2KE0VcvEUH/jFfor3g1nj0Yd2RmVBhCO/qnzGN15pj8k/T3H0WxhKwsMOb+TQP5V+b/nXeunX4L8z6mf5sT+//2uACUf+v2gAG3sA6J0HdsPHhR9SrWGHdVgRItiAY0lw0GF4+G2b03rh0NFtNrySBUERhEEF0pIiJy46Ob4d1L4dzwGXpxhxHnAblhbjWAP/Lne7eOjxxOH5SPGYgaZCUAhSpgWXZ5nrflDO21t6RVQtCxmT2wYEbLtqTA==' because it violates the following Content Security Policy directive: "font-src https://m.stripe.network https://fonts.gstatic.com".
+
+m.stripe.network/inner.html#url=https%3A%2F%2Fsavgent.replit.app%2Fcheckout%3FeventId%3D1%26ticketId%3D1%26amount%3D0%26currency%3DUSD%26title%3DRhythm%2520in%2520Riddim&title=Home%20%7C%20Savage%20Gentlemen%20Lifestyle%20%7C%20SGX%20Media&referrer=&muid=ec452913-6554-43ad-ae69-7251a9337a9f338ce1&sid=NA&version=6&preview=false&__shared_params__[version]=basil:1 Refused to load the font 'data:font/woff2;base64,d09GMgABAAAAAQskABEAAAADijQAAQpGAAUAAAABCqwAAAB4AAAAegAAAAAAAAAAG4HNfBylaAZgAIkKCF4JgnMREAqJoHyIxhMSgfk4ATYCJAOXTAuXUAAEIAWMIAe1AQyEcVvRT7MA/k0O/0upJBSo29l2m52jrVUnKOn57U5E4/C+xJhdw6t4rFjJNv2AeLoi5HfbIIh4E9r2dvb//////////8plIjqTLs6fZDtkECDM0meslkLXv9C0m3uktpSrkdSSojRiraJLByyjce8TMKWMZTbMF9VyVa0lqywzwBK2Uc02MokvasuVeHka/Nq90NuJVK/Zs1rVkIQkJCGJMxxi0b9rH0XZ+Ygeyb3Vu3SITZ5KzqPJRnnkqOuzJFkkGdARGu6oKfGw2iIzSEKeip4y1cbkzMu+fb1KPqg8UpXfkL0ROaRwiefogo/j9zQx2adbkt2QJSW7Ko6jVBLVe4ybKknOKadYSZ8v...DC12jad/Vfab7/44d+YOXvQcbhz5PVcshqfr+U8JjcAGgrrH/85NNOliruso+PY+/mxOed7bsVaY30IAb2qAirWXLBsMdktMtp/0+qlFrEIV7mNMJ1JeM5Eddgkh9/Eta9cWUQvIielRMNb89ww9PyiYV4QYpmrEM63abXfa63gvRFS84oE2TuwPZdPp89SVLgS4dNZqXbpXMjGkHwoqdTiNgGvOgb1WLuihkUu0Z36J07Gwd3NDKp7RzEBpUOGFFysVZKoTOX+rDh1EG3kPmRP83Dwr0O6/w9RXo3P4Jh9/zQeFRBv4pfcT7ZhB9O/2XMtKqe9Xb0WIM9Hagpg/R5/tE8AAAAG3kA6J0F7t4tGJFq+cU1JwUbY3M6jhDUuL1tc0YvHDZOs9GVNJAsIQqCiRxpIG0ZnuApcuKik+PbQe3b8RxweYoZBhtwCuvzIOH6mL+s3S5ejycO7yOVxwxkkoKCmqIMLp+iW64D09Of0Wnj1bpPALctoCy5FDEC' because it violates the following Content Security Policy directive: "font-src https://m.stripe.network https://fonts.gstatic.com".
+
+/api/tickets/free:1 
+            
+            
+           Failed to load resource: the server responded with a status of 401 ()
+hook.js:608 API Error (401): Object
+overrideMethod @ hook.js:608
+hook.js:608 Error claiming free ticket: TypeError: Failed to execute 'text' on 'Response': body stream already read
+    at Rb (index-6l-XbxfY.js:41:86242)
+    at Au (index-6l-XbxfY.js:41:87844)
+    at async onClick (checkout-BNWZnUcJ.js:2:17350)
+overrideMethod @ hook.js:608
+js.stripe.com/v3/controller-with-preconnect-05c009340633aa7532211680a6fc223a.html#__shared_params__[version]=basil&apiKey=pk_test_51RLcyWQAu6ENyWr9qpmGHohfFLHeOG6qMPTi6A9cpKcgEkJRZzPoLRLglLYhnNuIByu176DpngqqXf2KYWmQPaGF00jm82lVHV&apiVersion=2025-03-31.basil&stripeJsId=ef69b0a7-c925-4f0b-b91f-50f5847e3bda&firstStripeInstanceCreatedLatency=32&controllerCount=1&isCheckout=false&stripeJsLoadTime=1747174061701&manualBrowserDeprecationRollout=false&mids[guid]=NA&mids[muid]=ec452913-6554-43ad-ae69-7251a9337a9f338ce1&mids[sid]=NA&referrer=https%3A%2F%2Fsavgent.replit.app%2Fcheckout%3FeventId%3D1%26ticketId%3D1%26amount%3D0%26currency%3DUSD%26title%3DRhythm%2520in%2520Riddim&controllerId=__privateStripeController6001:1 Refused to load the stylesheet 'https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Poppins:wght@100;200;300;400;500;600;700;800;900&family=Roboto:wght@100;200;300;400;500;600;700;800;900&family=Open+Sans:wght@300;400;500;600;700;800&display=swap' because it violates the following Content Security Policy directive: "style-src 'self' 'sha256-0hAheEzaMe6uXIKV4EehS9pu1am1lj/KnnzrOYqckXk='". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback.
+
+js.stripe.com/v3/controller-with-preconnect-05c009340633aa7532211680a6fc223a.html#__shared_params__[version]=basil&apiKey=pk_test_51RLcyWQAu6ENyWr9qpmGHohfFLHeOG6qMPTi6A9cpKcgEkJRZzPoLRLglLYhnNuIByu176DpngqqXf2KYWmQPaGF00jm82lVHV&apiVersion=2025-03-31.basil&stripeJsId=ef69b0a7-c925-4f0b-b91f-50f5847e3bda&firstStripeInstanceCreatedLatency=32&controllerCount=1&isCheckout=false&stripeJsLoadTime=1747174061701&manualBrowserDeprecationRollout=false&mids[guid]=NA&mids[muid]=ec452913-6554-43ad-ae69-7251a9337a9f338ce1&mids[sid]=NA&referrer=https%3A%2F%2Fsavgent.replit.app%2Fcheckout%3FeventId%3D1%26ticketId%3D1%26amount%3D0%26currency%3DUSD%26title%3DRhythm%2520in%2520Riddim&controllerId=__privateStripeController6001:1 Refused to load the stylesheet 'https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Poppins:wght@100;200;300;400;500;600;700;800;900&family=Roboto:wght@100;200;300;400;500;600;700;800;900&family=Open+Sans:wght@300;400;500;600;700;800&display=swap' because it violates the following Content Security Policy directive: "style-src 'self' 'sha256-0hAheEzaMe6uXIKV4EehS9pu1am1lj/KnnzrOYqckXk='". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback.
+
+m.stripe.network/inner.html#url=https%3A%2F%2Fsavgent.replit.app%2Fcheckout%3FeventId%3D1%26ticketId%3D1%26amount%3D0%26currency%3DUSD%26title%3DRhythm%2520in%2520Riddim&title=Home%20%7C%20Savage%20Gentlemen%20Lifestyle%20%7C%20SGX%20Media&referrer=&muid=ec452913-6554-43ad-ae69-7251a9337a9f338ce1&sid=NA&version=6&preview=false&__shared_params__[version]=basil:1 Refused to load the stylesheet 'https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Poppins:wght@100;200;300;400;500;600;700;800;900&family=Roboto:wght@100;200;300;400;500;600;700;800;900&family=Open+Sans:wght@300;400;500;600;700;800&display=swap' because it violates the following Content Security Policy directive: "style-src https://m.stripe.network". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback.
+
+js.stripe.com/v3/m-outer-3437aaddcdf6922d623e172c2d6f9278.html#url=https%3A%2F%2Fsavgent.replit.app%2Fcheckout%3FeventId%3D1%26ticketId%3D1%26amount%3D0%26currency%3DUSD%26title%3DRhythm%2520in%2520Riddim&title=Home%20%7C%20Savage%20Gentlemen%20Lifestyle%20%7C%20SGX%20Media&referrer=&muid=ec452913-6554-43ad-ae69-7251a9337a9f338ce1&sid=NA&version=6&preview=false&__shared_params__[version]=basil:1 Refused to load the stylesheet 'https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Poppins:wght@100;200;300;400;500;600;700;800;900&family=Roboto:wght@100;200;300;400;500;600;700;800;900&family=Open+Sans:wght@300;400;500;600;700;800&display=swap' because it violates the following Content Security Policy directive: "style-src 'self'". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback.
+
+index-6l-XbxfY.js:41 
+            
+            
+           POST https://savgent.replit.app/api/tickets/free 401 (Unauthorized)
+Au @ index-6l-XbxfY.js:41
+onClick @ checkout-BNWZnUcJ.js:2
+JA @ index-6l-XbxfY.js:38
+tR @ index-6l-XbxfY.js:38
+nR @ index-6l-XbxfY.js:38
+wy @ index-6l-XbxfY.js:38
+pS @ index-6l-XbxfY.js:38
+(anonymous) @ index-6l-XbxfY.js:38
+Zm @ index-6l-XbxfY.js:41
+F_ @ index-6l-XbxfY.js:38
+Tf @ index-6l-XbxfY.js:38
+Sm @ index-6l-XbxfY.js:38
+yR @ index-6l-XbxfY.js:38
+index-6l-XbxfY.js:41 API Error (401): {message: 'Authentication required'}
+overrideMethod @ hook.js:608
+Au @ index-6l-XbxfY.js:41
+await in Au
+onClick @ checkout-BNWZnUcJ.js:2
+JA @ index-6l-XbxfY.js:38
+tR @ index-6l-XbxfY.js:38
+nR @ index-6l-XbxfY.js:38
+wy @ index-6l-XbxfY.js:38
+pS @ index-6l-XbxfY.js:38
+(anonymous) @ index-6l-XbxfY.js:38
+Zm @ index-6l-XbxfY.js:41
+F_ @ index-6l-XbxfY.js:38
+Tf @ index-6l-XbxfY.js:38
+Sm @ index-6l-XbxfY.js:38
+yR @ index-6l-XbxfY.js:38
+checkout-BNWZnUcJ.js:2 Error claiming free ticket: TypeError: Failed to execute 'text' on 'Response': body stream already read
+    at Rb (index-6l-XbxfY.js:41:86242)
+    at Au (index-6l-XbxfY.js:41:87844)
+    at async onClick (checkout-BNWZnUcJ.js:2:17350)
+overrideMethod @ hook.js:608
+onClick @ checkout-BNWZnUcJ.js:2
+await in onClick
+JA @ index-6l-XbxfY.js:38
+tR @ index-6l-XbxfY.js:38
+nR @ index-6l-XbxfY.js:38
+wy @ index-6l-XbxfY.js:38
+pS @ index-6l-XbxfY.js:38
+(anonymous) @ index-6l-XbxfY.js:38
+Zm @ index-6l-XbxfY.js:41
+F_ @ index-6l-XbxfY.js:38
+Tf @ index-6l-XbxfY.js:38
+Sm @ index-6l-XbxfY.js:38
+yR @ index-6l-XbxfY.js:38

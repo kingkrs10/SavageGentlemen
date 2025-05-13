@@ -404,13 +404,62 @@ export default function Checkout() {
                         ticketName: ticketName
                       };
                       
+                      // Prepare headers with authentication
+                      const headers: Record<string, string> = {
+                        'Content-Type': 'application/json'
+                      };
+                      
+                      // Add token from localStorage if available
+                      const userDataStr = localStorage.getItem('user');
+                      if (userDataStr) {
+                        try {
+                          const userData = JSON.parse(userDataStr);
+                          if (userData?.data?.token) {
+                            headers['Authorization'] = `Bearer ${userData.data.token}`;
+                            console.log("Added token to request headers");
+                          } else if (userData?.token) {
+                            headers['Authorization'] = `Bearer ${userData.token}`;
+                            console.log("Added token to request headers (alternate location)");
+                          }
+                        } catch (e) {
+                          console.error("Error parsing user data:", e);
+                        }
+                      }
+                      
+                      // Try Firebase token as fallback
+                      if (!headers['Authorization']) {
+                        const firebaseToken = localStorage.getItem("firebaseToken");
+                        if (firebaseToken) {
+                          headers['Authorization'] = `Bearer ${firebaseToken}`;
+                          console.log("Using Firebase token for authentication");
+                        }
+                      }
+                      
+                      // Add user ID as fallback authentication method
+                      if (user && user.id) {
+                        headers['user-id'] = user.id.toString();
+                        console.log("Added user-id header:", user.id);
+                      }
+
+                      console.log("Claiming free ticket with headers:", headers);
+                      
                       // First try with /api prefix
-                      let response = await apiRequest("POST", "/api/tickets/free", freeTicketPayload);
+                      let response = await fetch("/api/tickets/free", {
+                        method: "POST",
+                        headers: headers,
+                        body: JSON.stringify(freeTicketPayload),
+                        credentials: 'include' // Include cookies if available
+                      });
                       
                       // If that fails, try without the prefix
                       if (!response.ok) {
                         console.log("API prefixed free ticket endpoint failed, trying non-prefixed endpoint...");
-                        response = await apiRequest("POST", "/tickets/free", freeTicketPayload);
+                        response = await fetch("/tickets/free", {
+                          method: "POST",
+                          headers: headers,
+                          body: JSON.stringify(freeTicketPayload),
+                          credentials: 'include' // Include cookies if available
+                        });
                       }
                       
                       if (!response.ok) {
