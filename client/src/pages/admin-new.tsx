@@ -4180,56 +4180,103 @@ export default function AdminPage() {
                                       let headers: Record<string, string> = {};
                                       
                                       // Add user-id header
-                                      if (userId) {
+                                      if (currentUser && currentUser.id) {
+                                        headers['user-id'] = currentUser.id.toString();
+                                        console.log("Using user ID:", currentUser.id);
+                                      } else if (userId) {
                                         headers['user-id'] = userId;
+                                        console.log("Using userId from parameter:", userId);
                                       }
                                       
-                                      // Try to get Authorization header from localStorage or sessionStorage
+                                      // Try all possible auth token sources
                                       try {
-                                        // Check token from user object first (most reliable)
-                                        const storedUser = localStorage.getItem("user");
-                                        if (storedUser) {
-                                          const user = JSON.parse(storedUser);
-                                          const userData = user.data || user;
+                                        // Check currentUser first (most direct)
+                                        if (currentUser && currentUser.token) {
+                                          headers['Authorization'] = `Bearer ${currentUser.token}`;
+                                          console.log("Using token from currentUser");
+                                        } else {
+                                          // Check token from user object in localStorage
+                                          const storedUser = localStorage.getItem("user");
+                                          if (storedUser) {
+                                            try {
+                                              const user = JSON.parse(storedUser);
+                                              const userData = user.data || user;
+                                              
+                                              if (userData && userData.token) {
+                                                headers['Authorization'] = `Bearer ${userData.token}`;
+                                                console.log("Using token from user object in localStorage");
+                                              }
+                                            } catch (parseError) {
+                                              console.error("Error parsing user from localStorage:", parseError);
+                                            }
+                                          }
                                           
-                                          if (userData && userData.token) {
-                                            headers['Authorization'] = `Bearer ${userData.token}`;
-                                            console.log("Using token from user object");
+                                          // Fallback to authToken in localStorage if no token yet
+                                          if (!headers['Authorization']) {
+                                            const authToken = localStorage.getItem('authToken');
+                                            if (authToken) {
+                                              headers['Authorization'] = `Bearer ${authToken}`;
+                                              console.log("Using token from localStorage");
+                                            }
                                           }
-                                        }
-                                        
-                                        // Fallback to authToken in localStorage if no token in user object
-                                        if (!headers['Authorization']) {
-                                          const authToken = localStorage.getItem('authToken');
-                                          if (authToken) {
-                                            headers['Authorization'] = `Bearer ${authToken}`;
-                                            console.log("Using token from localStorage");
+                                          
+                                          // Fallback to sessionStorage
+                                          if (!headers['Authorization']) {
+                                            const sessionToken = sessionStorage.getItem('authToken');
+                                            if (sessionToken) {
+                                              headers['Authorization'] = `Bearer ${sessionToken}`;
+                                              console.log("Using token from sessionStorage");
+                                            }
                                           }
-                                        }
-                                        
-                                        // Fallback to sessionStorage as last resort
-                                        if (!headers['Authorization']) {
-                                          const sessionToken = sessionStorage.getItem('authToken');
-                                          if (sessionToken) {
-                                            headers['Authorization'] = `Bearer ${sessionToken}`;
-                                            console.log("Using token from sessionStorage");
+                                          
+                                          // Try Firebase token as last resort
+                                          if (!headers['Authorization']) {
+                                            const firebaseToken = localStorage.getItem("firebaseToken");
+                                            if (firebaseToken) {
+                                              headers['Authorization'] = `Bearer ${firebaseToken}`;
+                                              console.log("Using Firebase token");
+                                            }
                                           }
                                         }
                                       } catch (e) {
                                         console.error("Could not retrieve auth token:", e);
                                       }
                                       
+                                      // Try one more approach - send the raw user data as a header
+                                      if (!headers['Authorization'] && currentUser) {
+                                        try {
+                                          headers['x-user-data'] = JSON.stringify({
+                                            id: currentUser.id,
+                                            role: currentUser.role
+                                          });
+                                          console.log("Added x-user-data header as fallback");
+                                        } catch (e) {
+                                          console.error("Could not add x-user-data header:", e);
+                                        }
+                                      }
+                                      
                                       console.log("Uploading CSV with headers:", headers);
                                       
-                                      const response = await fetch('/api/email-marketing/subscribers/import', {
-                                        method: 'POST',
-                                        headers: headers,
-                                        body: cleanFormData,
-                                        credentials: 'include' // Include cookies if available
-                                      });
+                                      try {
+                                        const response = await fetch('/api/email-marketing/subscribers/import', {
+                                          method: 'POST',
+                                          headers: headers,
+                                          body: cleanFormData,
+                                          credentials: 'include' // Include cookies if available
+                                        });
                                       
                                       if (!response.ok) {
-                                        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                                        if (response.status === 401) {
+                                          console.error("Authentication error when uploading CSV");
+                                          toast({
+                                            title: "Authentication Error",
+                                            description: "Please log out and log back in to refresh your session.",
+                                            variant: "destructive"
+                                          });
+                                          throw new Error(`Authentication failed: ${response.status}`);
+                                        } else {
+                                          throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                                        }
                                       }
                                       
                                       const data = await response.json();
