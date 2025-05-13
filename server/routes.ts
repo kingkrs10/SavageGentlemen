@@ -194,6 +194,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "User not found" });
       }
       
+      // Generate a new token for API authentication
+      const token = crypto.randomBytes(32).toString('hex');
+      
       // Return user information without sensitive data
       return res.status(200).json({
         id: user.id,
@@ -201,7 +204,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         displayName: user.displayName,
         avatar: user.avatar,
         isGuest: user.isGuest,
-        role: user.role
+        role: user.role,
+        token: token
       });
     } catch (error) {
       console.error("Error in /me endpoint:", error);
@@ -449,12 +453,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         
+        // Generate a secure token for API authentication
+        const token = crypto.randomBytes(32).toString('hex');
+        
+        // Store the token in memory or database if needed for validation later
+        
         return res.status(200).json({
           id: user.id,
           username: user.username,
           displayName: user.displayName,
           avatar: user.avatar,
-          isGuest: user.isGuest
+          isGuest: user.isGuest,
+          role: user.role || 'user',
+          token: token
         });
       } catch (error) {
         console.error('Error verifying Firebase ID token:', error);

@@ -4242,6 +4242,12 @@ export default function AdminPage() {
                                         console.error("Could not retrieve auth token:", e);
                                       }
                                       
+                                      // Always add user-id header if we have the currentUser
+                                      if (currentUser && currentUser.id) {
+                                        headers['user-id'] = currentUser.id.toString();
+                                        console.log("Added user-id header:", currentUser.id);
+                                      }
+                                      
                                       // Try one more approach - send the raw user data as a header
                                       if (!headers['Authorization'] && currentUser) {
                                         try {
