@@ -18,6 +18,7 @@ import BrandLoader from '@/components/ui/BrandLoader';
 import { User } from '@/lib/types';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { getAuthHeaders, getCurrentUser } from '@/lib/auth-utils';
 
 // Stripe implementation has been moved to SimpleStripeCheckout component
 
