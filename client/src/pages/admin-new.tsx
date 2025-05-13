@@ -4240,6 +4240,9 @@ export default function AdminPage() {
                                         }
                                       } catch (e) {
                                         console.error("Could not retrieve auth token:", e);
+                                      } finally {
+                                        // Ensure we continue with the request even if token retrieval fails
+                                        console.log("Token retrieval process completed");
                                       }
                                       
                                       // Always add user-id header if we have the currentUser
@@ -4258,6 +4261,8 @@ export default function AdminPage() {
                                           console.log("Added x-user-data header as fallback");
                                         } catch (e) {
                                           console.error("Could not add x-user-data header:", e);
+                                        } finally {
+                                          console.log("User data header process completed");
                                         }
                                       }
                                       
