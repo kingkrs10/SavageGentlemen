@@ -4329,6 +4329,9 @@ export default function AdminPage() {
                                         description: error instanceof Error ? error.message : "Failed to import subscribers",
                                         variant: "destructive"
                                       });
+                                    } finally {
+                                      // Processing complete
+                                      console.log("CSV processing complete");
                                     }
                                   };
                                   
