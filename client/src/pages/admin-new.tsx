@@ -567,7 +567,7 @@ export default function AdminPage() {
     queryKey: ["/api/events"],
   });
   
-  // Fetch users with custom query function
+  // Fetch users using default query function
   const {
     data: users = [],
     isLoading: usersLoading,
@@ -578,74 +578,7 @@ export default function AdminPage() {
     queryKey: ["/api/admin/users"],
     enabled: !!currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator'),
     retry: 3,
-    refetchOnWindowFocus: false,
-    queryFn: async ({ queryKey }) => {
-      try {
-        // Add authentication headers manually
-        const headers: Record<string, string> = {};
-        
-        // Add user-id header
-        if (currentUser && currentUser.id) {
-          headers["user-id"] = currentUser.id.toString();
-        }
-        
-        // Add Authorization header if token exists in current user
-        if (currentUser && currentUser.token) {
-          headers["Authorization"] = `Bearer ${currentUser.token}`;
-          console.log("Using token from currentUser");
-        } else {
-          // Try to get token from localStorage
-          const storedUser = localStorage.getItem("user");
-          if (storedUser) {
-            try {
-              const user = JSON.parse(storedUser);
-              const userData = user.data || user;
-              if (userData && userData.token) {
-                headers["Authorization"] = `Bearer ${userData.token}`;
-                console.log("Using token from user in localStorage");
-              }
-            } catch (err) {
-              console.error("Error parsing user from localStorage:", err);
-            }
-          }
-          
-          // Fallback to standalone token in localStorage
-          if (!headers["Authorization"]) {
-            const authToken = localStorage.getItem("authToken");
-            if (authToken) {
-              headers["Authorization"] = `Bearer ${authToken}`;
-              console.log("Using authToken from localStorage");
-            }
-          }
-          
-          // Try Firebase token as last resort
-          if (!headers["Authorization"]) {
-            const firebaseToken = localStorage.getItem("firebaseToken");
-            if (firebaseToken) {
-              headers["Authorization"] = `Bearer ${firebaseToken}`;
-              console.log("Using Firebase token");
-            }
-          }
-        }
-        
-        console.log("Fetching users with headers:", headers);
-        
-        const response = await fetch("/api/admin/users", {
-          headers,
-          credentials: "include"
-        });
-        
-        if (!response.ok) {
-          console.error("Error fetching users:", response.status, response.statusText);
-          throw new Error(`Error fetching users: ${response.status} ${response.statusText}`);
-        }
-        
-        return await response.json();
-      } catch (error) {
-        console.error("Failed to fetch users:", error);
-        throw error;
-      }
-    }
+    refetchOnWindowFocus: false
   });
   
   // Log user data/errors for debugging
@@ -658,7 +591,7 @@ export default function AdminPage() {
     }
   }, [users, isUsersError, usersError]);
   
-  // Fetch all tickets with custom query function
+  // Fetch all tickets using default query function
   const {
     data: tickets = [],
     isLoading: ticketsLoading,
@@ -669,74 +602,7 @@ export default function AdminPage() {
     queryKey: ["/api/admin/tickets"],
     enabled: !!currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator'),
     retry: 3,
-    refetchOnWindowFocus: false,
-    queryFn: async ({ queryKey }) => {
-      try {
-        // Add authentication headers manually
-        const headers: Record<string, string> = {};
-        
-        // Add user-id header
-        if (currentUser && currentUser.id) {
-          headers["user-id"] = currentUser.id.toString();
-        }
-        
-        // Add Authorization header if token exists in current user
-        if (currentUser && currentUser.token) {
-          headers["Authorization"] = `Bearer ${currentUser.token}`;
-          console.log("Using token from currentUser");
-        } else {
-          // Try to get token from localStorage
-          const storedUser = localStorage.getItem("user");
-          if (storedUser) {
-            try {
-              const user = JSON.parse(storedUser);
-              const userData = user.data || user;
-              if (userData && userData.token) {
-                headers["Authorization"] = `Bearer ${userData.token}`;
-                console.log("Using token from user in localStorage");
-              }
-            } catch (err) {
-              console.error("Error parsing user from localStorage:", err);
-            }
-          }
-          
-          // Fallback to standalone token in localStorage
-          if (!headers["Authorization"]) {
-            const authToken = localStorage.getItem("authToken");
-            if (authToken) {
-              headers["Authorization"] = `Bearer ${authToken}`;
-              console.log("Using authToken from localStorage");
-            }
-          }
-          
-          // Try Firebase token as last resort
-          if (!headers["Authorization"]) {
-            const firebaseToken = localStorage.getItem("firebaseToken");
-            if (firebaseToken) {
-              headers["Authorization"] = `Bearer ${firebaseToken}`;
-              console.log("Using Firebase token");
-            }
-          }
-        }
-        
-        console.log("Fetching tickets with headers:", headers);
-        
-        const response = await fetch("/api/admin/tickets", {
-          headers,
-          credentials: "include"
-        });
-        
-        if (!response.ok) {
-          console.error("Error fetching tickets:", response.status, response.statusText);
-          throw new Error(`Error fetching tickets: ${response.status} ${response.statusText}`);
-        }
-        
-        return await response.json();
-      } catch (error) {
-        console.error("Failed to fetch tickets:", error);
-        throw error;
-      }
-    }
+    refetchOnWindowFocus: false
   });
   
   // Log ticket data/errors for debugging
@@ -749,7 +615,7 @@ export default function AdminPage() {
     }
   }, [tickets, isTicketsError, ticketsError]);
   
-  // Fetch orders with custom query function
+  // Fetch orders using default query function
   const {
     data: orders = [],
     isLoading: ordersLoading,
@@ -758,73 +624,8 @@ export default function AdminPage() {
   } = useQuery<Order[]>({
     queryKey: ["/api/admin/orders"],
     enabled: !!currentUser,
-    queryFn: async ({ queryKey }) => {
-      try {
-        // Add authentication headers manually
-        const headers: Record<string, string> = {};
-        
-        // Add user-id header
-        if (currentUser && currentUser.id) {
-          headers["user-id"] = currentUser.id.toString();
-        }
-        
-        // Add Authorization header if token exists in current user
-        if (currentUser && currentUser.token) {
-          headers["Authorization"] = `Bearer ${currentUser.token}`;
-          console.log("Using token from currentUser");
-        } else {
-          // Try to get token from localStorage
-          const storedUser = localStorage.getItem("user");
-          if (storedUser) {
-            try {
-              const user = JSON.parse(storedUser);
-              const userData = user.data || user;
-              if (userData && userData.token) {
-                headers["Authorization"] = `Bearer ${userData.token}`;
-                console.log("Using token from user in localStorage");
-              }
-            } catch (err) {
-              console.error("Error parsing user from localStorage:", err);
-            }
-          }
-          
-          // Fallback to standalone token in localStorage
-          if (!headers["Authorization"]) {
-            const authToken = localStorage.getItem("authToken");
-            if (authToken) {
-              headers["Authorization"] = `Bearer ${authToken}`;
-              console.log("Using authToken from localStorage");
-            }
-          }
-          
-          // Try Firebase token as last resort
-          if (!headers["Authorization"]) {
-            const firebaseToken = localStorage.getItem("firebaseToken");
-            if (firebaseToken) {
-              headers["Authorization"] = `Bearer ${firebaseToken}`;
-              console.log("Using Firebase token");
-            }
-          }
-        }
-        
-        console.log("Fetching orders with headers:", headers);
-        
-        const response = await fetch("/api/admin/orders", {
-          headers,
-          credentials: "include"
-        });
-        
-        if (!response.ok) {
-          console.error("Error fetching orders:", response.status, response.statusText);
-          throw new Error(`Error fetching orders: ${response.status} ${response.statusText}`);
-        }
-        
-        return await response.json();
-      } catch (error) {
-        console.error("Failed to fetch orders:", error);
-        throw error;
-      }
-    }
+    retry: 3,
+    refetchOnWindowFocus: false
   });
   
   // Fetch livestreams
