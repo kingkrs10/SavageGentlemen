@@ -1,9 +1,10 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { saveAs } from 'file-saver';
 import * as htmlToImage from 'html-to-image';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import QRCode from 'qrcode';
 
 interface TicketQRCodeProps {
   data: string;
@@ -28,9 +29,34 @@ const TicketQRCode: React.FC<TicketQRCodeProps> = ({
 }) => {
   const qrRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const [qrCodeImage, setQrCodeImage] = useState<string>('');
   
   // Use the provided data or create a fallback identifier
   const qrCodeData = data || `SGX-TIX-${orderId}`;
+  
+  // Generate QR code on component mount
+  useEffect(() => {
+    const generateQR = async () => {
+      try {
+        // Generate QR code as data URL
+        const dataUrl = await QRCode.toDataURL(qrCodeData, {
+          width: size,
+          margin: 1,
+          color: {
+            dark: '#000000', // Black dots
+            light: '#FFFFFF' // White background
+          }
+        });
+        setQrCodeImage(dataUrl);
+      } catch (err) {
+        console.error('Error generating QR code:', err);
+        // Set a fallback message or image
+        setQrCodeImage('');
+      }
+    };
+    
+    generateQR();
+  }, [qrCodeData, size]);
   
   const downloadQRCode = async () => {
     if (!qrRef.current) return;
@@ -69,8 +95,13 @@ const TicketQRCode: React.FC<TicketQRCodeProps> = ({
       let userEmail = "";
       
       if (storedUser) {
-        const user = JSON.parse(storedUser);
-        userEmail = user.email || "";
+        const userData = JSON.parse(storedUser);
+        // Handle different user data formats
+        if (userData.email) {
+          userEmail = userData.email;
+        } else if (userData.data && userData.data.data && userData.data.data.email) {
+          userEmail = userData.data.data.email;
+        }
       }
       
       if (!userEmail) {
@@ -80,17 +111,26 @@ const TicketQRCode: React.FC<TicketQRCodeProps> = ({
         userEmail = promptEmail;
       }
       
+      if (!qrCodeImage) {
+        toast({
+          title: "Error",
+          description: "QR code image is not yet generated. Please try again in a moment.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       // Send the QR code via email
-      const response = await apiRequest('POST', '/tickets/email', {
-        ticketId: id,
+      const response = await apiRequest('POST', '/api/tickets/email', {
+        ticketId: qrCodeData.split('-').pop() || "0", // Extract ticket ID from QR code data
         orderId,
         email: userEmail,
-        qrCodeDataUrl: data,
+        qrCodeDataUrl: qrCodeImage,
         eventName: eventName || 'Untitled Event',
         ticketName: ticketName || 'Standard Ticket',
-        ticketPrice: price || 0,
-        eventDate: date || new Date(),
-        eventLocation: location || 'TBA',
+        ticketPrice: 0, // Default price
+        eventDate: new Date().toISOString(), // Current date as fallback
+        eventLocation: 'Event Venue', // Default venue
         holderName: holderName || 'Ticket Holder'
       });
       
@@ -127,13 +167,22 @@ const TicketQRCode: React.FC<TicketQRCodeProps> = ({
           </div>
         )}
         
-        <img 
-          src={qrCodeData} 
-          alt="Ticket QR Code" 
-          className="mx-auto"
-          width={size}
-          height={size}
-        />
+        {qrCodeImage ? (
+          <img 
+            src={qrCodeImage} 
+            alt="Ticket QR Code" 
+            className="mx-auto"
+            width={size}
+            height={size}
+          />
+        ) : (
+          <div 
+            className="mx-auto flex items-center justify-center bg-gray-100" 
+            style={{ width: size, height: size }}
+          >
+            <p className="text-sm text-gray-500">Loading QR code...</p>
+          </div>
+        )}
         
         <div className="text-center mt-3">
           <p className="text-xs">{orderId}</p>

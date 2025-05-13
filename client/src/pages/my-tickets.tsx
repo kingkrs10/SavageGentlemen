@@ -238,7 +238,15 @@ export default function MyTickets() {
             </div>
             <div className="flex flex-col items-center justify-center">
               <div className="border rounded-lg p-4 bg-white">
-                <TicketQRCode data={ticket.qrCodeData} orderId={ticket.orderId.toString()} />
+                <TicketQRCode 
+                  data={ticket.qrCodeData} 
+                  orderId={ticket.orderId.toString()}
+                  eventName={ticket.event?.title}
+                  ticketName={ticket.ticketType} 
+                  holderName={user?.displayName || undefined}
+                  downloadable
+                  emailable
+                />
               </div>
               <p className="text-xs mt-2 text-center text-muted-foreground">
                 Present this QR code at the event
