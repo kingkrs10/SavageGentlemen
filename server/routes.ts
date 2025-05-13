@@ -167,6 +167,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
     
+    // Try to use x-user-data header as another fallback
+    if (!user && req.headers['x-user-data']) {
+      try {
+        const userData = JSON.parse(req.headers['x-user-data'] as string);
+        
+        if (userData && userData.id) {
+          // Get the user from storage to ensure this is a real user
+          const userFromStorage = await storage.getUser(userData.id);
+          
+          if (userFromStorage) {
+            user = userFromStorage;
+            console.log("User authenticated via x-user-data header:", user.id);
+          }
+        }
+      } catch (xUserDataError) {
+        console.error("Error authenticating with x-user-data:", xUserDataError);
+      }
+    }
+    
     // If we still don't have a user, authentication failed
     if (!user) {
       console.log("Authentication failed for request:", req.path);
@@ -181,21 +200,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint to check if user is logged in (for session validation)
   router.get("/me", async (req: Request, res: Response) => {
     try {
-      const userId = req.headers['user-id'];
+      let user = null;
       
-      if (!userId) {
+      // Try user-id header first
+      const userId = req.headers['user-id'];
+      if (userId) {
+        try {
+          const id = parseInt(userId as string);
+          user = await storage.getUser(id);
+          if (user) {
+            console.log("User found via user-id header in /me endpoint:", user.id);
+          }
+        } catch (e) {
+          console.error("Error retrieving user by ID:", e);
+        }
+      }
+      
+      // Try token authentication if user-id failed
+      if (!user) {
+        const authHeader = req.headers['authorization'];
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          const token = authHeader.split(' ')[1];
+          
+          if (token && token !== 'undefined' && token !== 'null') {
+            try {
+              // Try Firebase token
+              const decodedToken = await admin.auth().verifyIdToken(token);
+              const userByFirebase = await storage.getUserByFirebaseId(decodedToken.uid);
+              
+              if (userByFirebase) {
+                user = userByFirebase;
+                console.log("User found via Firebase token in /me endpoint:", user.id);
+              }
+            } catch (e) {
+              console.error("Error verifying Firebase token:", e);
+            }
+          }
+        }
+      }
+      
+      // Try x-user-data as a last resort
+      if (!user && req.headers['x-user-data']) {
+        try {
+          const userData = JSON.parse(req.headers['x-user-data'] as string);
+          
+          if (userData && userData.id) {
+            // Get the user from storage to ensure this is a real user
+            const userFromStorage = await storage.getUser(userData.id);
+            
+            if (userFromStorage) {
+              user = userFromStorage;
+              console.log("User found via x-user-data header in /me endpoint:", user.id);
+            }
+          }
+        } catch (e) {
+          console.error("Error parsing x-user-data:", e);
+        }
+      }
+      
+      // If no user found through any method, return authentication failure
+      if (!user) {
         return res.status(401).json({ message: "Not authenticated" });
       }
       
-      const id = parseInt(userId as string);
-      const user = await storage.getUser(id);
-      
-      if (!user) {
-        return res.status(401).json({ message: "User not found" });
-      }
-      
       // Generate a new token for API authentication
-      const token = crypto.randomBytes(32).toString('hex');
+      const token = Buffer.from(`${user.id}:${user.username}:${Date.now()}`).toString('base64');
       
       // Return user information without sensitive data
       return res.status(200).json({
@@ -283,6 +352,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Log successful logins for audit purposes
         console.log(`[AUTH] Successful login: ${username} from IP ${req.ip || req.socket.remoteAddress || 'unknown'}`);
         
+        // Generate a simple token for additional authentication
+        const token = Buffer.from(`${user.id}:${user.username}:${Date.now()}`).toString('base64');
+        
         return res.status(200).json({ 
           status: 'success',
           data: {
@@ -291,7 +363,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             displayName: user.displayName,
             avatar: user.avatar,
             isGuest: user.isGuest,
-            role: user.role
+            role: user.role,
+            token: token // Include token in the response
           }
         });
       } catch (err) {
