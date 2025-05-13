@@ -73,10 +73,35 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Login function - set user in state and localStorage
   const login = (userData: User) => {
+    // Ensure we don't lose any token data from the user
+    console.log("Login called with userData:", userData);
+    
+    // Set user in state
     setUser(userData);
-    localStorage.setItem("user", JSON.stringify({ status: "success", data: userData }));
+    
+    // Make sure the token is preserved
+    if (userData && userData.token) {
+      console.log("User has token, storing in localStorage");
+    } else {
+      console.log("User has no token, attempting to find one");
+    }
+    
+    // Store in localStorage with consistent structure
+    localStorage.setItem("user", JSON.stringify({ 
+      status: "success", 
+      data: userData 
+    }));
+    
+    // Also store userId separately for fallback authentication
+    if (userData && userData.id) {
+      localStorage.setItem("userId", userData.id.toString());
+      console.log("Stored userId in localStorage:", userData.id);
+    }
+    
     // Dispatch auth changed event
-    window.dispatchEvent(new CustomEvent('sg:auth:changed', { detail: { user: userData } }));
+    window.dispatchEvent(new CustomEvent('sg:auth:changed', { 
+      detail: { user: userData } 
+    }));
   };
 
   // Logout function - clear user from state and localStorage

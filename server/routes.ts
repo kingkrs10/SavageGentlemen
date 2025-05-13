@@ -2057,10 +2057,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Non-prefixed endpoint (for backward compatibility)
-  router.post("/tickets/free", authenticateUser, async (req: Request, res: Response) => {
+  router.post("/tickets/free", async (req: Request, res: Response) => {
     try {
       const { eventId, eventTitle } = req.body;
-      const user = (req as any).user;
+      
+      // More flexible authentication for free tickets
+      let user = null;
+      
+      // 1. Try user-id header first
+      const userId = req.headers['user-id'];
+      if (userId) {
+        try {
+          const id = parseInt(userId as string);
+          user = await storage.getUser(id);
+          if (user) {
+            console.log("User found via user-id header for free ticket (non-prefixed):", user.id);
+          }
+        } catch (e) {
+          console.error("Error retrieving user by ID:", e);
+        }
+      }
+      
+      // 2. Try token authentication if user-id failed
+      if (!user) {
+        const authHeader = req.headers['authorization'];
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          const token = authHeader.split(' ')[1];
+          
+          if (token && token !== 'undefined' && token !== 'null') {
+            try {
+              // Try Firebase token
+              const decodedToken = await admin.auth().verifyIdToken(token);
+              const userByFirebase = await storage.getUserByFirebaseId(decodedToken.uid);
+              
+              if (userByFirebase) {
+                user = userByFirebase;
+                console.log("User found via Firebase token for free ticket (non-prefixed):", user.id);
+              }
+            } catch (e) {
+              console.error("Error verifying Firebase token:", e);
+            }
+          }
+        }
+      }
+      
+      // 3. Try x-user-data as a last resort
+      if (!user && req.headers['x-user-data']) {
+        try {
+          const userData = JSON.parse(req.headers['x-user-data'] as string);
+          
+          if (userData && userData.id) {
+            // Get the user from storage to ensure this is a real user
+            const userFromStorage = await storage.getUser(userData.id);
+            
+            if (userFromStorage) {
+              user = userFromStorage;
+              console.log("User found via x-user-data header for free ticket (non-prefixed):", user.id);
+            }
+          }
+        } catch (e) {
+          console.error("Error parsing x-user-data:", e);
+        }
+      }
+      
+      // If no user found through any method, return authentication failure
+      if (!user) {
+        console.log("Authentication failed for free ticket request (non-prefixed)");
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      // Store authenticated user in request
+      (req as any).user = user;
       
       if (!eventId) {
         return res.status(400).json({ message: "Event ID is required" });

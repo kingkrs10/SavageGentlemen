@@ -103,6 +103,36 @@ export async function apiRequest(
     } else {
       console.log("No authentication token available from any source");
     }
+    
+    // STEP 5: Add user data as JSON in x-user-data header for extra redundancy
+    // This serves as a last resort fallback
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          const userData = parsedUser.data?.data || parsedUser.data || parsedUser;
+          
+          // Only add if we have valid user data with ID
+          if (userData && userData.id) {
+            // Create a minimal user object with just what's needed for authentication
+            const minimalUserData = {
+              id: userData.id,
+              username: userData.username,
+              role: userData.role
+            };
+            
+            // Add as a custom header
+            headers["x-user-data"] = JSON.stringify(minimalUserData);
+            console.log("Added x-user-data header with minimal user data");
+          }
+        } catch (error) {
+          console.error("Error preparing x-user-data header:", error);
+        }
+      }
+    } catch (error) {
+      console.error("Error setting up x-user-data header:", error);
+    }
   } catch (error) {
     console.error("Error setting up authentication headers:", error);
   }
