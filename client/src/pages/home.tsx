@@ -85,17 +85,17 @@ const Home = () => {
               />
               
               {/* Main Headline */}
-              <h1 className="text-5xl md:text-7xl font-heading text-white uppercase tracking-wide mb-6 [text-shadow:_0_2px_5px_rgba(0,0,0,0.7)]">
+              <h1 className="text-5xl md:text-7xl font-heading text-white uppercase tracking-wide mb-6 [text-shadow:_0_2px_5px_rgba(0,0,0,0.7)] text-center">
                 SAVAGE GENTLEMEN
               </h1>
               
               {/* Subtitle */}
-              <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto mb-12 uppercase tracking-widest [text-shadow:_0_1px_3px_rgba(0,0,0,0.9)]">
+              <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto mb-12 uppercase tracking-widest [text-shadow:_0_1px_3px_rgba(0,0,0,0.9)] text-center">
                 EVENTS · MERCHANDISE · LIVE STREAM · COMMUNITY
               </p>
               
               {/* Action Buttons below Logo */}
-              <div className="flex flex-col gap-4 max-w-md w-full px-6">
+              <div className="flex flex-col gap-4 mx-auto max-w-md px-6">
                 <Button 
                   className="bg-primary hover:bg-primary/90 text-white px-8 py-6 uppercase tracking-widest text-lg font-semibold shadow-xl w-full transition-all duration-300"
                   onClick={() => navigate('/events')}
