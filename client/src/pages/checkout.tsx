@@ -18,7 +18,7 @@ import BrandLoader from '@/components/ui/BrandLoader';
 import { User } from '@/lib/types';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { getAuthHeaders, getCurrentUser } from '@/lib/auth-utils';
+import { getAuthHeaders, getCurrentUser as getAuthUserData } from '@/lib/auth-utils';
 
 // Stripe implementation has been moved to SimpleStripeCheckout component
 
@@ -83,7 +83,7 @@ export default function Checkout() {
         setCheckingAuth(false);
       } else {
         // Try to get user from auth utils
-        const currentUser = getCurrentUser();
+        const currentUser = getAuthUserData();
         if (currentUser) {
           console.log("Checkout page: User data from auth-utils:", currentUser);
           setUser(currentUser);
@@ -91,7 +91,7 @@ export default function Checkout() {
         } else {
           // Last resort - re-fetch user data
           console.log("No user data available, re-fetching from server");
-          fetchUserAndSetup();
+          getCurrentUser(); // Call the local function
         }
       }
     };

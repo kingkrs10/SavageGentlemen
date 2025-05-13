@@ -1911,16 +1911,34 @@ export class DatabaseStorage implements IStorage {
   
   // Ticket purchase operations
   async createTicketPurchase(ticketPurchaseData: InsertTicketPurchase): Promise<TicketPurchase> {
-    const [ticketPurchase] = await db
-      .insert(ticketPurchases)
-      .values({
-        ...ticketPurchaseData,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .returning();
+    try {
+      console.log("Creating ticket purchase with data:", ticketPurchaseData);
       
-    return ticketPurchase;
+      // Make sure we have the ticketPurchases table defined
+      if (!ticketPurchases) {
+        throw new Error('ticketPurchases table is not defined');
+      }
+      
+      // Make sure the data has the required fields for insertion
+      if (!ticketPurchaseData.userId || !ticketPurchaseData.eventId || !ticketPurchaseData.orderId || !ticketPurchaseData.qrCodeData) {
+        throw new Error(`Missing required fields for ticket purchase: ${JSON.stringify(ticketPurchaseData)}`);
+      }
+      
+      const [ticketPurchase] = await db
+        .insert(ticketPurchases)
+        .values({
+          ...ticketPurchaseData,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+      
+      console.log("Successfully created ticket purchase:", ticketPurchase);
+      return ticketPurchase;
+    } catch (error) {
+      console.error("Error creating ticket purchase:", error);
+      throw error;
+    }
   }
   
   async getTicketPurchasesByUserId(userId: number): Promise<TicketPurchase[]> {
