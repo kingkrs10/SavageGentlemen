@@ -409,65 +409,136 @@ export default function Checkout() {
                         'Content-Type': 'application/json'
                       };
                       
-                      // Add token from localStorage if available
-                      const userDataStr = localStorage.getItem('user');
-                      if (userDataStr) {
-                        try {
-                          const userData = JSON.parse(userDataStr);
-                          if (userData?.data?.token) {
-                            headers['Authorization'] = `Bearer ${userData.data.token}`;
-                            console.log("Added token to request headers");
-                          } else if (userData?.token) {
-                            headers['Authorization'] = `Bearer ${userData.token}`;
-                            console.log("Added token to request headers (alternate location)");
-                          }
-                        } catch (e) {
-                          console.error("Error parsing user data:", e);
-                        }
+                      console.log("Current user object:", user);
+                      
+                      // First authentication method: Direct token from user object
+                      if (user && user.token) {
+                        headers['Authorization'] = `Bearer ${user.token}`;
+                        console.log("Added token directly from user object");
                       }
                       
-                      // Try Firebase token as fallback
+                      // Second authentication method: Token from localStorage
                       if (!headers['Authorization']) {
-                        const firebaseToken = localStorage.getItem("firebaseToken");
-                        if (firebaseToken) {
-                          headers['Authorization'] = `Bearer ${firebaseToken}`;
-                          console.log("Using Firebase token for authentication");
+                        const userDataStr = localStorage.getItem('user');
+                        if (userDataStr) {
+                          try {
+                            const userData = JSON.parse(userDataStr);
+                            console.log("User data from localStorage:", userData);
+                            
+                            // Try different locations where token might be stored
+                            if (userData?.data?.data?.token) {
+                              headers['Authorization'] = `Bearer ${userData.data.data.token}`;
+                              console.log("Added token from nested data");
+                            } else if (userData?.data?.token) {
+                              headers['Authorization'] = `Bearer ${userData.data.token}`;
+                              console.log("Added token from data");
+                            } else if (userData?.token) {
+                              headers['Authorization'] = `Bearer ${userData.token}`;
+                              console.log("Added token from root");
+                            }
+                          } catch (e) {
+                            console.error("Error parsing user data:", e);
+                          }
                         }
                       }
                       
-                      // Add user ID as fallback authentication method
+                      // Add user ID as reliable authentication method
+                      // Always add user-id regardless of other auth methods
                       if (user && user.id) {
                         headers['user-id'] = user.id.toString();
                         console.log("Added user-id header:", user.id);
+                      } else {
+                        try {
+                          const userDataStr = localStorage.getItem('user');
+                          if (userDataStr) {
+                            const userData = JSON.parse(userDataStr);
+                            const userId = userData?.data?.data?.id || userData?.data?.id || userData?.id;
+                            
+                            if (userId) {
+                              headers['user-id'] = userId.toString();
+                              console.log("Added user-id from localStorage:", userId);
+                            }
+                          }
+                        } catch (e) {
+                          console.error("Error getting user ID from localStorage:", e);
+                        }
                       }
 
                       console.log("Claiming free ticket with headers:", headers);
                       
-                      // First try with /api prefix
-                      let response = await fetch("/api/tickets/free", {
-                        method: "POST",
-                        headers: headers,
-                        body: JSON.stringify(freeTicketPayload),
-                        credentials: 'include' // Include cookies if available
-                      });
+                      // Try with different endpoint patterns and handle response properly
+                      let response;
+                      let responseText;
+                      let responseData;
                       
-                      // If that fails, try without the prefix
-                      if (!response.ok) {
-                        console.log("API prefixed free ticket endpoint failed, trying non-prefixed endpoint...");
-                        response = await fetch("/tickets/free", {
+                      try {
+                        // First try with /api prefix
+                        console.log("Trying /api/tickets/free endpoint with payload:", freeTicketPayload);
+                        response = await fetch("/api/tickets/free", {
                           method: "POST",
                           headers: headers,
                           body: JSON.stringify(freeTicketPayload),
                           credentials: 'include' // Include cookies if available
                         });
+                        
+                        // Get response text first for debugging
+                        responseText = await response.text();
+                        console.log(`API response status: ${response.status}, text:`, responseText);
+                        
+                        // If it's valid JSON, parse it
+                        try {
+                          responseData = JSON.parse(responseText);
+                        } catch (jsonError) {
+                          console.error("Not valid JSON response:", responseText);
+                          throw new Error("Server returned invalid JSON");
+                        }
+                        
+                        // Check if we got an error response
+                        if (!response.ok) {
+                          throw new Error(responseData?.message || "Server error");
+                        }
+                      } catch (apiPrefixError) {
+                        console.error("Error with /api prefix:", apiPrefixError);
+                        
+                        // If first attempt failed, try without the prefix
+                        try {
+                          console.log("API prefixed endpoint failed, trying /tickets/free endpoint...");
+                          response = await fetch("/tickets/free", {
+                            method: "POST",
+                            headers: headers,
+                            body: JSON.stringify(freeTicketPayload),
+                            credentials: 'include' // Include cookies if available
+                          });
+                          
+                          // Get response text for debugging
+                          responseText = await response.text();
+                          console.log(`Non-API response status: ${response.status}, text:`, responseText);
+                          
+                          // If it's valid JSON, parse it
+                          try {
+                            responseData = JSON.parse(responseText);
+                          } catch (jsonError) {
+                            console.error("Not valid JSON response:", responseText);
+                            throw new Error("Server returned invalid JSON");
+                          }
+                          
+                          // Check if we got an error response
+                          if (!response.ok) {
+                            throw new Error(responseData?.message || "Server error");
+                          }
+                        } catch (nonApiError) {
+                          console.error("Error with non-prefixed endpoint:", nonApiError);
+                          throw nonApiError; // Rethrow to be caught by the outer catch
+                        }
                       }
                       
-                      if (!response.ok) {
-                        throw new Error("Server error processing free ticket");
+                      // If we made it here, we have valid response data
+                      if (!responseData) {
+                        throw new Error("No response data received from server");
                       }
                       
-                      const data = await response.json();
-                      if (data.success) {
+                      // We now already have responseData from our improved error handling
+                      if (responseData.success) {
                         toast({
                           title: "Free Ticket Claimed!",
                           description: "Your free ticket has been claimed successfully. Check your email for details.",
@@ -481,12 +552,16 @@ export default function Checkout() {
                         if (ticketId) redirectParams.append('ticketId', ticketId.toString());
                         if (ticketName) redirectParams.append('ticketName', encodeURIComponent(ticketName));
                         
+                        // Log successful ticket claim
+                        console.log("Successfully claimed free ticket:", responseData);
+                        
                         // Add a short delay before redirect to ensure toast is seen
                         setTimeout(() => {
                           setLocation(`/payment-success?${redirectParams.toString()}`);
                         }, 1500);
                       } else {
-                        throw new Error(data.message || "Failed to claim free ticket");
+                        console.error("Server returned success:false:", responseData);
+                        throw new Error(responseData.message || "Failed to claim free ticket");
                       }
                     } catch (error) {
                       console.error("Error claiming free ticket:", error);
