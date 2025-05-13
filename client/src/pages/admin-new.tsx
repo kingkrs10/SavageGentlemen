@@ -263,32 +263,66 @@ export default function AdminPage() {
         const storedUser = localStorage.getItem("user");
         
         if (storedUser) {
-          // Parse the stored user
-          const user = JSON.parse(storedUser);
-          
-          // Handle both formats: { data: { ... } } and direct { ... }
-          const userData = user.data || user;
-          
-          // Set the current user
-          setCurrentUser(userData);
-          
-          // Log for debugging
-          console.log("Admin page loaded with user:", userData);
-          console.log("User role:", userData.role);
-          
+          // Parse the stored user with better error handling
           try {
-            // Verify the user role with the server
-            const response = await apiRequest("GET", "/api/admin/me");
-            if (response.ok) {
-              console.log("User confirmed as admin by server");
-              // Ensure we're using the latest user data from the server
-              const adminData = await response.json();
-              setCurrentUser(adminData);
+            const parsedUser = JSON.parse(storedUser);
+            console.log("Admin page - Raw parsed user:", parsedUser);
+            
+            // Handle deeply nested data structure (fixed)
+            let userData;
+            if (parsedUser?.data?.data) {
+              userData = parsedUser.data.data;
+            } else if (parsedUser?.data) {
+              userData = parsedUser.data;
+            } else {
+              userData = parsedUser;
             }
-          } catch (apiError) {
-            // Don't throw the user out of the admin page if the API call fails
-            // as long as they have a valid role in localStorage
-            console.error("Error verifying admin status with server:", apiError);
+            
+            console.log("Admin page - Final user data:", userData);
+            
+            // Set the current user
+            setCurrentUser(userData);
+            
+            // Verify this is an admin user
+            if (!userData.role || userData.role !== 'admin') {
+              console.error("User does not have admin role:", userData.role);
+              toast({
+                title: "Access Denied",
+                description: "You don't have permission to access this page.",
+                variant: "destructive"
+              });
+              navigate('/');
+              return;
+            }
+            
+            console.log("Admin page - Access granted for admin user:", userData.username);
+            
+            try {
+              // Verify the user role with the server
+              const response = await apiRequest("GET", "/api/admin/me");
+              if (response.ok) {
+                console.log("User confirmed as admin by server");
+                // Ensure we're using the latest user data from the server
+                const adminData = await response.json();
+                setCurrentUser(adminData);
+              }
+            } catch (apiError) {
+              // Don't throw the user out of the admin page if the API call fails
+              // as long as they have a valid role in localStorage
+              console.error("Error verifying admin status with server:", apiError);
+            } finally {
+              // This ensures we continue even if the server check fails
+              console.log("Admin authentication verification completed");
+            }
+          } catch (parseError) {
+            console.error("Error parsing user data:", parseError);
+            toast({
+              title: "Authentication Error",
+              description: "There was a problem with your session. Please log in again.",
+              variant: "destructive"
+            });
+            navigate('/login');
+            return;
           }
         } else {
           console.log("No user found in localStorage");
@@ -301,6 +335,9 @@ export default function AdminPage() {
         }
       } catch (error) {
         handleApiError("checking user authentication", error);
+      } finally {
+        // This ensures we complete the authentication process regardless of errors
+        console.log("User authentication check completed");
       }
     };
     
@@ -505,30 +542,12 @@ export default function AdminPage() {
   // Password visibility state
   const [showPassword, setShowPassword] = useState(false);
   
-  // Load current user from localStorage
+  // This useEffect has been replaced by the checkUserAuth useEffect
+  // to avoid duplicate user loading logic that could cause conflicts
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        const parsedData = JSON.parse(storedUser);
-        // Check if the data has the expected structure with a data property containing the user info
-        if (parsedData && parsedData.data) {
-          setCurrentUser(parsedData.data);
-          console.log("User loaded from localStorage:", parsedData);
-        } else {
-          console.error("Invalid user data structure:", parsedData);
-          navigate("/login");
-        }
-      } catch (err) {
-        console.error("Error parsing stored user:", err);
-        navigate("/login");
-      }
-    } else {
-      // No user in localStorage, redirect to login
-      console.warn("No user found in localStorage, redirecting to login");
-      navigate("/login");
-    }
-  }, [navigate]);
+    // User authentication is now handled in checkUserAuth
+    console.log("Secondary user auth effect skipped - using primary auth effect instead");
+  }, []);
 
   // Fetch products
   const {
