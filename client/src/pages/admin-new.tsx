@@ -1226,6 +1226,8 @@ export default function AdminPage() {
         description: "Failed to create event. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      console.log("Event creation process completed");
     }
   };
   
@@ -1322,6 +1324,8 @@ export default function AdminPage() {
         description: "Failed to update event. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      console.log("Event update process completed");
     }
   };
   
@@ -1349,6 +1353,8 @@ export default function AdminPage() {
         description: "Failed to delete event. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      console.log("Event deletion process completed");
     }
   };
   
