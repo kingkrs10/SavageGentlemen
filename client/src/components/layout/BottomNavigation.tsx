@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, Link } from "wouter";
-import { Home, CalendarDays, ShoppingBag, Video, Users, LayoutDashboard } from "lucide-react";
+import { Home, CalendarDays, ShoppingBag, Video, Users, LayoutDashboard, Ticket } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { User } from "@/lib/types";
 import { useUser } from "@/context/UserContext";
@@ -25,10 +25,15 @@ const BottomNavigation = ({ user: propUser }: BottomNavigationProps) => {
     { path: "/community", label: "Community", icon: Users },
   ];
   
+  // Add My Tickets if user is authenticated
+  const authenticatedItems = user && !user.isGuest
+    ? [...standardNavItems, { path: "/my-tickets", label: "My Tickets", icon: Ticket }]
+    : standardNavItems;
+  
   // Add admin item if user is admin
   const navItems = user?.role === "admin" 
-    ? [...standardNavItems, { path: "/admin", label: "Admin", icon: LayoutDashboard }]
-    : standardNavItems;
+    ? [...authenticatedItems, { path: "/admin", label: "Admin", icon: LayoutDashboard }]
+    : authenticatedItems;
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-black border-t border-white/10 z-40">

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { useUser } from "@/context/UserContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import TicketQRCode from "@/components/TicketQRCode";
@@ -38,7 +38,7 @@ interface TicketPurchase {
 }
 
 export default function MyTickets() {
-  const { currentUser, loading } = useAuth();
+  const { user, isAuthenticated } = useUser();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [selectedTicket, setSelectedTicket] = useState<TicketPurchase | null>(null);
@@ -49,10 +49,10 @@ export default function MyTickets() {
     error
   } = useQuery<TicketPurchase[]>({
     queryKey: ["/api/user/tickets"],
-    enabled: !!currentUser,
+    enabled: !!user,
   });
 
-  if (!currentUser && !loading) {
+  if (!isAuthenticated) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <h1 className="text-2xl font-bold mb-6">My Tickets</h1>

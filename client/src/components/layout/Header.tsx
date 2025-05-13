@@ -45,6 +45,9 @@ const Header = ({ user: propUser, onProfileClick, onLogout }: HeaderProps) => {
             <a href="/shop" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Shop</a>
             <a href="/live" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Live</a>
             <a href="/community" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Community</a>
+            {user && !user.isGuest && (
+              <a href="/my-tickets" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">My Tickets</a>
+            )}
           </nav>
         </div>
         
