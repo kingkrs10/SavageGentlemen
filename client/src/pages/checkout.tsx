@@ -74,15 +74,25 @@ export default function Checkout() {
     // Re-check authentication when auth-related changes happen
     const handleAuthChange = (event: Event) => {
       console.log("Checkout page: Auth change detected");
-      // Extract user data from event if available
+      
+      // First check if the event has user data
       const customEvent = event as CustomEvent;
       if (customEvent.detail && customEvent.detail.user) {
         console.log("Checkout page: User data from event", customEvent.detail.user);
         setUser(customEvent.detail.user);
         setCheckingAuth(false);
       } else {
-        // Otherwise re-fetch user data
-        getCurrentUser();
+        // Try to get user from auth utils
+        const currentUser = getCurrentUser();
+        if (currentUser) {
+          console.log("Checkout page: User data from auth-utils:", currentUser);
+          setUser(currentUser);
+          setCheckingAuth(false);
+        } else {
+          // Last resort - re-fetch user data
+          console.log("No user data available, re-fetching from server");
+          fetchUserAndSetup();
+        }
       }
     };
     
@@ -405,67 +415,14 @@ export default function Checkout() {
                         ticketName: ticketName
                       };
                       
-                      // Prepare headers with authentication
-                      const headers: Record<string, string> = {
+                      // Get standardized authentication headers from our utility
+                      const headers = {
+                        ...getAuthHeaders(),
                         'Content-Type': 'application/json'
                       };
                       
                       console.log("Current user object:", user);
-                      
-                      // First authentication method: Direct token from user object
-                      if (user && user.token) {
-                        headers['Authorization'] = `Bearer ${user.token}`;
-                        console.log("Added token directly from user object");
-                      }
-                      
-                      // Second authentication method: Token from localStorage
-                      if (!headers['Authorization']) {
-                        const userDataStr = localStorage.getItem('user');
-                        if (userDataStr) {
-                          try {
-                            const userData = JSON.parse(userDataStr);
-                            console.log("User data from localStorage:", userData);
-                            
-                            // Try different locations where token might be stored
-                            if (userData?.data?.data?.token) {
-                              headers['Authorization'] = `Bearer ${userData.data.data.token}`;
-                              console.log("Added token from nested data");
-                            } else if (userData?.data?.token) {
-                              headers['Authorization'] = `Bearer ${userData.data.token}`;
-                              console.log("Added token from data");
-                            } else if (userData?.token) {
-                              headers['Authorization'] = `Bearer ${userData.token}`;
-                              console.log("Added token from root");
-                            }
-                          } catch (e) {
-                            console.error("Error parsing user data:", e);
-                          }
-                        }
-                      }
-                      
-                      // Add user ID as reliable authentication method
-                      // Always add user-id regardless of other auth methods
-                      if (user && user.id) {
-                        headers['user-id'] = user.id.toString();
-                        console.log("Added user-id header:", user.id);
-                      } else {
-                        try {
-                          const userDataStr = localStorage.getItem('user');
-                          if (userDataStr) {
-                            const userData = JSON.parse(userDataStr);
-                            const userId = userData?.data?.data?.id || userData?.data?.id || userData?.id;
-                            
-                            if (userId) {
-                              headers['user-id'] = userId.toString();
-                              console.log("Added user-id from localStorage:", userId);
-                            }
-                          }
-                        } catch (e) {
-                          console.error("Error getting user ID from localStorage:", e);
-                        }
-                      }
-
-                      console.log("Claiming free ticket with headers:", headers);
+                      console.log("Using standardized auth headers for free ticket claim:", headers);
                       
                       // Try with different endpoint patterns and handle response properly
                       let response;
