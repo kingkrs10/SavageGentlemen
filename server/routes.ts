@@ -1781,6 +1781,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Endpoint to email ticket QR code to customer
+  // Original endpoint without /api prefix (for backward compatibility)
   router.post("/tickets/email", async (req: Request, res: Response) => {
     try {
       const { 
@@ -1836,6 +1837,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
         
         return res.status(200).json({ 
+          success: true,
+          message: `Ticket confirmation sent to ${email}`
+        });
+      } else {
+        throw new Error("Failed to send email");
+      }
+    } catch (err) {
+      console.error("Error sending ticket email:", err);
+      return res.status(500).json({ message: "Failed to send ticket email" });
+    }
+  });
+
+  // New endpoint with /api prefix to match client expectations
+  router.post("/api/tickets/email", async (req: Request, res: Response) => {
+    try {
+      const { 
+        ticketId, 
+        orderId, 
+        email, 
+        eventName, 
+        eventDate,
+        eventLocation,
+        ticketName,
+        ticketPrice,
+        holderName,
+        qrCodeDataUrl
+      } = req.body;
+      
+      if (!ticketId || !orderId || !email || !eventName || !qrCodeDataUrl) {
+        return res.status(400).json({ 
+          message: "Missing required fields", 
+          required: "ticketId, orderId, email, eventName, qrCodeDataUrl" 
+        });
+      }
+      
+      console.log(`Processing ticket email for ticketId ${ticketId}, orderId ${orderId} to ${email}`);
+      
+      // Format the ticket info for the email
+      const ticketInfo = {
+        eventName,
+        eventDate: eventDate ? new Date(eventDate) : new Date(),
+        eventLocation: eventLocation || "Venue to be announced",
+        ticketId,
+        ticketType: ticketName || "General Admission",
+        ticketPrice: ticketPrice || 0,
+        purchaseDate: new Date(),
+        qrCodeDataUrl
+      };
+      
+      // Send the ticket email using our email service
+      const emailSent = await sendTicketEmail(ticketInfo, email);
+      
+      if (emailSent) {
+        // Also notify admin about the ticket purchase
+        await sendAdminNotification(
+          "New Ticket Purchase", 
+          `A new ticket has been purchased and the confirmation email was sent to ${email}`,
+          {
+            TicketID: ticketId,
+            OrderID: orderId,
+            Event: eventName,
+            Purchaser: email,
+            HolderName: holderName,
+            PurchaseTime: new Date().toLocaleString()
+          }
+        );
+        
+        return res.status(200).json({
           success: true,
           message: `Ticket confirmation sent to ${email}`
         });

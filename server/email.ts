@@ -8,8 +8,8 @@ if (!process.env.SENDGRID_API_KEY) {
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // The sender email that will be used for all communications
-const DEFAULT_FROM_EMAIL = 'noreply@sgxmedia.com';
-const ADMIN_EMAIL = 'admin@sgxmedia.com'; // Replace with actual admin email
+const DEFAULT_FROM_EMAIL = 'savgmen@gmail.com';
+const ADMIN_EMAIL = 'savgmen@gmail.com'; // Official organizer email
 
 interface EmailOptions {
   to: string;
