@@ -5,6 +5,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import FileUploader from "@/components/ui/file-uploader";
 import {
   Mail,
   Plus,
@@ -1142,16 +1143,43 @@ export default function AdminSimplePage() {
                 onChange={(e) => setEventFormData({...eventFormData, location: e.target.value})}
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="eventImageUrl" className="text-right">
-                Image URL
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="eventImageUrl" className="text-right pt-2">
+                Event Image
               </Label>
-              <Input
-                id="eventImageUrl"
-                className="col-span-3"
-                value={eventFormData.imageUrl}
-                onChange={(e) => setEventFormData({...eventFormData, imageUrl: e.target.value})}
-              />
+              <div className="col-span-3">
+                {eventFormData.imageUrl ? (
+                  <div className="mb-4">
+                    <div className="relative aspect-video mb-2 bg-secondary/30 rounded-lg overflow-hidden">
+                      <img 
+                        src={eventFormData.imageUrl} 
+                        alt="Event preview" 
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = "/placeholder-image.png";
+                        }}
+                      />
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-2 right-2 h-6 w-6"
+                        onClick={() => setEventFormData({...eventFormData, imageUrl: ''})}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{eventFormData.imageUrl}</p>
+                  </div>
+                ) : (
+                  <FileUploader
+                    label="Upload Event Flyer"
+                    accept="image/*"
+                    entityType="event"
+                    onFileUploaded={(fileUrl) => setEventFormData({...eventFormData, imageUrl: fileUrl})}
+                  />
+                )}
+              </div>
             </div>
           </div>
           <DialogFooter>
