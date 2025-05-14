@@ -30,11 +30,37 @@ const handleZodError = (err: unknown, res: Response) => {
 // Track page view
 analyticsRouter.post("/page-view", async (req: Request, res: Response) => {
   try {
-    const pageViewData = insertPageViewSchema.parse(req.body);
-    const pageView = await storage.createPageView(pageViewData);
-    return res.status(201).json(pageView);
+    // Create a safer validation by handling nulls and undefined
+    const validData = {
+      path: req.body.path || '/',
+      sessionId: req.body.sessionId || 'unknown',
+      userId: req.body.userId || null,
+      deviceType: req.body.deviceType || null,
+      browser: req.body.browser || null,
+      referrer: req.body.referrer || null,
+      duration: req.body.duration || null
+    };
+
+    try {
+      // Attempt to validate with schema
+      const pageViewData = insertPageViewSchema.parse(validData);
+      const pageView = await storage.createPageView(pageViewData);
+      return res.status(201).json(pageView);
+    } catch (validationErr) {
+      console.error('Validation error in page view:', validationErr);
+      
+      // Fall back to a minimal valid page view if schema validation fails
+      const minimalPageView = {
+        path: validData.path,
+        sessionId: validData.sessionId
+      };
+      
+      const pageView = await storage.createPageView(minimalPageView);
+      return res.status(201).json(pageView);
+    }
   } catch (err) {
-    return handleZodError(err, res);
+    console.error('Error creating page view:', err);
+    return res.status(500).json({ message: "Failed to record page view" });
   }
 });
 

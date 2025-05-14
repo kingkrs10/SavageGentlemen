@@ -15,6 +15,12 @@ export const initGA = () => {
     return;
   }
 
+  // Check if GA already initialized
+  if (document.querySelector('script[src*="googletagmanager"]')) {
+    console.log('Google Analytics appears to be already initialized');
+    return;
+  }
+
   // Add Google Analytics script to the head
   const script1 = document.createElement('script');
   script1.async = true;
@@ -27,7 +33,9 @@ export const initGA = () => {
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', '${measurementId}');
+    gtag('config', '${measurementId}', {
+      send_page_view: false  // We'll handle page views manually
+    });
   `;
   document.head.appendChild(script2);
 
@@ -36,14 +44,26 @@ export const initGA = () => {
 
 // Track page views - useful for single-page applications
 export const trackGAPageView = (url: string) => {
-  if (typeof window === 'undefined' || !window.gtag) return;
+  if (typeof window === 'undefined') return;
   
   const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
   if (!measurementId) return;
   
-  window.gtag('config', measurementId, {
-    page_path: url
-  });
+  // Wait for gtag to be available
+  if (!window.gtag) {
+    console.log('Waiting for gtag to be available...');
+    setTimeout(() => trackGAPageView(url), 1000);
+    return;
+  }
+  
+  try {
+    window.gtag('config', measurementId, {
+      page_path: url
+    });
+    console.log('GA page view tracked:', url);
+  } catch (error) {
+    console.warn('Failed to track GA page view:', error);
+  }
 };
 
 // Track events
