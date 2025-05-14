@@ -1870,10 +1870,10 @@ export default function AdminPage() {
                   </div>
                 ) : (
                   <div className="text-center py-16 border rounded-md">
-                    <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                     <h3 className="font-semibold text-lg mb-2">NO EVENTS YET</h3>
                     <p className="text-muted-foreground mb-4">Create your first event to start selling tickets.</p>
-                    <Button onClick={handleOpenCreateEvent}>
+                    <Button onClick={() => setCreateEventOpen(true)}>
                       <Plus className="h-4 w-4 mr-1" />
                       Create Event
                     </Button>
