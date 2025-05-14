@@ -1773,7 +1773,7 @@ export default function AdminPage() {
                   <CardTitle>Event Management</CardTitle>
                   <CardDescription>Create and manage events</CardDescription>
                 </div>
-                <Button onClick={handleOpenCreateEvent}>
+                <Button onClick={() => setCreateEventOpen(true)}>
                   <Plus className="h-4 w-4 mr-1" />
                   Create Event
                 </Button>
@@ -1816,7 +1816,7 @@ export default function AdminPage() {
                             <h3 className="text-lg font-bold mb-1">{event.title}</h3>
                             <div className="grid grid-cols-2 gap-2 mb-3">
                               <div className="flex items-center text-sm text-muted-foreground">
-                                <CalendarIcon className="h-4 w-4 mr-1" />
+                                <Calendar className="h-4 w-4 mr-1" />
                                 {new Date(event.date).toLocaleDateString()}
                                 {event.time && ` at ${event.time}`}
                               </div>
@@ -1857,9 +1857,9 @@ export default function AdminPage() {
                               </div>
                               <Button
                                 size="sm"
-                                onClick={() => handleCreateTicketForEvent(event.id, event.title)}
+                                onClick={() => handleAddTicket(event.id)}
                               >
-                                <TicketIcon className="h-4 w-4 mr-1" />
+                                <Ticket className="h-4 w-4 mr-1" />
                                 Add Ticket Type
                               </Button>
                             </div>
