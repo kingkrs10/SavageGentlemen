@@ -70,7 +70,16 @@ export default function AdminSimplePage() {
                 <CardTitle>Event Management</CardTitle>
                 <CardDescription>Create and manage events</CardDescription>
               </div>
-              <Button>
+              <Button
+                onClick={() => {
+                  toast({
+                    title: "Create Event",
+                    description: "Opening event creation form...",
+                  });
+                  // In a real implementation, navigate to event creation form or open modal
+                  console.log("Create event button clicked");
+                }}
+              >
                 <Plus className="h-4 w-4 mr-1" />
                 Create Event
               </Button>
@@ -297,12 +306,31 @@ export default function AdminSimplePage() {
                   <CardContent>
                     <div className="flex justify-between items-center mb-4">
                       <p className="text-muted-foreground">Total Campaigns: 0</p>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          toast({
+                            title: "Test Email",
+                            description: "Sending test email to administrators...",
+                          });
+                          console.log("Send test email button clicked");
+                        }}
+                      >
                         <Mail className="h-4 w-4 mr-1" />
                         Send Test
                       </Button>
                     </div>
-                    <Button className="w-full">
+                    <Button 
+                      className="w-full"
+                      onClick={() => {
+                        toast({
+                          title: "Create Campaign",
+                          description: "Opening campaign creation form...",
+                        });
+                        console.log("Create campaign button clicked");
+                      }}
+                    >
                       <Plus className="h-4 w-4 mr-1" />
                       Create Campaign
                     </Button>
