@@ -3,6 +3,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation } from 'wouter';
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Mail,
   Plus,
@@ -12,6 +14,7 @@ import {
   Ticket,
   Tag as TagIcon,
   DollarSign as DollarSignIcon,
+  Loader2,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -662,71 +665,339 @@ export default function AdminSimplePage() {
       
       {/* Create Ticket Dialog */}
       <Dialog open={isCreateTicketModalOpen} onOpenChange={setIsCreateTicketModalOpen}>
-        <DialogContent className="sm:max-w-[450px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold">Create New Ticket</DialogTitle>
+            <DialogTitle className="text-xl font-bold">Create new ticket type</DialogTitle>
             <DialogDescription className="text-muted-foreground">
               Add a new ticket for <span className="font-medium">{events.find((e) => e.id === ticketFormData.eventId)?.title || 'event'}</span>
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <Input
-                id="name"
-                value={ticketFormData.name}
-                onChange={(e) => setTicketFormData({...ticketFormData, name: e.target.value})}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="price" className="text-right">
-                Price
-              </Label>
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                min="0"
-                value={ticketFormData.price}
-                onChange={(e) => setTicketFormData({...ticketFormData, price: e.target.value})}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="quantity" className="text-right">
-                Quantity
-              </Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="1"
-                value={ticketFormData.quantity}
-                onChange={(e) => setTicketFormData({...ticketFormData, quantity: e.target.value})}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">
-                Status
-              </Label>
-              <Select 
-                value={ticketFormData.status}
-                onValueChange={(value) => setTicketFormData({...ticketFormData, status: value})}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
+          
+          <Tabs value={ticketFormData.ticketType} onValueChange={(value) => setTicketFormData({...ticketFormData, ticketType: value})}>
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="essential">Essential</TabsTrigger>
+              <TabsTrigger value="advanced">Advanced</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="essential" className="space-y-4">
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline" className="bg-pink-950 text-white">REQ</Badge>
+                    <Label htmlFor="ticketName">Name</Label>
+                  </div>
+                  <div className="text-xs text-muted-foreground mb-1">
+                    e.g. General admission, Adult, Kid, VIP, Press
+                  </div>
+                  <Input
+                    id="ticketName"
+                    value={ticketFormData.name}
+                    onChange={(e) => setTicketFormData({...ticketFormData, name: e.target.value})}
+                    placeholder="Enter ticket name"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="outline" className="bg-pink-950 text-white">REQ</Badge>
+                      <Label htmlFor="ticketQuantity">Quantity</Label>
+                    </div>
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Availability for each date of the event
+                    </div>
+                    <Input
+                      id="ticketQuantity"
+                      type="number"
+                      min="1"
+                      value={ticketFormData.quantity}
+                      onChange={(e) => setTicketFormData({...ticketFormData, quantity: e.target.value})}
+                      placeholder="100"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="outline" className="bg-pink-950 text-white">REQ</Badge>
+                      <Label htmlFor="ticketPrice">Price</Label>
+                    </div>
+                    <div className="text-xs text-muted-foreground mb-1">
+                      The price per unit
+                    </div>
+                    <div className="flex items-center">
+                      <span className="mr-2">$</span>
+                      <Input
+                        id="ticketPrice"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={ticketFormData.price}
+                        onChange={(e) => setTicketFormData({...ticketFormData, price: e.target.value})}
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline">OPT</Badge>
+                    <Label htmlFor="ticketDescription">Description</Label>
+                  </div>
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Provide more information about this ticket type
+                  </div>
+                  <Textarea
+                    id="ticketDescription"
+                    value={ticketFormData.description}
+                    onChange={(e) => setTicketFormData({...ticketFormData, description: e.target.value})}
+                    placeholder="Describe what this ticket includes or any special instructions"
+                    rows={4}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline">OPT</Badge>
+                    <Label htmlFor="ticketStatus">Status</Label>
+                  </div>
+                  <Select 
+                    value={ticketFormData.status}
+                    onValueChange={(value) => setTicketFormData({...ticketFormData, status: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="advanced" className="space-y-4">
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline">OPT</Badge>
+                    <Label htmlFor="priceType">Price type</Label>
+                  </div>
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Add a visual cue for non standard prices
+                  </div>
+                  <Select 
+                    value={ticketFormData.priceType}
+                    onValueChange={(value) => setTicketFormData({...ticketFormData, priceType: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select price type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="standard">Standard</SelectItem>
+                      <SelectItem value="early-bird">Early Bird</SelectItem>
+                      <SelectItem value="discount">Discount</SelectItem>
+                      <SelectItem value="premium">Premium</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="outline">OPT</Badge>
+                      <Label htmlFor="minQuantityPerOrder">Min quantity per order</Label>
+                    </div>
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Minimum purchase quantity per order
+                    </div>
+                    <Input
+                      id="minQuantityPerOrder"
+                      type="number"
+                      min="1"
+                      value={ticketFormData.minQuantityPerOrder}
+                      onChange={(e) => setTicketFormData({...ticketFormData, minQuantityPerOrder: e.target.value})}
+                      placeholder="1"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="outline">OPT</Badge>
+                      <Label htmlFor="maxQuantityPerOrder">Max quantity per order</Label>
+                    </div>
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Maximum purchase quantity per order
+                    </div>
+                    <Input
+                      id="maxQuantityPerOrder"
+                      type="number"
+                      min="1"
+                      value={ticketFormData.maxQuantityPerOrder}
+                      onChange={(e) => setTicketFormData({...ticketFormData, maxQuantityPerOrder: e.target.value})}
+                      placeholder="10"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline">OPT</Badge>
+                    <Label htmlFor="displayRemainingQuantity">Display remaining quantity</Label>
+                  </div>
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Inform your customers about the remaining ticket availability
+                  </div>
+                  <Select 
+                    value={ticketFormData.displayRemainingQuantity ? "true" : "false"}
+                    onValueChange={(value) => setTicketFormData({...ticketFormData, displayRemainingQuantity: value === "true"})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select option" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Make the remaining quantity visible</SelectItem>
+                      <SelectItem value="false">Hide the remaining quantity</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline">OPT</Badge>
+                    <Label htmlFor="payWhatYouCan">Pay What You Can</Label>
+                  </div>
+                  <div className="text-xs text-muted-foreground mb-1">
+                    If marked as PWYC, the buyer can choose the price they wish to pay
+                  </div>
+                  <Select 
+                    value={ticketFormData.payWhatYouCan ? "true" : "false"}
+                    onValueChange={(value) => setTicketFormData({...ticketFormData, payWhatYouCan: value === "true"})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select option" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Mark as Pay What You Can</SelectItem>
+                      <SelectItem value="false">Standard fixed price</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline">OPT</Badge>
+                    <Label>Sales time frame</Label>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Sales start date</div>
+                      <Input
+                        type="date"
+                        value={ticketFormData.salesStartDate}
+                        onChange={(e) => setTicketFormData({...ticketFormData, salesStartDate: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Sales start time</div>
+                      <Input
+                        type="time"
+                        value={ticketFormData.salesStartTime}
+                        onChange={(e) => setTicketFormData({...ticketFormData, salesStartTime: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="hideBeforeSalesStart"
+                      checked={ticketFormData.hideBeforeSalesStart}
+                      onCheckedChange={(checked) => setTicketFormData({...ticketFormData, hideBeforeSalesStart: checked === true})}
+                    />
+                    <Label htmlFor="hideBeforeSalesStart">Hide before sales start</Label>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Sales end date</div>
+                      <Input
+                        type="date"
+                        value={ticketFormData.salesEndDate}
+                        onChange={(e) => setTicketFormData({...ticketFormData, salesEndDate: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Sales end time</div>
+                      <Input
+                        type="time"
+                        value={ticketFormData.salesEndTime}
+                        onChange={(e) => setTicketFormData({...ticketFormData, salesEndTime: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="hideAfterSalesEnd"
+                      checked={ticketFormData.hideAfterSalesEnd}
+                      onCheckedChange={(checked) => setTicketFormData({...ticketFormData, hideAfterSalesEnd: checked === true})}
+                    />
+                    <Label htmlFor="hideAfterSalesEnd">Hide after sales end</Label>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline">OPT</Badge>
+                    <Label htmlFor="secretCode">Secret code</Label>
+                  </div>
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Show this ticket type only to those who enter this code
+                  </div>
+                  <Input
+                    id="secretCode"
+                    value={ticketFormData.secretCode}
+                    onChange={(e) => setTicketFormData({...ticketFormData, secretCode: e.target.value})}
+                    placeholder="Enter a secret code"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline">OPT</Badge>
+                    <Label htmlFor="hideIfSoldOut">Hide if sold out</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="hideIfSoldOut"
+                      checked={ticketFormData.hideIfSoldOut}
+                      onCheckedChange={(checked) => setTicketFormData({...ticketFormData, hideIfSoldOut: checked === true})}
+                    />
+                    <Label htmlFor="hideIfSoldOut">Hide the ticket type when the available quantity is 0</Label>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline">OPT</Badge>
+                    <Label htmlFor="hidePriceIfSoldOut">Hide the price if sold out</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="hidePriceIfSoldOut"
+                      checked={ticketFormData.hidePriceIfSoldOut}
+                      onCheckedChange={(checked) => setTicketFormData({...ticketFormData, hidePriceIfSoldOut: checked === true})}
+                    />
+                    <Label htmlFor="hidePriceIfSoldOut">Hide the ticket type price when the available quantity is 0</Label>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+          
+          <DialogFooter className="mt-6">
             <Button
               variant="outline"
               onClick={() => setIsCreateTicketModalOpen(false)}
@@ -735,12 +1006,39 @@ export default function AdminSimplePage() {
             </Button>
             <Button 
               onClick={() => {
+                if (!selectedEventId) {
+                  toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "Please select an event first"
+                  });
+                  return;
+                }
+                
+                // Create a new ticket object based on ticketFormData
                 const newTicket = {
                   name: ticketFormData.name,
                   price: parseFloat(ticketFormData.price),
                   quantity: parseInt(ticketFormData.quantity),
                   status: ticketFormData.status,
-                  eventId: ticketFormData.eventId
+                  eventId: selectedEventId,
+                  description: ticketFormData.description || null,
+                  // Advanced fields
+                  ticketType: ticketFormData.ticketType,
+                  priceType: ticketFormData.priceType,
+                  minQuantityPerOrder: ticketFormData.minQuantityPerOrder ? parseInt(ticketFormData.minQuantityPerOrder) : null,
+                  maxQuantityPerOrder: ticketFormData.maxQuantityPerOrder ? parseInt(ticketFormData.maxQuantityPerOrder) : null,
+                  displayRemainingQuantity: ticketFormData.displayRemainingQuantity,
+                  payWhatYouCan: ticketFormData.payWhatYouCan,
+                  salesStartDate: ticketFormData.salesStartDate || null,
+                  salesStartTime: ticketFormData.salesStartTime || null,
+                  salesEndDate: ticketFormData.salesEndDate || null,
+                  salesEndTime: ticketFormData.salesEndTime || null,
+                  hideBeforeSalesStart: ticketFormData.hideBeforeSalesStart,
+                  hideAfterSalesEnd: ticketFormData.hideAfterSalesEnd,
+                  secretCode: ticketFormData.secretCode || null,
+                  hideIfSoldOut: ticketFormData.hideIfSoldOut,
+                  hidePriceIfSoldOut: ticketFormData.hidePriceIfSoldOut
                 };
                 
                 createTicketMutation.mutate(newTicket, {
@@ -763,7 +1061,14 @@ export default function AdminSimplePage() {
               }}
               disabled={createTicketMutation.isPending}
             >
-              {createTicketMutation.isPending ? "Creating..." : "Create Ticket"}
+              {createTicketMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                "Save"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
