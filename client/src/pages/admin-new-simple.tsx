@@ -19,7 +19,15 @@ import {
   Ticket,
   ShoppingBag,
   BarChart3,
-  MoreHorizontal
+  MoreHorizontal,
+  Image as ImageIcon,
+  Tag as TagIcon,
+  DollarSign as DollarSignIcon,
+  AlertTriangle,
+  Pencil as PencilIcon,
+  Check as CheckIcon,
+  X as XIcon,
+  Clock as ClockIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1547,9 +1555,149 @@ export default function AdminPage() {
           </TabsContent>
           
           <TabsContent value="tickets">
-            <div className="text-center py-16 border rounded-md">
-              <p className="mb-4">The tickets management section will be available soon.</p>
-            </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Ticket Type Management</CardTitle>
+                  <CardDescription>Manage ticket types for events</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {ticketsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+                    <p>Loading tickets...</p>
+                  </div>
+                ) : ticketsError ? (
+                  <div className="text-center py-8 text-destructive">
+                    <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
+                    <p>Error loading tickets. Please try again.</p>
+                  </div>
+                ) : tickets && tickets.length > 0 ? (
+                  <div className="space-y-4">
+                    <div className="rounded-md border overflow-hidden">
+                      <table className="w-full text-sm">
+                        <thead className="bg-muted/50">
+                          <tr>
+                            <th className="p-3 text-left font-medium">Ticket Type</th>
+                            <th className="p-3 text-left font-medium">Event</th>
+                            <th className="p-3 text-left font-medium">Price</th>
+                            <th className="p-3 text-left font-medium">Quantity</th>
+                            <th className="p-3 text-left font-medium">Status</th>
+                            <th className="p-3 text-left font-medium">Sales Period</th>
+                            <th className="p-3 text-left font-medium">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {tickets.map((ticket: any) => {
+                            // Find the associated event
+                            const event = events.find((e: any) => e.id === ticket.eventId);
+                            
+                            return (
+                              <tr key={ticket.id} className="bg-card hover:bg-muted/30 transition-colors">
+                                <td className="p-3">
+                                  <div>
+                                    <div className="font-medium">{ticket.name}</div>
+                                    {ticket.description && (
+                                      <div className="text-xs text-muted-foreground line-clamp-1">
+                                        {ticket.description}
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="p-3">
+                                  {event ? (
+                                    <div className="flex items-center gap-2">
+                                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                                      <span>{event.title}</span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted-foreground">Unknown Event</span>
+                                  )}
+                                </td>
+                                <td className="p-3 font-medium">${parseFloat(ticket.price).toFixed(2)}</td>
+                                <td className="p-3">
+                                  {ticket.quantity === -1 ? 'Unlimited' : ticket.quantity}
+                                </td>
+                                <td className="p-3">
+                                  <div className="flex items-center gap-2">
+                                    <div 
+                                      className={`h-2 w-2 rounded-full ${
+                                        ticket.status === 'active' ? 'bg-green-500' : 'bg-red-500'
+                                      }`}
+                                    ></div>
+                                    <span className="capitalize">{ticket.status || 'Active'}</span>
+                                  </div>
+                                </td>
+                                <td className="p-3">
+                                  {ticket.saleStartDate && ticket.saleEndDate ? (
+                                    <div className="text-xs">
+                                      <div className="flex items-center gap-1">
+                                        <ClockIcon className="h-3 w-3 text-muted-foreground" />
+                                        <span>
+                                          {new Date(ticket.saleStartDate).toLocaleDateString()} - 
+                                          {new Date(ticket.saleEndDate).toLocaleDateString()}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">No time restriction</span>
+                                  )}
+                                </td>
+                                <td className="p-3">
+                                  <div className="flex items-center gap-1">
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline" 
+                                      className="h-8 w-8 p-0"
+                                      onClick={() => handleEditTicket(ticket)}
+                                    >
+                                      <PencilIcon className="h-4 w-4" />
+                                      <span className="sr-only">Edit</span>
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline" 
+                                      className={`h-8 w-8 p-0 ${ticket.status === 'active' ? 'text-red-500 hover:text-red-500' : 'text-green-500 hover:text-green-500'}`}
+                                      onClick={() => handleToggleTicketStatus(ticket)}
+                                    >
+                                      {ticket.status === 'active' ? (
+                                        <XIcon className="h-4 w-4" />
+                                      ) : (
+                                        <CheckIcon className="h-4 w-4" />
+                                      )}
+                                      <span className="sr-only">Toggle Status</span>
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline" 
+                                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                      onClick={() => handleDeleteTicket(ticket.id)}
+                                    >
+                                      <TrashIcon className="h-4 w-4" />
+                                      <span className="sr-only">Delete</span>
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-16 border rounded-md">
+                    <Ticket className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="font-semibold text-lg mb-2">NO TICKET TYPES YET</h3>
+                    <p className="text-muted-foreground mb-4">Create ticket types for your events to start selling.</p>
+                    <p className="text-sm text-muted-foreground">
+                      You can add ticket types from the Events tab by clicking the "Add Ticket Type" button for a specific event.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
           
           <TabsContent value="users">
@@ -1934,6 +2082,588 @@ export default function AdminPage() {
                     Sending...
                   </>
                 ) : 'Send Test'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Create Event Dialog */}
+      <Dialog open={createEventOpen} onOpenChange={setCreateEventOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New Event</DialogTitle>
+            <DialogDescription>
+              Add a new event to your calendar. Fill in all the details to make it discoverable.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            createEventMutation.mutate();
+          }}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <label htmlFor="event-title" className="text-sm font-medium">
+                    Event Title *
+                  </label>
+                  <Input
+                    id="event-title"
+                    value={eventForm.title}
+                    onChange={(e) => setEventForm({...eventForm, title: e.target.value})}
+                    placeholder="Summer Party 2023"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label htmlFor="event-category" className="text-sm font-medium">
+                    Category
+                  </label>
+                  <Input
+                    id="event-category"
+                    value={eventForm.category}
+                    onChange={(e) => setEventForm({...eventForm, category: e.target.value})}
+                    placeholder="Concert, Workshop, etc."
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <label htmlFor="event-date" className="text-sm font-medium">
+                    Date *
+                  </label>
+                  <Input
+                    id="event-date"
+                    type="date"
+                    value={eventForm.date}
+                    onChange={(e) => setEventForm({...eventForm, date: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label htmlFor="event-time" className="text-sm font-medium">
+                    Time
+                  </label>
+                  <Input
+                    id="event-time"
+                    type="time"
+                    value={eventForm.time}
+                    onChange={(e) => setEventForm({...eventForm, time: e.target.value})}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <label htmlFor="event-location" className="text-sm font-medium">
+                    Location *
+                  </label>
+                  <Input
+                    id="event-location"
+                    value={eventForm.location}
+                    onChange={(e) => setEventForm({...eventForm, location: e.target.value})}
+                    placeholder="Venue name or address"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label htmlFor="event-price" className="text-sm font-medium">
+                    Base Price *
+                  </label>
+                  <Input
+                    id="event-price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={eventForm.price}
+                    onChange={(e) => setEventForm({...eventForm, price: e.target.value})}
+                    placeholder="0.00"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    This is the starting price. You can add different ticket types later.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="grid gap-2">
+                <label htmlFor="event-description" className="text-sm font-medium">
+                  Description
+                </label>
+                <textarea
+                  id="event-description"
+                  className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={eventForm.description}
+                  onChange={(e) => setEventForm({...eventForm, description: e.target.value})}
+                  placeholder="Write a description of your event..."
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <label htmlFor="event-image" className="text-sm font-medium">
+                  Event Image
+                </label>
+                <Input
+                  id="event-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleEventImageChange}
+                />
+                {eventForm.imageUrl && (
+                  <div className="mt-2 relative aspect-video w-full max-w-md rounded-md overflow-hidden border">
+                    <img 
+                      src={eventForm.imageUrl} 
+                      alt="Event preview" 
+                      className="object-cover w-full h-full"
+                    />
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <input
+                  id="event-featured"
+                  type="checkbox"
+                  checked={eventForm.featured}
+                  onChange={(e) => setEventForm({...eventForm, featured: e.target.checked})}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <label htmlFor="event-featured" className="text-sm font-medium">
+                  Feature this event on the homepage
+                </label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setCreateEventOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createEventMutation.isPending}>
+                {createEventMutation.isPending ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-foreground"></div>
+                    Creating...
+                  </>
+                ) : (
+                  "Create Event"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Event Dialog */}
+      <Dialog open={editEventOpen} onOpenChange={setEditEventOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Event</DialogTitle>
+            <DialogDescription>
+              Update event details and save changes.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            updateEventMutation.mutate();
+          }}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <label htmlFor="edit-event-title" className="text-sm font-medium">
+                    Event Title *
+                  </label>
+                  <Input
+                    id="edit-event-title"
+                    value={eventForm.title}
+                    onChange={(e) => setEventForm({...eventForm, title: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label htmlFor="edit-event-category" className="text-sm font-medium">
+                    Category
+                  </label>
+                  <Input
+                    id="edit-event-category"
+                    value={eventForm.category}
+                    onChange={(e) => setEventForm({...eventForm, category: e.target.value})}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <label htmlFor="edit-event-date" className="text-sm font-medium">
+                    Date *
+                  </label>
+                  <Input
+                    id="edit-event-date"
+                    type="date"
+                    value={eventForm.date}
+                    onChange={(e) => setEventForm({...eventForm, date: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label htmlFor="edit-event-time" className="text-sm font-medium">
+                    Time
+                  </label>
+                  <Input
+                    id="edit-event-time"
+                    type="time"
+                    value={eventForm.time}
+                    onChange={(e) => setEventForm({...eventForm, time: e.target.value})}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <label htmlFor="edit-event-location" className="text-sm font-medium">
+                    Location *
+                  </label>
+                  <Input
+                    id="edit-event-location"
+                    value={eventForm.location}
+                    onChange={(e) => setEventForm({...eventForm, location: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label htmlFor="edit-event-price" className="text-sm font-medium">
+                    Base Price *
+                  </label>
+                  <Input
+                    id="edit-event-price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={eventForm.price}
+                    onChange={(e) => setEventForm({...eventForm, price: e.target.value})}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="grid gap-2">
+                <label htmlFor="edit-event-description" className="text-sm font-medium">
+                  Description
+                </label>
+                <textarea
+                  id="edit-event-description"
+                  className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={eventForm.description}
+                  onChange={(e) => setEventForm({...eventForm, description: e.target.value})}
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <label htmlFor="edit-event-image" className="text-sm font-medium">
+                  Event Image
+                </label>
+                <Input
+                  id="edit-event-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleEventImageChange}
+                />
+                {eventForm.imageUrl && (
+                  <div className="mt-2 relative aspect-video w-full max-w-md rounded-md overflow-hidden border">
+                    <img 
+                      src={eventForm.imageUrl} 
+                      alt="Event preview" 
+                      className="object-cover w-full h-full"
+                    />
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <input
+                  id="edit-event-featured"
+                  type="checkbox"
+                  checked={eventForm.featured}
+                  onChange={(e) => setEventForm({...eventForm, featured: e.target.checked})}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <label htmlFor="edit-event-featured" className="text-sm font-medium">
+                  Feature this event on the homepage
+                </label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditEventOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateEventMutation.isPending}>
+                {updateEventMutation.isPending ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-foreground"></div>
+                    Updating...
+                  </>
+                ) : (
+                  "Update Event"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Create Ticket Dialog */}
+      <Dialog open={createTicketOpen} onOpenChange={setCreateTicketOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Ticket Type</DialogTitle>
+            <DialogDescription>
+              Add a new ticket type for your event.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            createTicketMutation.mutate();
+          }}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <label htmlFor="ticket-name" className="text-sm font-medium">
+                  Ticket Name *
+                </label>
+                <Input
+                  id="ticket-name"
+                  value={ticketForm.name}
+                  onChange={(e) => setTicketForm({...ticketForm, name: e.target.value})}
+                  placeholder="VIP Pass, Early Bird, General Admission, etc."
+                  required
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <label htmlFor="ticket-price" className="text-sm font-medium">
+                    Price *
+                  </label>
+                  <Input
+                    id="ticket-price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={ticketForm.price}
+                    onChange={(e) => setTicketForm({...ticketForm, price: e.target.value})}
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label htmlFor="ticket-quantity" className="text-sm font-medium">
+                    Quantity *
+                  </label>
+                  <Input
+                    id="ticket-quantity"
+                    value={ticketForm.quantity}
+                    onChange={(e) => setTicketForm({...ticketForm, quantity: e.target.value})}
+                    placeholder="Enter a number or 'unlimited'"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Enter a number or "unlimited"
+                  </p>
+                </div>
+              </div>
+              
+              <div className="grid gap-2">
+                <label htmlFor="ticket-description" className="text-sm font-medium">
+                  Description
+                </label>
+                <textarea
+                  id="ticket-description"
+                  className="min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={ticketForm.description}
+                  onChange={(e) => setTicketForm({...ticketForm, description: e.target.value})}
+                  placeholder="Describe what's included with this ticket type..."
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <label htmlFor="ticket-sale-start" className="text-sm font-medium">
+                    Sale Start Date
+                  </label>
+                  <Input
+                    id="ticket-sale-start"
+                    type="date"
+                    value={ticketForm.saleStartDate}
+                    onChange={(e) => setTicketForm({...ticketForm, saleStartDate: e.target.value})}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label htmlFor="ticket-sale-end" className="text-sm font-medium">
+                    Sale End Date
+                  </label>
+                  <Input
+                    id="ticket-sale-end"
+                    type="date"
+                    value={ticketForm.saleEndDate}
+                    onChange={(e) => setTicketForm({...ticketForm, saleEndDate: e.target.value})}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid gap-2">
+                <label htmlFor="ticket-status" className="text-sm font-medium">
+                  Status
+                </label>
+                <select
+                  id="ticket-status"
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  value={ticketForm.status}
+                  onChange={(e) => setTicketForm({...ticketForm, status: e.target.value})}
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setCreateTicketOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createTicketMutation.isPending}>
+                {createTicketMutation.isPending ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-foreground"></div>
+                    Creating...
+                  </>
+                ) : (
+                  "Create Ticket Type"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Ticket Dialog */}
+      <Dialog open={editTicketOpen} onOpenChange={setEditTicketOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Ticket Type</DialogTitle>
+            <DialogDescription>
+              Update the details for this ticket type.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            updateTicketMutation.mutate();
+          }}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <label htmlFor="edit-ticket-name" className="text-sm font-medium">
+                  Ticket Name *
+                </label>
+                <Input
+                  id="edit-ticket-name"
+                  value={ticketForm.name}
+                  onChange={(e) => setTicketForm({...ticketForm, name: e.target.value})}
+                  required
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <label htmlFor="edit-ticket-price" className="text-sm font-medium">
+                    Price *
+                  </label>
+                  <Input
+                    id="edit-ticket-price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={ticketForm.price}
+                    onChange={(e) => setTicketForm({...ticketForm, price: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label htmlFor="edit-ticket-quantity" className="text-sm font-medium">
+                    Quantity *
+                  </label>
+                  <Input
+                    id="edit-ticket-quantity"
+                    value={ticketForm.quantity}
+                    onChange={(e) => setTicketForm({...ticketForm, quantity: e.target.value})}
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Enter a number or "unlimited"
+                  </p>
+                </div>
+              </div>
+              
+              <div className="grid gap-2">
+                <label htmlFor="edit-ticket-description" className="text-sm font-medium">
+                  Description
+                </label>
+                <textarea
+                  id="edit-ticket-description"
+                  className="min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={ticketForm.description}
+                  onChange={(e) => setTicketForm({...ticketForm, description: e.target.value})}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <label htmlFor="edit-ticket-sale-start" className="text-sm font-medium">
+                    Sale Start Date
+                  </label>
+                  <Input
+                    id="edit-ticket-sale-start"
+                    type="date"
+                    value={ticketForm.saleStartDate}
+                    onChange={(e) => setTicketForm({...ticketForm, saleStartDate: e.target.value})}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label htmlFor="edit-ticket-sale-end" className="text-sm font-medium">
+                    Sale End Date
+                  </label>
+                  <Input
+                    id="edit-ticket-sale-end"
+                    type="date"
+                    value={ticketForm.saleEndDate}
+                    onChange={(e) => setTicketForm({...ticketForm, saleEndDate: e.target.value})}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid gap-2">
+                <label htmlFor="edit-ticket-status" className="text-sm font-medium">
+                  Status
+                </label>
+                <select
+                  id="edit-ticket-status"
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  value={ticketForm.status}
+                  onChange={(e) => setTicketForm({...ticketForm, status: e.target.value})}
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditTicketOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateTicketMutation.isPending}>
+                {updateTicketMutation.isPending ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-foreground"></div>
+                    Updating...
+                  </>
+                ) : (
+                  "Update Ticket Type"
+                )}
               </Button>
             </DialogFooter>
           </form>
