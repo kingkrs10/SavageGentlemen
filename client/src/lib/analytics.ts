@@ -16,25 +16,35 @@ export async function trackPageView(path: string, userId?: number) {
       referrer: document.referrer || null
     };
     
-    await fetch('/api/analytics/page-view', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        path,
-        userId: userId || null,
-        sessionId,
-        ...deviceInfo
-      })
-    });
-    
-    // Track in Google Analytics as well
+    // First, track in Google Analytics since it's more reliable
     trackGAPageView(path);
     
-    // Update analytics cache after recording view
-    queryClient.invalidateQueries({ queryKey: ['/api/analytics/dashboard'] });
-    
+    // Then attempt to track in our custom analytics system
+    try {
+      const response = await fetch('/api/analytics/page-view', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          path,
+          userId: userId || null,
+          sessionId,
+          ...deviceInfo
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.warn('Analytics API warning:', errorData);
+      } else {
+        // Only invalidate queries if the request was successful
+        queryClient.invalidateQueries({ queryKey: ['/api/analytics/dashboard'] });
+      }
+    } catch (apiError) {
+      // Log but don't rethrow API-specific errors
+      console.warn('Custom analytics tracking failed, but GA tracking succeeded:', apiError);
+    }
   } catch (error) {
     console.error('Failed to track page view:', error);
   }
