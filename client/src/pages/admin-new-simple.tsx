@@ -13,7 +13,13 @@ import {
   FileText,
   Send,
   Eye,
-  MoreVertical
+  MoreVertical,
+  Calendar,
+  MapPin,
+  Ticket,
+  ShoppingBag,
+  BarChart3,
+  MoreHorizontal
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -162,6 +168,28 @@ export default function AdminPage() {
     error: emailCampaignsError
   } = useQuery({
     queryKey: ["/api/email-marketing/campaigns"],
+    enabled: !!currentUser && currentUser?.role === 'admin',
+    retry: 3,
+  });
+  
+  // Fetch events
+  const {
+    data: events = [],
+    isLoading: eventsLoading,
+    error: eventsError
+  } = useQuery({
+    queryKey: ["/api/events"],
+    enabled: !!currentUser && currentUser?.role === 'admin',
+    retry: 3,
+  });
+  
+  // Fetch tickets
+  const {
+    data: tickets = [],
+    isLoading: ticketsLoading,
+    error: ticketsError
+  } = useQuery({
+    queryKey: ["/api/tickets"],
     enabled: !!currentUser && currentUser?.role === 'admin',
     retry: 3,
   });
