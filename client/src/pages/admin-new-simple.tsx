@@ -1,12 +1,74 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from 'wouter';
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import {
+  Mail,
+  Plus,
+  Download,
+  Upload,
+  Search,
+  Trash,
+  FileText,
+  Send,
+  Eye,
+  MoreVertical
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
-export default function SimpleAdminPage() {
+export default function AdminPage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  
+  // State for list modals
+  const [createListOpen, setCreateListOpen] = useState(false);
+  const [listForm, setListForm] = useState({ name: '', description: '' });
+  
+  // State for subscriber modals
+  const [addSubscriberOpen, setAddSubscriberOpen] = useState(false);
+  const [subscriberForm, setSubscriberForm] = useState({ email: '', name: '', listId: '' });
+  
+  // State for import/export
+  const [importCsvOpen, setImportCsvOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedListId, setSelectedListId] = useState<string>('');
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [subscriberParams, setSubscriberParams] = useState({
+    search: '',
+    listId: '',
+    status: '',
+  });
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Check user authentication
     const user = localStorage.getItem('user');
     if (!user) {
@@ -34,6 +96,7 @@ export default function SimpleAdminPage() {
       }
       
       console.log("Admin page - Final user data:", userData);
+      setCurrentUser(userData);
       
       if (!userData.role || userData.role !== 'admin') {
         toast({
@@ -56,109 +119,731 @@ export default function SimpleAdminPage() {
     }
   }, []);
 
+  // Fetch email lists
+  const {
+    data: emailLists = [],
+    isLoading: emailListsLoading,
+    error: emailListsError
+  } = useQuery({
+    queryKey: ["/api/email-marketing/lists"],
+    enabled: !!currentUser && currentUser?.role === 'admin',
+    retry: 3,
+  });
+
+  // Fetch subscribers
+  const {
+    data: emailSubscribers = { subscribers: [] },
+    isLoading: emailSubscribersLoading,
+    error: emailSubscribersError
+  } = useQuery({
+    queryKey: ["/api/email-marketing/subscribers", subscriberParams],
+    enabled: !!currentUser && currentUser?.role === 'admin',
+    retry: 3,
+  });
+
+  // Create list mutation
+  const createListMutation = useMutation({
+    mutationFn: async () => {
+      if (!listForm.name.trim()) {
+        throw new Error('List name is required');
+      }
+      
+      const response = await apiRequest('POST', '/api/email-marketing/lists', listForm);
+      
+      if (response.ok) {
+        setCreateListOpen(false);
+        setListForm({ name: '', description: '' });
+        toast({
+          title: "List Created",
+          description: `Successfully created "${listForm.name}" list`,
+        });
+        queryClient.invalidateQueries({queryKey: ["/api/email-marketing/lists"]});
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create list');
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error Creating List",
+        description: error.message || "Something went wrong",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Add subscriber mutation
+  const addSubscriberMutation = useMutation({
+    mutationFn: async () => {
+      if (!subscriberForm.email.trim()) {
+        throw new Error('Email is required');
+      }
+      
+      const response = await apiRequest('POST', '/api/email-marketing/subscribers', subscriberForm);
+      
+      if (response.ok) {
+        setAddSubscriberOpen(false);
+        setSubscriberForm({ email: '', name: '', listId: '' });
+        toast({
+          title: "Subscriber Added",
+          description: `Successfully added ${subscriberForm.email} to the list`,
+        });
+        queryClient.invalidateQueries({queryKey: ["/api/email-marketing/subscribers"]});
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to add subscriber');
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error Adding Subscriber",
+        description: error.message || "Something went wrong",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Import CSV mutation
+  const importCsvMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedFile) {
+        throw new Error('Please select a CSV file');
+      }
+      
+      if (!selectedListId) {
+        throw new Error('Please select a list');
+      }
+      
+      const formData = new FormData();
+      formData.append('csv', selectedFile);
+      formData.append('listId', selectedListId);
+      
+      const response = await fetch(`/api/email-marketing/subscribers/import`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (response.ok) {
+        setImportCsvOpen(false);
+        setSelectedFile(null);
+        setSelectedListId('');
+        
+        const result = await response.json();
+        
+        toast({
+          title: "Import Successful",
+          description: `Successfully imported ${result.imported} subscribers`,
+        });
+        
+        queryClient.invalidateQueries({queryKey: ["/api/email-marketing/subscribers"]});
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to import subscribers');
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Import Error",
+        description: error.message || "Something went wrong",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Export CSV handler
+  const handleExportCsv = async () => {
+    try {
+      const response = await fetch('/api/email-marketing/subscribers/export');
+      
+      if (!response.ok) {
+        throw new Error('Failed to export subscribers');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `subscribers-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Export Successful",
+        description: "Subscribers exported successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Export Error",
+        description: error.message || "Something went wrong",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  // Handle list creation submission
+  const handleCreateList = (e: React.FormEvent) => {
+    e.preventDefault();
+    createListMutation.mutate();
+  };
+
+  // Handle subscriber addition
+  const handleAddSubscriber = (e: React.FormEvent) => {
+    e.preventDefault();
+    addSubscriberMutation.mutate();
+  };
+
+  // Handle import submission
+  const handleImportSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    importCsvMutation.mutate();
+  };
+
+  // Apply search filter
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubscriberParams(prev => ({
+      ...prev,
+      search: searchQuery
+    }));
+  };
+
+  // Apply list filter
+  const handleListFilter = (listId: string) => {
+    setSubscriberParams(prev => ({
+      ...prev,
+      listId: listId === prev.listId ? '' : listId
+    }));
+  };
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setSubscriberParams({
+      search: '',
+      listId: '',
+      status: ''
+    });
+  };
+
   const [activeTab, setActiveTab] = React.useState("dashboard");
   
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Temporary Version</p>
+        <h1 className="text-3xl font-bold">ADMIN DASHBOARD</h1>
+        <div className="text-sm text-muted-foreground">
+          <span className="font-semibold">Logged in</span>
+          <br/>
+          <span>{currentUser?.username || 'User'}</span>
+        </div>
       </div>
       
-      <div className="mb-6 border-b flex overflow-x-auto">
-        <button 
-          className={`px-4 py-2 font-medium ${activeTab === "dashboard" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
-          onClick={() => setActiveTab("dashboard")}
-        >
-          Dashboard
-        </button>
-        <button 
-          className={`px-4 py-2 font-medium ${activeTab === "events" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
-          onClick={() => setActiveTab("events")}
-        >
-          Events
-        </button>
-        <button 
-          className={`px-4 py-2 font-medium ${activeTab === "users" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
-          onClick={() => setActiveTab("users")}
-        >
-          Users
-        </button>
-        <button 
-          className={`px-4 py-2 font-medium ${activeTab === "emails" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
-          onClick={() => setActiveTab("emails")}
-        >
-          Email Marketing
-        </button>
-        <button 
-          className={`px-4 py-2 font-medium ${activeTab === "livestreams" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
-          onClick={() => setActiveTab("livestreams")}
-        >
-          Livestreams
-        </button>
+      <div className="mb-8 border rounded-md p-1 bg-card">
+        <Tabs defaultValue="events" className="w-full" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid grid-cols-6">
+            <TabsTrigger value="events">Events</TabsTrigger>
+            <TabsTrigger value="tickets">Tickets</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="livestreams">Livestreams</TabsTrigger>
+            <TabsTrigger value="inventory">Inventory</TabsTrigger>
+            <TabsTrigger value="email-marketing">Email Marketing</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          </TabsList>
+          
+          {/* Email Marketing Content */}
+          <TabsContent value="email-marketing">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Email Marketing</CardTitle>
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleExportCsv}
+                  >
+                    <Download className="h-4 w-4 mr-1" />
+                    Export CSV
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setImportCsvOpen(true)}
+                  >
+                    <Upload className="h-4 w-4 mr-1" />
+                    Import CSV
+                  </Button>
+                  <Button 
+                    variant="default" 
+                    size="sm"
+                    onClick={() => setCreateListOpen(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Create New List
+                  </Button>
+                </div>
+              </CardHeader>
+              
+              <CardContent>
+                <Tabs defaultValue="subscribers" className="w-full">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="subscribers">Subscribers</TabsTrigger>
+                    <TabsTrigger value="email-lists">Email Lists</TabsTrigger>
+                    <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="subscribers">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-bold">ALL SUBSCRIBERS</h3>
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          onClick={() => setAddSubscriberOpen(true)}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Subscriber
+                        </Button>
+                      </div>
+                      
+                      <div className="flex justify-between items-center gap-4">
+                        <form onSubmit={handleSearchSubmit} className="flex-1">
+                          <div className="relative">
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder="Search by email or name..."
+                              className="pl-8"
+                              value={searchQuery}
+                              onChange={handleSearchChange}
+                            />
+                          </div>
+                        </form>
+                        
+                        <div className="flex gap-2">
+                          <select 
+                            className="border rounded-md px-3 py-2 bg-background text-sm" 
+                            value={subscriberParams.status}
+                            onChange={(e) => setSubscriberParams(prev => ({...prev, status: e.target.value}))}
+                          >
+                            <option value="">Filter by status</option>
+                            <option value="active">Active</option>
+                            <option value="unsubscribed">Unsubscribed</option>
+                            <option value="bounced">Bounced</option>
+                          </select>
+                          
+                          <select 
+                            className="border rounded-md px-3 py-2 bg-background text-sm" 
+                            value={subscriberParams.listId}
+                            onChange={(e) => setSubscriberParams(prev => ({...prev, listId: e.target.value}))}
+                          >
+                            <option value="">Filter by list</option>
+                            {emailLists && Array.isArray(emailLists) && emailLists.map((list: any) => (
+                              <option key={list.id} value={list.id}>{list.name}</option>
+                            ))}
+                          </select>
+                          
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={resetFilters}
+                          >
+                            Reset Filters
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {emailSubscribersLoading ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+                          <p>Loading subscribers...</p>
+                        </div>
+                      ) : emailSubscribersError ? (
+                        <div className="text-center py-8 text-destructive">
+                          <p>Error loading subscribers. Please try again.</p>
+                        </div>
+                      ) : emailSubscribers.subscribers && emailSubscribers.subscribers.length > 0 ? (
+                        <div className="border rounded-md overflow-hidden">
+                          <table className="w-full text-sm">
+                            <thead className="bg-muted">
+                              <tr>
+                                <th className="px-4 py-3 text-left font-medium">Email</th>
+                                <th className="px-4 py-3 text-left font-medium">Name</th>
+                                <th className="px-4 py-3 text-left font-medium">Status</th>
+                                <th className="px-4 py-3 text-left font-medium">Lists</th>
+                                <th className="px-4 py-3 text-left font-medium">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                              {emailSubscribers.subscribers.map((subscriber: any) => (
+                                <tr key={subscriber.id} className="hover:bg-muted/50">
+                                  <td className="px-4 py-3">{subscriber.email}</td>
+                                  <td className="px-4 py-3">{subscriber.name || '-'}</td>
+                                  <td className="px-4 py-3">
+                                    <span className={`px-2 py-1 rounded-full text-xs ${
+                                      subscriber.status === 'active' ? 'bg-green-100 text-green-800' :
+                                      subscriber.status === 'unsubscribed' ? 'bg-yellow-100 text-yellow-800' :
+                                      'bg-red-100 text-red-800'
+                                    }`}>
+                                      {subscriber.status || 'active'}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    {subscriber.lists && subscriber.lists.length > 0
+                                      ? subscriber.lists.map((list: any) => list.name).join(', ')
+                                      : '-'}
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon">
+                                          <MoreVertical className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem>
+                                          Edit
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem className="text-destructive">
+                                          Remove
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="text-center py-16 border rounded-md">
+                          <Mail className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                          <h3 className="font-semibold text-lg mb-2">NO SUBSCRIBERS YET</h3>
+                          <p className="text-muted-foreground mb-4">Import subscribers via CSV or add them manually.</p>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="email-lists">
+                    <div className="space-y-4">
+                      {emailListsLoading ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+                          <p>Loading email lists...</p>
+                        </div>
+                      ) : emailListsError ? (
+                        <div className="text-center py-8 text-destructive">
+                          <p>Error loading email lists. Please try again.</p>
+                        </div>
+                      ) : emailLists && emailLists.length > 0 ? (
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                          {emailLists.map((list: any) => (
+                            <Card key={list.id} className="overflow-hidden">
+                              <CardHeader className="pb-2">
+                                <CardTitle>{list.name}</CardTitle>
+                                <CardDescription>
+                                  {list.description || 'No description provided'}
+                                </CardDescription>
+                              </CardHeader>
+                              <CardContent className="pb-2">
+                                <div className="text-sm">
+                                  <div className="flex justify-between mb-1">
+                                    <span className="text-muted-foreground">Subscribers:</span>
+                                    <span className="font-medium">{list.subscriberCount || 0}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Created:</span>
+                                    <span className="font-medium">
+                                      {new Date(list.createdAt).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                </div>
+                              </CardContent>
+                              <CardFooter className="flex gap-2 justify-end border-t pt-4">
+                                <Button variant="outline" size="sm">
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  View
+                                </Button>
+                                <Button variant="destructive" size="sm">
+                                  <Trash className="h-4 w-4 mr-1" />
+                                  Delete
+                                </Button>
+                              </CardFooter>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-16 border rounded-md">
+                          <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                          <h3 className="font-semibold text-lg mb-2">NO EMAIL LISTS YET</h3>
+                          <p className="text-muted-foreground mb-4">Create your first email list to organize your subscribers.</p>
+                          <Button onClick={() => setCreateListOpen(true)}>
+                            <Plus className="h-4 w-4 mr-1" />
+                            Create New List
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="campaigns">
+                    <div className="text-center py-16 border rounded-md">
+                      <Send className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <h3 className="font-semibold text-lg mb-2">NO CAMPAIGNS YET</h3>
+                      <p className="text-muted-foreground mb-4">Create your first email campaign to engage with your subscribers.</p>
+                      <Button>
+                        <Plus className="h-4 w-4 mr-1" />
+                        Create Campaign
+                      </Button>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          {/* Other Tabs Content */}
+          <TabsContent value="events">
+            <div className="text-center py-16 border rounded-md">
+              <p className="mb-4">The events management section will be available soon.</p>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="tickets">
+            <div className="text-center py-16 border rounded-md">
+              <p className="mb-4">The tickets management section will be available soon.</p>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="users">
+            <div className="text-center py-16 border rounded-md">
+              <p className="mb-4">The users management section will be available soon.</p>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="livestreams">
+            <div className="text-center py-16 border rounded-md">
+              <p className="mb-4">The livestreams management section will be available soon.</p>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="inventory">
+            <div className="text-center py-16 border rounded-md">
+              <p className="mb-4">The inventory management section will be available soon.</p>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="analytics">
+            <div className="text-center py-16 border rounded-md">
+              <p className="mb-4">The analytics section will be available soon.</p>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
       
-      {activeTab === "dashboard" && (
-        <div>
-          <p className="mb-4 text-lg">We're currently fixing an issue with the full admin dashboard. This is a temporary simplified version.</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="p-6 border rounded-lg bg-card shadow-sm">
-              <h2 className="text-xl font-semibold mb-1">Users</h2>
-              <p className="text-3xl font-bold">-</p>
-            </div>
-            <div className="p-6 border rounded-lg bg-card shadow-sm">
-              <h2 className="text-xl font-semibold mb-1">Events</h2>
-              <p className="text-3xl font-bold">-</p>
-            </div>
-            <div className="p-6 border rounded-lg bg-card shadow-sm">
-              <h2 className="text-xl font-semibold mb-1">Ticket Sales</h2>
-              <p className="text-3xl font-bold">-</p>
-            </div>
-            <div className="p-6 border rounded-lg bg-card shadow-sm">
-              <h2 className="text-xl font-semibold mb-1">Subscribers</h2>
-              <p className="text-3xl font-bold">-</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="col-span-1 md:col-span-2 p-6 border rounded-lg bg-card shadow-sm">
-              <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
-              <p className="text-muted-foreground">Activity data is being loaded from the database...</p>
-            </div>
-            <div className="p-6 border rounded-lg bg-card shadow-sm">
-              <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-              <div className="flex flex-col gap-2">
-                <a href="/" className="text-primary hover:underline">View Public Site</a>
-                <a href="/events" className="text-primary hover:underline">View All Events</a>
-                <a href="/shop" className="text-primary hover:underline">View Shop</a>
+      {/* Create List Dialog */}
+      <Dialog open={createListOpen} onOpenChange={setCreateListOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Email List</DialogTitle>
+            <DialogDescription>
+              Create a new list to organize your subscribers.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleCreateList}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <label htmlFor="list-name" className="text-sm font-medium">
+                  List Name
+                </label>
+                <Input
+                  id="list-name"
+                  value={listForm.name}
+                  onChange={(e) => setListForm({...listForm, name: e.target.value})}
+                  placeholder="e.g., Newsletter Subscribers"
+                  required
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <label htmlFor="list-description" className="text-sm font-medium">
+                  Description (Optional)
+                </label>
+                <Input
+                  id="list-description"
+                  value={listForm.description}
+                  onChange={(e) => setListForm({...listForm, description: e.target.value})}
+                  placeholder="e.g., Main newsletter subscribers list"
+                />
               </div>
             </div>
-          </div>
-        </div>
-      )}
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setCreateListOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createListMutation.isPending}>
+                {createListMutation.isPending ? (
+                  <>
+                    <span className="animate-spin mr-2">●</span>
+                    Creating...
+                  </>
+                ) : 'Create List'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
       
-      {activeTab === "events" && (
-        <div>
-          <p className="mb-4">To manage events, please wait for the full admin dashboard to be restored.</p>
-        </div>
-      )}
+      {/* Add Subscriber Dialog */}
+      <Dialog open={addSubscriberOpen} onOpenChange={setAddSubscriberOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Subscriber</DialogTitle>
+            <DialogDescription>
+              Add a new subscriber to your email list.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleAddSubscriber}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <label htmlFor="subscriber-email" className="text-sm font-medium">
+                  Email Address
+                </label>
+                <Input
+                  id="subscriber-email"
+                  type="email"
+                  value={subscriberForm.email}
+                  onChange={(e) => setSubscriberForm({...subscriberForm, email: e.target.value})}
+                  placeholder="example@email.com"
+                  required
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <label htmlFor="subscriber-name" className="text-sm font-medium">
+                  Name (Optional)
+                </label>
+                <Input
+                  id="subscriber-name"
+                  value={subscriberForm.name}
+                  onChange={(e) => setSubscriberForm({...subscriberForm, name: e.target.value})}
+                  placeholder="e.g., John Doe"
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <label htmlFor="subscriber-list" className="text-sm font-medium">
+                  Email List (Optional)
+                </label>
+                <select
+                  id="subscriber-list"
+                  className="border rounded-md px-3 py-2 bg-background"
+                  value={subscriberForm.listId}
+                  onChange={(e) => setSubscriberForm({...subscriberForm, listId: e.target.value})}
+                >
+                  <option value="">Select a list</option>
+                  {emailLists && Array.isArray(emailLists) && emailLists.map((list: any) => (
+                    <option key={list.id} value={list.id}>{list.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setAddSubscriberOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={addSubscriberMutation.isPending}>
+                {addSubscriberMutation.isPending ? (
+                  <>
+                    <span className="animate-spin mr-2">●</span>
+                    Adding...
+                  </>
+                ) : 'Add Subscriber'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
       
-      {activeTab === "users" && (
-        <div>
-          <p className="mb-4">To manage users, please wait for the full admin dashboard to be restored.</p>
-        </div>
-      )}
-      
-      {activeTab === "emails" && (
-        <div>
-          <p className="mb-4">To manage email marketing, please wait for the full admin dashboard to be restored.</p>
-        </div>
-      )}
-      
-      {activeTab === "livestreams" && (
-        <div>
-          <p className="mb-4">To manage livestreams, please wait for the full admin dashboard to be restored.</p>
-        </div>
-      )}
+      {/* Import CSV Dialog */}
+      <Dialog open={importCsvOpen} onOpenChange={setImportCsvOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Import Subscribers from CSV</DialogTitle>
+            <DialogDescription>
+              Upload a CSV file with subscriber data. The file should have headers: email, name (optional).
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleImportSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <label htmlFor="csv-file" className="text-sm font-medium">
+                  CSV File
+                </label>
+                <Input
+                  id="csv-file"
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileChange}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Maximum file size: 2MB
+                </p>
+              </div>
+              
+              <div className="grid gap-2">
+                <label htmlFor="import-list" className="text-sm font-medium">
+                  Add to List (Optional)
+                </label>
+                <select
+                  id="import-list"
+                  className="border rounded-md px-3 py-2 bg-background"
+                  value={selectedListId}
+                  onChange={(e) => setSelectedListId(e.target.value)}
+                >
+                  <option value="">Select a list</option>
+                  {emailLists && Array.isArray(emailLists) && emailLists.map((list: any) => (
+                    <option key={list.id} value={list.id}>{list.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setImportCsvOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={importCsvMutation.isPending}>
+                {importCsvMutation.isPending ? (
+                  <>
+                    <span className="animate-spin mr-2">●</span>
+                    Importing...
+                  </>
+                ) : 'Import Subscribers'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
