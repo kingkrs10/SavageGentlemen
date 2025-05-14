@@ -12,6 +12,7 @@ import {
   Ticket,
   Tag as TagIcon,
   DollarSign as DollarSignIcon,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,25 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
+  CardFooter,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Type definitions for admin panel
 interface Event {
@@ -51,6 +70,14 @@ export default function AdminSimplePage() {
   const [location, navigate] = useLocation();
   const [activeTab, setActiveTab] = React.useState("events");
   const [selectedEventId, setSelectedEventId] = React.useState<number | null>(null);
+  const [isCreateTicketModalOpen, setIsCreateTicketModalOpen] = React.useState(false);
+  const [ticketFormData, setTicketFormData] = React.useState({
+    name: '',
+    price: '0.00',
+    quantity: '100',
+    status: 'active',
+    eventId: 0
+  });
 
   // Event Queries
   const { 
@@ -68,6 +95,37 @@ export default function AdminSimplePage() {
   } = useQuery<Ticket[]>({
     queryKey: ['/api/tickets'],
     enabled: true,
+  });
+  
+  // Delete Event Mutation
+  const deleteEventMutation = useMutation({
+    mutationFn: async (eventId: number) => {
+      return await apiRequest('DELETE', `/api/events/${eventId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+    }
+  });
+  
+  // Delete Ticket Mutation
+  const deleteTicketMutation = useMutation({
+    mutationFn: async (ticketId: number) => {
+      return await apiRequest('DELETE', `/api/tickets/${ticketId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tickets'] });
+    }
+  });
+  
+  // Create Ticket Mutation
+  const createTicketMutation = useMutation({
+    mutationFn: async (newTicket: any) => {
+      return await apiRequest('POST', '/api/tickets', newTicket);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tickets'] });
+      setIsCreateTicketModalOpen(false);
+    }
   });
 
   return (
@@ -179,14 +237,24 @@ export default function AdminSimplePage() {
                               variant="destructive"
                               onClick={() => {
                                 if (confirm(`Are you sure you want to delete "${event.title}"? This action cannot be undone.`)) {
-                                  toast({
-                                    title: "Event Deleted",
-                                    description: `${event.title} has been deleted`,
-                                    variant: "destructive"
-                                  });
                                   console.log(`Deleting event ID: ${event.id}`);
-                                  // In a real implementation:
-                                  // deleteEventMutation.mutate(event.id)
+                                  deleteEventMutation.mutate(event.id, {
+                                    onSuccess: () => {
+                                      toast({
+                                        title: "Event Deleted",
+                                        description: `${event.title} has been deleted`,
+                                        variant: "destructive"
+                                      });
+                                    },
+                                    onError: (error) => {
+                                      console.error("Error deleting event:", error);
+                                      toast({
+                                        title: "Error Deleting Event",
+                                        description: "There was a problem deleting this event. Please try again.",
+                                        variant: "destructive"
+                                      });
+                                    }
+                                  });
                                 }
                               }}
                             >
@@ -308,14 +376,24 @@ export default function AdminSimplePage() {
                                   variant="destructive"
                                   onClick={() => {
                                     if (confirm(`Are you sure you want to delete "${ticket.name}" ticket? This action cannot be undone.`)) {
-                                      toast({
-                                        title: "Ticket Deleted",
-                                        description: `${ticket.name} has been deleted`,
-                                        variant: "destructive"
-                                      });
                                       console.log(`Deleting ticket ID: ${ticket.id}`);
-                                      // In a real implementation:
-                                      // deleteTicketMutation.mutate(ticket.id)
+                                      deleteTicketMutation.mutate(ticket.id, {
+                                        onSuccess: () => {
+                                          toast({
+                                            title: "Ticket Deleted",
+                                            description: `${ticket.name} has been deleted`,
+                                            variant: "destructive"
+                                          });
+                                        },
+                                        onError: (error) => {
+                                          console.error("Error deleting ticket:", error);
+                                          toast({
+                                            title: "Error Deleting Ticket",
+                                            description: "There was a problem deleting this ticket. Please try again.",
+                                            variant: "destructive"
+                                          });
+                                        }
+                                      });
                                     }
                                   }}
                                 >
@@ -332,11 +410,17 @@ export default function AdminSimplePage() {
                     <div className="mt-6">
                       <Button 
                         onClick={() => {
+                          setTicketFormData({
+                            ...ticketFormData,
+                            eventId: selectedEventId || 0,
+                            name: `Ticket for ${events.find((e) => e.id === selectedEventId)?.title || 'Event'}`
+                          });
+                          setIsCreateTicketModalOpen(true);
                           toast({
                             title: "Add Ticket",
-                            description: `Creating new ticket for ${events.find((e: any) => e.id === selectedEventId)?.title}`,
+                            description: `Creating new ticket for ${events.find((e) => e.id === selectedEventId)?.title}`,
                           });
-                          console.log(`Creating ticket for event ID: ${selectedEventId}`);
+                          console.log(`Creating ticket form opened for event ID: ${selectedEventId}`);
                         }}
                       >
                         <Plus className="h-4 w-4 mr-1" />
@@ -353,9 +437,15 @@ export default function AdminSimplePage() {
                   {selectedEventId && (
                     <Button
                       onClick={() => {
+                        setTicketFormData({
+                          ...ticketFormData,
+                          eventId: selectedEventId || 0,
+                          name: `Ticket for ${events.find((e) => e.id === selectedEventId)?.title || 'Event'}`
+                        });
+                        setIsCreateTicketModalOpen(true);
                         toast({
                           title: "Create Ticket",
-                          description: `Opening ticket creation form for ${events.find((e: any) => e.id === selectedEventId)?.title}`,
+                          description: `Opening ticket creation form for ${events.find((e) => e.id === selectedEventId)?.title}`,
                         });
                         console.log(`Creating first ticket for event ID: ${selectedEventId}`);
                       }}
@@ -493,6 +583,115 @@ export default function AdminSimplePage() {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Create Ticket Dialog */}
+      <Dialog open={isCreateTicketModalOpen} onOpenChange={setIsCreateTicketModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Create New Ticket</DialogTitle>
+            <DialogDescription>
+              Add a new ticket for {events.find((e) => e.id === ticketFormData.eventId)?.title || 'event'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
+                value={ticketFormData.name}
+                onChange={(e) => setTicketFormData({...ticketFormData, name: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="price" className="text-right">
+                Price
+              </Label>
+              <Input
+                id="price"
+                type="number"
+                step="0.01"
+                min="0"
+                value={ticketFormData.price}
+                onChange={(e) => setTicketFormData({...ticketFormData, price: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="quantity" className="text-right">
+                Quantity
+              </Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                value={ticketFormData.quantity}
+                onChange={(e) => setTicketFormData({...ticketFormData, quantity: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="status" className="text-right">
+                Status
+              </Label>
+              <Select 
+                value={ticketFormData.status}
+                onValueChange={(value) => setTicketFormData({...ticketFormData, status: value})}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsCreateTicketModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                const newTicket = {
+                  name: ticketFormData.name,
+                  price: parseFloat(ticketFormData.price),
+                  quantity: parseInt(ticketFormData.quantity),
+                  status: ticketFormData.status,
+                  eventId: ticketFormData.eventId
+                };
+                
+                createTicketMutation.mutate(newTicket, {
+                  onSuccess: () => {
+                    toast({
+                      title: "Ticket Created",
+                      description: `${newTicket.name} has been created successfully`,
+                    });
+                    setIsCreateTicketModalOpen(false);
+                  },
+                  onError: (error) => {
+                    console.error("Error creating ticket:", error);
+                    toast({
+                      title: "Error Creating Ticket",
+                      description: "There was a problem creating this ticket. Please try again.",
+                      variant: "destructive"
+                    });
+                  }
+                });
+              }}
+              disabled={createTicketMutation.isPending}
+            >
+              {createTicketMutation.isPending ? "Creating..." : "Create Ticket"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
