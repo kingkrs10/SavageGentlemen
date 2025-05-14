@@ -7,6 +7,7 @@ import {
   Mail,
   Plus,
   Download,
+  Upload,
   Calendar,
   Ticket,
   Tag as TagIcon,
