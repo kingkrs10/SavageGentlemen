@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -272,6 +273,17 @@ export default function AdminSimplePage() {
                               size="sm"
                               variant="outline"
                               onClick={() => {
+                                setEventFormData({
+                                  id: event.id,
+                                  title: event.title,
+                                  description: event.description || '',
+                                  date: event.date,
+                                  time: event.time || '19:00',
+                                  price: event.price,
+                                  location: event.location || '',
+                                  imageUrl: event.imageUrl || ''
+                                });
+                                setIsEditEventModalOpen(true);
                                 toast({
                                   title: "Edit Event",
                                   description: `Opening editor for ${event.title}`,
@@ -739,6 +751,277 @@ export default function AdminSimplePage() {
               disabled={createTicketMutation.isPending}
             >
               {createTicketMutation.isPending ? "Creating..." : "Create Ticket"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Event Creation Modal */}
+      <Dialog open={isCreateEventModalOpen} onOpenChange={setIsCreateEventModalOpen}>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle>Create Event</DialogTitle>
+            <DialogDescription>
+              Create a new event. Fill out the details below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="eventTitle" className="text-right">
+                Title
+              </Label>
+              <Input
+                id="eventTitle"
+                className="col-span-3"
+                value={eventFormData.title}
+                onChange={(e) => setEventFormData({...eventFormData, title: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="eventDescription" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="eventDescription"
+                className="col-span-3"
+                value={eventFormData.description}
+                onChange={(e) => setEventFormData({...eventFormData, description: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="eventDate" className="text-right">
+                Date
+              </Label>
+              <Input
+                id="eventDate"
+                type="date"
+                className="col-span-3"
+                value={eventFormData.date}
+                onChange={(e) => setEventFormData({...eventFormData, date: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="eventTime" className="text-right">
+                Time
+              </Label>
+              <Input
+                id="eventTime"
+                type="time"
+                className="col-span-3"
+                value={eventFormData.time}
+                onChange={(e) => setEventFormData({...eventFormData, time: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="eventPrice" className="text-right">
+                Price
+              </Label>
+              <Input
+                id="eventPrice"
+                className="col-span-3"
+                value={eventFormData.price}
+                onChange={(e) => setEventFormData({...eventFormData, price: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="eventLocation" className="text-right">
+                Location
+              </Label>
+              <Input
+                id="eventLocation"
+                className="col-span-3"
+                value={eventFormData.location}
+                onChange={(e) => setEventFormData({...eventFormData, location: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="eventImageUrl" className="text-right">
+                Image URL
+              </Label>
+              <Input
+                id="eventImageUrl"
+                className="col-span-3"
+                value={eventFormData.imageUrl}
+                onChange={(e) => setEventFormData({...eventFormData, imageUrl: e.target.value})}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsCreateEventModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                const newEvent = {
+                  title: eventFormData.title,
+                  description: eventFormData.description || null,
+                  date: eventFormData.date,
+                  time: eventFormData.time || null,
+                  price: parseFloat(eventFormData.price),
+                  location: eventFormData.location || null,
+                  imageUrl: eventFormData.imageUrl || null
+                };
+                
+                createEventMutation.mutate(newEvent, {
+                  onSuccess: () => {
+                    toast({
+                      title: "Event Created",
+                      description: `${newEvent.title} has been created successfully`,
+                    });
+                    setIsCreateEventModalOpen(false);
+                  },
+                  onError: (error) => {
+                    console.error("Error creating event:", error);
+                    toast({
+                      title: "Error Creating Event",
+                      description: "There was a problem creating this event. Please try again.",
+                      variant: "destructive"
+                    });
+                  }
+                });
+              }}
+              disabled={createEventMutation.isPending}
+            >
+              {createEventMutation.isPending ? "Creating..." : "Create Event"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Event Edit Modal */}
+      <Dialog open={isEditEventModalOpen} onOpenChange={setIsEditEventModalOpen}>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle>Edit Event</DialogTitle>
+            <DialogDescription>
+              Update event details.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="editEventTitle" className="text-right">
+                Title
+              </Label>
+              <Input
+                id="editEventTitle"
+                className="col-span-3"
+                value={eventFormData.title}
+                onChange={(e) => setEventFormData({...eventFormData, title: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="editEventDescription" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="editEventDescription"
+                className="col-span-3"
+                value={eventFormData.description}
+                onChange={(e) => setEventFormData({...eventFormData, description: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="editEventDate" className="text-right">
+                Date
+              </Label>
+              <Input
+                id="editEventDate"
+                type="date"
+                className="col-span-3"
+                value={eventFormData.date}
+                onChange={(e) => setEventFormData({...eventFormData, date: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="editEventTime" className="text-right">
+                Time
+              </Label>
+              <Input
+                id="editEventTime"
+                type="time"
+                className="col-span-3"
+                value={eventFormData.time}
+                onChange={(e) => setEventFormData({...eventFormData, time: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="editEventPrice" className="text-right">
+                Price
+              </Label>
+              <Input
+                id="editEventPrice"
+                className="col-span-3"
+                value={eventFormData.price}
+                onChange={(e) => setEventFormData({...eventFormData, price: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="editEventLocation" className="text-right">
+                Location
+              </Label>
+              <Input
+                id="editEventLocation"
+                className="col-span-3"
+                value={eventFormData.location}
+                onChange={(e) => setEventFormData({...eventFormData, location: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="editEventImageUrl" className="text-right">
+                Image URL
+              </Label>
+              <Input
+                id="editEventImageUrl"
+                className="col-span-3"
+                value={eventFormData.imageUrl}
+                onChange={(e) => setEventFormData({...eventFormData, imageUrl: e.target.value})}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditEventModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                const updatedEvent = {
+                  id: eventFormData.id,
+                  title: eventFormData.title,
+                  description: eventFormData.description || null,
+                  date: eventFormData.date,
+                  time: eventFormData.time || null,
+                  price: parseFloat(eventFormData.price),
+                  location: eventFormData.location || null,
+                  imageUrl: eventFormData.imageUrl || null
+                };
+                
+                editEventMutation.mutate(updatedEvent, {
+                  onSuccess: () => {
+                    toast({
+                      title: "Event Updated",
+                      description: `${updatedEvent.title} has been updated successfully`,
+                    });
+                    setIsEditEventModalOpen(false);
+                  },
+                  onError: (error) => {
+                    console.error("Error updating event:", error);
+                    toast({
+                      title: "Error Updating Event",
+                      description: "There was a problem updating this event. Please try again.",
+                      variant: "destructive"
+                    });
+                  }
+                });
+              }}
+              disabled={editEventMutation.isPending}
+            >
+              {editEventMutation.isPending ? "Updating..." : "Update Event"}
             </Button>
           </DialogFooter>
         </DialogContent>
