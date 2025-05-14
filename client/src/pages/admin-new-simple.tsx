@@ -60,6 +60,20 @@ export default function AdminPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedListId, setSelectedListId] = useState<string>('');
   
+  // Campaign state
+  const [createCampaignOpen, setCreateCampaignOpen] = useState(false);
+  const [campaignForm, setCampaignForm] = useState({ 
+    name: '', 
+    subject: '', 
+    content: '', 
+    listIds: [] as string[],
+    sendTo: 'list' // 'list' or 'all'
+  });
+  const [sendTestEmailOpen, setSendTestEmailOpen] = useState(false);
+  const [testEmails, setTestEmails] = useState('');
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string>('');
+  const [editingCampaign, setEditingCampaign] = useState(false);
+  
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [subscriberParams, setSubscriberParams] = useState({
@@ -137,6 +151,17 @@ export default function AdminPage() {
     error: emailSubscribersError
   } = useQuery({
     queryKey: ["/api/email-marketing/subscribers", subscriberParams],
+    enabled: !!currentUser && currentUser?.role === 'admin',
+    retry: 3,
+  });
+  
+  // Fetch campaigns
+  const {
+    data: emailCampaigns = [],
+    isLoading: emailCampaignsLoading,
+    error: emailCampaignsError
+  } = useQuery({
+    queryKey: ["/api/email-marketing/campaigns"],
     enabled: !!currentUser && currentUser?.role === 'admin',
     retry: 3,
   });
@@ -307,6 +332,188 @@ export default function AdminPage() {
   const handleImportSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     importCsvMutation.mutate();
+  };
+
+  // Create campaign mutation
+  const createCampaignMutation = useMutation({
+    mutationFn: async () => {
+      if (!campaignForm.name.trim() || !campaignForm.subject.trim() || !campaignForm.content.trim()) {
+        throw new Error('Name, subject, and content are required');
+      }
+      
+      // For list targeting, check if at least one list is selected
+      if (campaignForm.sendTo === 'list' && campaignForm.listIds.length === 0) {
+        throw new Error('Please select at least one list for the campaign');
+      }
+      
+      const response = await apiRequest('POST', '/api/email-marketing/campaigns', campaignForm);
+      
+      if (response.ok) {
+        setCreateCampaignOpen(false);
+        setCampaignForm({ 
+          name: '', 
+          subject: '', 
+          content: '', 
+          listIds: [],
+          sendTo: 'list'
+        });
+        setEditingCampaign(false);
+        
+        toast({
+          title: "Campaign Created",
+          description: `Successfully created "${campaignForm.name}" campaign`,
+        });
+        
+        queryClient.invalidateQueries({queryKey: ["/api/email-marketing/campaigns"]});
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create campaign');
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error Creating Campaign",
+        description: error.message || "Something went wrong",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Test email mutation
+  const sendTestEmailMutation = useMutation({
+    mutationFn: async () => {
+      if (!testEmails.trim()) {
+        throw new Error('Please enter at least one email address');
+      }
+      
+      if (!selectedCampaignId) {
+        throw new Error('No campaign selected for test email');
+      }
+      
+      const emails = testEmails.split(',').map(email => email.trim());
+      
+      const response = await apiRequest('POST', `/api/email-marketing/campaigns/${selectedCampaignId}/test`, {
+        emails
+      });
+      
+      if (response.ok) {
+        setSendTestEmailOpen(false);
+        setTestEmails('');
+        
+        toast({
+          title: "Test Email Sent",
+          description: `Test email sent to ${emails.length} recipient(s)`,
+        });
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to send test email');
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error Sending Test Email",
+        description: error.message || "Something went wrong",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Send campaign mutation
+  const sendCampaignMutation = useMutation({
+    mutationFn: async (campaignId: string) => {
+      const response = await apiRequest('POST', `/api/email-marketing/campaigns/${campaignId}/send`, {});
+      
+      if (response.ok) {
+        toast({
+          title: "Campaign Sent",
+          description: "Your campaign has been queued for delivery",
+        });
+        
+        queryClient.invalidateQueries({queryKey: ["/api/email-marketing/campaigns"]});
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to send campaign');
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error Sending Campaign",
+        description: error.message || "Something went wrong",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Delete campaign mutation
+  const deleteCampaignMutation = useMutation({
+    mutationFn: async (campaignId: string) => {
+      const response = await apiRequest('DELETE', `/api/email-marketing/campaigns/${campaignId}`, {});
+      
+      if (response.ok) {
+        toast({
+          title: "Campaign Deleted",
+          description: "Campaign has been deleted successfully",
+        });
+        
+        queryClient.invalidateQueries({queryKey: ["/api/email-marketing/campaigns"]});
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete campaign');
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error Deleting Campaign",
+        description: error.message || "Something went wrong",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Handle campaign creation/update 
+  const handleCampaignSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createCampaignMutation.mutate();
+  };
+
+  // Handle test email send
+  const handleSendTestEmail = (e: React.FormEvent) => {
+    e.preventDefault();
+    sendTestEmailMutation.mutate();
+  };
+  
+  // Handle campaign sending
+  const handleSendCampaign = (campaignId: string) => {
+    if (window.confirm('Are you sure you want to send this campaign? This action cannot be undone.')) {
+      sendCampaignMutation.mutate(campaignId);
+    }
+  };
+  
+  // Handle campaign deletion
+  const handleDeleteCampaign = (campaignId: string) => {
+    if (window.confirm('Are you sure you want to delete this campaign? This action cannot be undone.')) {
+      deleteCampaignMutation.mutate(campaignId);
+    }
+  };
+  
+  // Handle campaign editing
+  const handleEditCampaign = (campaign: any) => {
+    setCampaignForm({
+      name: campaign.name,
+      subject: campaign.subject,
+      content: campaign.content,
+      listIds: campaign.listIds || [],
+      sendTo: campaign.listIds && campaign.listIds.length > 0 ? 'list' : 'all'
+    });
+    setSelectedCampaignId(campaign.id);
+    setEditingCampaign(true);
+    setCreateCampaignOpen(true);
+  };
+  
+  // Open test email dialog
+  const handleOpenTestEmailDialog = (campaignId: string) => {
+    setSelectedCampaignId(campaignId);
+    setSendTestEmailOpen(true);
   };
 
   // Apply search filter
@@ -600,14 +807,135 @@ export default function AdminPage() {
                   </TabsContent>
                   
                   <TabsContent value="campaigns">
-                    <div className="text-center py-16 border rounded-md">
-                      <Send className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                      <h3 className="font-semibold text-lg mb-2">NO CAMPAIGNS YET</h3>
-                      <p className="text-muted-foreground mb-4">Create your first email campaign to engage with your subscribers.</p>
-                      <Button>
-                        <Plus className="h-4 w-4 mr-1" />
-                        Create Campaign
-                      </Button>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-bold">ALL CAMPAIGNS</h3>
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          onClick={() => {
+                            setCampaignForm({ 
+                              name: '', 
+                              subject: '', 
+                              content: '', 
+                              listIds: [],
+                              sendTo: 'list' 
+                            });
+                            setEditingCampaign(false);
+                            setCreateCampaignOpen(true);
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Create Campaign
+                        </Button>
+                      </div>
+                      
+                      {emailCampaignsLoading ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+                          <p>Loading campaigns...</p>
+                        </div>
+                      ) : emailCampaignsError ? (
+                        <div className="text-center py-8 text-destructive">
+                          <p>Error loading campaigns. Please try again.</p>
+                        </div>
+                      ) : emailCampaigns && emailCampaigns.length > 0 ? (
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                          {emailCampaigns.map((campaign: any) => (
+                            <Card key={campaign.id} className="overflow-hidden">
+                              <CardHeader className="pb-2">
+                                <div className="flex justify-between items-start">
+                                  <CardTitle className="mr-2">{campaign.name}</CardTitle>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <MoreVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => handleEditCampaign(campaign)}>
+                                        Edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleOpenTestEmailDialog(campaign.id)}>
+                                        Send Test
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleSendCampaign(campaign.id)}>
+                                        Send Campaign
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem 
+                                        className="text-destructive"
+                                        onClick={() => handleDeleteCampaign(campaign.id)}
+                                      >
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                                <CardDescription>
+                                  {campaign.subject}
+                                </CardDescription>
+                              </CardHeader>
+                              <CardContent className="pb-2">
+                                <div className="text-sm">
+                                  <div className="flex justify-between mb-1">
+                                    <span className="text-muted-foreground">Status:</span>
+                                    <span className={`font-medium ${campaign.status === 'sent' ? 'text-green-600' : campaign.status === 'sending' ? 'text-amber-600' : ''}`}>
+                                      {campaign.status === 'draft' ? 'Draft' : 
+                                       campaign.status === 'sending' ? 'Sending' : 
+                                       campaign.status === 'sent' ? 'Sent' : 'Unknown'}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between mb-1">
+                                    <span className="text-muted-foreground">Created:</span>
+                                    <span className="font-medium">
+                                      {new Date(campaign.createdAt).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                  {campaign.status === 'sent' && (
+                                    <div className="flex justify-between">
+                                      <span className="text-muted-foreground">Sent to:</span>
+                                      <span className="font-medium">
+                                        {campaign.sentCount || 0} recipients
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </CardContent>
+                              <CardFooter className="flex gap-2 justify-end border-t pt-4">
+                                <Button variant="outline" size="sm" onClick={() => handleOpenTestEmailDialog(campaign.id)}>
+                                  Test
+                                </Button>
+                                {campaign.status !== 'sent' && (
+                                  <Button variant="default" size="sm" onClick={() => handleSendCampaign(campaign.id)}>
+                                    <Send className="h-4 w-4 mr-1" />
+                                    Send
+                                  </Button>
+                                )}
+                              </CardFooter>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-16 border rounded-md">
+                          <Send className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                          <h3 className="font-semibold text-lg mb-2">NO CAMPAIGNS YET</h3>
+                          <p className="text-muted-foreground mb-4">Create your first email campaign to engage with your subscribers.</p>
+                          <Button onClick={() => {
+                            setCampaignForm({ 
+                              name: '', 
+                              subject: '', 
+                              content: '', 
+                              listIds: [],
+                              sendTo: 'list' 
+                            });
+                            setEditingCampaign(false);
+                            setCreateCampaignOpen(true);
+                          }}>
+                            <Plus className="h-4 w-4 mr-1" />
+                            Create Campaign
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </TabsContent>
                 </Tabs>
@@ -839,6 +1167,177 @@ export default function AdminPage() {
                     Importing...
                   </>
                 ) : 'Import Subscribers'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Create Campaign Dialog */}
+      <Dialog open={createCampaignOpen} onOpenChange={setCreateCampaignOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{editingCampaign ? 'Edit Campaign' : 'Create New Campaign'}</DialogTitle>
+            <DialogDescription>
+              {editingCampaign ? 'Update your email campaign details.' : 'Create a new email campaign to send to your subscribers.'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleCampaignSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <label htmlFor="campaign-name" className="text-sm font-medium">
+                  Campaign Name
+                </label>
+                <Input
+                  id="campaign-name"
+                  value={campaignForm.name}
+                  onChange={(e) => setCampaignForm({...campaignForm, name: e.target.value})}
+                  placeholder="e.g., May Newsletter"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  This is for your reference only and won't be shown to recipients.
+                </p>
+              </div>
+              
+              <div className="grid gap-2">
+                <label htmlFor="campaign-subject" className="text-sm font-medium">
+                  Email Subject
+                </label>
+                <Input
+                  id="campaign-subject"
+                  value={campaignForm.subject}
+                  onChange={(e) => setCampaignForm({...campaignForm, subject: e.target.value})}
+                  placeholder="e.g., Your May Newsletter Is Here!"
+                  required
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <label htmlFor="campaign-content" className="text-sm font-medium">
+                  Email Content
+                </label>
+                <textarea
+                  id="campaign-content"
+                  className="min-h-[200px] border rounded-md p-3 bg-background"
+                  value={campaignForm.content}
+                  onChange={(e) => setCampaignForm({...campaignForm, content: e.target.value})}
+                  placeholder="Write your email content here..."
+                  required
+                ></textarea>
+                <p className="text-xs text-muted-foreground">
+                  You can use HTML for formatting. Use {'{name}'} to personalize with the recipient's name.
+                </p>
+              </div>
+              
+              <div className="grid gap-2">
+                <label htmlFor="send-to" className="text-sm font-medium">
+                  Send To
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="send-to"
+                      value="all"
+                      checked={campaignForm.sendTo === 'all'}
+                      onChange={() => setCampaignForm({...campaignForm, sendTo: 'all', listIds: []})}
+                    />
+                    <span>All Subscribers</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="send-to"
+                      value="list"
+                      checked={campaignForm.sendTo === 'list'}
+                      onChange={() => setCampaignForm({...campaignForm, sendTo: 'list'})}
+                    />
+                    <span>Specific Lists</span>
+                  </label>
+                </div>
+              </div>
+              
+              {campaignForm.sendTo === 'list' && (
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">
+                    Select Lists
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {emailLists && Array.isArray(emailLists) && emailLists.map((list: any) => (
+                      <label key={list.id} className="flex items-center gap-2 p-2 border rounded-md">
+                        <input
+                          type="checkbox"
+                          checked={campaignForm.listIds.includes(list.id)}
+                          onChange={(e) => {
+                            const updatedLists = e.target.checked
+                              ? [...campaignForm.listIds, list.id]
+                              : campaignForm.listIds.filter(id => id !== list.id);
+                            setCampaignForm({...campaignForm, listIds: updatedLists});
+                          }}
+                        />
+                        <span>{list.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setCreateCampaignOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createCampaignMutation.isPending}>
+                {createCampaignMutation.isPending ? (
+                  <>
+                    <span className="animate-spin mr-2">●</span>
+                    {editingCampaign ? 'Updating...' : 'Creating...'}
+                  </>
+                ) : (editingCampaign ? 'Update Campaign' : 'Create Campaign')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Test Email Dialog */}
+      <Dialog open={sendTestEmailOpen} onOpenChange={setSendTestEmailOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Test Email</DialogTitle>
+            <DialogDescription>
+              Send a test email to verify how your campaign will look.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleSendTestEmail} className="space-y-4">
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <label htmlFor="test-emails" className="text-sm font-medium">Email Addresses</label>
+                <input 
+                  type="text" 
+                  id="test-emails"
+                  value={testEmails}
+                  onChange={e => setTestEmails(e.target.value)}
+                  className="border rounded-md p-2 text-sm"
+                  placeholder="email@example.com, another@example.com"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">Separate multiple emails with commas</p>
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setSendTestEmailOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={sendTestEmailMutation.isPending}>
+                {sendTestEmailMutation.isPending ? (
+                  <>
+                    <span className="animate-spin mr-2">●</span>
+                    Sending...
+                  </>
+                ) : 'Send Test'}
               </Button>
             </DialogFooter>
           </form>
