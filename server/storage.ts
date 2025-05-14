@@ -61,7 +61,13 @@ import {
   ticketScans,
   passwordResetTokens,
   productVariants,
-  inventoryHistory
+  inventoryHistory,
+  // Analytics tables
+  pageViews,
+  eventAnalytics,
+  productAnalytics,
+  userEvents,
+  dailyStats
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, sql, lte, lt, isNotNull } from "drizzle-orm";
