@@ -1221,6 +1221,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log the date being saved
       console.log(`Creating event with date:`, requestData.date);
       
+      // Set price to null if not provided
+      if (requestData.price === undefined) {
+        requestData.price = null;
+      }
+      
       // Now parse with the schema
       const eventData = insertEventSchema.parse(requestData);
       const event = await storage.createEvent(eventData);

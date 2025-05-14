@@ -64,7 +64,7 @@ export const events = pgTable("events", {
   endTime: text("end_time"), // End time string in HH:MM format
   duration: integer("duration"), // Duration in minutes
   location: text("location").notNull(),
-  price: integer("price").notNull(),
+  price: integer("price"),
   imageUrl: text("image_url"),
   category: text("category"),
   featured: boolean("featured").default(false),
@@ -83,7 +83,7 @@ export const insertEventSchema = createInsertSchema(events)
     endTime: true,
     duration: true,
     location: true,
-    price: true,
+    price: false,
     imageUrl: true,
     category: true,
     featured: true,
