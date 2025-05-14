@@ -27,7 +27,7 @@ const Live = lazy(() => import("@/pages/live"));
 const Community = lazy(() => import("@/pages/community"));
 const Checkout = lazy(() => import("@/pages/checkout"));
 const PaymentSuccess = lazy(() => import("@/pages/payment-success"));
-const Admin = lazy(() => import("@/pages/admin-new-simple"));
+const Admin = lazy(() => import("@/pages/admin-simple"));
 const AdminNew = lazy(() => import("@/pages/admin-new"));
 const PasswordReset = lazy(() => import("@/pages/password-reset"));
 const AnalyticsDashboard = lazy(() => import("@/pages/analytics-dashboard"));
