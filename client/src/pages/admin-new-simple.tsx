@@ -105,6 +105,170 @@ export default function AdminPage() {
   });
   const [eventImageFile, setEventImageFile] = useState<File | null>(null);
   
+  // Fetch Events
+  const { 
+    data: events = [], 
+    isLoading: eventsLoading, 
+    error: eventsError 
+  } = useQuery({ 
+    queryKey: ['/api/events'], 
+    queryFn: () => apiRequest('GET', '/api/events').then(res => res.json()) 
+  });
+  
+  // Event Mutations
+  const createEventMutation = useMutation({
+    mutationFn: async () => {
+      const formData = new FormData();
+      formData.append('title', eventForm.title);
+      formData.append('description', eventForm.description || '');
+      formData.append('date', eventForm.date);
+      formData.append('time', eventForm.time || '');
+      formData.append('location', eventForm.location);
+      formData.append('price', eventForm.price);
+      formData.append('category', eventForm.category || '');
+      formData.append('featured', String(eventForm.featured));
+      
+      if (eventImageFile) {
+        formData.append('image', eventImageFile);
+      }
+      
+      return apiRequest('POST', '/api/events', formData, true);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/events/featured'] });
+      setCreateEventOpen(false);
+      setEventForm({
+        title: '',
+        description: '',
+        date: '',
+        time: '',
+        location: '',
+        price: '',
+        category: '',
+        featured: false,
+        imageUrl: ''
+      });
+      setEventImageFile(null);
+      toast({
+        title: "Success",
+        description: "Event created successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create event",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const updateEventMutation = useMutation({
+    mutationFn: async () => {
+      const formData = new FormData();
+      formData.append('title', eventForm.title);
+      formData.append('description', eventForm.description || '');
+      formData.append('date', eventForm.date);
+      formData.append('time', eventForm.time || '');
+      formData.append('location', eventForm.location);
+      formData.append('price', eventForm.price);
+      formData.append('category', eventForm.category || '');
+      formData.append('featured', String(eventForm.featured));
+      
+      if (eventImageFile) {
+        formData.append('image', eventImageFile);
+      }
+      
+      return apiRequest('PUT', `/api/events/${selectedEvent.id}`, formData, true);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/events/featured'] });
+      setEditEventOpen(false);
+      setSelectedEvent(null);
+      setEventForm({
+        title: '',
+        description: '',
+        date: '',
+        time: '',
+        location: '',
+        price: '',
+        category: '',
+        featured: false,
+        imageUrl: ''
+      });
+      setEventImageFile(null);
+      toast({
+        title: "Success",
+        description: "Event updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update event",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const deleteEventMutation = useMutation({
+    mutationFn: (id: number) => apiRequest('DELETE', `/api/events/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/events/featured'] });
+      toast({
+        title: "Success",
+        description: "Event deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete event",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Event handlers
+  const handleEditEvent = (event: any) => {
+    setSelectedEvent(event);
+    setEventForm({
+      title: event.title,
+      description: event.description || '',
+      date: event.date ? new Date(event.date).toISOString().split('T')[0] : '',
+      time: event.time || '',
+      location: event.location,
+      price: String(event.price),
+      category: event.category || '',
+      featured: event.featured || false,
+      imageUrl: event.imageUrl || ''
+    });
+    setEditEventOpen(true);
+  };
+  
+  const handleDeleteEvent = (id: number) => {
+    if (window.confirm('Are you sure you want to delete this event?')) {
+      deleteEventMutation.mutate(id);
+    }
+  };
+  
+  const handleEventImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setEventImageFile(file);
+      
+      // Create a preview URL
+      const reader = new FileReader();
+      reader.onload = () => {
+        setEventForm({ ...eventForm, imageUrl: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
   // Ticket management state
   const [createTicketOpen, setCreateTicketOpen] = useState(false);
   const [editTicketOpen, setEditTicketOpen] = useState(false);
@@ -120,6 +284,171 @@ export default function AdminPage() {
     saleStartDate: '',
     saleEndDate: ''
   });
+  
+  // Fetch Tickets
+  const { 
+    data: tickets = [], 
+    isLoading: ticketsLoading, 
+    error: ticketsError 
+  } = useQuery({ 
+    queryKey: ['/api/tickets'], 
+    queryFn: () => apiRequest('GET', '/api/tickets').then(res => res.json()) 
+  });
+  
+  // Ticket Mutations
+  const createTicketMutation = useMutation({
+    mutationFn: async () => {
+      const data = {
+        name: ticketForm.name,
+        description: ticketForm.description,
+        price: parseFloat(ticketForm.price),
+        quantity: ticketForm.quantity === 'unlimited' ? -1 : parseInt(ticketForm.quantity),
+        status: ticketForm.status,
+        eventId: parseInt(ticketForm.eventId),
+        saleStartDate: ticketForm.saleStartDate || null,
+        saleEndDate: ticketForm.saleEndDate || null
+      };
+      return apiRequest('POST', '/api/tickets', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tickets'] });
+      setCreateTicketOpen(false);
+      setTicketForm({
+        name: '',
+        description: '',
+        price: '',
+        quantity: '',
+        status: 'active',
+        eventId: '',
+        saleStartDate: '',
+        saleEndDate: ''
+      });
+      toast({
+        title: "Success",
+        description: "Ticket type created successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create ticket type",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const updateTicketMutation = useMutation({
+    mutationFn: async () => {
+      const data = {
+        name: ticketForm.name,
+        description: ticketForm.description,
+        price: parseFloat(ticketForm.price),
+        quantity: ticketForm.quantity === 'unlimited' ? -1 : parseInt(ticketForm.quantity),
+        status: ticketForm.status,
+        eventId: parseInt(ticketForm.eventId),
+        saleStartDate: ticketForm.saleStartDate || null,
+        saleEndDate: ticketForm.saleEndDate || null
+      };
+      return apiRequest('PUT', `/api/tickets/${selectedTicket.id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tickets'] });
+      setEditTicketOpen(false);
+      setSelectedTicket(null);
+      setTicketForm({
+        name: '',
+        description: '',
+        price: '',
+        quantity: '',
+        status: 'active',
+        eventId: '',
+        saleStartDate: '',
+        saleEndDate: ''
+      });
+      toast({
+        title: "Success",
+        description: "Ticket type updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update ticket type",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const deleteTicketMutation = useMutation({
+    mutationFn: (id: number) => apiRequest('DELETE', `/api/tickets/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tickets'] });
+      toast({
+        title: "Success",
+        description: "Ticket type deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete ticket type",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Ticket handlers
+  const handleAddTicket = (eventId: number) => {
+    setTicketForm({
+      ...ticketForm,
+      eventId: String(eventId)
+    });
+    setCreateTicketOpen(true);
+  };
+  
+  const handleEditTicket = (ticket: any) => {
+    setSelectedTicket(ticket);
+    setTicketForm({
+      name: ticket.name,
+      description: ticket.description || '',
+      price: String(ticket.price),
+      quantity: ticket.quantity === -1 ? 'unlimited' : String(ticket.quantity),
+      status: ticket.status || 'active',
+      eventId: String(ticket.eventId),
+      saleStartDate: ticket.saleStartDate ? new Date(ticket.saleStartDate).toISOString().split('T')[0] : '',
+      saleEndDate: ticket.saleEndDate ? new Date(ticket.saleEndDate).toISOString().split('T')[0] : ''
+    });
+    setEditTicketOpen(true);
+  };
+  
+  const handleDeleteTicket = (id: number) => {
+    if (window.confirm('Are you sure you want to delete this ticket type?')) {
+      deleteTicketMutation.mutate(id);
+    }
+  };
+  
+  const handleToggleTicketStatus = (ticket: any) => {
+    const updatedTicket = {
+      ...ticket,
+      status: ticket.status === 'active' ? 'inactive' : 'active'
+    };
+    
+    apiRequest('PUT', `/api/tickets/${ticket.id}`, updatedTicket)
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/tickets'] });
+        toast({
+          title: "Success",
+          description: `Ticket type ${updatedTicket.status === 'active' ? 'activated' : 'deactivated'} successfully`,
+        });
+      })
+      .catch((error) => {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to update ticket status",
+          variant: "destructive",
+        });
+      });
+  };
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
