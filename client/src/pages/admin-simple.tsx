@@ -129,7 +129,7 @@ export default function AdminSimplePage() {
   });
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
       <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
       
       <Tabs 
@@ -171,11 +171,11 @@ export default function AdminSimplePage() {
                   <p>Loading events...</p>
                 </div>
               ) : events.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {events.map((event: any) => (
-                    <Card key={event.id} className="overflow-hidden">
-                      <div className="grid grid-cols-1 md:grid-cols-3">
-                        <div className="aspect-video bg-muted">
+                <div className="grid grid-cols-1 gap-6">
+                  {events.map((event) => (
+                    <Card key={event.id} className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200">
+                      <div className="grid grid-cols-1 md:grid-cols-4">
+                        <div className="aspect-video md:aspect-square bg-muted md:col-span-1">
                           {event.imageUrl ? (
                             <img 
                               src={event.imageUrl} 
@@ -184,24 +184,29 @@ export default function AdminSimplePage() {
                             />
                           ) : (
                             <div className="flex items-center justify-center h-full bg-muted">
-                              <Calendar className="h-8 w-8 text-muted-foreground" />
+                              <Calendar className="h-10 w-10 text-muted-foreground" />
                             </div>
                           )}
                         </div>
-                        <div className="md:col-span-2 p-4">
-                          <h3 className="text-lg font-bold mb-1">{event.title}</h3>
-                          <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div className="md:col-span-3 p-6">
+                          <h3 className="text-xl font-bold mb-2">{event.title}</h3>
+                          <div className="grid grid-cols-2 gap-4 mb-4">
                             <div className="flex items-center text-sm text-muted-foreground">
-                              <Calendar className="h-4 w-4 mr-1" />
+                              <Calendar className="h-4 w-4 mr-2" />
                               {new Date(event.date).toLocaleDateString()}
                               {event.time && ` at ${event.time}`}
                             </div>
                             <div className="flex items-center text-sm font-semibold">
-                              <DollarSignIcon className="h-4 w-4 mr-1" />
+                              <DollarSignIcon className="h-4 w-4 mr-2" />
                               ${parseFloat(event.price).toFixed(2)}
                             </div>
                           </div>
-                          <div className="flex space-x-2">
+                          {event.description && (
+                            <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                              {event.description}
+                            </p>
+                          )}
+                          <div className="flex flex-wrap gap-2">
                             <Button 
                               size="sm" 
                               onClick={() => {
@@ -324,38 +329,40 @@ export default function AdminSimplePage() {
                   <p>Loading tickets...</p>
                 </div>
               ) : tickets.length > 0 ? (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto rounded-md border">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-3">Name</th>
-                        <th className="text-left p-3">Event</th>
-                        <th className="text-left p-3">Price</th>
-                        <th className="text-left p-3">Quantity</th>
-                        <th className="text-left p-3">Status</th>
-                        <th className="text-left p-3">Actions</th>
+                      <tr className="border-b bg-muted/50">
+                        <th className="text-left p-4 font-medium">Name</th>
+                        <th className="text-left p-4 font-medium">Event</th>
+                        <th className="text-left p-4 font-medium">Price</th>
+                        <th className="text-left p-4 font-medium">Quantity</th>
+                        <th className="text-left p-4 font-medium">Status</th>
+                        <th className="text-left p-4 font-medium">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {tickets
                         .filter((ticket: any) => selectedEventId ? ticket.eventId === selectedEventId : true)
                         .map((ticket: any) => (
-                          <tr key={ticket.id} className="border-b">
-                            <td className="p-3">{ticket.name}</td>
-                            <td className="p-3">{ticket.eventName || 'Unknown Event'}</td>
-                            <td className="p-3">${parseFloat(ticket.price).toFixed(2)}</td>
-                            <td className="p-3">{ticket.quantity || 'Unlimited'}</td>
-                            <td className="p-3">
+                          <tr key={ticket.id} className="border-b hover:bg-muted/20 transition-colors">
+                            <td className="p-4 font-medium">{ticket.name}</td>
+                            <td className="p-4">{ticket.eventName || 'Unknown Event'}</td>
+                            <td className="p-4 font-medium">${parseFloat(ticket.price).toFixed(2)}</td>
+                            <td className="p-4">{ticket.quantity || 'Unlimited'}</td>
+                            <td className="p-4">
                               <div className="flex items-center gap-2">
                                 <div 
-                                  className={`h-2 w-2 rounded-full ${
+                                  className={`h-3 w-3 rounded-full ${
                                     ticket.status === 'active' ? 'bg-green-500' : 'bg-red-500'
                                   }`}
                                 ></div>
-                                <span className="capitalize">{ticket.status || 'Active'}</span>
+                                <span className={`capitalize ${ticket.status === 'active' ? 'text-green-600' : 'text-red-600'}`}>
+                                  {ticket.status || 'Active'}
+                                </span>
                               </div>
                             </td>
-                            <td className="p-3">
+                            <td className="p-4">
                               <div className="flex space-x-2">
                                 <Button 
                                   size="sm" 
@@ -586,11 +593,11 @@ export default function AdminSimplePage() {
       
       {/* Create Ticket Dialog */}
       <Dialog open={isCreateTicketModalOpen} onOpenChange={setIsCreateTicketModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[450px]">
           <DialogHeader>
-            <DialogTitle>Create New Ticket</DialogTitle>
-            <DialogDescription>
-              Add a new ticket for {events.find((e) => e.id === ticketFormData.eventId)?.title || 'event'}
+            <DialogTitle className="text-xl font-bold">Create New Ticket</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Add a new ticket for <span className="font-medium">{events.find((e) => e.id === ticketFormData.eventId)?.title || 'event'}</span>
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
