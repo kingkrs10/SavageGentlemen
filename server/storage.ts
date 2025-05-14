@@ -2160,14 +2160,28 @@ export class DatabaseStorage implements IStorage {
   
   // Page Views
   async createPageView(pageViewData: InsertPageView): Promise<PageView> {
-    const [pageView] = await db
-      .insert(pageViews)
-      .values({
-        ...pageViewData,
-        timestamp: new Date()
-      })
-      .returning();
-    return pageView;
+    try {
+      console.log('Creating page view with data:', JSON.stringify(pageViewData));
+      
+      // Make sure we have required fields
+      if (!pageViewData.path || !pageViewData.sessionId) {
+        throw new Error('Missing required fields for page view');
+      }
+      
+      const [pageView] = await db
+        .insert(pageViews)
+        .values({
+          ...pageViewData,
+          timestamp: new Date()
+        })
+        .returning();
+        
+      console.log('Page view created successfully');
+      return pageView;
+    } catch (error) {
+      console.error('Error in createPageView:', error);
+      throw error;
+    }
   }
   
   async getPageViewsByPath(path: string): Promise<PageView[]> {
