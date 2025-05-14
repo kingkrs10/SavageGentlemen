@@ -80,6 +80,39 @@ export default function AdminPage() {
   const [selectedCampaignId, setSelectedCampaignId] = useState<string>('');
   const [editingCampaign, setEditingCampaign] = useState(false);
   
+  // Event management state
+  const [createEventOpen, setCreateEventOpen] = useState(false);
+  const [editEventOpen, setEditEventOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [eventForm, setEventForm] = useState({
+    title: '',
+    description: '',
+    date: '',
+    time: '',
+    location: '',
+    price: '',
+    category: '',
+    featured: false,
+    imageUrl: ''
+  });
+  const [eventImageFile, setEventImageFile] = useState<File | null>(null);
+  
+  // Ticket management state
+  const [createTicketOpen, setCreateTicketOpen] = useState(false);
+  const [editTicketOpen, setEditTicketOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [selectedEventId, setSelectedEventId] = useState<string>('');
+  const [ticketForm, setTicketForm] = useState({
+    name: '',
+    description: '',
+    price: '',
+    quantity: '',
+    status: 'active',
+    eventId: '',
+    saleStartDate: '',
+    saleEndDate: ''
+  });
+  
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [subscriberParams, setSubscriberParams] = useState({
@@ -497,6 +530,298 @@ export default function AdminPage() {
       });
     }
   });
+  
+  // Create event mutation
+  const createEventMutation = useMutation({
+    mutationFn: async () => {
+      if (!eventForm.title.trim() || !eventForm.date || !eventForm.location) {
+        throw new Error("Please fill all required fields");
+      }
+      
+      // First upload image if one is selected
+      let imageUrl = eventForm.imageUrl;
+      
+      if (eventImageFile) {
+        const formData = new FormData();
+        formData.append('image', eventImageFile);
+        
+        const uploadResponse = await fetch('/api/upload/image', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!uploadResponse.ok) {
+          throw new Error("Failed to upload image");
+        }
+        
+        const uploadResult = await uploadResponse.json();
+        imageUrl = uploadResult.url;
+      }
+      
+      // Then create the event
+      const payload = {
+        ...eventForm,
+        price: parseFloat(eventForm.price),
+        imageUrl
+      };
+      
+      const response = await apiRequest('POST', '/api/events', payload);
+      
+      if (response.ok) {
+        toast({
+          title: "Event Created",
+          description: "Event has been created successfully",
+        });
+        
+        setCreateEventOpen(false);
+        setEventForm({
+          title: '',
+          description: '',
+          date: '',
+          time: '',
+          location: '',
+          price: '',
+          category: '',
+          featured: false,
+          imageUrl: ''
+        });
+        setEventImageFile(null);
+        
+        queryClient.invalidateQueries({queryKey: ["/api/events"]});
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create event');
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error Creating Event",
+        description: error.message || "Something went wrong",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Update event mutation
+  const updateEventMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedEvent || !eventForm.title.trim() || !eventForm.date || !eventForm.location) {
+        throw new Error("Please fill all required fields");
+      }
+      
+      // First upload image if a new one is selected
+      let imageUrl = eventForm.imageUrl;
+      
+      if (eventImageFile) {
+        const formData = new FormData();
+        formData.append('image', eventImageFile);
+        
+        const uploadResponse = await fetch('/api/upload/image', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!uploadResponse.ok) {
+          throw new Error("Failed to upload image");
+        }
+        
+        const uploadResult = await uploadResponse.json();
+        imageUrl = uploadResult.url;
+      }
+      
+      // Then update the event
+      const payload = {
+        ...eventForm,
+        price: parseFloat(eventForm.price),
+        imageUrl
+      };
+      
+      const response = await apiRequest('PUT', `/api/events/${selectedEvent.id}`, payload);
+      
+      if (response.ok) {
+        toast({
+          title: "Event Updated",
+          description: "Event has been updated successfully",
+        });
+        
+        setEditEventOpen(false);
+        setSelectedEvent(null);
+        setEventForm({
+          title: '',
+          description: '',
+          date: '',
+          time: '',
+          location: '',
+          price: '',
+          category: '',
+          featured: false,
+          imageUrl: ''
+        });
+        setEventImageFile(null);
+        
+        queryClient.invalidateQueries({queryKey: ["/api/events"]});
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update event');
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error Updating Event",
+        description: error.message || "Something went wrong",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Delete event mutation
+  const deleteEventMutation = useMutation({
+    mutationFn: async (eventId: string) => {
+      const response = await apiRequest('DELETE', `/api/events/${eventId}`, {});
+      
+      if (response.ok) {
+        toast({
+          title: "Event Deleted",
+          description: "Event has been deleted successfully",
+        });
+        
+        queryClient.invalidateQueries({queryKey: ["/api/events"]});
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete event');
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error Deleting Event",
+        description: error.message || "Something went wrong",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Create ticket type mutation
+  const createTicketMutation = useMutation({
+    mutationFn: async () => {
+      if (!ticketForm.name.trim() || !ticketForm.price || !ticketForm.eventId) {
+        throw new Error("Please fill all required fields");
+      }
+      
+      const payload = {
+        ...ticketForm,
+        price: parseFloat(ticketForm.price),
+        quantity: ticketForm.quantity === 'unlimited' ? -1 : parseInt(ticketForm.quantity)
+      };
+      
+      const response = await apiRequest('POST', '/api/tickets', payload);
+      
+      if (response.ok) {
+        toast({
+          title: "Ticket Type Created",
+          description: "Ticket type has been created successfully",
+        });
+        
+        setCreateTicketOpen(false);
+        setTicketForm({
+          name: '',
+          description: '',
+          price: '',
+          quantity: '',
+          status: 'active',
+          eventId: '',
+          saleStartDate: '',
+          saleEndDate: ''
+        });
+        
+        queryClient.invalidateQueries({queryKey: ["/api/tickets"]});
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create ticket type');
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error Creating Ticket Type",
+        description: error.message || "Something went wrong",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Update ticket type mutation
+  const updateTicketMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedTicket || !ticketForm.name.trim() || !ticketForm.price) {
+        throw new Error("Please fill all required fields");
+      }
+      
+      const payload = {
+        ...ticketForm,
+        price: parseFloat(ticketForm.price),
+        quantity: ticketForm.quantity === 'unlimited' ? -1 : parseInt(ticketForm.quantity)
+      };
+      
+      const response = await apiRequest('PUT', `/api/tickets/${selectedTicket.id}`, payload);
+      
+      if (response.ok) {
+        toast({
+          title: "Ticket Type Updated",
+          description: "Ticket type has been updated successfully",
+        });
+        
+        setEditTicketOpen(false);
+        setSelectedTicket(null);
+        setTicketForm({
+          name: '',
+          description: '',
+          price: '',
+          quantity: '',
+          status: 'active',
+          eventId: '',
+          saleStartDate: '',
+          saleEndDate: ''
+        });
+        
+        queryClient.invalidateQueries({queryKey: ["/api/tickets"]});
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update ticket type');
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error Updating Ticket Type",
+        description: error.message || "Something went wrong",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Delete ticket type mutation
+  const deleteTicketMutation = useMutation({
+    mutationFn: async (ticketId: string) => {
+      const response = await apiRequest('DELETE', `/api/tickets/${ticketId}`, {});
+      
+      if (response.ok) {
+        toast({
+          title: "Ticket Type Deleted",
+          description: "Ticket type has been deleted successfully",
+        });
+        
+        queryClient.invalidateQueries({queryKey: ["/api/tickets"]});
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete ticket type');
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error Deleting Ticket Type",
+        description: error.message || "Something went wrong",
+        variant: "destructive"
+      });
+    }
+  });
 
   // Handle campaign creation/update 
   const handleCampaignSubmit = (e: React.FormEvent) => {
@@ -547,6 +872,138 @@ export default function AdminPage() {
   // Apply search filter
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
+  };
+  
+  // Handle event image upload
+  const handleEventImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setEventImageFile(e.target.files[0]);
+      
+      // Create a preview
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setEventForm(prev => ({ ...prev, imageUrl: reader.result }));
+        }
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  };
+  
+  // Open event create modal
+  const handleOpenCreateEvent = () => {
+    setEventForm({
+      title: '',
+      description: '',
+      date: '',
+      time: '',
+      location: '',
+      price: '',
+      category: '',
+      featured: false,
+      imageUrl: ''
+    });
+    setEventImageFile(null);
+    setCreateEventOpen(true);
+  };
+  
+  // Edit event handler
+  const handleEditEvent = (event: any) => {
+    setSelectedEvent(event);
+    setEventForm({
+      title: event.title,
+      description: event.description || '',
+      date: new Date(event.date).toISOString().split('T')[0],
+      time: event.time || '',
+      location: event.location,
+      price: event.price.toString(),
+      category: event.category || '',
+      featured: event.featured || false,
+      imageUrl: event.imageUrl || ''
+    });
+    setEventImageFile(null);
+    setEditEventOpen(true);
+  };
+  
+  // Delete event handler
+  const handleDeleteEvent = (eventId: string) => {
+    if (window.confirm('Are you sure you want to delete this event? This will also delete all associated tickets.')) {
+      deleteEventMutation.mutate(eventId);
+    }
+  };
+  
+  // Create ticket type for event
+  const handleCreateTicketForEvent = (eventId: string, eventTitle: string) => {
+    setTicketForm({
+      name: '',
+      description: '',
+      price: '',
+      quantity: '',
+      status: 'active',
+      eventId,
+      saleStartDate: '',
+      saleEndDate: ''
+    });
+    setSelectedEventId(eventId);
+    setCreateTicketOpen(true);
+  };
+  
+  // Edit ticket handler
+  const handleEditTicket = (ticket: any) => {
+    setSelectedTicket(ticket);
+    setTicketForm({
+      name: ticket.name,
+      description: ticket.description || '',
+      price: ticket.price.toString(),
+      quantity: ticket.quantity === -1 ? 'unlimited' : ticket.quantity.toString(),
+      status: ticket.status || 'active',
+      eventId: ticket.eventId.toString(),
+      saleStartDate: ticket.saleStartDate ? new Date(ticket.saleStartDate).toISOString().split('T')[0] : '',
+      saleEndDate: ticket.saleEndDate ? new Date(ticket.saleEndDate).toISOString().split('T')[0] : '',
+    });
+    setEditTicketOpen(true);
+  };
+  
+  // Delete ticket type handler
+  const handleDeleteTicket = (ticketId: string) => {
+    if (window.confirm('Are you sure you want to delete this ticket type?')) {
+      deleteTicketMutation.mutate(ticketId);
+    }
+  };
+  
+  // Toggle ticket status
+  const handleToggleTicketStatus = (ticket: any) => {
+    const newStatus = ticket.status === 'active' ? 'inactive' : 'active';
+    
+    const updatePayload = {
+      ...ticket,
+      status: newStatus
+    };
+    
+    apiRequest('PUT', `/api/tickets/${ticket.id}`, updatePayload)
+      .then(response => {
+        if (response.ok) {
+          toast({
+            title: "Status Updated",
+            description: `Ticket type is now ${newStatus}`,
+          });
+          
+          queryClient.invalidateQueries({queryKey: ["/api/tickets"]});
+        } else {
+          toast({
+            title: "Update Failed",
+            description: "Failed to update ticket status",
+            variant: "destructive"
+          });
+        }
+      })
+      .catch(error => {
+        toast({
+          title: "Error",
+          description: error.message || "An error occurred",
+          variant: "destructive"
+        });
+      });
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
