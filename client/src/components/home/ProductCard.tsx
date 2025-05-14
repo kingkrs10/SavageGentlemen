@@ -5,6 +5,7 @@ import { formatCurrency } from "@/lib/utils";
 import { Product } from "@/lib/types";
 import SGFlyerLogoPng from "@assets/SGFLYERLOGO.png";
 import { Link } from "wouter";
+import { trackProductView, trackProductDetailClick } from "@/lib/analytics";
 
 interface ProductCardProps {
   product: Product;
@@ -28,10 +29,12 @@ const ProductCard = ({
   const [imgError, setImgError] = useState(false);
   const [imgSrc, setImgSrc] = useState<string>(imageUrl);
   
-  // Log product info for debugging
+  // Track product view and log product info for debugging
   useEffect(() => {
     console.log("Product rendering:", title, "Image URL:", imageUrl);
-  }, [title, imageUrl]);
+    // Track product view for analytics
+    trackProductView(id);
+  }, [title, imageUrl, id]);
   
   useEffect(() => {
     // Try to load the image initially
@@ -115,7 +118,11 @@ const ProductCard = ({
   
   return (
     <div className="bg-gray-900 rounded-lg overflow-hidden shadow-lg">
-      <Link href={`/product/${id}`} className="block">
+      <Link 
+        href={`/product/${id}`} 
+        className="block" 
+        onClick={() => trackProductDetailClick(id)}
+      >
         {imgError ? (
           <div className="w-full h-40 bg-gray-800 flex items-center justify-center">
             <img 
@@ -134,7 +141,11 @@ const ProductCard = ({
         )}
       </Link>
       <div className="p-3">
-        <Link href={`/product/${id}`} className="block">
+        <Link 
+          href={`/product/${id}`} 
+          className="block"
+          onClick={() => trackProductDetailClick(id)}
+        >
           <h3 className="text-md font-semibold truncate hover:text-primary transition">{title}</h3>
         </Link>
         <div className="flex justify-between items-center mt-1">

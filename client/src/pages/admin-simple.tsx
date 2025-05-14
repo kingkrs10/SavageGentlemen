@@ -254,8 +254,8 @@ export default function AdminSimplePage() {
             </CardHeader>
             <CardContent>
               <div className="text-center py-16">
-                <p className="text-muted-foreground mb-4">Analytics data will appear here.</p>
-                <Button variant="outline">
+                <p className="text-muted-foreground mb-4">Track and analyze visitor engagement, sales, and user activity.</p>
+                <Button variant="outline" onClick={() => navigate("/analytics")}>
                   View Detailed Analytics
                 </Button>
               </div>

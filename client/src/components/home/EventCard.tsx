@@ -1,3 +1,4 @@
+import React from "react";
 import { Calendar, MapPin, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +8,7 @@ import SGFlyerLogoPng from "@assets/SGFLYERLOGO.png";
 import AddToCalendarButton from "@/components/events/AddToCalendarButton";
 import LazyImage from "@/components/ui/LazyImage";
 import { Link } from "wouter";
+import { trackEventView, trackEventTicketClick } from "@/lib/analytics";
 
 interface EventCardProps {
   event: Event;
@@ -20,6 +22,11 @@ const EventCard = ({
   onGetTicket 
 }: EventCardProps) => {
   const { id, title, description, date, location, price, imageUrl } = event;
+  
+  // Track event view when card is rendered
+  React.useEffect(() => {
+    trackEventView(id);
+  }, [id]);
   
   if (variant === "horizontal") {
     return (
@@ -81,6 +88,8 @@ const EventCard = ({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    // Track ticket click for analytics
+                    trackEventTicketClick(id);
                     onGetTicket && onGetTicket(id);
                   }}
                 >
@@ -161,6 +170,8 @@ const EventCard = ({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                // Track ticket click for analytics
+                trackEventTicketClick(id);
                 onGetTicket && onGetTicket(id);
               }}
             >

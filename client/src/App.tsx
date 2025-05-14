@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
@@ -17,6 +17,8 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { User } from "@/lib/types";
 import { UserProvider, useUser } from "@/context/UserContext";
+import { initGA } from "@/lib/ga-analytics";
+import { trackPageView } from "@/lib/analytics";
 
 // Lazily load pages for code splitting
 const Home = lazy(() => import("@/pages/home"));
@@ -35,6 +37,16 @@ const MyTickets = lazy(() => import("@/pages/my-tickets"));
 const TicketScanner = lazy(() => import("@/pages/ticket-scanner"));
 
 function Router() {
+  // Use location hook for tracking page views
+  const [location] = useLocation();
+  const { user } = useUser();
+  
+  // Track page views whenever location changes
+  useEffect(() => {
+    trackPageView(location, user?.id);
+    console.log('Page view tracked:', location);
+  }, [location, user?.id]);
+  
   return (
     <Suspense fallback={
       <div className="w-full h-[70vh] flex items-center justify-center">
@@ -274,6 +286,16 @@ function AppContent() {
 }
 
 function App() {
+  // Initialize Google Analytics when the app loads
+  useEffect(() => {
+    if (!import.meta.env.VITE_GA_MEASUREMENT_ID) {
+      console.warn('Missing required Google Analytics key: VITE_GA_MEASUREMENT_ID');
+    } else {
+      initGA();
+      console.log('Google Analytics initialized');
+    }
+  }, []);
+
   return (
     <UserProvider>
       <AppContent />
