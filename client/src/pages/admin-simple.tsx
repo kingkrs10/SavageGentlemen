@@ -79,7 +79,23 @@ export default function AdminSimplePage() {
     price: '0.00',
     quantity: '100',
     status: 'active',
-    eventId: 0
+    eventId: 0,
+    description: '',
+    ticketType: 'essential', // 'essential' or 'advanced'
+    priceType: 'standard',
+    minQuantityPerOrder: '',
+    maxQuantityPerOrder: '',
+    displayRemainingQuantity: true,
+    payWhatYouCan: false,
+    salesStartDate: '',
+    salesStartTime: '',
+    salesEndDate: '',
+    salesEndTime: '',
+    hideBeforeSalesStart: false,
+    hideAfterSalesEnd: false,
+    secretCode: '',
+    hideIfSoldOut: true,
+    hidePriceIfSoldOut: true
   });
   const [eventFormData, setEventFormData] = React.useState({
     id: 0,
@@ -87,7 +103,6 @@ export default function AdminSimplePage() {
     description: '',
     date: new Date().toISOString().split('T')[0],
     time: '19:00',
-    price: '0.00',
     location: '',
     imageUrl: ''
   });
@@ -194,7 +209,6 @@ export default function AdminSimplePage() {
                     description: '',
                     date: new Date().toISOString().split('T')[0],
                     time: '19:00',
-                    price: '0.00',
                     location: '',
                     imageUrl: ''
                   });
@@ -279,7 +293,6 @@ export default function AdminSimplePage() {
                                   description: event.description || '',
                                   date: event.date,
                                   time: event.time || '19:00',
-                                  price: event.price,
                                   location: event.location || '',
                                   imageUrl: event.imageUrl || ''
                                 });
@@ -812,17 +825,7 @@ export default function AdminSimplePage() {
                 onChange={(e) => setEventFormData({...eventFormData, time: e.target.value})}
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="eventPrice" className="text-right">
-                Price
-              </Label>
-              <Input
-                id="eventPrice"
-                className="col-span-3"
-                value={eventFormData.price}
-                onChange={(e) => setEventFormData({...eventFormData, price: e.target.value})}
-              />
-            </div>
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="eventLocation" className="text-right">
                 Location
@@ -860,7 +863,6 @@ export default function AdminSimplePage() {
                   description: eventFormData.description || null,
                   date: eventFormData.date,
                   time: eventFormData.time || null,
-                  price: parseFloat(eventFormData.price),
                   location: eventFormData.location || null,
                   imageUrl: eventFormData.imageUrl || null
                 };
@@ -947,17 +949,7 @@ export default function AdminSimplePage() {
                 onChange={(e) => setEventFormData({...eventFormData, time: e.target.value})}
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="editEventPrice" className="text-right">
-                Price
-              </Label>
-              <Input
-                id="editEventPrice"
-                className="col-span-3"
-                value={eventFormData.price}
-                onChange={(e) => setEventFormData({...eventFormData, price: e.target.value})}
-              />
-            </div>
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="editEventLocation" className="text-right">
                 Location
@@ -996,7 +988,6 @@ export default function AdminSimplePage() {
                   description: eventFormData.description || null,
                   date: eventFormData.date,
                   time: eventFormData.time || null,
-                  price: parseFloat(eventFormData.price),
                   location: eventFormData.location || null,
                   imageUrl: eventFormData.imageUrl || null
                 };
