@@ -24,25 +24,48 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 
+// Type definitions for admin panel
+interface Event {
+  id: number;
+  title: string;
+  description?: string;
+  date: string;
+  time?: string;
+  price: string;
+  imageUrl?: string;
+  location?: string;
+}
+
+interface Ticket {
+  id: number;
+  name: string;
+  eventId: number;
+  eventName?: string;
+  price: string;
+  quantity?: number;
+  status?: 'active' | 'inactive';
+}
+
 export default function AdminSimplePage() {
   const { toast } = useToast();
   const [location, navigate] = useLocation();
   const [activeTab, setActiveTab] = React.useState("events");
+  const [selectedEventId, setSelectedEventId] = React.useState<number | null>(null);
 
   // Event Queries
   const { 
-    data: events = [], 
+    data: events = [] as Event[], 
     isLoading: eventsLoading 
-  } = useQuery({
+  } = useQuery<Event[]>({
     queryKey: ['/api/events'],
     enabled: true,
   });
 
   // Ticket Queries
   const { 
-    data: tickets = [], 
+    data: tickets = [] as Ticket[], 
     isLoading: ticketsLoading 
-  } = useQuery({
+  } = useQuery<Ticket[]>({
     queryKey: ['/api/tickets'],
     enabled: true,
   });
@@ -120,21 +143,56 @@ export default function AdminSimplePage() {
                               ${parseFloat(event.price).toFixed(2)}
                             </div>
                           </div>
-                          <Button 
-                            size="sm" 
-                            onClick={() => {
-                              // Navigate to the tickets tab
-                              setActiveTab("tickets");
-                              // Filter tickets by this event
-                              const eventId = event.id;
-                              console.log(`Managing tickets for event ID: ${eventId}`);
-                              // Could also pass eventId to a more detailed ticket management page
-                              // navigate(`/admin/events/${eventId}/tickets`);
-                            }}
-                          >
-                            <Ticket className="h-4 w-4 mr-1" />
-                            Manage Tickets
-                          </Button>
+                          <div className="flex space-x-2">
+                            <Button 
+                              size="sm" 
+                              onClick={() => {
+                                // Navigate to the tickets tab
+                                setActiveTab("tickets");
+                                // Set the selected event ID for filtering tickets
+                                setSelectedEventId(event.id);
+                                console.log(`Managing tickets for event ID: ${event.id}`);
+                                toast({
+                                  title: "Managing Tickets",
+                                  description: `Showing tickets for ${event.title}`,
+                                });
+                              }}
+                            >
+                              <Ticket className="h-4 w-4 mr-1" />
+                              Manage Tickets
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                toast({
+                                  title: "Edit Event",
+                                  description: `Opening editor for ${event.title}`,
+                                });
+                                console.log(`Editing event ID: ${event.id}`);
+                              }}
+                            >
+                              Edit
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => {
+                                if (confirm(`Are you sure you want to delete "${event.title}"? This action cannot be undone.`)) {
+                                  toast({
+                                    title: "Event Deleted",
+                                    description: `${event.title} has been deleted`,
+                                    variant: "destructive"
+                                  });
+                                  console.log(`Deleting event ID: ${event.id}`);
+                                  // In a real implementation:
+                                  // deleteEventMutation.mutate(event.id)
+                                }
+                              }}
+                            >
+                              Delete
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </Card>
@@ -166,9 +224,31 @@ export default function AdminSimplePage() {
         
         <TabsContent value="tickets">
           <Card>
-            <CardHeader>
-              <CardTitle>Ticket Management</CardTitle>
-              <CardDescription>Manage event tickets and pricing</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Ticket Management</CardTitle>
+                <CardDescription>
+                  {selectedEventId ? 
+                    `Managing tickets for ${events.find((e: any) => e.id === selectedEventId)?.title || 'selected event'}` :
+                    'Manage event tickets and pricing'
+                  }
+                </CardDescription>
+              </div>
+              {selectedEventId && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setSelectedEventId(null);
+                    toast({
+                      title: "Filter Cleared",
+                      description: "Showing all tickets",
+                    });
+                  }}
+                >
+                  Clear Filter
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               {ticketsLoading ? (
@@ -183,52 +263,107 @@ export default function AdminSimplePage() {
                         <th className="text-left p-3">Name</th>
                         <th className="text-left p-3">Event</th>
                         <th className="text-left p-3">Price</th>
+                        <th className="text-left p-3">Quantity</th>
                         <th className="text-left p-3">Status</th>
                         <th className="text-left p-3">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {tickets.map((ticket: any) => (
-                        <tr key={ticket.id} className="border-b">
-                          <td className="p-3">{ticket.name}</td>
-                          <td className="p-3">{ticket.eventName || 'Unknown Event'}</td>
-                          <td className="p-3">${parseFloat(ticket.price).toFixed(2)}</td>
-                          <td className="p-3">
-                            <div className="flex items-center gap-2">
-                              <div 
-                                className={`h-2 w-2 rounded-full ${
-                                  ticket.status === 'active' ? 'bg-green-500' : 'bg-red-500'
-                                }`}
-                              ></div>
-                              <span className="capitalize">{ticket.status || 'Active'}</span>
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => {
-                                console.log(`Editing ticket ID: ${ticket.id}`);
-                                toast({
-                                  title: "Edit Ticket",
-                                  description: `Opening ticket editor for ${ticket.name}`,
-                                });
-                                // In a real implementation, this would open a modal or navigate to a ticket editing page
-                              }}
-                            >
-                              Edit
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
+                      {tickets
+                        .filter((ticket: any) => selectedEventId ? ticket.eventId === selectedEventId : true)
+                        .map((ticket: any) => (
+                          <tr key={ticket.id} className="border-b">
+                            <td className="p-3">{ticket.name}</td>
+                            <td className="p-3">{ticket.eventName || 'Unknown Event'}</td>
+                            <td className="p-3">${parseFloat(ticket.price).toFixed(2)}</td>
+                            <td className="p-3">{ticket.quantity || 'Unlimited'}</td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-2">
+                                <div 
+                                  className={`h-2 w-2 rounded-full ${
+                                    ticket.status === 'active' ? 'bg-green-500' : 'bg-red-500'
+                                  }`}
+                                ></div>
+                                <span className="capitalize">{ticket.status || 'Active'}</span>
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              <div className="flex space-x-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => {
+                                    console.log(`Editing ticket ID: ${ticket.id}`);
+                                    toast({
+                                      title: "Edit Ticket",
+                                      description: `Opening ticket editor for ${ticket.name}`,
+                                    });
+                                    // In a real implementation, this would open a modal or navigate to a ticket editing page
+                                  }}
+                                >
+                                  Edit
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive"
+                                  onClick={() => {
+                                    if (confirm(`Are you sure you want to delete "${ticket.name}" ticket? This action cannot be undone.`)) {
+                                      toast({
+                                        title: "Ticket Deleted",
+                                        description: `${ticket.name} has been deleted`,
+                                        variant: "destructive"
+                                      });
+                                      console.log(`Deleting ticket ID: ${ticket.id}`);
+                                      // In a real implementation:
+                                      // deleteTicketMutation.mutate(ticket.id)
+                                    }
+                                  }}
+                                >
+                                  Delete
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
+                  
+                  {selectedEventId && (
+                    <div className="mt-6">
+                      <Button 
+                        onClick={() => {
+                          toast({
+                            title: "Add Ticket",
+                            description: `Creating new ticket for ${events.find((e: any) => e.id === selectedEventId)?.title}`,
+                          });
+                          console.log(`Creating ticket for event ID: ${selectedEventId}`);
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Ticket for This Event
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-16">
                   <Ticket className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                   <h3 className="font-semibold text-lg mb-2">NO TICKETS CREATED</h3>
                   <p className="text-muted-foreground mb-4">Create tickets for your events to sell them online.</p>
+                  {selectedEventId && (
+                    <Button
+                      onClick={() => {
+                        toast({
+                          title: "Create Ticket",
+                          description: `Opening ticket creation form for ${events.find((e: any) => e.id === selectedEventId)?.title}`,
+                        });
+                        console.log(`Creating first ticket for event ID: ${selectedEventId}`);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Create First Ticket
+                    </Button>
+                  )}
                 </div>
               )}
             </CardContent>
