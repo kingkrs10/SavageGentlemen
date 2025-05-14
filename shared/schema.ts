@@ -83,12 +83,14 @@ export const insertEventSchema = createInsertSchema(events)
     endTime: true,
     duration: true,
     location: true,
-    price: false,
     imageUrl: true,
     category: true,
     featured: true,
     organizerName: true,
     organizerEmail: true,
+  })
+  .extend({
+    price: z.number().nullable().optional(),
   })
   .transform((data) => {
     // If date is provided as a string, convert it to a Date object
