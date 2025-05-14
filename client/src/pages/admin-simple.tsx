@@ -71,12 +71,24 @@ export default function AdminSimplePage() {
   const [activeTab, setActiveTab] = React.useState("events");
   const [selectedEventId, setSelectedEventId] = React.useState<number | null>(null);
   const [isCreateTicketModalOpen, setIsCreateTicketModalOpen] = React.useState(false);
+  const [isCreateEventModalOpen, setIsCreateEventModalOpen] = React.useState(false);
+  const [isEditEventModalOpen, setIsEditEventModalOpen] = React.useState(false);
   const [ticketFormData, setTicketFormData] = React.useState({
     name: '',
     price: '0.00',
     quantity: '100',
     status: 'active',
     eventId: 0
+  });
+  const [eventFormData, setEventFormData] = React.useState({
+    id: 0,
+    title: '',
+    description: '',
+    date: new Date().toISOString().split('T')[0],
+    time: '19:00',
+    price: '0.00',
+    location: '',
+    imageUrl: ''
   });
 
   // Event Queries
@@ -100,7 +112,7 @@ export default function AdminSimplePage() {
   // Delete Event Mutation
   const deleteEventMutation = useMutation({
     mutationFn: async (eventId: number) => {
-      return await apiRequest('DELETE', `/api/events/${eventId}`);
+      return await apiRequest('DELETE', `/api/admin/events/${eventId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
@@ -110,7 +122,7 @@ export default function AdminSimplePage() {
   // Delete Ticket Mutation
   const deleteTicketMutation = useMutation({
     mutationFn: async (ticketId: number) => {
-      return await apiRequest('DELETE', `/api/tickets/${ticketId}`);
+      return await apiRequest('DELETE', `/api/admin/tickets/${ticketId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tickets'] });
@@ -120,11 +132,33 @@ export default function AdminSimplePage() {
   // Create Ticket Mutation
   const createTicketMutation = useMutation({
     mutationFn: async (newTicket: any) => {
-      return await apiRequest('POST', '/api/tickets', newTicket);
+      return await apiRequest('POST', '/api/admin/tickets', newTicket);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tickets'] });
       setIsCreateTicketModalOpen(false);
+    }
+  });
+  
+  // Create Event Mutation 
+  const createEventMutation = useMutation({
+    mutationFn: async (newEvent: any) => {
+      return await apiRequest('POST', '/api/admin/events', newEvent);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+      setIsCreateEventModalOpen(false);
+    }
+  });
+  
+  // Edit Event Mutation
+  const editEventMutation = useMutation({
+    mutationFn: async (event: any) => {
+      return await apiRequest('PUT', `/api/admin/events/${event.id}`, event);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+      setIsEditEventModalOpen(false);
     }
   });
 
@@ -153,11 +187,21 @@ export default function AdminSimplePage() {
               </div>
               <Button
                 onClick={() => {
+                  setEventFormData({
+                    id: 0,
+                    title: '',
+                    description: '',
+                    date: new Date().toISOString().split('T')[0],
+                    time: '19:00',
+                    price: '0.00',
+                    location: '',
+                    imageUrl: ''
+                  });
+                  setIsCreateEventModalOpen(true);
                   toast({
                     title: "Create Event",
                     description: "Opening event creation form...",
                   });
-                  // In a real implementation, navigate to event creation form or open modal
                   console.log("Create event button clicked");
                 }}
               >
