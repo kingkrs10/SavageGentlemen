@@ -1428,11 +1428,122 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
           
-          {/* Other Tabs Content */}
+          {/* Events Tab Content */}
           <TabsContent value="events">
-            <div className="text-center py-16 border rounded-md">
-              <p className="mb-4">The events management section will be available soon.</p>
-            </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Event Management</CardTitle>
+                  <CardDescription>Create and manage events</CardDescription>
+                </div>
+                <Button onClick={handleOpenCreateEvent}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Create Event
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {eventsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+                    <p>Loading events...</p>
+                  </div>
+                ) : eventsError ? (
+                  <div className="text-center py-8 text-destructive">
+                    <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
+                    <p>Error loading events. Please try again.</p>
+                  </div>
+                ) : events && events.length > 0 ? (
+                  <div className="space-y-4">
+                    {events.map((event: any) => (
+                      <Card key={event.id} className="overflow-hidden">
+                        <div className="grid md:grid-cols-3 gap-4">
+                          <div className="aspect-video relative bg-muted/20 rounded-md overflow-hidden">
+                            {event.imageUrl ? (
+                              <img 
+                                src={event.imageUrl} 
+                                alt={event.title} 
+                                className="absolute inset-0 object-cover w-full h-full"
+                              />
+                            ) : (
+                              <div className="absolute inset-0 flex items-center justify-center bg-muted/20">
+                                <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                              </div>
+                            )}
+                            {event.featured && (
+                              <div className="absolute top-2 right-2 bg-accent text-accent-foreground text-xs font-medium py-1 px-2 rounded-md">
+                                Featured
+                              </div>
+                            )}
+                          </div>
+                          <div className="md:col-span-2 p-4">
+                            <h3 className="text-lg font-bold mb-1">{event.title}</h3>
+                            <div className="grid grid-cols-2 gap-2 mb-3">
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                <CalendarIcon className="h-4 w-4 mr-1" />
+                                {new Date(event.date).toLocaleDateString()}
+                                {event.time && ` at ${event.time}`}
+                              </div>
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                <MapPinIcon className="h-4 w-4 mr-1" />
+                                {event.location}
+                              </div>
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                <TagIcon className="h-4 w-4 mr-1" />
+                                {event.category || 'Uncategorized'}
+                              </div>
+                              <div className="flex items-center text-sm font-semibold">
+                                <DollarSignIcon className="h-4 w-4 mr-1" />
+                                ${parseFloat(event.price).toFixed(2)}
+                              </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                              {event.description || 'No description provided.'}
+                            </p>
+                            <div className="flex items-center justify-between">
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEditEvent(event)}
+                                >
+                                  <PencilIcon className="h-4 w-4 mr-1" />
+                                  Edit
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleDeleteEvent(event.id)}
+                                >
+                                  <TrashIcon className="h-4 w-4 mr-1" />
+                                  Delete
+                                </Button>
+                              </div>
+                              <Button
+                                size="sm"
+                                onClick={() => handleCreateTicketForEvent(event.id, event.title)}
+                              >
+                                <TicketIcon className="h-4 w-4 mr-1" />
+                                Add Ticket Type
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-16 border rounded-md">
+                    <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="font-semibold text-lg mb-2">NO EVENTS YET</h3>
+                    <p className="text-muted-foreground mb-4">Create your first event to start selling tickets.</p>
+                    <Button onClick={handleOpenCreateEvent}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Create Event
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
           
           <TabsContent value="tickets">
