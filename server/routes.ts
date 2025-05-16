@@ -721,6 +721,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Failed to retrieve your tickets" });
     }
   });
+  
+  // Manual ticket creation endpoint for after successful payment
+  router.post("/payment/create-ticket", async (req: Request, res: Response) => {
+    try {
+      // Get user from request headers if possible
+      let userId = req.headers['user-id'];
+      
+      if (!userId) {
+        console.error("No user ID found in create-ticket request");
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const user = await storage.getUser(parseInt(userId as string));
+      if (!user) {
+        console.error(`User not found with ID: ${userId}`);
+        return res.status(401).json({ message: "Authentication failed - user not found" });
+      }
+      
+      const { 
+        eventId, 
+        ticketId,
+        payment_intent,
+        amount,
+        currency = "usd",
+        paymentMethod = 'stripe'
+      } = req.body;
+      
+      if (!eventId) {
+        return res.status(400).json({ message: "Event ID is required" });
+      }
+
+      console.log(`Manual ticket creation: Event ID ${eventId}, User ID ${user.id}, Payment ${payment_intent}`);
+
+      // Get the event
+      const event = await storage.getEvent(Number(eventId));
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      // Create an order first
+      const order = await storage.createOrder({
+        userId: user.id,
+        totalAmount: amount || event.price || 0,
+        status: 'completed',
+        paymentMethod: paymentMethod,
+        paymentId: payment_intent || `manual-${Date.now()}`
+      });
+      
+      console.log(`Created order #${order.id} for user ${user.id}, event ${eventId}, ticket ${ticketId || 'default'}`);
+
+      // Determine ticket type
+      let selectedTicket = null;
+      let ticketType = 'standard';
+      let ticketName = 'General Admission';
+      
+      if (ticketId) {
+        try {
+          selectedTicket = await storage.getTicket(Number(ticketId));
+          if (selectedTicket) {
+            ticketType = selectedTicket.type || 'standard';
+            ticketName = selectedTicket.name || 'General Admission';
+          }
+        } catch (err) {
+          console.error("Error getting ticket details:", err);
+        }
+      }
+      
+      // Generate QR code data
+      const qrCodeData = `EVENT-${eventId}-ORDER-${order.id}-USER-${user.id}-${Date.now()}`;
+      
+      // Create the ticket
+      const ticketPurchase = await storage.createTicketPurchase({
+        eventId: Number(eventId),
+        userId: user.id,
+        ticketId: selectedTicket ? Number(ticketId) : null,
+        orderId: order.id,
+        qrCodeData: qrCodeData,
+        status: 'valid',
+        price: amount || event.price || 0,
+        purchaseDate: new Date(),
+        ticketType: ticketType,
+        attendeeEmail: user.email || null,
+        attendeeName: user.displayName || user.username || null
+      });
+      
+      console.log(`Created ticket purchase #${ticketPurchase.id} for order #${order.id}`);
+      
+      return res.status(201).json({
+        success: true,
+        message: "Ticket created successfully",
+        ticket: ticketPurchase
+      });
+    } catch (error: any) {
+      console.error("Error creating ticket:", error);
+      return res.status(500).json({
+        message: error.message || "Error creating ticket"
+      });
+    }
+  });
 
   // Products routes
   router.get("/products", async (req: Request, res: Response) => {
