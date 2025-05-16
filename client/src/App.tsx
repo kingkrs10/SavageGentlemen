@@ -20,8 +20,6 @@ import { UserProvider, useUser } from "@/context/UserContext";
 import { initGA } from "@/lib/ga-analytics";
 import { trackPageView } from "@/lib/analytics";
 
-// Firebase imports for handling redirect results
-import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 
 // Lazily load pages for code splitting
@@ -292,46 +290,8 @@ function AppContent() {
 function App() {
   const { toast } = useToast();
   
-  // Handle Google sign-in redirect results (needed for production login flow)
-  useEffect(() => {
-    async function checkRedirectResult() {
-      try {
-        console.log('Checking for Google sign-in redirect result...');
-        const result = await getRedirectResult(auth);
-        
-        if (result) {
-          console.log('Google sign-in redirect successful:', {
-            uid: result.user?.uid,
-            email: result.user?.email,
-            displayName: result.user?.displayName
-          });
-          
-          toast({
-            title: "Login Successful",
-            description: "Welcome to Savage Gentlemen!",
-          });
-          
-          // Check if there's a stored redirect path
-          const redirectPath = localStorage.getItem('sg:auth:redirect');
-          if (redirectPath) {
-            console.log('Redirecting after Google login to:', redirectPath);
-            localStorage.removeItem('sg:auth:redirect');
-            window.location.href = redirectPath;
-          }
-        }
-      } catch (error: any) {
-        console.error('Error handling Google redirect result:', error);
-        
-        toast({
-          title: "Authentication Error",
-          description: "There was a problem with Google sign-in. Please try again or use email/password.",
-          variant: "destructive",
-        });
-      }
-    }
-    
-    checkRedirectResult();
-  }, [toast]);
+  // Email/password login is now the only authentication method
+  // No redirect handling needed
   
   // Initialize Google Analytics when the app loads
   useEffect(() => {
