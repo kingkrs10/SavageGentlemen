@@ -1,18 +1,12 @@
 import { useState, useEffect } from 'react';
 import { 
-  signInWithPopup,
-  signInWithRedirect,
   signOut as firebaseSignOut, 
   onAuthStateChanged,
-  GoogleAuthProvider,
-  UserCredential,
   AuthError
 } from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { User } from '@/lib/types';
 import { apiRequest } from '@/lib/queryClient';
-
-export type AuthProviderType = 'google';
 
 export function useAuth() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);

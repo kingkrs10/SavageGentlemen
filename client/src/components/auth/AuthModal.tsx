@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { X, Mail } from "lucide-react";
-import { FaGoogle } from "react-icons/fa";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -444,110 +443,14 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
           </TabsContent>
         </Tabs>
 
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-gray-700" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-gray-900 px-2 text-gray-400">Or continue with</span>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          {/* Enhanced Google login button with improved error handling */}
-            <div className="space-y-2">
-              <p className="text-xs text-gray-400 text-center mb-2">
-                ⚠️ Google login may experience connectivity issues in some environments.
-                <br />We recommend using email/password login for a more reliable experience.
-              </p>
-              
-              <Button 
-                variant="outline" 
-                className="w-full flex items-center justify-center bg-white hover:bg-gray-100 text-black"
-                onClick={async () => {
-                  try {
-                    // Reset any previous errors
-                    console.log('Google login button clicked');
-                    
-                    // First verify we have all required Firebase configuration 
-                    if (!import.meta.env.VITE_FIREBASE_API_KEY || !import.meta.env.VITE_FIREBASE_PROJECT_ID) {
-                      console.error('Missing Firebase configuration:', {
-                        hasApiKey: Boolean(import.meta.env.VITE_FIREBASE_API_KEY),
-                        hasProjectId: Boolean(import.meta.env.VITE_FIREBASE_PROJECT_ID),
-                        hasAppId: Boolean(import.meta.env.VITE_FIREBASE_APP_ID)
-                      });
-                      
-                      toast({
-                        title: "Configuration Error",
-                        description: "Firebase configuration is incomplete. Please contact support.",
-                        variant: "destructive",
-                      });
-                      return;
-                    }
-                    
-                    await signInWithGoogle();
-                    
-                    toast({
-                      title: "Login Successful",
-                      description: "Welcome to Savage Gentlemen!",
-                    });
-                    
-                    // Check if there's a stored redirect path
-                    const redirectPath = localStorage.getItem('sg:auth:redirect');
-                    if (redirectPath) {
-                      console.log('Redirecting after Google login to:', redirectPath);
-                      localStorage.removeItem('sg:auth:redirect');
-                    }
-                  } catch (error: any) {
-                    console.error("Error signing in:", error);
-                    
-                    // Handle specific Firebase error codes with user-friendly messages
-                    let errorMessage = "Failed to login with Google";
-                    let errorDetails = "";
-                    
-                    if (error?.code === "auth/configuration-not-found") {
-                      errorMessage = "Google authentication needs to be configured";
-                      errorDetails = "Please try using email/password login instead";
-                    } else if (error?.code === "auth/popup-closed-by-user") {
-                      errorMessage = "Login was canceled";
-                      errorDetails = "Please try again or use email/password login";
-                    } else if (error?.code === "auth/popup-blocked") {
-                      errorMessage = "Login popup was blocked";
-                      errorDetails = "Please use email/password login instead";
-                    } else if (error?.code === "auth/account-exists-with-different-credential") {
-                      errorMessage = "Account already exists with different credentials";
-                      errorDetails = "Try using email/password login";
-                    } else if (error?.code === "auth/network-request-failed") {
-                      errorMessage = "Network connectivity issue";
-                      errorDetails = "Please use email/password login instead";
-                    } else if (error?.code === "auth/internal-error") {
-                      errorMessage = "Google login temporarily unavailable";
-                      errorDetails = "Please use email/password login instead";
-                    } else if (error?.message) {
-                      errorMessage = error.message;
-                      errorDetails = "Try using email/password login instead";
-                    }
-                    
-                    toast({
-                      title: "Login Failed",
-                      description: errorDetails ? `${errorMessage}. ${errorDetails}.` : errorMessage,
-                      variant: "destructive",
-                    });
-                  }
-                }}
-                disabled={loading}
-              >
-                <FaGoogle className="w-4 h-4 mr-2" />
-                <span>Sign in with Google</span>
-              </Button>
-            </div>
+        <div className="space-y-3 my-4">
           <Button 
             variant="outline" 
             className="w-full flex items-center justify-center bg-black hover:bg-gray-900 border-gray-700"
             onClick={() => setCurrentTab("login")}
           >
             <Mail className="w-4 h-4 mr-2" />
-            <span>Email</span>
+            <span>Sign in with Email</span>
           </Button>
         </div>
 
