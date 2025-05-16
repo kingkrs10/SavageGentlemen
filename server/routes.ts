@@ -46,8 +46,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2023-10-16", // Will update when appropriate
-  // Always use production mode for Stripe in all environments
+  apiVersion: "2023-10-16",
   appInfo: { 
     name: 'SGX Media',
     version: '1.0.0',

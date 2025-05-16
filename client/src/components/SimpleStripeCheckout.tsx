@@ -13,7 +13,8 @@ console.log(`Using Stripe key: ${stripeKey}`);
 const stripePromise = loadStripe(stripeKey);
 
 // Determine if we're in test mode based on the Stripe key
-const isTestMode = stripeKey.startsWith('pk_test_');
+// We'll force production mode as requested by the user
+const isTestMode = false;
 
 // Simple form component
 const CheckoutForm = ({ 
