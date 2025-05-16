@@ -1532,9 +1532,9 @@ export default function AdminSimplePage() {
                   quantity: parseInt(ticketFormData.quantity),
                   status: ticketFormData.status,
                   description: ticketFormData.description || '',
-                  // Format dates as expected by backend
-                  salesStartDate: ticketFormData.salesStartDate ? new Date(ticketFormData.salesStartDate) : null,
-                  salesEndDate: ticketFormData.salesEndDate ? new Date(ticketFormData.salesEndDate) : null,
+                  // Send dates as strings to avoid toISOString conversion issues
+                  salesStartDate: ticketFormData.salesStartDate || null,
+                  salesEndDate: ticketFormData.salesEndDate || null,
                   salesStartTime: ticketFormData.salesStartTime || '',
                   salesEndTime: ticketFormData.salesEndTime || '',
                   remainingQuantity: parseInt(ticketFormData.quantity) // Set remaining to match total quantity

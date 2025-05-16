@@ -1887,16 +1887,33 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateTicket(id: number, ticketData: Partial<InsertTicket>): Promise<Ticket | undefined> {
-    const [updatedTicket] = await db
-      .update(tickets)
-      .set({
+    try {
+      // Handle dates appropriately
+      let dataToUpdate: any = {
         ...ticketData,
         updatedAt: new Date()
-      })
-      .where(eq(tickets.id, id))
-      .returning();
-    
-    return updatedTicket || undefined;
+      };
+      
+      // Convert string dates to Date objects, or leave as null
+      if (typeof dataToUpdate.salesStartDate === 'string' && dataToUpdate.salesStartDate) {
+        dataToUpdate.salesStartDate = new Date(dataToUpdate.salesStartDate);
+      }
+      
+      if (typeof dataToUpdate.salesEndDate === 'string' && dataToUpdate.salesEndDate) {
+        dataToUpdate.salesEndDate = new Date(dataToUpdate.salesEndDate);
+      }
+      
+      const [updatedTicket] = await db
+        .update(tickets)
+        .set(dataToUpdate)
+        .where(eq(tickets.id, id))
+        .returning();
+      
+      return updatedTicket || undefined;
+    } catch (error) {
+      console.error("Error updating ticket in database:", error);
+      throw error;
+    }
   }
   
   async deleteTicket(id: number): Promise<boolean> {
