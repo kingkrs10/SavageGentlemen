@@ -75,6 +75,7 @@ export default function AdminSimplePage() {
   const [location, navigate] = useLocation();
   const [activeTab, setActiveTab] = React.useState("events");
   const [selectedEventId, setSelectedEventId] = React.useState<number | null>(null);
+  const [editingTicketId, setEditingTicketId] = React.useState<number | null>(null);
   const [isCreateTicketModalOpen, setIsCreateTicketModalOpen] = React.useState(false);
   const [isEditTicketModalOpen, setIsEditTicketModalOpen] = React.useState(false);
   const [isCreateEventModalOpen, setIsCreateEventModalOpen] = React.useState(false);
@@ -494,7 +495,7 @@ export default function AdminSimplePage() {
                                     // Store the ticket ID separately for the update operation
                                     setTicketFormData(updatedFormData);
                                     // Store the ticket ID for later use
-                                    window.editingTicketId = ticket.id;
+                                    setEditingTicketId(ticket.id);
                                     setIsEditTicketModalOpen(true);
                                     toast({
                                       title: "Edit Ticket",
@@ -1511,8 +1512,18 @@ export default function AdminSimplePage() {
             </Button>
             <Button 
               onClick={() => {
+                // Make sure we have a valid ticket ID
+                if (!editingTicketId) {
+                  toast({
+                    title: "Error",
+                    description: "Cannot update ticket: Missing ticket ID",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                
                 const updatedTicket = {
-                  id: ticketFormData.id,
+                  id: editingTicketId, // Use the stored ticket ID from state
                   eventId: ticketFormData.eventId,
                   name: ticketFormData.name,
                   price: ticketFormData.price,
