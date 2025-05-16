@@ -187,7 +187,8 @@ export default function AdminSimplePage() {
   // Edit Ticket Mutation
   const editTicketMutation = useMutation({
     mutationFn: async (ticket: any) => {
-      return await apiRequest('PUT', `/api/admin/tickets/${ticket.id}`, ticket);
+      // Get the ID from our state variable, not from the ticket object
+      return await apiRequest('PUT', `/api/admin/tickets/${editingTicketId}`, ticket);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/tickets'] });
@@ -1522,18 +1523,21 @@ export default function AdminSimplePage() {
                   return;
                 }
                 
+                // Format ticket data appropriate for the API
                 const updatedTicket = {
-                  id: editingTicketId, // Use the stored ticket ID from state
+                  // Send only fields that need to be updated
                   eventId: ticketFormData.eventId,
                   name: ticketFormData.name,
                   price: ticketFormData.price,
                   quantity: parseInt(ticketFormData.quantity),
                   status: ticketFormData.status,
-                  description: ticketFormData.description || null,
-                  salesStartDate: ticketFormData.salesStartDate || null,
-                  salesEndDate: ticketFormData.salesEndDate || null,
-                  salesStartTime: ticketFormData.salesStartTime || null,
-                  salesEndTime: ticketFormData.salesEndTime || null
+                  description: ticketFormData.description || '',
+                  // Format dates as expected by backend
+                  salesStartDate: ticketFormData.salesStartDate ? new Date(ticketFormData.salesStartDate) : null,
+                  salesEndDate: ticketFormData.salesEndDate ? new Date(ticketFormData.salesEndDate) : null,
+                  salesStartTime: ticketFormData.salesStartTime || '',
+                  salesEndTime: ticketFormData.salesEndTime || '',
+                  remainingQuantity: parseInt(ticketFormData.quantity) // Set remaining to match total quantity
                 };
                 
                 editTicketMutation.mutate(updatedTicket);
