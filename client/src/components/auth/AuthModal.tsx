@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Mail } from "lucide-react";
+import { X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,7 +26,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import LogoSvg from "@/assets/logo.svg";
+import LogoImg from "@/assets/SGFLYERLOGO.png";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -307,7 +307,7 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
       <DialogContent className="bg-gray-900 sm:max-w-md">
         <DialogHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <img src={LogoSvg} alt="Savage Gentlemen Logo" className="h-20 w-20" />
+            <img src={LogoImg} alt="Savage Gentlemen Logo" className="h-32 object-contain" />
           </div>
           <DialogTitle className="text-2xl font-heading">
             Join The Community
@@ -443,16 +443,7 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
           </TabsContent>
         </Tabs>
 
-        <div className="space-y-3 my-4">
-          <Button 
-            variant="outline" 
-            className="w-full flex items-center justify-center bg-black hover:bg-gray-900 border-gray-700"
-            onClick={() => setCurrentTab("login")}
-          >
-            <Mail className="w-4 h-4 mr-2" />
-            <span>Sign in with Email</span>
-          </Button>
-        </div>
+        {/* Email/password authentication is the only login method */}
 
         <div className="text-center mt-4">
           <Button
