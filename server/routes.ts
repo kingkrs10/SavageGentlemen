@@ -30,7 +30,7 @@ import {
 } from "@shared/schema";
 import { validateRequest, authRateLimiter } from "./security/middleware";
 import { ZodError } from "zod";
-import admin from "firebase-admin";
+import { admin, verifyFirebaseToken } from "./firebase";
 import Stripe from "stripe";
 import multer from "multer";
 import path from "path";
@@ -463,7 +463,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Firebase authentication endpoint
+  // Firebase authentication endpoint - using our enhanced Firebase utility
   router.post("/auth/firebase", async (req: Request, res: Response) => {
     try {
       const { idToken } = req.body;
@@ -473,16 +473,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       try {
-        // Verify the ID token with improved error handling
-        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        // Use our enhanced verification function
+        const verificationResult = await verifyFirebaseToken(idToken);
+        
+        if (!verificationResult.success) {
+          return res.status(401).json({ 
+            message: "Authentication failed", 
+            error: verificationResult.error instanceof Error ? verificationResult.error.message : "Token verification failed",
+            requestInfo: {
+              hasToken: Boolean(idToken),
+              tokenLength: idToken ? idToken.length : 0,
+              tokenPrefix: idToken ? idToken.substring(0, 10) + '...' : 'none'
+            }
+          });
+        }
         
         // Log successful token verification
-        console.log("Firebase token verified successfully for user:", decodedToken.uid);
+        console.log("Firebase token verified successfully for user:", verificationResult.uid);
         
-        const firebaseUid = decodedToken.uid;
-        const email = decodedToken.email || '';
-        const displayName = decodedToken.name || email.split('@')[0] || `User_${Date.now()}`;
-        const photoURL = decodedToken.picture || null;
+        const firebaseUid = verificationResult.uid;
+        const email = verificationResult.email || '';
+        const displayName = verificationResult.name || email.split('@')[0] || `User_${Date.now()}`;
+        const photoURL = verificationResult.picture || null;
         
         // Check if the user already exists in our database
         const existingUsername = `firebase_${firebaseUid}`;
