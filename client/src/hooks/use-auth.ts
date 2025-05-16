@@ -67,6 +67,15 @@ export function useAuth() {
     setError(null);
     
     try {
+      console.log('Starting Google authentication process...');
+      
+      // Log Firebase configuration to help with debugging
+      console.log('Firebase auth instance state:', {
+        currentUser: auth.currentUser?.uid ? 'Logged in' : 'No user',
+        initialized: auth.INTERNAL ? 'Yes' : 'No',
+        authDomain: auth.config?.authDomain || 'Not set'
+      });
+      
       // Add scopes for better user data
       googleProvider.addScope('profile');
       googleProvider.addScope('email');
@@ -76,7 +85,16 @@ export function useAuth() {
         prompt: 'select_account'
       });
       
+      console.log('Launching Google sign-in popup...');
       const result = await signInWithPopup(auth, googleProvider);
+      
+      console.log('Google sign-in successful:', {
+        uid: result.user?.uid,
+        email: result.user?.email,
+        displayName: result.user?.displayName,
+        hasIdToken: Boolean(result.user)
+      });
+      
       // The signed-in user info is in result.user
       // But our app will get the user from the onAuthStateChanged listener
       return result;
@@ -93,9 +111,17 @@ export function useAuth() {
       
       setError(authError.message);
       
-      // Check if this is an auth domain error
+      // Check for specific Firebase auth errors and provide better guidance
       if (authError.code === 'auth/configuration-not-found') {
         console.warn('Firebase Auth Domain Error: Make sure your app domain is added to Firebase authorized domains');
+      } else if (authError.code === 'auth/internal-error') {
+        console.error('Firebase Internal Error: This could be a configuration issue with the Firebase project or credentials');
+      } else if (authError.code === 'auth/popup-closed-by-user') {
+        console.log('User closed the popup before completing authentication');
+      } else if (authError.code === 'auth/cancelled-popup-request') {
+        console.log('Another popup is open - authentication request cancelled');
+      } else if (authError.code === 'auth/popup-blocked') {
+        console.warn('Popup blocked by browser - adjust browser settings');
       }
       
       throw error;

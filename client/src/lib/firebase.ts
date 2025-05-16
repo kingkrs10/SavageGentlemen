@@ -4,12 +4,13 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 // Firebase configuration
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  // Always use current domain for authentication
-  // Note: Any domain you use MUST be added to your Firebase project's "Authorized Domains" list
-  authDomain: window.location.hostname,
+  // Use Firebase's default authDomain which is always authorized
+  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  // Enable debugging for development environments
+  ...(import.meta.env.DEV ? { debug: true } : {})
 };
 
 // Initialize Firebase
