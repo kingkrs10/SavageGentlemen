@@ -442,23 +442,7 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
         </div>
 
         <div className="space-y-3">
-          {/* Check if we're on Replit and show appropriate Google button */}
-          {window.location.hostname.includes('replit.dev') || window.location.hostname.includes('replit.app') ? (
-            <>
-              <Button 
-                variant="outline" 
-                className="w-full flex items-center justify-center bg-gray-300 text-gray-500 cursor-not-allowed"
-                disabled={true}
-              >
-                <FaGoogle className="w-4 h-4 mr-2" />
-                <span>Google Login (Disabled on Replit)</span>
-              </Button>
-              <div className="text-xs text-center text-gray-400 mt-1 mb-2">
-                <p>Google login requires domain verification.</p>
-                <p>Please use email login or continue as guest.</p>
-              </div>
-            </>
-          ) : (
+          {/* Google login button - now enabled across all environments */}
             <Button 
               variant="outline" 
               className="w-full flex items-center justify-center bg-white hover:bg-gray-100 text-black"
@@ -501,7 +485,6 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
               <FaGoogle className="w-4 h-4 mr-2" />
               <span>Google</span>
             </Button>
-          )}
           <Button 
             variant="outline" 
             className="w-full flex items-center justify-center bg-black hover:bg-gray-900 border-gray-700"

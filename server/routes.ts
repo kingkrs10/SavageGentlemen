@@ -473,11 +473,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       try {
-        // Verify the ID token
+        // Verify the ID token with improved error handling
         const decodedToken = await admin.auth().verifyIdToken(idToken);
+        
+        // Log successful token verification
+        console.log("Firebase token verified successfully for user:", decodedToken.uid);
+        
         const firebaseUid = decodedToken.uid;
         const email = decodedToken.email || '';
-        const displayName = decodedToken.name || email.split('@')[0];
+        const displayName = decodedToken.name || email.split('@')[0] || `User_${Date.now()}`;
         const photoURL = decodedToken.picture || null;
         
         // Check if the user already exists in our database
@@ -541,7 +545,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       } catch (error) {
         console.error('Error verifying Firebase ID token:', error);
-        return res.status(401).json({ message: "Invalid ID token" });
+        
+        // Provide a more detailed error response with error information when possible
+        let errorMessage = "Failed to verify Firebase token";
+        
+        if (error instanceof Error) {
+          errorMessage = error.message;
+          console.error('Firebase authentication error details:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+          });
+        }
+        
+        return res.status(401).json({ 
+          message: "Authentication failed", 
+          error: errorMessage,
+          requestInfo: {
+            hasToken: Boolean(idToken),
+            tokenLength: idToken ? idToken.length : 0,
+            tokenPrefix: idToken ? idToken.substring(0, 10) + '...' : 'none'
+          }
+        });
       }
     } catch (err) {
       return handleZodError(err, res);
