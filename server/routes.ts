@@ -1994,7 +1994,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // New endpoint with /api prefix to match client expectations
+  // Delete ticket endpoint to match client expectations
+  router.delete("/api/tickets/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      console.log(`User ${req.user.id} attempting to delete ticket ${ticketId}`);
+
+      // Check if ticket exists
+      const ticket = await storage.getTicket(ticketId);
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+      
+      // Check if user is authorized (admin or event creator)
+      if (req.user.role !== 'admin') {
+        // Get the event
+        const event = await storage.getEvent(ticket.eventId);
+        if (!event || event.creatorId !== req.user.id) {
+          return res.status(403).json({ message: "You don't have permission to delete this ticket" });
+        }
+      }
+      
+      // Check if ticket has any purchases
+      const ticketPurchases = await storage.getTicketPurchasesByTicketId(ticketId);
+      const hasPurchases = ticketPurchases && ticketPurchases.length > 0;
+      
+      if (hasPurchases) {
+        console.log(`WARNING: Attempted to delete ticket ${ticketId} with existing purchases (${ticketPurchases.length})`);
+        // For now, we'll still allow deletion with a warning log
+      }
+      
+      // Delete the ticket
+      const result = await storage.deleteTicket(ticketId);
+      
+      if (result) {
+        console.log(`Successfully deleted ticket ${ticketId}`);
+        return res.status(200).json({ 
+          success: true,
+          message: "Ticket deleted successfully" 
+        });
+      } else {
+        return res.status(500).json({ message: "Failed to delete ticket" });
+      }
+    } catch (err) {
+      console.error("Error deleting ticket:", err);
+      return res.status(500).json({ message: "Failed to delete ticket" });
+    }
+  });
+
+// New endpoint with /api prefix to match client expectations
   router.post("/api/tickets/email", async (req: Request, res: Response) => {
     try {
       const { 
