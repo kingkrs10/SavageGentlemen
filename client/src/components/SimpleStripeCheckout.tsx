@@ -12,6 +12,9 @@ const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_TYooMQauvdE
 console.log(`Using Stripe key: ${stripeKey}`);
 const stripePromise = loadStripe(stripeKey);
 
+// Determine if we're in test mode based on the Stripe key
+const isTestMode = stripeKey.startsWith('pk_test_');
+
 // Simple form component
 const CheckoutForm = ({ 
   amount, 
@@ -116,6 +119,32 @@ const CheckoutForm = ({
           }}
         />
       </div>
+      
+      {isTestMode && (
+        <div className="p-3 bg-amber-50 dark:bg-amber-900/30 rounded-md mb-3 border border-amber-200 dark:border-amber-800">
+          <h3 className="text-sm font-medium text-amber-800 dark:text-amber-300 mb-1">Test Mode</h3>
+          <p className="text-xs text-amber-700 dark:text-amber-400 mb-2">
+            Payment is in test mode. Use these test card numbers:
+          </p>
+          <div className="grid grid-cols-1 gap-1 text-xs">
+            <div className="flex justify-between">
+              <span className="font-medium">4242 4242 4242 4242</span>
+              <span>Success Payment</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-medium">4000 0027 6000 3184</span>
+              <span>3D Secure Auth</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-medium">4000 0000 0000 9995</span>
+              <span>Insufficient Funds</span>
+            </div>
+          </div>
+          <p className="text-xs mt-2 text-amber-700 dark:text-amber-400">
+            Use any future date, any 3 digits for CVC, and any postal code.
+          </p>
+        </div>
+      )}
       
       <Button 
         disabled={isProcessing || !stripe} 
