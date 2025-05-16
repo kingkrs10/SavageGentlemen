@@ -295,31 +295,43 @@ export const tickets = pgTable("tickets", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const insertTicketSchema = createInsertSchema(tickets).pick({
-  eventId: true,
-  name: true,
-  description: true,
-  price: true,
-  quantity: true,
-  remainingQuantity: true,
-  isActive: true,
-  status: true,
-  priceType: true,
-  minPerOrder: true,
-  maxPerPurchase: true,
-  displayRemainingQuantity: true,
-  hideIfSoldOut: true,
-  hidePriceIfSoldOut: true,
-  secretCode: true,
-  salesStartDate: true,
-  salesStartTime: true,
-  salesEndDate: true,
-  salesEndTime: true,
-  hideBeforeSalesStart: true,
-  hideAfterSalesEnd: true,
-  lockMinQuantity: true,
-  lockTicketTypeId: true,
-});
+export const insertTicketSchema = createInsertSchema(tickets)
+  .pick({
+    eventId: true,
+    name: true,
+    description: true,
+    price: true,
+    quantity: true,
+    remainingQuantity: true,
+    isActive: true,
+    status: true,
+    priceType: true,
+    minPerOrder: true,
+    maxPerPurchase: true,
+    displayRemainingQuantity: true,
+    hideIfSoldOut: true,
+    hidePriceIfSoldOut: true,
+    secretCode: true,
+    salesStartTime: true,
+    salesEndTime: true,
+    hideBeforeSalesStart: true,
+    hideAfterSalesEnd: true,
+    lockMinQuantity: true,
+    lockTicketTypeId: true,
+  })
+  .extend({
+    // Handle dates as strings and convert them in the transform
+    salesStartDate: z.string().nullable().optional(),
+    salesEndDate: z.string().nullable().optional(),
+  })
+  .transform((data) => {
+    // Convert string dates to Date objects if present
+    return {
+      ...data,
+      salesStartDate: data.salesStartDate ? new Date(data.salesStartDate) : null,
+      salesEndDate: data.salesEndDate ? new Date(data.salesEndDate) : null,
+    };
+  });
 
 // Discount Codes schema
 export const discountCodes = pgTable("discount_codes", {
