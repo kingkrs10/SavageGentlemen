@@ -17,17 +17,65 @@ export default function PaymentSuccess() {
     const orderId = searchParams.get('order_id');
     const eventId = searchParams.get('eventId');
     const eventTitle = searchParams.get('eventTitle');
+    const ticketId = searchParams.get('ticketId');
+    const ticketName = searchParams.get('ticketName');
+    const amount = searchParams.get('amount');
+    
+    // Create ticket purchase in the database for event tickets
+    const createTicketPurchase = async (details: any) => {
+      try {
+        // Make API call to create the ticket in the database
+        console.log("Creating ticket purchase:", details);
+        
+        const response = await fetch('/api/payment/create-ticket', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            eventId: details.eventId,
+            ticketId: details.ticketId,
+            payment_intent: details.id,
+            amount: details.amount,
+            currency: 'usd',
+            paymentMethod: details.type
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Ticket created successfully:", data);
+          return true;
+        } else {
+          console.error("Failed to create ticket:", await response.text());
+          return false;
+        }
+      } catch (error) {
+        console.error("Error creating ticket purchase:", error);
+        return false;
+      }
+    };
     
     // Check first if we have event details - this is a ticket purchase
     if (eventId && eventTitle) {
-      setPaymentDetails({
+      const parsedAmount = amount ? parseFloat(amount) : undefined;
+      
+      const details = {
         id: paymentIntentParam || `order-${Date.now()}`,
         type: 'stripe',
         isEventTicket: true,
         eventId: eventId,
+        ticketId: ticketId || undefined,
         eventTitle: decodeURIComponent(eventTitle),
-        ticketType: 'Standard Admission'
-      });
+        ticketType: ticketName ? decodeURIComponent(ticketName) : 'Standard Admission',
+        amount: parsedAmount
+      };
+      
+      setPaymentDetails(details);
+      
+      // Create the ticket in the database
+      createTicketPurchase(details);
+      
     } else if (paymentIntentParam && paymentIntentClientSecret) {
       // For regular Stripe payments
       setPaymentDetails({
@@ -38,14 +86,23 @@ export default function PaymentSuccess() {
       // For PayPal payments - fetch order details if needed
       // Check if this is a ticket purchase (for PayPal)
       if (eventId && eventTitle) {
-        setPaymentDetails({
+        const parsedAmount = amount ? parseFloat(amount) : undefined;
+        
+        const details = {
           id: orderId,
           type: 'paypal',
           isEventTicket: true,
           eventId: eventId,
+          ticketId: ticketId || undefined,
           eventTitle: decodeURIComponent(eventTitle),
-          ticketType: 'Standard Admission'
-        });
+          ticketType: ticketName ? decodeURIComponent(ticketName) : 'Standard Admission',
+          amount: parsedAmount
+        };
+        
+        setPaymentDetails(details);
+        
+        // Create the ticket in the database
+        createTicketPurchase(details);
       } else {
         // For regular PayPal purchases
         fetch(`/api/payment/paypal-order/${orderId}/details`)
@@ -76,8 +133,6 @@ export default function PaymentSuccess() {
         type: 'other'
       });
     }
-    
-    // You could also fetch order details from your API here
   }, []);
 
   return (
