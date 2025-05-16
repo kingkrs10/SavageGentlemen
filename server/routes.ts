@@ -84,16 +84,8 @@ const upload = multer({
   }
 });
 
-// Initialize Firebase Admin
-try {
-  // Initialize without credentials for now - we'll use token verification only
-  admin.initializeApp({
-    projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-  });
-  console.log('Firebase Admin initialized');
-} catch (error) {
-  console.error('Firebase Admin initialization error:', error);
-}
+// Firebase Admin is already initialized in server/firebase.ts
+// Import the configured admin instance from there
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API prefix for all routes
