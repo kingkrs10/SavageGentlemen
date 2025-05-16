@@ -1899,6 +1899,26 @@ export class DatabaseStorage implements IStorage {
     return updatedTicket || undefined;
   }
   
+  async deleteTicket(id: number): Promise<boolean> {
+    try {
+      await db
+        .delete(tickets)
+        .where(eq(tickets.id, id));
+      
+      return true;
+    } catch (error) {
+      console.error("Error deleting ticket:", error);
+      return false;
+    }
+  }
+  
+  async getTicketPurchasesByTicketId(ticketId: number): Promise<TicketPurchase[]> {
+    return await db
+      .select()
+      .from(ticketPurchases)
+      .where(eq(ticketPurchases.ticketId, ticketId));
+  }
+  
   async createTicket(ticketData: InsertTicket): Promise<Ticket> {
     const [ticket] = await db
       .insert(tickets)
