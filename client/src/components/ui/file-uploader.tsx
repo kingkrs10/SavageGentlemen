@@ -147,96 +147,145 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         formData.append('relatedEntityId', entityId.toString());
       }
       
-      // Get the user ID from localStorage (if available)
-      const userId = localStorage.getItem('userId');
+      // Get the user data from localStorage
+      const userDataString = localStorage.getItem('user');
+      let userId = null;
+      let token = null;
       
       // Define headers with user ID for authentication
       const headers: Record<string, string> = {};
-      if (userId) {
-        headers['user-id'] = userId;
+      
+      // Parse user data if it exists
+      if (userDataString) {
+        try {
+          const userData = JSON.parse(userDataString);
+          // Set user ID and token if available
+          if (userData && userData.id) {
+            userId = userData.id.toString();
+            headers['user-id'] = userId;
+            console.log('Setting user-id header to:', userId);
+          }
+          
+          // Add authorization token if available
+          if (userData && userData.token) {
+            token = userData.token;
+            headers['Authorization'] = `Bearer ${token}`;
+            console.log('Setting Authorization header with token');
+          }
+          
+          // Also add x-user-data header with minimal user info
+          if (userData && userData.id && userData.username && userData.role) {
+            const minimalUserData = {
+              id: userData.id,
+              username: userData.username,
+              role: userData.role
+            };
+            headers['x-user-data'] = JSON.stringify(minimalUserData);
+            console.log('Setting x-user-data header with minimal user data');
+          }
+        } catch (error) {
+          console.error('Error parsing user data from localStorage:', error);
+        }
+      } else {
+        console.warn('No user data found in localStorage for file upload authentication');
       }
       
-      // Create a custom XMLHttpRequest to track upload progress
-      const xhr = new XMLHttpRequest();
+      // Use fetch with a custom function to track progress instead of XMLHttpRequest
+      // First, log what headers we're sending
+      console.log('File upload headers:', headers);
       
-      xhr.upload.addEventListener('progress', (event) => {
-        if (event.lengthComputable) {
-          const progress = Math.round((event.loaded / event.total) * 100);
-          setUploadProgress(progress);
-        }
-      });
-      
-      xhr.addEventListener('load', () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const response = JSON.parse(xhr.responseText);
-            setUploadSuccess(true);
-            setUploading(false);
-            
-            if (onFileUploaded && response.file && response.file.url) {
-              onFileUploaded(response.file.url);
-            }
-            
-            toast({
-              title: "Upload Complete",
-              description: "File uploaded successfully!",
-            });
-          } catch (error) {
-            console.error('Error parsing response:', error);
-            setUploading(false);
-            toast({
-              title: "Upload Error",
-              description: "Could not process server response",
-              variant: "destructive"
-            });
+      // Create a progress tracker
+      const trackUploadProgress = async (response: Response): Promise<Response> => {
+        const reader = response.body?.getReader();
+        const contentLength = +response.headers.get('Content-Length');
+        let receivedLength = 0;
+        
+        if (!reader) return response;
+        
+        const chunks = [];
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) break;
+          
+          chunks.push(value);
+          receivedLength += value.length;
+          
+          if (contentLength) {
+            const progress = Math.round((receivedLength / contentLength) * 100);
+            setUploadProgress(progress);
           }
+        }
+        
+        // Reconstruct the response with the original body
+        const allChunks = new Uint8Array(receivedLength);
+        let position = 0;
+        for (const chunk of chunks) {
+          allChunks.set(chunk, position);
+          position += chunk.length;
+        }
+        
+        const newBody = new Blob([allChunks]);
+        return new Response(newBody, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers
+        });
+      };
+      
+      try {
+        // Use the regular fetch API for simplicity
+        const response = await fetch('/api/admin/uploads', {
+          method: 'POST',
+          headers: headers,
+          body: formData
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setUploadSuccess(true);
+          setUploading(false);
+          
+          if (onFileUploaded && data.file && data.file.url) {
+            onFileUploaded(data.file.url);
+            console.log('File uploaded successfully, URL:', data.file.url);
+          }
+          
+          toast({
+            title: "Upload Complete",
+            description: "File uploaded successfully!",
+          });
         } else {
+          // Handle error response
           setUploading(false);
           let errorMessage = "Upload failed";
           
           try {
-            const response = JSON.parse(xhr.responseText);
-            if (response.message) {
-              errorMessage = response.message;
+            const errorData = await response.json();
+            if (errorData.message) {
+              errorMessage = errorData.message;
             }
           } catch (e) {
-            // If we can't parse the response, just use the default message
+            // If we can't parse the response, use status text
+            errorMessage = `Upload failed (${response.status}: ${response.statusText})`;
           }
           
+          console.error('File upload error:', errorMessage);
           toast({
             title: "Upload Failed",
             description: errorMessage,
             variant: "destructive"
           });
         }
-      });
-      
-      xhr.addEventListener('error', () => {
+      } catch (error) {
+        console.error('Network error during file upload:', error);
         setUploading(false);
         toast({
           title: "Upload Failed",
-          description: "Network error occurred",
+          description: "Network error occurred while uploading",
           variant: "destructive"
         });
-      });
-      
-      xhr.addEventListener('abort', () => {
-        setUploading(false);
-        toast({
-          title: "Upload Cancelled",
-          description: "The upload was cancelled",
-        });
-      });
-      
-      // Open and send the request
-      xhr.open('POST', '/api/admin/uploads');
-      
-      // Add headers
-      Object.keys(headers).forEach(key => {
-        xhr.setRequestHeader(key, headers[key]);
-      });
-      
-      xhr.send(formData);
+      }
     } catch (error) {
       console.error('Upload error:', error);
       setUploading(false);
