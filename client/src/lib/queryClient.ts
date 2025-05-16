@@ -22,7 +22,7 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
-  options?: { headers?: Record<string, string> }
+  options?: { headers?: Record<string, string>; skipErrorThrow?: boolean }
 ): Promise<Response> {
   // Get the current user from localStorage
   let headers: Record<string, string> = options?.headers || {};
@@ -139,6 +139,10 @@ export async function apiRequest(
   
   console.log("Request headers:", headers);
   
+  // Special registration and authentication paths that have rate limiting
+  const sensitiveRoutes = ['/api/auth/register', '/api/auth/login'];
+  const isRegistrationOrLogin = sensitiveRoutes.includes(normalizeUrl(url));
+  
   const res = await fetch(normalizeUrl(url), {
     method,
     headers,
@@ -155,6 +159,13 @@ export async function apiRequest(
     }
   }
 
+  // If we're making a registration or login request OR skipErrorThrow is true,
+  // don't throw an error automatically, as we'll handle it in the component
+  if (options?.skipErrorThrow || isRegistrationOrLogin) {
+    return res;
+  }
+  
+  // For all other requests, throw an error if the response is not ok
   await throwIfResNotOk(res);
   return res;
 }

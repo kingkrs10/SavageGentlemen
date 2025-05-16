@@ -41,8 +41,16 @@ const loginSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
+// Enhanced password validation for registration
+const passwordSchema = z.string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+  .regex(/[0-9]/, "Password must contain at least one number");
+
 const registerSchema = loginSchema.extend({
   displayName: z.string().min(3, "Display name must be at least 3 characters"),
+  // Use the enhanced password validation for registration
+  password: passwordSchema,
   confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords do not match",
@@ -161,8 +169,58 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterFormValues) => {
       const { confirmPassword, ...registerData } = data;
-      const res = await apiRequest("POST", "/api/auth/register", registerData);
-      return res.json();
+      
+      try {
+        // Make API request - explicitly skip auto error throwing for auth requests
+        const res = await apiRequest("POST", "/api/auth/register", registerData, { skipErrorThrow: true });
+        
+        // Handle response based on status
+        if (!res.ok) {
+          // Try to extract error message from response
+          let errorMessage = "Registration failed";
+          let errorData;
+          
+          try {
+            // Create a clone of the response before reading it
+            const clonedResponse = res.clone();
+            errorData = await clonedResponse.json();
+            
+            // Check for different error formats
+            if (errorData.message) {
+              errorMessage = errorData.message;
+            }
+            
+            // Check for validation errors
+            if (errorData.errors && errorData.errors.length > 0) {
+              errorMessage = errorData.errors.map((e: any) => e.message).join(', ');
+            }
+          } catch (jsonError) {
+            console.error("Error parsing JSON error response:", jsonError);
+          }
+          
+          throw new Error(errorMessage);
+        }
+        
+        // Success case - handle carefully to avoid "body already read" error
+        try {
+          // Create a clone before reading
+          const clonedSuccessResponse = res.clone();
+          const userData = await clonedSuccessResponse.json();
+          
+          // Ensure we got valid user data
+          if (!userData || !userData.id) {
+            throw new Error("Invalid user data received");
+          }
+          
+          return userData;
+        } catch (jsonError) {
+          console.error("Error parsing success response:", jsonError);
+          throw new Error("Unable to process registration response");
+        }
+      } catch (error) {
+        console.error("Registration API error:", error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       toast({
