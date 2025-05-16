@@ -82,40 +82,55 @@ export function useAuth() {
       // 2. Fall back to redirect if popup fails (better compatibility)
       
       console.log('Attempting Google sign-in with popup...');
-      try {
-        // Popup method (preferred) - works in most desktop environments
-        const result = await signInWithPopup(auth, googleProvider);
+      // In Replit environment, skip the popup method completely and
+      // go directly to the redirect method which is more reliable
+      if (window.location.hostname.includes('replit')) {
+        console.log('Detected Replit environment, using redirect method directly');
         
-        console.log('Google sign-in successful via popup:', {
-          uid: result.user?.uid,
-          email: result.user?.email,
-          displayName: result.user?.displayName
-        });
+        // Store current path for redirect back after auth
+        const currentPath = window.location.pathname;
+        localStorage.setItem('sg:auth:redirect', currentPath);
         
-        // Success! The signed-in user info is in result.user
-        // Our app will get the user from the onAuthStateChanged listener
-        return result;
-      } catch (popupError: any) {
-        // If popup is blocked or fails, try redirect method instead
-        if (
-          popupError.code === 'auth/popup-blocked' || 
-          popupError.code === 'auth/popup-closed-by-user' ||
-          popupError.code === 'auth/internal-error'
-        ) {
-          console.log('Popup authentication failed, falling back to redirect method:', popupError.code);
+        // Redirect method - more compatible with Replit environment
+        await signInWithRedirect(auth, googleProvider);
+        // This function won't return as the page will redirect to Google
+        return null;
+      } else {
+        try {
+          // Popup method (preferred) - works in most desktop environments outside Replit
+          const result = await signInWithPopup(auth, googleProvider);
           
-          // Store current path for redirect back after auth
-          const currentPath = window.location.pathname;
-          localStorage.setItem('sg:auth:redirect', currentPath);
+          console.log('Google sign-in successful via popup:', {
+            uid: result.user?.uid,
+            email: result.user?.email,
+            displayName: result.user?.displayName
+          });
           
-          // Redirect method (fallback) - more compatible with mobile/production
-          await signInWithRedirect(auth, googleProvider);
-          // This function won't return as the page will redirect to Google
-          return null;
+          // Success! The signed-in user info is in result.user
+          // Our app will get the user from the onAuthStateChanged listener
+          return result;
+        } catch (popupError: any) {
+          // If popup is blocked or fails, try redirect method instead
+          if (
+            popupError.code === 'auth/popup-blocked' || 
+            popupError.code === 'auth/popup-closed-by-user' ||
+            popupError.code === 'auth/internal-error'
+          ) {
+            console.log('Popup authentication failed, falling back to redirect method:', popupError.code);
+            
+            // Store current path for redirect back after auth
+            const currentPath = window.location.pathname;
+            localStorage.setItem('sg:auth:redirect', currentPath);
+            
+            // Redirect method (fallback) - more compatible with mobile/production
+            await signInWithRedirect(auth, googleProvider);
+            // This function won't return as the page will redirect to Google
+            return null;
+          }
+          
+          // If it's not a popup-related error, rethrow it
+          throw popupError;
         }
-        
-        // If it's not a popup-related error, rethrow it
-        throw popupError;
       }
     } catch (error) {
       const authError = error as AuthError;

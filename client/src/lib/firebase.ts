@@ -3,12 +3,14 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 /**
  * Firebase production configuration with essential settings
- * The authDomain must be the Firebase-provided domain to ensure
- * proper OAuth redirect handling in all environments including production
+ * We need to use the correct authDomain that matches what's in 
+ * the authorized domains list in Firebase console
  */
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
+  // Use savgent.replit.app as it's already in your authorized domains
+  // This is critical for authentication to work
+  authDomain: "savgent.replit.app",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
