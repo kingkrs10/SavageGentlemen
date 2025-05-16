@@ -21,7 +21,6 @@ import { initGA } from "@/lib/ga-analytics";
 import { trackPageView } from "@/lib/analytics";
 
 // Firebase imports for handling redirect results
-import { getRedirectResult } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 

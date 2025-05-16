@@ -56,123 +56,7 @@ export function useAuth() {
     return () => unsubscribe();
   }, []);
 
-  // Sign in with Google - production ready version with fallback
-  const signInWithGoogle = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      console.log('Starting Google authentication process...');
-      
-      // Log Firebase configuration to help with debugging
-      console.log('Firebase auth instance state:', {
-        currentUser: auth.currentUser?.uid ? 'Logged in' : 'No user',
-        authDomain: auth.config?.authDomain || 'Not set',
-        providerId: googleProvider.providerId
-      });
-      
-      // We're using two different approaches:
-      // 1. Try popup first (better UX)
-      // 2. Fall back to redirect if popup fails (better compatibility)
-      
-      console.log('Attempting Google sign-in with popup...');
-      // In Replit environment, skip the popup method completely and
-      // go directly to the redirect method which is more reliable
-      if (window.location.hostname.includes('replit')) {
-        console.log('Detected Replit environment, using redirect method directly');
-        
-        // Store current path for redirect back after auth
-        const currentPath = window.location.pathname;
-        localStorage.setItem('sg:auth:redirect', currentPath);
-        
-        // Redirect method - more compatible with Replit environment
-        await signInWithRedirect(auth, googleProvider);
-        // This function won't return as the page will redirect to Google
-        return null;
-      } else {
-        try {
-          // Popup method (preferred) - works in most desktop environments outside Replit
-          const result = await signInWithPopup(auth, googleProvider);
-          
-          console.log('Google sign-in successful via popup:', {
-            uid: result.user?.uid,
-            email: result.user?.email,
-            displayName: result.user?.displayName
-          });
-          
-          // Success! The signed-in user info is in result.user
-          // Our app will get the user from the onAuthStateChanged listener
-          return result;
-        } catch (popupError: any) {
-          // If popup is blocked or fails, try redirect method instead
-          if (
-            popupError.code === 'auth/popup-blocked' || 
-            popupError.code === 'auth/popup-closed-by-user' ||
-            popupError.code === 'auth/internal-error'
-          ) {
-            console.log('Popup authentication failed, falling back to redirect method:', popupError.code);
-            
-            // Store current path for redirect back after auth
-            const currentPath = window.location.pathname;
-            localStorage.setItem('sg:auth:redirect', currentPath);
-            
-            // Redirect method (fallback) - more compatible with mobile/production
-            await signInWithRedirect(auth, googleProvider);
-            // This function won't return as the page will redirect to Google
-            return null;
-          }
-          
-          // If it's not a popup-related error, rethrow it
-          throw popupError;
-        }
-      }
-    } catch (error) {
-      const authError = error as AuthError;
-      
-      // Log comprehensive error information for debugging
-      console.error('Error signing in with Google:', {
-        code: authError.code,
-        message: authError.message,
-        customData: authError.customData,
-        stack: authError.stack,
-        authDomain: auth.config?.authDomain,
-        projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID
-      });
-      
-      setError(authError.message);
-      
-      // Detailed error handling with specific guidance
-      if (authError.code === 'auth/configuration-not-found') {
-        console.warn('Firebase Auth Domain Error: The authDomain in Firebase config must match the domain in Firebase console.');
-      } else if (authError.code === 'auth/internal-error') {
-        console.error('Firebase Internal Error: This is often related to incorrect project configuration. Verify API key and app settings in Firebase console.');
-      } else if (authError.code === 'auth/popup-closed-by-user') {
-        console.log('User closed the popup before completing authentication');
-      } else if (authError.code === 'auth/cancelled-popup-request') {
-        console.log('Another popup is open - authentication request cancelled');
-      } else if (authError.code === 'auth/popup-blocked') {
-        console.warn('Popup blocked by browser - adjust browser settings or try again');
-      } else if (authError.code === 'auth/network-request-failed') {
-        console.error('Network error occurred - check internet connection and firewall settings');
-        
-        // Add specific handling for the network error case
-        setError('Network connection error. Please try again or contact support.');
-        
-        // Log more details about the environment for troubleshooting
-        console.log('Network error details:', {
-          environment: process.env.NODE_ENV,
-          protocol: window.location.protocol,
-          host: window.location.host,
-          userAgent: navigator.userAgent,
-          timestamp: new Date().toISOString()
-        });
-      }
-      
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Placeholder for auth methods - removed Google sign-in
 
   // Sign out
   const signOut = async () => {
@@ -193,7 +77,6 @@ export function useAuth() {
     currentUser,
     loading,
     error,
-    signInWithGoogle,
     signOut
   };
 }

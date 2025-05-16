@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 
 /**
  * Firebase production configuration with essential settings
@@ -32,16 +32,5 @@ const app = initializeApp(firebaseConfig);
 
 // Authentication setup
 export const auth = getAuth(app);
-
-// Production-optimized Google provider
-export const googleProvider = new GoogleAuthProvider();
-
-// Configure Google provider for production use
-googleProvider.addScope('profile');
-googleProvider.addScope('email');
-// Force re-authorization even if already signed in
-googleProvider.setCustomParameters({
-  prompt: 'select_account'
-});
 
 export default app;

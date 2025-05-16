@@ -66,7 +66,7 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
     (storedTab === "register" ? "register" : "login")
   );
   const { toast } = useToast();
-  const { signInWithGoogle, loading, error } = useAuth();
+  const { loading, error } = useAuth();
   
   // Clear stored tab preference when modal opens
   useEffect(() => {
