@@ -20,6 +20,11 @@ import { UserProvider, useUser } from "@/context/UserContext";
 import { initGA } from "@/lib/ga-analytics";
 import { trackPageView } from "@/lib/analytics";
 
+// Firebase imports for handling redirect results
+import { getRedirectResult } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { useToast } from "@/hooks/use-toast";
+
 // Lazily load pages for code splitting
 const Home = lazy(() => import("@/pages/home"));
 const Events = lazy(() => import("@/pages/events"));
