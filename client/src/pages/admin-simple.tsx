@@ -76,6 +76,7 @@ export default function AdminSimplePage() {
   const [activeTab, setActiveTab] = React.useState("events");
   const [selectedEventId, setSelectedEventId] = React.useState<number | null>(null);
   const [isCreateTicketModalOpen, setIsCreateTicketModalOpen] = React.useState(false);
+  const [isEditTicketModalOpen, setIsEditTicketModalOpen] = React.useState(false);
   const [isCreateEventModalOpen, setIsCreateEventModalOpen] = React.useState(false);
   const [isEditEventModalOpen, setIsEditEventModalOpen] = React.useState(false);
   const [ticketFormData, setTicketFormData] = React.useState({
@@ -179,6 +180,29 @@ export default function AdminSimplePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
       setIsEditEventModalOpen(false);
+    }
+  });
+  
+  // Edit Ticket Mutation
+  const editTicketMutation = useMutation({
+    mutationFn: async (ticket: any) => {
+      return await apiRequest('PUT', `/api/admin/tickets/${ticket.id}`, ticket);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/tickets'] });
+      setIsEditTicketModalOpen(false);
+      toast({
+        title: "Ticket Updated",
+        description: "The ticket has been updated successfully",
+      });
+    },
+    onError: (error) => {
+      console.error("Error updating ticket:", error);
+      toast({
+        title: "Error Updating Ticket",
+        description: "There was a problem updating this ticket. Please try again.",
+        variant: "destructive"
+      });
     }
   });
 
@@ -442,11 +466,40 @@ export default function AdminSimplePage() {
                                   variant="outline"
                                   onClick={() => {
                                     console.log(`Editing ticket ID: ${ticket.id}`);
+                                    // Populate the form with existing ticket data
+                                    // We need to create a new object with all the required fields
+                                    const updatedFormData = {
+                                      name: ticket.name,
+                                      price: ticket.price,
+                                      quantity: ticket.quantity?.toString() || '100',
+                                      status: ticket.status || 'active',
+                                      eventId: ticket.eventId,
+                                      description: ticket.description || '',
+                                      ticketType: 'essential',
+                                      priceType: 'standard',
+                                      minQuantityPerOrder: '',
+                                      maxQuantityPerOrder: '',
+                                      displayRemainingQuantity: true,
+                                      payWhatYouCan: false,
+                                      salesStartDate: ticket.salesStartDate || '',
+                                      salesStartTime: ticket.salesStartTime || '',
+                                      salesEndDate: ticket.salesEndDate || '',
+                                      salesEndTime: ticket.salesEndTime || '',
+                                      hideBeforeSalesStart: false,
+                                      hideAfterSalesEnd: false,
+                                      secretCode: '',
+                                      hideIfSoldOut: true,
+                                      hidePriceIfSoldOut: true
+                                    };
+                                    // Store the ticket ID separately for the update operation
+                                    setTicketFormData(updatedFormData);
+                                    // Store the ticket ID for later use
+                                    window.editingTicketId = ticket.id;
+                                    setIsEditTicketModalOpen(true);
                                     toast({
                                       title: "Edit Ticket",
                                       description: `Opening ticket editor for ${ticket.name}`,
                                     });
-                                    // In a real implementation, this would open a modal or navigate to a ticket editing page
                                   }}
                                 >
                                   Edit
@@ -1374,6 +1427,109 @@ export default function AdminSimplePage() {
               disabled={editEventMutation.isPending}
             >
               {editEventMutation.isPending ? "Updating..." : "Update Event"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Ticket Modal */}
+      <Dialog open={isEditTicketModalOpen} onOpenChange={setIsEditTicketModalOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Ticket</DialogTitle>
+            <DialogDescription>
+              Update the ticket details below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <Label htmlFor="edit-ticket-name">Ticket Name</Label>
+                <Input
+                  id="edit-ticket-name"
+                  placeholder="VIP Ticket"
+                  value={ticketFormData.name}
+                  onChange={(e) => setTicketFormData({...ticketFormData, name: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-ticket-price">Price</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5">$</span>
+                  <Input
+                    id="edit-ticket-price"
+                    type="number"
+                    className="pl-7"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    value={ticketFormData.price}
+                    onChange={(e) => setTicketFormData({...ticketFormData, price: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="edit-ticket-quantity">Quantity</Label>
+                <Input
+                  id="edit-ticket-quantity"
+                  type="number"
+                  placeholder="100"
+                  min="1"
+                  value={ticketFormData.quantity}
+                  onChange={(e) => setTicketFormData({...ticketFormData, quantity: e.target.value})}
+                />
+              </div>
+              <div className="col-span-2">
+                <Label htmlFor="edit-ticket-description">Description</Label>
+                <Textarea
+                  id="edit-ticket-description"
+                  placeholder="Describe what this ticket includes..."
+                  value={ticketFormData.description}
+                  onChange={(e) => setTicketFormData({...ticketFormData, description: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-ticket-status">Status</Label>
+                <Select 
+                  value={ticketFormData.status} 
+                  onValueChange={(value) => setTicketFormData({...ticketFormData, status: value})}
+                >
+                  <SelectTrigger id="edit-ticket-status">
+                    <SelectValue placeholder="Select a status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditTicketModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                const updatedTicket = {
+                  id: ticketFormData.id,
+                  eventId: ticketFormData.eventId,
+                  name: ticketFormData.name,
+                  price: ticketFormData.price,
+                  quantity: parseInt(ticketFormData.quantity),
+                  status: ticketFormData.status,
+                  description: ticketFormData.description || null,
+                  salesStartDate: ticketFormData.salesStartDate || null,
+                  salesEndDate: ticketFormData.salesEndDate || null,
+                  salesStartTime: ticketFormData.salesStartTime || null,
+                  salesEndTime: ticketFormData.salesEndTime || null
+                };
+                
+                editTicketMutation.mutate(updatedTicket);
+              }}
+              disabled={editTicketMutation.isPending}
+            >
+              {editTicketMutation.isPending ? "Updating..." : "Update Ticket"}
             </Button>
           </DialogFooter>
         </DialogContent>
