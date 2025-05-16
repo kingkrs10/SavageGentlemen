@@ -455,84 +455,92 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
 
         <div className="space-y-3">
           {/* Enhanced Google login button with improved error handling */}
-            <Button 
-              variant="outline" 
-              className="w-full flex items-center justify-center bg-white hover:bg-gray-100 text-black"
-              onClick={async () => {
-                try {
-                  // Reset any previous errors
-                  console.log('Google login button clicked');
-                  
-                  // First verify we have all required Firebase configuration 
-                  if (!import.meta.env.VITE_FIREBASE_API_KEY || !import.meta.env.VITE_FIREBASE_PROJECT_ID) {
-                    console.error('Missing Firebase configuration:', {
-                      hasApiKey: Boolean(import.meta.env.VITE_FIREBASE_API_KEY),
-                      hasProjectId: Boolean(import.meta.env.VITE_FIREBASE_PROJECT_ID),
-                      hasAppId: Boolean(import.meta.env.VITE_FIREBASE_APP_ID)
-                    });
+            <div className="space-y-2">
+              <p className="text-xs text-gray-400 text-center mb-2">
+                ⚠️ Google login may experience connectivity issues in some environments.
+                <br />We recommend using email/password login for a more reliable experience.
+              </p>
+              
+              <Button 
+                variant="outline" 
+                className="w-full flex items-center justify-center bg-white hover:bg-gray-100 text-black"
+                onClick={async () => {
+                  try {
+                    // Reset any previous errors
+                    console.log('Google login button clicked');
+                    
+                    // First verify we have all required Firebase configuration 
+                    if (!import.meta.env.VITE_FIREBASE_API_KEY || !import.meta.env.VITE_FIREBASE_PROJECT_ID) {
+                      console.error('Missing Firebase configuration:', {
+                        hasApiKey: Boolean(import.meta.env.VITE_FIREBASE_API_KEY),
+                        hasProjectId: Boolean(import.meta.env.VITE_FIREBASE_PROJECT_ID),
+                        hasAppId: Boolean(import.meta.env.VITE_FIREBASE_APP_ID)
+                      });
+                      
+                      toast({
+                        title: "Configuration Error",
+                        description: "Firebase configuration is incomplete. Please contact support.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    
+                    await signInWithGoogle();
                     
                     toast({
-                      title: "Configuration Error",
-                      description: "Firebase configuration is incomplete. Please contact support.",
+                      title: "Login Successful",
+                      description: "Welcome to Savage Gentlemen!",
+                    });
+                    
+                    // Check if there's a stored redirect path
+                    const redirectPath = localStorage.getItem('sg:auth:redirect');
+                    if (redirectPath) {
+                      console.log('Redirecting after Google login to:', redirectPath);
+                      localStorage.removeItem('sg:auth:redirect');
+                    }
+                  } catch (error: any) {
+                    console.error("Error signing in:", error);
+                    
+                    // Handle specific Firebase error codes with user-friendly messages
+                    let errorMessage = "Failed to login with Google";
+                    let errorDetails = "";
+                    
+                    if (error?.code === "auth/configuration-not-found") {
+                      errorMessage = "Google authentication needs to be configured";
+                      errorDetails = "Please try using email/password login instead";
+                    } else if (error?.code === "auth/popup-closed-by-user") {
+                      errorMessage = "Login was canceled";
+                      errorDetails = "Please try again or use email/password login";
+                    } else if (error?.code === "auth/popup-blocked") {
+                      errorMessage = "Login popup was blocked";
+                      errorDetails = "Please use email/password login instead";
+                    } else if (error?.code === "auth/account-exists-with-different-credential") {
+                      errorMessage = "Account already exists with different credentials";
+                      errorDetails = "Try using email/password login";
+                    } else if (error?.code === "auth/network-request-failed") {
+                      errorMessage = "Network connectivity issue";
+                      errorDetails = "Please use email/password login instead";
+                    } else if (error?.code === "auth/internal-error") {
+                      errorMessage = "Google login temporarily unavailable";
+                      errorDetails = "Please use email/password login instead";
+                    } else if (error?.message) {
+                      errorMessage = error.message;
+                      errorDetails = "Try using email/password login instead";
+                    }
+                    
+                    toast({
+                      title: "Login Failed",
+                      description: errorDetails ? `${errorMessage}. ${errorDetails}.` : errorMessage,
                       variant: "destructive",
                     });
-                    return;
                   }
-                  
-                  await signInWithGoogle();
-                  
-                  toast({
-                    title: "Login Successful",
-                    description: "Welcome to Savage Gentlemen!",
-                  });
-                  
-                  // Check if there's a stored redirect path
-                  const redirectPath = localStorage.getItem('sg:auth:redirect');
-                  if (redirectPath) {
-                    console.log('Redirecting after Google login to:', redirectPath);
-                    localStorage.removeItem('sg:auth:redirect');
-                  }
-                } catch (error: any) {
-                  console.error("Error signing in:", error);
-                  
-                  // Handle specific Firebase error codes with user-friendly messages
-                  let errorMessage = "Failed to login with Google";
-                  let errorDetails = "";
-                  
-                  if (error?.code === "auth/configuration-not-found") {
-                    errorMessage = "Google authentication needs to be configured";
-                    errorDetails = "Please try again later or use email/password login";
-                  } else if (error?.code === "auth/popup-closed-by-user") {
-                    errorMessage = "Login was canceled";
-                    errorDetails = "Please try again";
-                  } else if (error?.code === "auth/popup-blocked") {
-                    errorMessage = "Login popup was blocked";
-                    errorDetails = "Please allow popups for this site";
-                  } else if (error?.code === "auth/account-exists-with-different-credential") {
-                    errorMessage = "Account already exists with different credentials";
-                    errorDetails = "Try another sign-in method";
-                  } else if (error?.code === "auth/network-request-failed") {
-                    errorMessage = "Network error";
-                    errorDetails = "Please check your internet connection";
-                  } else if (error?.code === "auth/internal-error") {
-                    errorMessage = "Google login temporarily unavailable";
-                    errorDetails = "Please try again later or use email/password";
-                  } else if (error?.message) {
-                    errorMessage = error.message;
-                  }
-                  
-                  toast({
-                    title: "Login Failed",
-                    description: errorDetails ? `${errorMessage}. ${errorDetails}.` : errorMessage,
-                    variant: "destructive",
-                  });
-                }
-              }}
-              disabled={loading}
-            >
-              <FaGoogle className="w-4 h-4 mr-2" />
-              <span>Sign in with Google</span>
-            </Button>
+                }}
+                disabled={loading}
+              >
+                <FaGoogle className="w-4 h-4 mr-2" />
+                <span>Sign in with Google</span>
+              </Button>
+            </div>
           <Button 
             variant="outline" 
             className="w-full flex items-center justify-center bg-black hover:bg-gray-900 border-gray-700"
