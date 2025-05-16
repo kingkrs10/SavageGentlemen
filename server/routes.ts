@@ -502,7 +502,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             avatar: photoURL,
             isGuest: false,
             email: email,
-            role: 'user' // Explicitly set user role for Firebase users
+            role: 'user', // Explicitly set user role for Firebase users
+            firebaseId: firebaseUid // Store the Firebase UID for future reference
           });
           isNewUser = true;
         }
