@@ -300,7 +300,10 @@ export class MemStorage implements IStorage {
       role: userData.role || 'user',
       stripeCustomerId: userData.stripeCustomerId || null,
       paypalCustomerId: userData.paypalCustomerId || null,
-      email: userData.email || null
+      email: userData.email || null,
+      firebaseId: userData.firebaseId || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
     this.users.set(id, user);
     return user;

@@ -147,6 +147,18 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
       if (error instanceof Error) {
         errorMessage = error.message;
         
+        // Check if it's a network error from Firebase
+        if (error.message.includes('network-request-failed') || error.message.includes('Network Error')) {
+          errorMessage = "Network connection error. Please check your internet connection and try again.";
+          
+          // Log additional details for troubleshooting
+          console.log('Network error details:', {
+            url: window.location.href,
+            navigator: navigator.onLine ? 'online' : 'offline',
+            timestamp: new Date().toISOString()
+          });
+        }
+        
         // Provide more user-friendly messages based on common errors
         if (errorMessage.includes("Invalid username or password")) {
           errorMessage = "Invalid username or password. Please try again.";

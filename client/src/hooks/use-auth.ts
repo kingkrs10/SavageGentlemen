@@ -145,6 +145,18 @@ export function useAuth() {
         console.warn('Popup blocked by browser - adjust browser settings or try again');
       } else if (authError.code === 'auth/network-request-failed') {
         console.error('Network error occurred - check internet connection and firewall settings');
+        
+        // Add specific handling for the network error case
+        setError('Network connection error. Please try again or contact support.');
+        
+        // Log more details about the environment for troubleshooting
+        console.log('Network error details:', {
+          environment: process.env.NODE_ENV,
+          protocol: window.location.protocol,
+          host: window.location.host,
+          userAgent: navigator.userAgent,
+          timestamp: new Date().toISOString()
+        });
       }
       
       throw error;

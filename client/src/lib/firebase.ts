@@ -12,6 +12,9 @@ const firebaseConfig = {
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  // Add these settings to improve network connectivity and timeout handling
+  connectTimeoutMS: 20000, // 20 seconds
+  retryMaxAttempts: 3,
 };
 
 // Log configuration for debugging (without sensitive data)
