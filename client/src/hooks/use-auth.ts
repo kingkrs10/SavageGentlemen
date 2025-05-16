@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { 
-  signInWithPopup, 
+  signInWithPopup,
+  signInWithRedirect,
   signOut as firebaseSignOut, 
   onAuthStateChanged,
   GoogleAuthProvider,
