@@ -1460,6 +1460,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Delete ticket endpoint
+  router.delete("/admin/tickets/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      console.log(`Admin deleting ticket with ID: ${ticketId}`);
+      
+      // Check if ticket exists
+      const ticket = await storage.getTicket(ticketId);
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+      
+      // Check if ticket has any purchases
+      const ticketPurchases = await storage.getTicketPurchasesByTicketId(ticketId);
+      const hasPurchases = ticketPurchases && ticketPurchases.length > 0;
+      
+      if (hasPurchases) {
+        console.log(`WARNING: Attempted to delete ticket ${ticketId} with existing purchases (${ticketPurchases.length})`);
+        // You might want to just mark the ticket as inactive instead of deleting it
+        // Or ask for confirmation to delete
+        
+        // For now, we'll still allow deletion with a warning log
+      }
+      
+      // Delete the ticket
+      const result = await storage.deleteTicket(ticketId);
+      
+      if (result) {
+        console.log(`Successfully deleted ticket ${ticketId}`);
+        return res.status(200).json({ 
+          success: true,
+          message: "Ticket deleted successfully" 
+        });
+      } else {
+        return res.status(500).json({ message: "Failed to delete ticket" });
+      }
+    } catch (err) {
+      console.error("Error deleting ticket:", err);
+      return res.status(500).json({ message: "Failed to delete ticket" });
+    }
+  });
+  
   // Ticket validation endpoint for QR code scanner (accessible by both admins and moderators)
   router.post("/admin/tickets/validate", authenticateUser, authorizeModerator, async (req: Request, res: Response) => {
     try {
