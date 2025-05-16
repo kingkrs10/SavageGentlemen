@@ -125,7 +125,7 @@ export default function AdminSimplePage() {
     data: tickets = [] as Ticket[], 
     isLoading: ticketsLoading 
   } = useQuery<Ticket[]>({
-    queryKey: ['/api/tickets'],
+    queryKey: ['/api/admin/tickets'],
     enabled: true,
   });
   
