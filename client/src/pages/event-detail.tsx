@@ -259,7 +259,7 @@ const EventDetail = () => {
             <div className="flex flex-col space-y-3">
               <div className="flex items-center text-muted-foreground">
                 <Calendar className="h-5 w-5 mr-2" />
-                <span>{formatEventDate(event.date)}</span>
+                <span>{formatEventDate(event.date)} {event.time && `at ${formatEventTime(event.date, event.time)}`}</span>
               </div>
               
               <div className="flex items-center text-muted-foreground">
