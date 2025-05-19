@@ -479,7 +479,7 @@ export default function AdminSimplePage() {
                                       price: (parseFloat(ticket.price) / 100).toFixed(2),
                                       quantity: ticket.quantity?.toString() || '100',
                                       status: ticket.status || 'active',
-                                      eventId: ticket.eventId,
+                                      eventId: String(ticket.eventId || ''),
                                       description: ticket.description || '',
                                       ticketType: 'essential',
                                       priceType: 'standard',
@@ -1543,27 +1543,25 @@ export default function AdminSimplePage() {
               </div>
               <div className="col-span-2">
                 <Label htmlFor="edit-ticket-event">Event</Label>
-                <Select 
-                  defaultValue={String(ticketFormData.eventId)} 
-                  onValueChange={(value) => {
-                    console.log("Event selected:", value);
+                <select
+                  id="edit-ticket-event"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={ticketFormData.eventId}
+                  onChange={(e) => {
+                    console.log("Event selected:", e.target.value);
                     setTicketFormData({
                       ...ticketFormData, 
-                      eventId: parseInt(value)
+                      eventId: parseInt(e.target.value)
                     });
                   }}
                 >
-                  <SelectTrigger id="edit-ticket-event">
-                    <SelectValue placeholder="Select an event" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {events.map((event) => (
-                      <SelectItem key={event.id} value={String(event.id)}>
-                        {event.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <option value="">Select an event</option>
+                  {events.map((event) => (
+                    <option key={event.id} value={event.id}>
+                      {event.title}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="col-span-2">
                 <Label htmlFor="edit-ticket-description">Description</Label>
@@ -1607,10 +1605,12 @@ export default function AdminSimplePage() {
                   return;
                 }
                 
+                console.log("Submitting ticket update with data:", ticketFormData);
+                
                 // Format ticket data appropriate for the API
                 const updatedTicket = {
                   // Send only fields that need to be updated
-                  eventId: ticketFormData.eventId,
+                  eventId: parseInt(ticketFormData.eventId as any) || null, // Ensure eventId is a proper number
                   name: ticketFormData.name,
                   price: Math.round(parseFloat(ticketFormData.price) * 100), // Convert to cents
                   quantity: parseInt(ticketFormData.quantity),
