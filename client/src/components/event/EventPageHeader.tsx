@@ -7,16 +7,13 @@ type EventPageHeaderProps = {
 };
 
 const EventPageHeader: React.FC<EventPageHeaderProps> = ({ event }) => {
-  // For the specific Riddem Riot event, override values
-  const displayDate = (event.id === 4 && event.title === "Riddem Riot") 
-    ? "June 27, 2025" 
-    : new Date(event.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  // Always use the actual date from the event data
+  const displayDate = new Date(event.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   
-  const displayTime = (event.id === 4 && event.title === "Riddem Riot") 
-    ? "11:00 PM" 
-    : event.time 
-      ? new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true })
-      : "8:00 PM"; // Default time
+  // Use the time from the event data or a sensible default
+  const displayTime = event.time 
+    ? new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true })
+    : "8:00 PM"; // Default time
   
   // Calculate the lowest ticket price from all available tickets
   const lowestPrice = event.tickets && event.tickets.length > 0

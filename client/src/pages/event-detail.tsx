@@ -150,11 +150,7 @@ const EventDetail = () => {
   };
 
   const formatEventDate = (dateString: string | Date) => {
-    // For the Riddem Riot event specifically, show June 27 as mentioned in the description
-    // This helps align with the event description which mentions June 27th
-    if (event?.id === 4 && event?.title === "Riddem Riot") {
-      return "Friday, June 27, 2025";
-    }
+    // Always use the actual date from the database
     const date = new Date(dateString);
     return format(date, 'EEEE, MMMM d, yyyy');
   };
