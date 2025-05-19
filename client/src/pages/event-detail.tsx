@@ -139,6 +139,13 @@ const EventDetail = () => {
 
   const formatEventTime = (dateString: string | Date, timeString?: string | null) => {
     if (timeString) {
+      // Convert 24-hour format to 12-hour format with AM/PM
+      if (timeString.includes(':')) {
+        const [hours, minutes] = timeString.split(':').map(Number);
+        const date = new Date();
+        date.setHours(hours, minutes);
+        return format(date, 'h:mm a');
+      }
       return timeString;
     }
     
