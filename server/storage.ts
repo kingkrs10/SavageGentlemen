@@ -1901,7 +1901,32 @@ export class DatabaseStorage implements IStorage {
       // Only include fields that are actually present to avoid null overrides
       Object.keys(ticketData).forEach(key => {
         if (ticketData[key] !== undefined) {
-          dataToUpdate[key] = ticketData[key];
+          // Special handling for price - convert to integer cents
+          if (key === 'price') {
+            if (typeof ticketData.price === 'string') {
+              // If price is a string like "21.50", convert to cents (2150)
+              const floatPrice = parseFloat(ticketData.price);
+              if (!isNaN(floatPrice)) {
+                const priceCents = Math.round(floatPrice * 100);
+                console.log(`Converting price from ${ticketData.price} to ${priceCents} cents`);
+                dataToUpdate.price = priceCents;
+              } else {
+                console.warn(`Invalid price format: ${ticketData.price}, skipping price update`);
+              }
+            } else if (typeof ticketData.price === 'number') {
+              // If price is already a number, ensure it's an integer (cents)
+              if (Number.isInteger(ticketData.price)) {
+                dataToUpdate.price = ticketData.price;
+              } else {
+                // If it's a float, convert to cents
+                const priceCents = Math.round(ticketData.price * 100);
+                console.log(`Converting number price from ${ticketData.price} to ${priceCents} cents`);
+                dataToUpdate.price = priceCents;
+              }
+            }
+          } else {
+            dataToUpdate[key] = ticketData[key];
+          }
         }
       });
       
