@@ -1411,6 +1411,124 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
   
+  // Verify and scan a ticket
+  async scanTicket(ticketIdentifier: string): Promise<{ 
+    valid: boolean; 
+    ticketInfo?: any; 
+    error?: string;
+    alreadyScanned?: boolean;
+    scannedAt?: Date;
+  }> {
+    try {
+      // Parse the ticket identifier (SGX-TIX-orderId-ticketId)
+      const parts = ticketIdentifier.split('-');
+      
+      if (parts.length !== 4 || parts[0] !== 'SGX' || parts[1] !== 'TIX') {
+        return {
+          valid: false,
+          error: 'Invalid ticket format. Expected format: SGX-TIX-orderId-ticketId'
+        };
+      }
+      
+      const orderId = parseInt(parts[2]);
+      const ticketId = parseInt(parts[3]);
+      
+      if (isNaN(orderId) || isNaN(ticketId)) {
+        return {
+          valid: false,
+          error: 'Invalid ticket identifier. Order ID and Ticket ID must be numbers.'
+        };
+      }
+      
+      // Get the order item with this order ID and ticket ID
+      const orderItems = await db
+        .select()
+        .from(orderItems)
+        .where(and(
+          eq(orderItems.orderId, orderId),
+          eq(orderItems.ticketId, ticketId)
+        ));
+      
+      if (!orderItems || orderItems.length === 0) {
+        return {
+          valid: false,
+          error: 'Ticket not found in our system.'
+        };
+      }
+      
+      const orderItem = orderItems[0];
+      
+      // Check if this ticket has already been scanned
+      if (orderItem.scanDate) {
+        return {
+          valid: true,
+          alreadyScanned: true,
+          scannedAt: orderItem.scanDate,
+          ticketInfo: {
+            orderId,
+            ticketId,
+            purchaseDate: orderItem.createdAt,
+            scannedAt: orderItem.scanDate
+          }
+        };
+      }
+      
+      // Get the ticket information
+      const ticket = await db
+        .select()
+        .from(tickets)
+        .where(eq(tickets.id, ticketId))
+        .then(rows => rows[0]);
+      
+      if (!ticket) {
+        return {
+          valid: false,
+          error: 'Ticket information not found.'
+        };
+      }
+      
+      // Get the event information
+      const event = await db
+        .select()
+        .from(events)
+        .where(eq(events.id, ticket.eventId))
+        .then(rows => rows[0]);
+      
+      // Mark the ticket as scanned
+      const [updated] = await db
+        .update(orderItems)
+        .set({ 
+          scanDate: new Date(),
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(orderItems.orderId, orderId),
+          eq(orderItems.ticketId, ticketId)
+        ))
+        .returning();
+      
+      return {
+        valid: true,
+        ticketInfo: {
+          orderId,
+          ticketId,
+          ticketName: ticket.name,
+          eventName: event?.title || 'Unknown Event',
+          eventDate: event?.date || null,
+          eventLocation: event?.location || 'Unknown Location',
+          purchaseDate: orderItem.createdAt,
+          scannedAt: updated.scanDate
+        }
+      };
+    } catch (error) {
+      console.error('Error scanning ticket:', error);
+      return {
+        valid: false,
+        error: 'Error processing ticket. Please try again.'
+      };
+    }
+  }
+  
   async updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User> {
     const [user] = await db
       .update(users)

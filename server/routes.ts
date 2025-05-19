@@ -1036,6 +1036,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
+  // Get all users (admin only)
+  router.get("/admin/users", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const users = await storage.getAllUsers();
+      
+      // Map users to only send required fields to client
+      const safeUsers = users.map(user => ({
+        id: user.id,
+        username: user.username,
+        displayName: user.displayName,
+        avatar: user.avatar,
+        role: user.role,
+        email: user.email,
+        createdAt: user.createdAt,
+        isGuest: user.isGuest
+      }));
+      
+      return res.status(200).json(safeUsers);
+    } catch (err) {
+      console.error("Error getting users:", err);
+      return res.status(500).json({ message: "Failed to retrieve users" });
+    }
+  });
+  
+  // Update user role (admin only)
+  router.put("/admin/users/:id/role", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { role } = req.body;
+      
+      if (!userId || isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      if (!role || !['user', 'admin', 'moderator'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role. Must be 'user', 'admin', or 'moderator'" });
+      }
+      
+      // Prevent changing your own role to prevent lockout
+      if (req.user.id === userId) {
+        return res.status(403).json({ 
+          message: "You cannot change your own role to prevent accidental lockout" 
+        });
+      }
+      
+      const updatedUser = await storage.updateUserRole(userId, role);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return safe user object
+      return res.status(200).json({
+        id: updatedUser.id,
+        username: updatedUser.username,
+        displayName: updatedUser.displayName,
+        avatar: updatedUser.avatar,
+        role: updatedUser.role,
+        email: updatedUser.email,
+        message: `User role updated to ${role} successfully`
+      });
+    } catch (err) {
+      console.error("Error updating user role:", err);
+      return res.status(500).json({ message: "Failed to update user role" });
+    }
+  });
+  
   // Register email marketing router (admin only)
   // We'll use the authenticateUser middleware but not require admin for CSV operations
   // Modified email marketing authentication to allow more fallback options
@@ -1079,6 +1146,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       role: user.role,
       email: user.email
     });
+  });
+  
+  // Endpoint to scan tickets at events
+  router.post("/tickets/scan", authenticateUser, authorizeModerator, async (req: Request, res: Response) => {
+    try {
+      const { ticketCode } = req.body;
+      
+      if (!ticketCode) {
+        return res.status(400).json({ message: "Ticket code is required" });
+      }
+      
+      // Log the scan attempt with user info
+      console.log(`Ticket scan attempt by ${req.user.username} (${req.user.role}): ${ticketCode}`);
+      
+      // Use the storage function to scan the ticket
+      const scanResult = await storage.scanTicket(ticketCode);
+      
+      if (!scanResult.valid) {
+        return res.status(400).json({ 
+          valid: false,
+          error: scanResult.error || "Invalid ticket"
+        });
+      }
+      
+      // Return scan result with information about the ticket
+      return res.status(200).json({
+        valid: true,
+        alreadyScanned: scanResult.alreadyScanned || false,
+        scannedAt: scanResult.scannedAt,
+        ticketInfo: scanResult.ticketInfo
+      });
+    } catch (err) {
+      console.error("Error scanning ticket:", err);
+      return res.status(500).json({ message: "Failed to scan ticket" });
+    }
   });
   
   // Livestream management
