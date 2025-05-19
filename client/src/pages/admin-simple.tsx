@@ -450,7 +450,7 @@ export default function AdminSimplePage() {
                         .map((ticket: any) => (
                           <tr key={ticket.id} className="border-b hover:bg-muted/20 transition-colors">
                             <td className="p-4 font-medium">{ticket.name}</td>
-                            <td className="p-4">{ticket.eventName || 'Unknown Event'}</td>
+                            <td className="p-4">{events.find((e: any) => e.id === ticket.eventId)?.title || 'Unknown Event'}</td>
                             <td className="p-4 font-medium">${(parseFloat(ticket.price) / 100).toFixed(2)}</td>
                             <td className="p-4">{ticket.quantity || 'Unlimited'}</td>
                             <td className="p-4">
@@ -1607,6 +1607,10 @@ export default function AdminSimplePage() {
                 
                 console.log("Submitting ticket update with data:", ticketFormData);
                 
+                // Update the event Name based on the selected eventId
+                const selectedEvent = events.find((e: any) => e.id === parseInt(ticketFormData.eventId as any));
+                console.log("Selected event for ticket:", selectedEvent);
+                
                 // Format ticket data appropriate for the API
                 const updatedTicket = {
                   // Send only fields that need to be updated
@@ -1621,7 +1625,9 @@ export default function AdminSimplePage() {
                   salesEndDate: ticketFormData.salesEndDate || null,
                   salesStartTime: ticketFormData.salesStartTime || '',
                   salesEndTime: ticketFormData.salesEndTime || '',
-                  remainingQuantity: parseInt(ticketFormData.quantity) // Set remaining to match total quantity
+                  remainingQuantity: parseInt(ticketFormData.quantity), // Set remaining to match total quantity
+                  // Add eventName to make sure it's displayed correctly
+                  eventName: selectedEvent?.title || 'Unknown Event'
                 };
                 
                 editTicketMutation.mutate(updatedTicket);
