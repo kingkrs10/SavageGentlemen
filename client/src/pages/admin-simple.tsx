@@ -1542,6 +1542,24 @@ export default function AdminSimplePage() {
                 />
               </div>
               <div className="col-span-2">
+                <Label htmlFor="edit-ticket-event">Event</Label>
+                <Select 
+                  value={String(ticketFormData.eventId)} 
+                  onValueChange={(value) => setTicketFormData({...ticketFormData, eventId: Number(value)})}
+                >
+                  <SelectTrigger id="edit-ticket-event">
+                    <SelectValue placeholder="Select an event" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {events.map((event) => (
+                      <SelectItem key={event.id} value={String(event.id)}>
+                        {event.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="col-span-2">
                 <Label htmlFor="edit-ticket-description">Description</Label>
                 <Textarea
                   id="edit-ticket-description"
