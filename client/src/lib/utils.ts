@@ -13,17 +13,41 @@ export function formatCurrency(value: number, eventId?: number, eventTitle?: str
   }).format(value / 100);
 }
 
-export function formatDate(date: string | Date, eventId?: number, eventTitle?: string): string {
+export function formatDate(date: string | Date, eventId?: number, eventTitle?: string, time?: string): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   
-  return dateObj.toLocaleDateString('en-US', {
+  // Format the date part
+  const formattedDate = dateObj.toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
   });
+  
+  // Format time if provided, otherwise use the dateObj time
+  let formattedTime = '';
+  if (time) {
+    // Parse time string (assumes format like "09:00 PM" or "09:00:00")
+    try {
+      const timeDate = new Date(`2000-01-01T${time}`);
+      formattedTime = timeDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch (e) {
+      // Fallback to just using the time string as is
+      formattedTime = time;
+    }
+  } else {
+    // Use time from the date object
+    formattedTime = dateObj.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  }
+  
+  return `${formattedDate} at ${formattedTime}`;
 }
 
 export function formatTimeAgo(date: string | Date): string {

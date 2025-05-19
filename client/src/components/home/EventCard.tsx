@@ -21,7 +21,7 @@ const EventCard = ({
   variant = "vertical",
   onGetTicket 
 }: EventCardProps) => {
-  const { id, title, description, date, location, price, imageUrl } = event;
+  const { id, title, description, date, time, location, price, imageUrl } = event;
   
   // Track event view when card is rendered
   React.useEffect(() => {
@@ -56,7 +56,7 @@ const EventCard = ({
                   <h3 className="text-xl font-heading">{title}</h3>
                 </Link>
                 <p className="text-sm text-gray-300 flex items-center mt-1">
-                  <Calendar className="w-4 h-4 mr-1" /> {formatDate(date, id, title)}
+                  <Calendar className="w-4 h-4 mr-1" /> {formatDate(date, id, title, time)}
                 </p>
                 <p className="text-sm text-gray-300 flex items-center mt-1">
                   <MapPin className="w-4 h-4 mr-1" /> {location}
