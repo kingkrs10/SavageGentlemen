@@ -4,22 +4,22 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
 import { useUser } from "@/context/UserContext";
-import TicketScanner from "@/components/admin/TicketScanner";
+import UserManagement from "@/components/admin/UserManagement";
 
-export default function TicketScannerPage() {
+export default function UserManagementPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
   const [, navigate] = useLocation();
   
   // Get user data from context
-  const { user, isAdmin, isModerator } = useUser();
+  const { user, isAdmin } = useUser();
 
-  // Check if user is authorized to access this page
+  // Check if user is admin (only admins can manage users, not moderators)
   useEffect(() => {
     const checkAccess = () => {
       setLoading(true);
       
-      if (isAdmin || isModerator) {
+      if (isAdmin) {
         setIsAuthorized(true);
       } else {
         setIsAuthorized(false);
@@ -29,7 +29,7 @@ export default function TicketScannerPage() {
     };
     
     checkAccess();
-  }, [user, isAdmin, isModerator]);
+  }, [user, isAdmin]);
 
   if (loading) {
     return (
@@ -43,7 +43,7 @@ export default function TicketScannerPage() {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <h1 className="text-2xl font-bold mb-6">Access Denied</h1>
-        <p className="mb-6">You need admin or moderator privileges to access the ticket scanner.</p>
+        <p className="mb-6">You need administrator privileges to access the user management page.</p>
         <Button 
           onClick={() => navigate('/admin')}
           variant="default"
@@ -57,8 +57,8 @@ export default function TicketScannerPage() {
   return (
     <>
       <SEOHead 
-        title="Ticket Scanner | Admin"
-        description="Scan and validate event tickets"
+        title="User Management | Admin"
+        description="Manage users and their roles"
       />
       <div className="container mx-auto px-4 py-6">
         <div className="mb-6">
@@ -71,14 +71,14 @@ export default function TicketScannerPage() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Admin
           </Button>
-          <h1 className="text-2xl font-bold">Ticket Scanner</h1>
+          <h1 className="text-2xl font-bold">User Management</h1>
           <p className="text-muted-foreground">
-            Scan QR codes to validate tickets at the event entrance
+            View and manage user accounts and permissions
           </p>
         </div>
         
         <div className="pb-10">
-          <TicketScanner />
+          <UserManagement />
         </div>
       </div>
     </>
