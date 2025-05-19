@@ -1544,8 +1544,14 @@ export default function AdminSimplePage() {
               <div className="col-span-2">
                 <Label htmlFor="edit-ticket-event">Event</Label>
                 <Select 
-                  value={String(ticketFormData.eventId)} 
-                  onValueChange={(value) => setTicketFormData({...ticketFormData, eventId: Number(value)})}
+                  defaultValue={String(ticketFormData.eventId)} 
+                  onValueChange={(value) => {
+                    console.log("Event selected:", value);
+                    setTicketFormData({
+                      ...ticketFormData, 
+                      eventId: parseInt(value)
+                    });
+                  }}
                 >
                   <SelectTrigger id="edit-ticket-event">
                     <SelectValue placeholder="Select an event" />
