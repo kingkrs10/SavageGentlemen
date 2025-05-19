@@ -6,11 +6,6 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(value: number, eventId?: number, eventTitle?: string): string {
-  // Special case for Riddem Riot event
-  if (eventId === 4 && eventTitle?.includes("Riddem Riot")) {
-    return "$21.48";
-  }
-  
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -19,11 +14,6 @@ export function formatCurrency(value: number, eventId?: number, eventTitle?: str
 }
 
 export function formatDate(date: string | Date, eventId?: number, eventTitle?: string): string {
-  // Special case for Riddem Riot event (ID 4)
-  if (eventId === 4 && eventTitle?.includes("Riddem Riot")) {
-    return "June 27, 2025 at 11:00 PM";
-  }
-  
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   
   return dateObj.toLocaleDateString('en-US', {
