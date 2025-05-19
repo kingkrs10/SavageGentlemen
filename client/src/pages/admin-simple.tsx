@@ -1277,7 +1277,9 @@ export default function AdminSimplePage() {
                   date: eventFormData.date,
                   time: eventFormData.time || null,
                   location: eventFormData.location || null,
-                  imageUrl: eventFormData.imageUrl || null
+                  imageUrl: eventFormData.imageUrl || null,
+                  organizerName: eventFormData.organizerName || "Savage Gentlemen",
+                  organizerEmail: eventFormData.organizerEmail || "info@savagegentlemen.com"
                 };
                 
                 createEventMutation.mutate(newEvent, {
@@ -1457,7 +1459,9 @@ export default function AdminSimplePage() {
                   date: eventFormData.date,
                   time: eventFormData.time || null,
                   location: eventFormData.location || null,
-                  imageUrl: eventFormData.imageUrl || null
+                  imageUrl: eventFormData.imageUrl || null,
+                  organizerName: eventFormData.organizerName || "Savage Gentlemen",
+                  organizerEmail: eventFormData.organizerEmail || "info@savagegentlemen.com"
                 };
                 
                 editEventMutation.mutate(updatedEvent, {
