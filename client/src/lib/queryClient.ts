@@ -318,6 +318,29 @@ export const getQueryFn: <T>(options: {
     return await res.json();
   };
 
+/**
+ * Invalidates all event-related queries to ensure data consistency across the app
+ * @param eventId Optional specific event ID to invalidate
+ */
+export const invalidateEventQueries = (eventId?: number | string) => {
+  // Main event lists
+  queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+  queryClient.invalidateQueries({ queryKey: ['/api/events/featured'] });
+  queryClient.invalidateQueries({ queryKey: ['/api/upcoming-events'] });
+  
+  // If we have a specific event ID, invalidate that specific event's queries
+  if (eventId) {
+    queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}`] });
+    queryClient.invalidateQueries({ queryKey: [`/api/events/detail/${eventId}`] });
+    queryClient.invalidateQueries({ queryKey: [`/api/tickets/event/${eventId}`] });
+  }
+  
+  // Also invalidate related data that might be affected
+  queryClient.invalidateQueries({ queryKey: ['/api/tickets'] });
+  
+  console.log(`Event queries invalidated${eventId ? ` for event ${eventId}` : ''}`);
+};
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
