@@ -1866,6 +1866,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Ticket scanning endpoint for the ticket scanner component
+  router.post("/tickets/scan", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const { ticketCode } = req.body;
+      const user = (req as any).user;
+      
+      if (!ticketCode) {
+        return res.status(400).json({ 
+          valid: false,
+          error: "Ticket code is required" 
+        });
+      }
+      
+      // Extract orderId and ticketId from the ticket code
+      // Format: SGX-TIX-{ticketId}-{orderId}
+      const codeParts = ticketCode.split('-');
+      
+      if (codeParts.length !== 4 || codeParts[0] !== 'SGX' || codeParts[1] !== 'TIX') {
+        return res.status(400).json({ 
+          valid: false,
+          error: "Invalid ticket code format" 
+        });
+      }
+      
+      const ticketId = parseInt(codeParts[2]);
+      const orderId = parseInt(codeParts[3]);
+      
+      if (isNaN(ticketId) || isNaN(orderId)) {
+        return res.status(400).json({ 
+          valid: false,
+          error: "Invalid ticket code" 
+        });
+      }
+      
+      // Get ticket purchase (order) info
+      const ticketPurchase = await storage.getOrderById(orderId);
+      
+      if (!ticketPurchase) {
+        return res.status(404).json({ 
+          valid: false,
+          error: "Ticket purchase not found" 
+        });
+      }
+      
+      // Get ticket and event info
+      const ticket = await storage.getTicket(ticketId);
+      
+      if (!ticket) {
+        return res.status(404).json({ 
+          valid: false,
+          error: "Ticket information not found" 
+        });
+      }
+      
+      const event = await storage.getEvent(ticket.eventId);
+      
+      if (!event) {
+        return res.status(404).json({ 
+          valid: false,
+          error: "Event information not found" 
+        });
+      }
+      
+      // Check if this ticket has been scanned before
+      const existingScans = await storage.getTicketScansByTicketId(ticketId);
+      const alreadyScanned = existingScans.length > 0;
+      
+      // Create a new scan record if it hasn't been scanned
+      let scanRecord = null;
+      if (!alreadyScanned) {
+        scanRecord = await storage.createTicketScan({
+          ticketId: ticket.id,
+          orderId: ticketPurchase.id,
+          scannedBy: user.id,
+          scannedAt: new Date(),
+          notes: "Scanned via ticket scanner"
+        });
+      }
+      
+      // Format and return ticket info
+      const ticketInfo = {
+        ticketId: ticket.id,
+        orderId: ticketPurchase.id,
+        ticketName: ticket.name,
+        eventName: event.title,
+        eventDate: event.date,
+        eventLocation: event.location || "Not specified",
+        purchaseDate: ticketPurchase.createdAt,
+        scannedAt: alreadyScanned ? existingScans[0].scannedAt : scanRecord?.scannedAt
+      };
+      
+      return res.status(200).json({
+        valid: true,
+        alreadyScanned,
+        ticketInfo,
+        scannedAt: alreadyScanned ? existingScans[0].scannedAt : null
+      });
+    } catch (err) {
+      console.error("Error scanning ticket:", err);
+      return res.status(500).json({ 
+        valid: false,
+        error: "Failed to process ticket scan" 
+      });
+    }
+  });
+  
   // User management
   router.get("/admin/users", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
