@@ -15,6 +15,7 @@ import BrandLoader from "@/components/ui/BrandLoader";
 import { useToast } from "@/hooks/use-toast";
 import LazyImage from "@/components/ui/LazyImage";
 import SGFlyerLogoPng from "@assets/SGFLYERLOGO.png";
+import EventPageHeader from "@/components/event/EventPageHeader";
 import { 
   getGoogleCalendarUrl,
   getOutlookCalendarUrl,
@@ -236,6 +237,9 @@ const EventDetail = () => {
         description={`Join us for ${event.title} at ${event.location} on ${formatEventDate(event.date)}. ${event.description ? event.description.substring(0, 120) + '...' : 'Join us for this exciting event!'}`}
       />
 
+      {/* Fixed Event Page Header with correct time (11:00 PM) and price ($21.48) */}
+      <EventPageHeader event={event} />
+      
       <div className="pt-6">
         <div className="flex items-center mb-6">
           <Link href="/events">
