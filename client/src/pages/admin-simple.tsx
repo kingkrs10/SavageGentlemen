@@ -1163,6 +1163,31 @@ export default function AdminSimplePage() {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="eventOrganizerName" className="text-right">
+                Organizer Name
+              </Label>
+              <Input
+                id="eventOrganizerName"
+                className="col-span-3"
+                value={eventFormData.organizerName || "Savage Gentlemen"}
+                onChange={(e) => setEventFormData({...eventFormData, organizerName: e.target.value})}
+                placeholder="Savage Gentlemen"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="eventOrganizerEmail" className="text-right">
+                Organizer Email
+              </Label>
+              <Input
+                id="eventOrganizerEmail"
+                className="col-span-3"
+                type="email"
+                value={eventFormData.organizerEmail || "info@savagegentlemen.com"}
+                onChange={(e) => setEventFormData({...eventFormData, organizerEmail: e.target.value})}
+                placeholder="info@savagegentlemen.com"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="eventDate" className="text-right">
                 Date
               </Label>
@@ -1387,6 +1412,33 @@ export default function AdminSimplePage() {
                   />
                 )}
               </div>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="editEventOrganizerName" className="text-right">
+                Organizer Name
+              </Label>
+              <Input
+                id="editEventOrganizerName"
+                className="col-span-3"
+                value={eventFormData.organizerName || "Savage Gentlemen"}
+                onChange={(e) => setEventFormData({...eventFormData, organizerName: e.target.value})}
+                placeholder="Savage Gentlemen"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="editEventOrganizerEmail" className="text-right">
+                Organizer Email
+              </Label>
+              <Input
+                id="editEventOrganizerEmail"
+                className="col-span-3"
+                type="email"
+                value={eventFormData.organizerEmail || "info@savagegentlemen.com"}
+                onChange={(e) => setEventFormData({...eventFormData, organizerEmail: e.target.value})}
+                placeholder="info@savagegentlemen.com"
+              />
             </div>
           </div>
           <DialogFooter>
