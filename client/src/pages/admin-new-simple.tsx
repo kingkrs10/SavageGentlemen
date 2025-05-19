@@ -135,8 +135,13 @@ export default function AdminPage() {
       return apiRequest('POST', '/api/events', formData, true);
     },
     onSuccess: () => {
+      // Invalidate all event-related queries to ensure fresh data across the app
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
       queryClient.invalidateQueries({ queryKey: ['/api/events/featured'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/upcoming-events'] });
+      
+      console.log('All event-related queries invalidated for sync across site');
+      
       setCreateEventOpen(false);
       setEventForm({
         title: '',
@@ -183,8 +188,23 @@ export default function AdminPage() {
       return apiRequest('PUT', `/api/events/${selectedEvent.id}`, formData, true);
     },
     onSuccess: () => {
+      // Invalidate all event-related queries to ensure fresh data across the app
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
       queryClient.invalidateQueries({ queryKey: ['/api/events/featured'] });
+      
+      // Also invalidate the specific event details
+      if (selectedEvent?.id) {
+        queryClient.invalidateQueries({ queryKey: [`/api/events/${selectedEvent.id}`] });
+        // Invalidate any possible path variation for this event
+        queryClient.invalidateQueries({ queryKey: [`/api/events/detail/${selectedEvent.id}`] });
+      }
+      
+      // Invalidate any other event-related queries
+      queryClient.invalidateQueries({ queryKey: ['/api/upcoming-events'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tickets'] });
+      
+      console.log('All event-related queries invalidated for sync across site');
+      
       setEditEventOpen(false);
       setSelectedEvent(null);
       setEventForm({
