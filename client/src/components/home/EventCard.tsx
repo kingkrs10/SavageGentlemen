@@ -56,14 +56,14 @@ const EventCard = ({
                   <h3 className="text-xl font-heading">{title}</h3>
                 </Link>
                 <p className="text-sm text-gray-300 flex items-center mt-1">
-                  <Calendar className="w-4 h-4 mr-1" /> {formatDate(date)}
+                  <Calendar className="w-4 h-4 mr-1" /> {formatDate(date, id, title)}
                 </p>
                 <p className="text-sm text-gray-300 flex items-center mt-1">
                   <MapPin className="w-4 h-4 mr-1" /> {location}
                 </p>
               </div>
               <Badge variant="outline" className="bg-accent text-black font-bold px-3 py-1 rounded-full">
-                {formatCurrency(price)}
+                {formatCurrency(price, id, title)}
               </Badge>
             </div>
             <p className="text-sm mt-3">{description}</p>
@@ -142,11 +142,11 @@ const EventCard = ({
               <h3 className="text-xl font-heading">{title}</h3>
             </Link>
             <p className="text-sm text-gray-300 flex items-center mt-1">
-              <Calendar className="w-3 h-3 mr-1" /> {formatDate(date)}
+              <Calendar className="w-3 h-3 mr-1" /> {formatDate(date, id, title)}
             </p>
           </div>
           <Badge variant="outline" className="bg-accent text-black text-xs font-bold px-3 py-1 rounded-full">
-            {formatCurrency(price)}
+            {formatCurrency(price, id, title)}
           </Badge>
         </div>
         <p className="text-sm mt-2">{description}</p>
