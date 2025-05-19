@@ -182,38 +182,33 @@ const PostCard = ({ post, currentUser }: PostCardProps) => {
           <h4 className="text-xs font-semibold mb-2">Comments</h4>
           <div className="space-y-2">
             {comments.length > 0 ? comments.map((comment) => (
-              <div key={comment.id} className="flex items-start gap-2 group">
+              <div key={comment.id} className="flex items-start gap-2 group relative">
                 <Avatar className="w-6 h-6 mt-1">
                   <AvatarImage src={comment.user?.avatar} alt={comment.user?.displayName} />
                   <AvatarFallback>{comment.user?.displayName?.charAt(0) || '?'}</AvatarFallback>
                 </Avatar>
-                <div className="bg-gray-800 rounded-lg p-2 flex-1 relative">
+                <div className="bg-gray-800 rounded-lg p-2 flex-1">
                   <p className="text-[10px] font-semibold">{comment.user?.displayName || 'Anonymous'}</p>
                   <p className="text-xs">{comment.content}</p>
-                  
-                  {/* Admin Delete Button - Only visible for admins */}
-                  {currentUser?.role === 'admin' && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute top-1 right-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-0 h-4 w-4"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (window.confirm('Are you sure you want to delete this comment?')) {
-                          handleDeleteComment(comment.id);
-                        }
-                      }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        <line x1="10" y1="11" x2="10" y2="17"></line>
-                        <line x1="14" y1="11" x2="14" y2="17"></line>
-                      </svg>
-                    </Button>
-                  )}
                 </div>
+                
+                {/* Admin Delete Button - Only visible for admins on hover */}
+                {currentUser?.role === 'admin' && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-0 right-0 text-white h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-0"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (window.confirm('Are you sure you want to delete this comment?')) {
+                        handleDeleteComment(comment.id);
+                      }
+                    }}
+                  >
+                    <Trash2 size={12} />
+                  </Button>
+                )}
               </div>
             )) : (
               <p className="text-xs text-gray-400 py-1">No comments yet</p>
