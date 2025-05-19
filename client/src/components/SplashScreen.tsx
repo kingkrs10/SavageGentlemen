@@ -7,17 +7,45 @@ import IntroVideo from "@/assets/videos/intro.mp4";
 // Debug helper
 console.log("Loading SplashScreen component");
 
-const SplashScreen = () => {
+interface SplashScreenProps {
+  onComplete: () => void;
+}
+
+const SplashScreen = ({ onComplete }: SplashScreenProps) => {
   const [videoEnded, setVideoEnded] = useState(false);
+  const [animationComplete, setAnimationComplete] = useState(false);
   
-  // Auto-proceed to logo after video or if video fails to load
+  // Handle video end and trigger logo animation
+  const handleVideoEnd = () => {
+    console.log("Video ended, showing logo animation");
+    setVideoEnded(true);
+  };
+  
+  // Auto-proceed to logo after video or if video fails to load (fallback)
   useEffect(() => {
     const timer = setTimeout(() => {
-      setVideoEnded(true);
-    }, 7000); // Slightly longer fallback timeout for video
+      if (!videoEnded) {
+        console.log("Video play timeout reached, forcing logo animation");
+        setVideoEnded(true);
+      }
+    }, 7000); // Fallback timeout for video
     
     return () => clearTimeout(timer);
-  }, []);
+  }, [videoEnded]);
+  
+  // Handle the end of the logo animation and dismiss splash screen
+  useEffect(() => {
+    if (videoEnded && !animationComplete) {
+      // After video ends, wait for logo animation then dismiss splash
+      const timer = setTimeout(() => {
+        console.log("Logo animation complete, dismissing splash screen");
+        setAnimationComplete(true);
+        onComplete(); // Signal the parent component to dismiss splash
+      }, 3000); // Time for logo animation to play
+      
+      return () => clearTimeout(timer);
+    }
+  }, [videoEnded, animationComplete, onComplete]);
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center overflow-hidden">
@@ -32,8 +60,8 @@ const SplashScreen = () => {
             autoPlay 
             muted 
             playsInline
-            onEnded={() => setVideoEnded(true)}
-            onError={() => setVideoEnded(true)}
+            onEnded={handleVideoEnd}
+            onError={handleVideoEnd}
             style={{
               position: 'absolute',
               top: '50%',

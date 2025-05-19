@@ -119,13 +119,8 @@ function AppContent() {
         sessionStorage.setItem("hasShownSplash", "true");
       }
       
-      // Hide splash screen after 3 seconds to allow video to play
-      const timer = setTimeout(() => {
-        console.log("Splash screen timer completed, moving to main app");
-        setShowSplash(false);
-      }, 3000);
-      
-      return () => clearTimeout(timer);
+      // No automatic timeout - the splash screen will control its own dismissal
+      // after the video plays completely
     }
   }, [showSplash]);
 
