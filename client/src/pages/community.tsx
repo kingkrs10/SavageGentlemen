@@ -25,8 +25,17 @@ const Community = () => {
       try {
         const userString = localStorage.getItem("user");
         if (userString) {
-          const userData = JSON.parse(userString);
-          setCurrentUser(userData);
+          const parsedData = JSON.parse(userString);
+          // Handle different user data structures (regular user vs. nested structure)
+          if (parsedData.status && parsedData.data) {
+            // Handle nested structure from login response
+            const userData = parsedData.data.status ? parsedData.data.data : parsedData.data;
+            setCurrentUser(userData);
+          } else {
+            // Regular user object
+            setCurrentUser(parsedData);
+          }
+          console.log("Extracted user data:", userData);
         }
       } catch (error) {
         console.error("Error parsing user data:", error);
