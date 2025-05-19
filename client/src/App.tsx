@@ -37,6 +37,7 @@ const PasswordReset = lazy(() => import("@/pages/password-reset"));
 const AnalyticsDashboard = lazy(() => import("@/pages/analytics-dashboard"));
 const MyTickets = lazy(() => import("@/pages/my-tickets"));
 const TicketScanner = lazy(() => import("@/pages/ticket-scanner"));
+const UserManagement = lazy(() => import("@/pages/user-management"));
 
 function Router() {
   // Use location hook for tracking page views
@@ -74,6 +75,7 @@ function Router() {
         <Route path="/analytics" component={AnalyticsDashboard} />
         <Route path="/my-tickets" component={MyTickets} />
         <Route path="/ticket-scanner" component={TicketScanner} />
+        <Route path="/user-management" component={UserManagement} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
