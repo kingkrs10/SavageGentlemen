@@ -214,7 +214,27 @@ export default function AdminSimplePage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/ticket-scanner')}
+            className="flex items-center"
+          >
+            <Ticket className="h-4 w-4 mr-2" />
+            Ticket Scanner
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/user-management')}
+            className="flex items-center"
+          >
+            <Mail className="h-4 w-4 mr-2" />
+            User Management
+          </Button>
+        </div>
+      </div>
       
       <Tabs 
         value={activeTab} 
