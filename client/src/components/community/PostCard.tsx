@@ -42,17 +42,37 @@ const PostCard = ({ post, currentUser }: PostCardProps) => {
     mutationFn: async (content: string) => {
       if (!currentUser) throw new Error("You must be logged in to comment");
       
+      console.log("Current user data for comment:", currentUser);
+      
       const res = await apiRequest("POST", "/api/comments", {
         postId: post.id,
         userId: currentUser.id,
         content
       });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error("Error posting comment:", errorData);
+        throw new Error(errorData.message || "Failed to add comment");
+      }
+      
       return res.json();
     },
     onSuccess: () => {
       setCommentText("");
-      queryClient.invalidateQueries({ queryKey: ['/api/posts/' + post.id + '/comments'] });
+      queryClientInstance.invalidateQueries({ queryKey: ['/api/posts/' + post.id + '/comments'] });
+      toast({
+        title: "Comment added",
+        description: "Your comment has been added successfully",
+      });
     },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add comment",
+        variant: "destructive",
+      });
+    }
   });
   
   const handleSubmitComment = (e: React.FormEvent) => {
