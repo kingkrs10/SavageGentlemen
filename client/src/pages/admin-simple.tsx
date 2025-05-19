@@ -447,7 +447,7 @@ export default function AdminSimplePage() {
                           <tr key={ticket.id} className="border-b hover:bg-muted/20 transition-colors">
                             <td className="p-4 font-medium">{ticket.name}</td>
                             <td className="p-4">{ticket.eventName || 'Unknown Event'}</td>
-                            <td className="p-4 font-medium">${parseFloat(ticket.price).toFixed(2)}</td>
+                            <td className="p-4 font-medium">${(parseFloat(ticket.price) / 100).toFixed(2)}</td>
                             <td className="p-4">{ticket.quantity || 'Unlimited'}</td>
                             <td className="p-4">
                               <div className="flex items-center gap-2">
@@ -472,7 +472,7 @@ export default function AdminSimplePage() {
                                     // We need to create a new object with all the required fields
                                     const updatedFormData = {
                                       name: ticket.name,
-                                      price: ticket.price,
+                                      price: (parseFloat(ticket.price) / 100).toFixed(2),
                                       quantity: ticket.quantity?.toString() || '100',
                                       status: ticket.status || 'active',
                                       eventId: ticket.eventId,
@@ -1074,7 +1074,7 @@ export default function AdminSimplePage() {
                 // Create a new ticket object based on ticketFormData
                 const newTicket = {
                   name: ticketFormData.name,
-                  price: parseFloat(ticketFormData.price),
+                  price: Math.round(parseFloat(ticketFormData.price) * 100), // Convert to cents
                   quantity: parseInt(ticketFormData.quantity),
                   status: ticketFormData.status,
                   eventId: selectedEventId,

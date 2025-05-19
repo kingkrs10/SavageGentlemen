@@ -692,7 +692,7 @@ export default function AdminPage() {
                         <tr key={ticket.id} className="border-b">
                           <td className="p-3">{ticket.name}</td>
                           <td className="p-3">{ticket.eventName || 'Unknown Event'}</td>
-                          <td className="p-3">${parseFloat(ticket.price).toFixed(2)}</td>
+                          <td className="p-3">${(parseFloat(ticket.price) / 100).toFixed(2)}</td>
                           <td className="p-3">{ticket.quantity}</td>
                           <td className="p-3">
                             <div className="flex items-center gap-2">
