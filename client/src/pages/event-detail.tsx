@@ -302,7 +302,7 @@ const EventDetail = () => {
                           <h4 className="font-medium">{ticket.name}</h4>
                           {ticket.price > 0 && (
                             <p className="font-bold text-primary">
-                              ${ticket.price.toFixed(2)}
+                              ${(ticket.price / 100).toFixed(2)}
                             </p>
                           )}
                           {ticket.price === 0 && (
@@ -323,7 +323,7 @@ const EventDetail = () => {
                             });
                             
                             // Redirect to checkout page with ticket details
-                            window.location.href = `/checkout?eventId=${event.id}&ticketId=${ticket.id}&amount=${ticket.price}&currency=USD&title=${encodeURIComponent(event.title)}`;
+                            window.location.href = `/checkout?eventId=${event.id}&ticketId=${ticket.id}&amount=${ticket.price / 100}&currency=USD&title=${encodeURIComponent(event.title)}`;
                           }}
                         >
                           {ticket.price === 0 ? 'Claim Free Ticket' : 'Purchase Ticket'}
