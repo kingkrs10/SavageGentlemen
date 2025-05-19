@@ -961,6 +961,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return handleZodError(err, res);
     }
   });
+  
+  router.delete("/comments/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      // Only admins can delete comments
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized: Admin privileges required" });
+      }
+      
+      const commentId = parseInt(req.params.id);
+      if (isNaN(commentId)) {
+        return res.status(400).json({ message: "Invalid comment ID" });
+      }
+      
+      // Get the comment to find its post ID (needed for decrementing comment count)
+      const comment = await storage.getCommentById(commentId);
+      if (!comment) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+      
+      // Delete the comment
+      await storage.deleteComment(commentId);
+      
+      // Decrement the post's comment count
+      await storage.decrementPostCommentCount(comment.postId);
+      
+      return res.status(200).json({ message: "Comment deleted successfully" });
+    } catch (err) {
+      console.error("Error deleting comment:", err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // Add single product
   router.post("/products/add-product", async (req: Request, res: Response) => {

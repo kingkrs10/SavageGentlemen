@@ -121,8 +121,11 @@ export interface IStorage {
   
   // Comment operations
   getComment(id: number): Promise<Comment | undefined>;
+  getCommentById(id: number): Promise<Comment | undefined>;
   getCommentsByPostId(postId: number): Promise<Comment[]>;
   createComment(comment: InsertComment): Promise<Comment>;
+  deleteComment(id: number): Promise<boolean>;
+  decrementPostCommentCount(postId: number): Promise<void>;
   
   // Chat operations
   getChatMessagesByLivestreamId(livestreamId: number): Promise<ChatMessage[]>;
@@ -1820,15 +1823,43 @@ export class DatabaseStorage implements IStorage {
         comments: sql`${posts.comments} + 1`
       })
       .where(eq(posts.id, comment.postId));
-
+      
+    // Return comment with user data
     return {
       ...comment,
       user: {
         id: user.id,
-        displayName: user.displayName,
+        displayName: user.displayName || user.username,
         avatar: user.avatar
       }
     };
+  }
+  
+  async getCommentById(id: number): Promise<Comment | undefined> {
+    return await this.getComment(id);
+  }
+  
+  async deleteComment(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(comments)
+        .where(eq(comments.id, id))
+        .returning();
+        
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      return false;
+    }
+  }
+  
+  async decrementPostCommentCount(postId: number): Promise<void> {
+    await db
+      .update(posts)
+      .set({
+        comments: sql`GREATEST(${posts.comments} - 1, 0)`
+      })
+      .where(eq(posts.id, postId));
   }
 
   // Chat operations

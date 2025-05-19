@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { Heart, MessageSquare, Share } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Heart, MessageSquare, Share, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { formatTimeAgo } from "@/lib/utils";
 import { Post, User, Comment as CommentType } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
 
 interface PostCardProps {
   post: Post;
@@ -29,6 +30,8 @@ interface Comment {
 const PostCard = ({ post, currentUser }: PostCardProps) => {
   const [commentText, setCommentText] = useState("");
   const [showComments, setShowComments] = useState(false);
+  const { toast } = useToast();
+  const queryClientInstance = useQueryClient();
 
   const { data: comments = [] } = useQuery<Comment[]>({
     queryKey: ['/api/posts/' + post.id + '/comments'],
@@ -59,6 +62,40 @@ const PostCard = ({ post, currentUser }: PostCardProps) => {
     }
   };
   
+  // Comment deletion mutation
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (commentId: number) => {
+      if (!currentUser || currentUser.role !== 'admin') {
+        throw new Error("You must be an admin to delete comments");
+      }
+      
+      const res = await apiRequest("DELETE", `/api/comments/${commentId}`, null);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to delete comment");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClientInstance.invalidateQueries({ queryKey: ['/api/posts/' + post.id + '/comments'] });
+      toast({
+        title: "Comment deleted",
+        description: "The comment has been successfully removed",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete comment",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleDeleteComment = (commentId: number) => {
+    deleteCommentMutation.mutate(commentId);
+  };
+
   const toggleComments = () => {
     setShowComments(!showComments);
   };
@@ -145,14 +182,37 @@ const PostCard = ({ post, currentUser }: PostCardProps) => {
           <h4 className="text-xs font-semibold mb-2">Comments</h4>
           <div className="space-y-2">
             {comments.length > 0 ? comments.map((comment) => (
-              <div key={comment.id} className="flex items-start gap-2">
+              <div key={comment.id} className="flex items-start gap-2 group">
                 <Avatar className="w-6 h-6 mt-1">
                   <AvatarImage src={comment.user?.avatar} alt={comment.user?.displayName} />
                   <AvatarFallback>{comment.user?.displayName?.charAt(0) || '?'}</AvatarFallback>
                 </Avatar>
-                <div className="bg-gray-800 rounded-lg p-2 flex-1">
+                <div className="bg-gray-800 rounded-lg p-2 flex-1 relative">
                   <p className="text-[10px] font-semibold">{comment.user?.displayName || 'Anonymous'}</p>
                   <p className="text-xs">{comment.content}</p>
+                  
+                  {/* Admin Delete Button - Only visible for admins */}
+                  {currentUser?.role === 'admin' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute top-1 right-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-0 h-4 w-4"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (window.confirm('Are you sure you want to delete this comment?')) {
+                          handleDeleteComment(comment.id);
+                        }
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                      </svg>
+                    </Button>
+                  )}
                 </div>
               </div>
             )) : (
