@@ -1528,7 +1528,7 @@ export default function AdminSimplePage() {
                   // Send only fields that need to be updated
                   eventId: ticketFormData.eventId,
                   name: ticketFormData.name,
-                  price: ticketFormData.price,
+                  price: Math.round(parseFloat(ticketFormData.price) * 100), // Convert to cents
                   quantity: parseInt(ticketFormData.quantity),
                   status: ticketFormData.status,
                   description: ticketFormData.description || '',
