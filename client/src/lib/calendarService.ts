@@ -75,7 +75,7 @@ export const saveEventToCalendar = (event: Event): void => {
       start: toIcsDate(startDate),
       end: toIcsDate(endDate),
       title: event.title,
-      description: event.description,
+      description: event.description || 'Join us for this event by Savage Gentlemen',
       location: event.location,
       url: window.location.href,
       status: 'CONFIRMED' as const,

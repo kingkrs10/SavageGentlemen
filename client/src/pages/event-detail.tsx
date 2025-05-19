@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { API_ROUTES } from "@/lib/constants";
 import { Event } from "@/types";
 import { Button } from "@/components/ui/button";
+import { parseEventId, getEventUrl, createSlug } from "@/lib/utils/url-utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import SEOHead from "@/components/SEOHead";
@@ -31,9 +32,15 @@ import {
 import { FaGoogle, FaMicrosoft, FaYahoo, FaApple, FaCalendarAlt } from "react-icons/fa";
 
 const EventDetail = () => {
-  const [_, params] = useRoute("/events/:id");
+  // Support both URL formats: /events/:id and /events/:id/:slug
+  const [matchSimple, paramsSimple] = useRoute("/events/:id");
+  const [matchWithSlug, paramsWithSlug] = useRoute("/events/:id/:slug");
+  const [location, setLocation] = useLocation();
   const { toast } = useToast();
-  const eventId = params?.id;
+  
+  // Get the event ID from either URL format
+  const eventIdParam = matchWithSlug ? paramsWithSlug?.id : paramsSimple?.id;
+  const eventId = eventIdParam ? parseEventId(eventIdParam) : null;
   
   // Query to fetch event details
   const { 
@@ -53,6 +60,15 @@ const EventDetail = () => {
     },
     enabled: !!eventId,
   });
+  
+  // If we have the event data and user arrived via the simple URL (/events/id),
+  // redirect to the SEO-friendly URL with the slug
+  useEffect(() => {
+    if (matchSimple && event && !matchWithSlug) {
+      const seoFriendlyUrl = getEventUrl(event.id, event.title);
+      setLocation(seoFriendlyUrl, { replace: true });
+    }
+  }, [event, matchSimple, matchWithSlug, setLocation]);
 
   // Function to handle adding to calendar based on provider
   const handleAddToCalendar = (provider: string) => {
