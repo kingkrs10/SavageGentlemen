@@ -218,8 +218,8 @@ export default function AdminPage() {
   const deleteEventMutation = useMutation({
     mutationFn: (id: number) => apiRequest('DELETE', `/api/events/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/events/featured'] });
+      // Use the centralized utility function to ensure all event data is refreshed
+      invalidateEventQueries();
       toast({
         title: "Success",
         description: "Event deleted successfully",

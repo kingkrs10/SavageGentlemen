@@ -2,7 +2,7 @@ import React from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from 'wouter';
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, invalidateEventQueries } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import FileUploader from "@/components/ui/file-uploader";
@@ -137,7 +137,8 @@ export default function AdminSimplePage() {
       return await apiRequest('DELETE', `/api/admin/events/${eventId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+      // Use the centralized utility function to ensure all event-related data is refreshed
+      invalidateEventQueries();
     }
   });
   
@@ -168,7 +169,8 @@ export default function AdminSimplePage() {
       return await apiRequest('POST', '/api/admin/events', newEvent);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+      // Use the centralized utility function to ensure all event-related data is refreshed
+      invalidateEventQueries();
       setIsCreateEventModalOpen(false);
     }
   });
@@ -178,8 +180,10 @@ export default function AdminSimplePage() {
     mutationFn: async (event: any) => {
       return await apiRequest('PUT', `/api/admin/events/${event.id}`, event);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+    onSuccess: (_, variables) => {
+      // Use the centralized utility function to ensure all event-related data is refreshed
+      // Pass the specific event ID to ensure all related queries are invalidated
+      invalidateEventQueries(variables.id);
       setIsEditEventModalOpen(false);
     }
   });
