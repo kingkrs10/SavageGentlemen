@@ -1891,20 +1891,44 @@ export class DatabaseStorage implements IStorage {
   
   async updateTicket(id: number, ticketData: Partial<InsertTicket>): Promise<Ticket | undefined> {
     try {
+      console.log("Updating ticket with ID:", id, "Data:", JSON.stringify(ticketData, null, 2));
+      
       // Handle dates appropriately
       let dataToUpdate: any = {
-        ...ticketData,
         updatedAt: new Date()
       };
       
-      // Convert string dates to Date objects, or leave as null
+      // Only include fields that are actually present to avoid null overrides
+      Object.keys(ticketData).forEach(key => {
+        if (ticketData[key] !== undefined) {
+          dataToUpdate[key] = ticketData[key];
+        }
+      });
+      
+      // Safely process dates - convert string dates to Date objects, but only if they're valid
       if (typeof dataToUpdate.salesStartDate === 'string' && dataToUpdate.salesStartDate) {
-        dataToUpdate.salesStartDate = new Date(dataToUpdate.salesStartDate);
+        const startDate = new Date(dataToUpdate.salesStartDate);
+        if (!isNaN(startDate.getTime())) {
+          dataToUpdate.salesStartDate = startDate;
+        } else {
+          delete dataToUpdate.salesStartDate; // Remove invalid date
+        }
       }
       
       if (typeof dataToUpdate.salesEndDate === 'string' && dataToUpdate.salesEndDate) {
-        dataToUpdate.salesEndDate = new Date(dataToUpdate.salesEndDate);
+        const endDate = new Date(dataToUpdate.salesEndDate);
+        if (!isNaN(endDate.getTime())) {
+          dataToUpdate.salesEndDate = endDate;
+        } else {
+          delete dataToUpdate.salesEndDate; // Remove invalid date
+        }
       }
+      
+      // If dates are null/undefined in the input, keep them that way without trying to convert
+      if (ticketData.salesStartDate === null) dataToUpdate.salesStartDate = null;
+      if (ticketData.salesEndDate === null) dataToUpdate.salesEndDate = null;
+      
+      console.log("Processed update data:", JSON.stringify(dataToUpdate, null, 2));
       
       const [updatedTicket] = await db
         .update(tickets)
@@ -1912,6 +1936,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(tickets.id, id))
         .returning();
       
+      console.log("Updated ticket result:", updatedTicket ? "Success" : "No ticket returned");
       return updatedTicket || undefined;
     } catch (error) {
       console.error("Error updating ticket in database:", error);
