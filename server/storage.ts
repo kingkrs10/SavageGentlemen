@@ -1460,16 +1460,16 @@ export class DatabaseStorage implements IStorage {
       const orderItem = orderItemsList[0];
       
       // Check if this ticket has already been scanned
-      if (orderItem.scanDate) {
+      if (orderItem.scan_date) {
         return {
           valid: true,
           alreadyScanned: true,
-          scannedAt: orderItem.scanDate,
+          scannedAt: orderItem.scan_date,
           ticketInfo: {
             orderId,
             ticketId,
             purchaseDate: orderItem.createdAt,
-            scannedAt: orderItem.scanDate
+            scannedAt: orderItem.scan_date
           }
         };
       }
@@ -1499,8 +1499,8 @@ export class DatabaseStorage implements IStorage {
       const [updated] = await db
         .update(orderItemsTable)
         .set({ 
-          scanDate: new Date(),
-          updatedAt: new Date()
+          scan_date: new Date(),
+          updated_at: new Date()
         })
         .where(and(
           eq(orderItemsTable.orderId, orderId),
@@ -1518,7 +1518,7 @@ export class DatabaseStorage implements IStorage {
           eventDate: event?.date || null,
           eventLocation: event?.location || 'Unknown Location',
           purchaseDate: orderItem.createdAt,
-          scannedAt: updated.scanDate
+          scannedAt: updated.scan_date
         }
       };
     } catch (error) {
