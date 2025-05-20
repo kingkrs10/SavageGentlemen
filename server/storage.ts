@@ -1441,22 +1441,23 @@ export class DatabaseStorage implements IStorage {
       }
       
       // Get the order item with this order ID and ticket ID
-      const orderItems = await db
+      const orderItemsTable = orderItems; // Create a reference to the table
+      const orderItemsList = await db
         .select()
-        .from(orderItems)
+        .from(orderItemsTable)
         .where(and(
-          eq(orderItems.orderId, orderId),
-          eq(orderItems.ticketId, ticketId)
+          eq(orderItemsTable.orderId, orderId),
+          eq(orderItemsTable.ticketId, ticketId)
         ));
       
-      if (!orderItems || orderItems.length === 0) {
+      if (!orderItemsList || orderItemsList.length === 0) {
         return {
           valid: false,
           error: 'Ticket not found in our system.'
         };
       }
       
-      const orderItem = orderItems[0];
+      const orderItem = orderItemsList[0];
       
       // Check if this ticket has already been scanned
       if (orderItem.scanDate) {
@@ -1496,14 +1497,14 @@ export class DatabaseStorage implements IStorage {
       
       // Mark the ticket as scanned
       const [updated] = await db
-        .update(orderItems)
+        .update(orderItemsTable)
         .set({ 
           scanDate: new Date(),
           updatedAt: new Date()
         })
         .where(and(
-          eq(orderItems.orderId, orderId),
-          eq(orderItems.ticketId, ticketId)
+          eq(orderItemsTable.orderId, orderId),
+          eq(orderItemsTable.ticketId, ticketId)
         ))
         .returning();
       
