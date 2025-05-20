@@ -1629,85 +1629,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { ticketCode } = req.body;
       
       if (!ticketCode) {
-        return res.status(400).json({ error: "Ticket code is required" });
+        return res.status(400).json({ 
+          valid: false, 
+          error: "Ticket code is required" 
+        });
       }
+      
+      console.log(`Processing ticket scan for code: ${ticketCode}`);
       
       // Get current user
       const user = req.user;
       
       // Check if user is admin or moderator
       if (user.role !== 'admin' && user.role !== 'moderator') {
-        return res.status(403).json({ error: "You don't have permission to scan tickets" });
-      }
-      
-      // Find the ticket purchase by QR code
-      const ticketPurchase = await storage.getTicketPurchaseByQrCodeData(ticketCode);
-      
-      if (!ticketPurchase) {
-        return res.status(404).json({ 
-          valid: false,
-          error: "Invalid ticket code. Ticket not found."
+        return res.status(403).json({ 
+          valid: false, 
+          error: "You don't have permission to scan tickets" 
         });
       }
       
-      // Get ticket and event info
-      const ticket = await storage.getTicket(ticketPurchase.ticketId);
+      // Parse the ticket code
+      // Format: SGX-TIX-{ticketId}-{orderId}
+      const parts = ticketCode.split('-');
       
+      if (parts.length !== 4 || parts[0] !== 'SGX' || parts[1] !== 'TIX') {
+        console.log(`Invalid ticket format: ${ticketCode}`);
+        return res.status(400).json({ 
+          valid: false, 
+          error: "Invalid ticket format. Expected: SGX-TIX-ticketId-orderId" 
+        });
+      }
+      
+      const ticketId = parseInt(parts[2]);
+      const orderId = parseInt(parts[3]);
+      
+      if (isNaN(ticketId) || isNaN(orderId)) {
+        console.log(`Invalid ticket or order ID: ticketId=${parts[2]}, orderId=${parts[3]}`);
+        return res.status(400).json({ 
+          valid: false, 
+          error: "Invalid ticket identifier. Ticket ID and Order ID must be numbers." 
+        });
+      }
+      
+      console.log(`Processing scan for ticketId=${ticketId}, orderId=${orderId}`);
+      
+      // Verify the ticket exists
+      const ticket = await storage.getTicket(ticketId);
       if (!ticket) {
+        console.log(`Ticket not found in database: ${ticketId}`);
         return res.status(404).json({ 
-          valid: false,
-          error: "Ticket information not found."
+          valid: false, 
+          error: "Ticket not found in our system." 
         });
       }
       
+      // Get event information
       const event = await storage.getEvent(ticket.eventId);
-      
       if (!event) {
+        console.log(`Event not found for ticket: ${ticketId}`);
         return res.status(404).json({ 
-          valid: false,
-          error: "Event information not found."
+          valid: false, 
+          error: "Event information not found" 
         });
       }
       
-      // Check if this ticket has been scanned before
-      const existingScans = await storage.getTicketScansByOrderId(ticketPurchase.id);
-      const alreadyScanned = existingScans.length > 0;
+      // Check the order item in the database
+      const orderItem = await db
+        .select()
+        .from(orderItems)
+        .where(and(
+          eq(orderItems.orderId, orderId),
+          eq(orderItems.ticketId, ticketId)
+        ))
+        .then(rows => rows[0]);
       
-      // Create a new scan record if it hasn't been scanned
-      let scanRecord = null;
+      if (!orderItem) {
+        console.log(`No order item found for ticketId=${ticketId}, orderId=${orderId}`);
+        return res.status(404).json({ 
+          valid: false, 
+          error: "Ticket not found in our system." 
+        });
+      }
+      
+      // Check if this ticket has already been scanned
+      const alreadyScanned = orderItem.scan_date !== null;
+      let scannedAt = orderItem.scan_date;
+      
+      // Mark the ticket as scanned if it hasn't been scanned yet
       if (!alreadyScanned) {
-        scanRecord = await storage.createTicketScan({
-          ticketId: ticket.id,
-          orderId: ticketPurchase.id,
+        console.log(`Marking ticket as scanned: ticketId=${ticketId}, orderId=${orderId}`);
+        
+        // Update the order item with scan date
+        const [updated] = await db
+          .update(orderItems)
+          .set({ 
+            scan_date: new Date(),
+            updatedAt: new Date()
+          })
+          .where(and(
+            eq(orderItems.orderId, orderId),
+            eq(orderItems.ticketId, ticketId)
+          ))
+          .returning();
+        
+        scannedAt = updated.scan_date;
+        
+        // Also create a ticket scan record for reporting
+        await storage.createTicketScan({
+          ticketId: ticketId,
+          orderId: orderId,
           scannedBy: user.id,
           scannedAt: new Date(),
-          notes: "Scanned via admin scanner"
+          notes: "Scanned via ticket scanner"
         });
+      } else {
+        console.log(`Ticket already scanned at: ${scannedAt}`);
       }
       
       // Format and return ticket info
       const ticketInfo = {
-        ticketId: ticket.id,
-        orderId: ticketPurchase.id,
+        ticketId: ticketId,
+        orderId: orderId,
         ticketName: ticket.name,
         eventName: event.title,
         eventDate: event.date,
-        eventLocation: event.location,
-        purchaseDate: ticketPurchase.createdAt,
-        scannedAt: alreadyScanned ? existingScans[0].scannedAt : scanRecord?.scannedAt
+        eventLocation: event.location || "Not specified",
+        purchaseDate: orderItem.createdAt,
+        scannedAt: scannedAt
       };
       
       return res.status(200).json({
         valid: true,
         alreadyScanned,
         ticketInfo,
-        scannedAt: alreadyScanned ? existingScans[0].scannedAt : null
+        scannedAt
       });
     } catch (err) {
       console.error("Error scanning ticket:", err);
       return res.status(500).json({ 
         valid: false,
-        error: "Failed to process ticket scan"
+        error: "Failed to process ticket scan" 
       });
     }
   });
