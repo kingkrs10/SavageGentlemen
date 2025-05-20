@@ -247,10 +247,6 @@ function AppContent() {
     logout();
   };
 
-  if (showSplash) {
-    return <SplashScreen />;
-  }
-
   return (
     <ErrorBoundary>
       <SEOHead 
@@ -260,17 +256,28 @@ function AppContent() {
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <TooltipProvider>
           <div className="min-h-screen flex flex-col bg-background">
-            <Header
-              user={user}
-              onProfileClick={() => setShowAuthModal(true)}
-              onLogout={handleLogout}
-            />
-            <main className="flex-grow container mx-auto px-3 py-4 pb-16">
-              <ErrorBoundary>
-                <Router />
-              </ErrorBoundary>
-            </main>
-            <BottomNavigation />
+            {showSplash ? (
+              <SplashScreen 
+                onComplete={() => {
+                  console.log("Splash screen sequence complete, transitioning to main app");
+                  setShowSplash(false);
+                }}
+              />
+            ) : (
+              <>
+                <Header
+                  user={user}
+                  onProfileClick={() => setShowAuthModal(true)}
+                  onLogout={handleLogout}
+                />
+                <main className="flex-grow container mx-auto px-3 py-4 pb-16">
+                  <ErrorBoundary>
+                    <Router />
+                  </ErrorBoundary>
+                </main>
+                <BottomNavigation />
+              </>
+            )}
             <AuthModal
               isOpen={showAuthModal}
               onClose={() => setShowAuthModal(false)}
