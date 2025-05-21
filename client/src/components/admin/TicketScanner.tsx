@@ -155,52 +155,58 @@ const TicketScanner = () => {
     const isScanned = ticketInfo.scannedAt !== undefined;
     
     return (
-      <Card className={`mt-4 ${isScanned ? 'border-yellow-500' : 'border-green-500'}`}>
-        <CardHeader className={`${isScanned ? 'bg-yellow-500/10' : 'bg-green-500/10'}`}>
+      <Card className={`mt-4 shadow-md ${isScanned ? 'border-amber-500' : 'border-green-500'}`}>
+        <CardHeader className={`pb-3 ${isScanned ? 'bg-amber-500/10' : 'bg-green-500/10'}`}>
           <div className="flex items-center gap-2">
             {isScanned ? (
-              <CheckCircle className="h-6 w-6 text-yellow-500" />
+              <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-amber-500 shrink-0" />
             ) : (
-              <CheckCircle className="h-6 w-6 text-green-500" />
+              <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-500 shrink-0" />
             )}
-            <CardTitle>
+            <CardTitle className="text-lg sm:text-xl">
               {isScanned ? 'Ticket Already Scanned' : 'Ticket Valid'}
             </CardTitle>
           </div>
-          <CardDescription>
+          <CardDescription className="text-xs sm:text-sm">
             {isScanned && ticketInfo.scannedAt
-              ? `This ticket was previously scanned on ${new Date(ticketInfo.scannedAt).toLocaleString()}`
+              ? `This ticket was previously scanned on ${new Date(ticketInfo.scannedAt as string).toLocaleString()}`
               : 'This ticket is valid and has been marked as scanned'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="pt-4">
-          <div className="space-y-2">
-            <div className="font-bold text-xl">
+        <CardContent className="pt-3 sm:pt-4">
+          <div className="space-y-2 text-sm sm:text-base">
+            <div className="font-bold text-lg sm:text-xl">
               {ticketInfo.eventName}
             </div>
-            <div>
-              <span className="font-semibold">Ticket Type:</span> {ticketInfo.ticketName}
+            <div className="grid grid-cols-3 gap-1">
+              <span className="font-semibold col-span-1">Ticket:</span> 
+              <span className="col-span-2">{ticketInfo.ticketName}</span>
             </div>
-            <div>
-              <span className="font-semibold">Event Date:</span> {new Date(ticketInfo.eventDate).toLocaleString()}
+            <div className="grid grid-cols-3 gap-1">
+              <span className="font-semibold col-span-1">Date:</span> 
+              <span className="col-span-2">{new Date(ticketInfo.eventDate).toLocaleDateString()} {new Date(ticketInfo.eventDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
             </div>
-            <div>
-              <span className="font-semibold">Location:</span> {ticketInfo.eventLocation}
+            <div className="grid grid-cols-3 gap-1">
+              <span className="font-semibold col-span-1">Location:</span> 
+              <span className="col-span-2">{ticketInfo.eventLocation}</span>
             </div>
-            <div>
-              <span className="font-semibold">Ticket ID:</span> {ticketInfo.ticketId}
+            <div className="grid grid-cols-3 gap-1">
+              <span className="font-semibold col-span-1">Ticket ID:</span> 
+              <span className="col-span-2">{ticketInfo.ticketId}</span>
             </div>
-            <div>
-              <span className="font-semibold">Order ID:</span> {ticketInfo.orderId}
+            <div className="grid grid-cols-3 gap-1">
+              <span className="font-semibold col-span-1">Order ID:</span> 
+              <span className="col-span-2">{ticketInfo.orderId}</span>
             </div>
             {ticketInfo.scannedAt && (
-              <div>
-                <span className="font-semibold">Previously Scanned:</span> {new Date(ticketInfo.scannedAt).toLocaleString()}
+              <div className="grid grid-cols-3 gap-1 text-amber-700">
+                <span className="font-semibold col-span-1">Scanned:</span> 
+                <span className="col-span-2">{new Date(ticketInfo.scannedAt as string).toLocaleString()}</span>
               </div>
             )}
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="pt-2">
           <Button onClick={resetScanner} className="w-full">
             Scan Another Ticket
           </Button>
@@ -210,8 +216,10 @@ const TicketScanner = () => {
   };
   
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center px-4 py-4">
       <div className="w-full max-w-md">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-4 text-center">Ticket Scanner</h1>
+        
         {error && (
           <Alert variant="destructive" className="mb-4">
             <XCircle className="h-4 w-4" />
@@ -221,9 +229,9 @@ const TicketScanner = () => {
         )}
         
         {!ticketInfo && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Ticket Scanner</CardTitle>
+          <Card className="shadow-md">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-xl">Scan Ticket</CardTitle>
               <CardDescription>
                 Enter the ticket code from the QR code
               </CardDescription>
@@ -242,9 +250,14 @@ const TicketScanner = () => {
                     autoComplete="off"
                     disabled={loading}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Type or paste the ticket code that appears in the QR code
-                  </p>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-xs text-muted-foreground">
+                      Type or paste the ticket code that appears in the QR code
+                    </p>
+                    <p className="text-xs text-muted-foreground font-medium">
+                      Try "DEMO-TICKET" to see a working example
+                    </p>
+                  </div>
                 </div>
                 <Button 
                   type="submit" 

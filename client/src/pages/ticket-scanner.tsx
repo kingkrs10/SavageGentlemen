@@ -60,21 +60,17 @@ export default function TicketScannerPage() {
         title="Ticket Scanner | Admin"
         description="Scan and validate event tickets"
       />
-      <div className="container mx-auto px-4 py-6">
-        <div className="mb-6">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
+        <div className="mb-4">
           <Button
             variant="outline"
             size="sm"
-            className="mb-4"
+            className="mb-2 text-xs sm:text-sm"
             onClick={() => navigate('/admin')}
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
             Back to Admin
           </Button>
-          <h1 className="text-2xl font-bold">Ticket Scanner</h1>
-          <p className="text-muted-foreground">
-            Scan QR codes to validate tickets at the event entrance
-          </p>
         </div>
         
         <div className="pb-10">
