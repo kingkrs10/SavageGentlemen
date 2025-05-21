@@ -290,7 +290,7 @@ export default function AdminSimplePage() {
                   {events.map((event) => (
                     <Card key={event.id} className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200">
                       <div className="grid grid-cols-1 md:grid-cols-4">
-                        <div className="aspect-video md:aspect-square bg-muted md:col-span-1">
+                        <div className="aspect-[4/2] sm:aspect-[3/2] md:aspect-square bg-muted md:col-span-1">
                           {event.imageUrl ? (
                             <img 
                               src={event.imageUrl} 
@@ -299,31 +299,34 @@ export default function AdminSimplePage() {
                             />
                           ) : (
                             <div className="flex items-center justify-center h-full bg-muted">
-                              <Calendar className="h-10 w-10 text-muted-foreground" />
+                              <Calendar className="h-8 w-8 sm:h-10 sm:w-10 text-muted-foreground" />
                             </div>
                           )}
                         </div>
-                        <div className="md:col-span-3 p-6">
-                          <h3 className="text-xl font-bold mb-2">{event.title}</h3>
-                          <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div className="flex items-center text-sm text-muted-foreground">
-                              <Calendar className="h-4 w-4 mr-2" />
-                              {new Date(event.date).toLocaleDateString()}
-                              {event.time && ` at ${event.time}`}
+                        <div className="md:col-span-3 p-3 sm:p-4 md:p-6">
+                          <h3 className="text-lg sm:text-xl font-bold mb-2">{event.title}</h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mb-3 sm:mb-4">
+                            <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
+                              <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 flex-shrink-0" />
+                              <span className="truncate">
+                                {new Date(event.date).toLocaleDateString()}
+                                {event.time && ` at ${event.time}`}
+                              </span>
                             </div>
-                            <div className="flex items-center text-sm font-semibold">
-                              <DollarSignIcon className="h-4 w-4 mr-2" />
+                            <div className="flex items-center text-xs sm:text-sm font-semibold">
+                              <DollarSignIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 flex-shrink-0" />
                               ${parseFloat(event.price).toFixed(2)}
                             </div>
                           </div>
                           {event.description && (
-                            <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                            <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 line-clamp-2">
                               {event.description}
                             </p>
                           )}
                           <div className="flex flex-wrap gap-2">
                             <Button 
                               size="sm" 
+                              className="h-7 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"
                               onClick={() => {
                                 // Navigate to the tickets tab
                                 setActiveTab("tickets");
@@ -336,12 +339,13 @@ export default function AdminSimplePage() {
                                 });
                               }}
                             >
-                              <Ticket className="h-4 w-4 mr-1" />
-                              Manage Tickets
+                              <Ticket className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                              Tickets
                             </Button>
                             <Button 
                               size="sm"
                               variant="outline"
+                              className="h-7 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"
                               onClick={() => {
                                 setEventFormData({
                                   id: event.id,
@@ -365,6 +369,7 @@ export default function AdminSimplePage() {
                             <Button 
                               size="sm"
                               variant="destructive"
+                              className="h-7 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"
                               onClick={() => {
                                 if (confirm(`Are you sure you want to delete "${event.title}"? This action cannot be undone.`)) {
                                   console.log(`Deleting event ID: ${event.id}`);
@@ -454,16 +459,16 @@ export default function AdminSimplePage() {
                   <p>Loading tickets...</p>
                 </div>
               ) : tickets.length > 0 ? (
-                <div className="overflow-x-auto rounded-md border">
+                <div className="hidden sm:block overflow-x-auto rounded-md border">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b bg-muted/50">
-                        <th className="text-left p-4 font-medium">Name</th>
-                        <th className="text-left p-4 font-medium">Event</th>
-                        <th className="text-left p-4 font-medium">Price</th>
-                        <th className="text-left p-4 font-medium">Quantity</th>
-                        <th className="text-left p-4 font-medium">Status</th>
-                        <th className="text-left p-4 font-medium">Actions</th>
+                        <th className="text-left p-2 sm:p-4 font-medium text-xs sm:text-sm">Name</th>
+                        <th className="text-left p-2 sm:p-4 font-medium text-xs sm:text-sm">Event</th>
+                        <th className="text-left p-2 sm:p-4 font-medium text-xs sm:text-sm">Price</th>
+                        <th className="text-left p-2 sm:p-4 font-medium text-xs sm:text-sm">Quantity</th>
+                        <th className="text-left p-2 sm:p-4 font-medium text-xs sm:text-sm">Status</th>
+                        <th className="text-left p-2 sm:p-4 font-medium text-xs sm:text-sm">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -566,13 +571,124 @@ export default function AdminSimplePage() {
                         ))}
                     </tbody>
                   </table>
-                  
-                  {selectedEventId && (
-                    <div className="mt-6">
-                      <Button 
-                        onClick={() => {
-                          setTicketFormData({
-                            ...ticketFormData,
+                </div>
+                
+                {/* Mobile-optimized card view for tickets (visible only on small screens) */}
+                <div className="block sm:hidden space-y-4">
+                  {tickets
+                    .filter((ticket: any) => selectedEventId ? ticket.eventId === selectedEventId : true)
+                    .map((ticket: any) => (
+                      <Card key={ticket.id} className="shadow-sm border">
+                        <CardHeader className="py-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="text-sm font-bold line-clamp-1">{ticket.name}</CardTitle>
+                              <CardDescription className="text-xs mt-1">
+                                {events.find((e: any) => e.id === ticket.eventId)?.title || 'Unknown Event'}
+                              </CardDescription>
+                            </div>
+                            <div 
+                              className={`h-3 w-3 rounded-full flex-shrink-0 ${
+                                ticket.status === 'active' ? 'bg-green-500' : 'bg-red-500'
+                              }`}
+                            ></div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="py-2">
+                          <div className="grid grid-cols-2 gap-y-1 text-xs">
+                            <div className="font-medium">Price:</div>
+                            <div>${(parseFloat(ticket.price) / 100).toFixed(2)}</div>
+                            
+                            <div className="font-medium">Quantity:</div>
+                            <div>{ticket.quantity || 'Unlimited'}</div>
+                            
+                            <div className="font-medium">Status:</div>
+                            <div className={`capitalize ${ticket.status === 'active' ? 'text-green-600' : 'text-red-600'}`}>
+                              {ticket.status || 'Active'}
+                            </div>
+                          </div>
+                        </CardContent>
+                        <CardFooter className="flex justify-between py-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => {
+                              console.log(`Editing ticket ID: ${ticket.id}`);
+                              // Create updated form data
+                              const updatedFormData = {
+                                name: ticket.name,
+                                price: (parseFloat(ticket.price) / 100).toFixed(2),
+                                quantity: ticket.quantity?.toString() || '100',
+                                status: ticket.status || 'active',
+                                eventId: Number(ticket.eventId || 0),
+                                description: ticket.description || '',
+                                ticketType: 'essential',
+                                priceType: 'standard',
+                                minQuantityPerOrder: '',
+                                maxQuantityPerOrder: '',
+                                displayRemainingQuantity: true,
+                                payWhatYouCan: false,
+                                salesStartDate: ticket.salesStartDate || '',
+                                salesStartTime: ticket.salesStartTime || '',
+                                salesEndDate: ticket.salesEndDate || '',
+                                salesEndTime: ticket.salesEndTime || '',
+                                hideBeforeSalesStart: false,
+                                hideAfterSalesEnd: false,
+                                secretCode: '',
+                                hideIfSoldOut: true,
+                                hidePriceIfSoldOut: true
+                              };
+                              setTicketFormData(updatedFormData);
+                              setEditingTicketId(ticket.id);
+                              setIsEditTicketModalOpen(true);
+                              toast({
+                                title: "Edit Ticket",
+                                description: `Opening ticket editor for ${ticket.name}`,
+                              });
+                            }}
+                          >
+                            Edit
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => {
+                              if (confirm(`Are you sure you want to delete "${ticket.name}"?`)) {
+                                deleteTicketMutation.mutate(ticket.id, {
+                                  onSuccess: () => {
+                                    toast({
+                                      title: "Ticket Deleted",
+                                      description: `${ticket.name} has been deleted`,
+                                      variant: "destructive"
+                                    });
+                                  },
+                                  onError: (error) => {
+                                    console.error("Error deleting ticket:", error);
+                                    toast({
+                                      title: "Error Deleting Ticket",
+                                      description: "There was a problem deleting this ticket.",
+                                      variant: "destructive"
+                                    });
+                                  }
+                                });
+                              }
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                </div>
+                
+                {selectedEventId && (
+                  <div className="mt-6">
+                    <Button 
+                      onClick={() => {
+                        setTicketFormData({
+                          ...ticketFormData,
                             eventId: selectedEventId || 0,
                             name: `Ticket for ${events.find((e) => e.id === selectedEventId)?.title || 'Event'}`
                           });
