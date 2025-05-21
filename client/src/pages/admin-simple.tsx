@@ -213,24 +213,26 @@ export default function AdminSimplePage() {
   });
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
+    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-7xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">Admin Dashboard</h1>
+        <div className="flex flex-wrap gap-2 mt-2 md:mt-0">
           <Button 
             variant="outline" 
             onClick={() => navigate('/ticket-scanner')}
-            className="flex items-center"
+            className="flex items-center text-xs sm:text-sm"
+            size="sm"
           >
-            <Ticket className="h-4 w-4 mr-2" />
+            <Ticket className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
             Ticket Scanner
           </Button>
           <Button 
             variant="outline" 
             onClick={() => navigate('/user-management')}
-            className="flex items-center"
+            className="flex items-center text-xs sm:text-sm"
+            size="sm"
           >
-            <Mail className="h-4 w-4 mr-2" />
+            <Mail className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
             User Management
           </Button>
         </div>
@@ -241,10 +243,10 @@ export default function AdminSimplePage() {
         onValueChange={setActiveTab}
         className="w-full"
       >
-        <TabsList className="grid grid-cols-4 mb-8">
+        <TabsList className="grid grid-cols-4 mb-4 sm:mb-8 text-xs sm:text-sm">
           <TabsTrigger value="events">Events</TabsTrigger>
           <TabsTrigger value="tickets">Tickets</TabsTrigger>
-          <TabsTrigger value="email">Email Marketing</TabsTrigger>
+          <TabsTrigger value="email">Email</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
         

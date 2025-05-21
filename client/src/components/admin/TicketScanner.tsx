@@ -128,7 +128,7 @@ const TicketScanner = () => {
           toast({
             title: "Ticket Already Scanned",
             description: `This ticket was previously scanned on ${new Date(result.scannedAt).toLocaleString()}`,
-            variant: "warning"
+            variant: "destructive"
           });
         } else {
           // Success for newly scanned tickets
@@ -168,7 +168,7 @@ const TicketScanner = () => {
             </CardTitle>
           </div>
           <CardDescription>
-            {isScanned
+            {isScanned && ticketInfo.scannedAt
               ? `This ticket was previously scanned on ${new Date(ticketInfo.scannedAt).toLocaleString()}`
               : 'This ticket is valid and has been marked as scanned'}
           </CardDescription>
