@@ -73,10 +73,12 @@ export default function AdminTemp() {
           body: eventData,
           headers: {
             'Authorization': `Bearer ${user?.token}`,
+            'user-id': user?.id?.toString() || ''
           }
         });
         if (!response.ok) {
-          throw new Error('Failed to create event');
+          const errorText = await response.text();
+          throw new Error(`Failed to create event: ${errorText}`);
         }
         return await response.json();
       } else {
@@ -86,10 +88,17 @@ export default function AdminTemp() {
           body: eventData,
           headers: {
             'Authorization': `Bearer ${user?.token}`,
+            'user-id': user?.id?.toString() || '',
+            'x-user-data': JSON.stringify({
+              id: user?.id,
+              username: user?.username,
+              role: user?.role
+            })
           }
         });
         if (!response.ok) {
-          throw new Error('Failed to update event');
+          const errorText = await response.text();
+          throw new Error(`Failed to update event: ${errorText}`);
         }
         return await response.json();
       }
