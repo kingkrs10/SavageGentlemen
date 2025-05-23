@@ -22,10 +22,6 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from '@/lib/queryClient';
-import QrReader from 'react-qr-scanner';
-
-// Add TypeScript declaration for react-qr-scanner
-declare module 'react-qr-scanner';
 
 interface TicketInfo {
   ticketId: number;
@@ -43,9 +39,7 @@ const TicketScanner = () => {
   const [ticketInfo, setTicketInfo] = useState<TicketInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [scanMode, setScanMode] = useState<'manual' | 'camera'>('manual');
-  const [cameraPermission, setCameraPermission] = useState<boolean | null>(null);
-  const [facingMode, setFacingMode] = useState<'rear' | 'front'>('rear');
+  const [scanMode, setScanMode] = useState<'manual' | 'upload'>('manual');
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   
@@ -71,37 +65,36 @@ const TicketScanner = () => {
     }
   };
   
-  // Function to handle QR scanner errors
-  const handleScanError = (err: any) => {
-    console.error('QR Scanner error:', err);
-    if (err.name === 'NotAllowedError') {
-      setCameraPermission(false);
-      setError('Camera access denied. Please enable camera permissions.');
-    } else {
-      setError(`Scanner error: ${err.message || 'Unknown error'}`);
+  // Reference for the file input element
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Function to handle file input for QR code image upload
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setError(null);
+      setLoading(true);
+      
+      // Show feedback to the user
+      toast({
+        title: "Processing Image",
+        description: "Please enter the ticket code shown in the QR image",
+        variant: "default"
+      });
+      
+      setLoading(false);
     }
   };
   
-  // Function to handle successful QR code scan
-  const handleScanSuccess = (data: any) => {
-    if (data && !loading && !ticketInfo) {
-      // Extract the text from scanned QR code
-      const scannedText = data.text;
-      if (scannedText && scannedText.trim() !== '') {
-        setTicketCode(scannedText);
-        validateTicket(scannedText);
-      }
+  // Function to trigger file input click
+  const triggerFileUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     }
   };
   
-  // Function to toggle camera facing mode
-  const toggleCamera = () => {
-    setFacingMode(facingMode === 'rear' ? 'front' : 'rear');
-  };
-  
-  // Function to toggle between manual and camera scanning modes
+  // Function to toggle between manual and upload scanning modes
   const toggleScanMode = () => {
-    setScanMode(scanMode === 'manual' ? 'camera' : 'manual');
+    setScanMode(scanMode === 'manual' ? 'upload' : 'manual');
     setError(null);
   };
   
@@ -301,14 +294,22 @@ const TicketScanner = () => {
               </Button>
               <Button
                 type="button"
-                variant={scanMode === 'camera' ? 'default' : 'outline'}
+                variant={scanMode === 'upload' ? 'default' : 'outline'}
                 size="sm"
                 className="flex items-center text-xs sm:text-sm"
-                onClick={() => setScanMode('camera')}
+                onClick={() => setScanMode('upload')}
               >
                 <Camera className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                Camera Scan
+                Take Photo
               </Button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+              />
             </div>
           </div>
         )}
@@ -374,63 +375,49 @@ const TicketScanner = () => {
           </Card>
         )}
         
-        {!ticketInfo && scanMode === 'camera' && (
-          <Card className="shadow-md overflow-hidden">
+        {!ticketInfo && scanMode === 'upload' && (
+          <Card className="shadow-md">
             <CardHeader className="pb-2 sm:pb-3">
-              <CardTitle className="text-lg sm:text-xl">Scan QR Code</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">Take a Photo</CardTitle>
               <CardDescription className="text-xs sm:text-sm">
-                Point your camera at the ticket QR code
+                Take a photo of the ticket QR code
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-0">
-              <div className="relative">
-                <div className="aspect-square overflow-hidden bg-black">
-                  <QrReader
-                    delay={300}
-                    onError={handleScanError}
-                    onScan={handleScanSuccess}
-                    style={{ width: '100%' }}
-                    constraints={{
-                      video: {
-                        facingMode: facingMode === 'rear' ? 'environment' : 'user'
-                      }
-                    }}
-                  />
-                  {loading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                      <Loader2 className="h-10 w-10 animate-spin text-white" />
-                    </div>
-                  )}
+            <CardContent>
+              <div className="flex flex-col items-center space-y-4">
+                <div className="w-full aspect-square max-w-[250px] border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center bg-gray-50">
+                  <div className="text-center p-4">
+                    <Camera className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-500">Take a clear photo of the QR code</p>
+                  </div>
                 </div>
                 
-                <div className="absolute top-3 right-3">
-                  <Button 
-                    onClick={toggleCamera} 
-                    size="sm"
-                    variant="outline"
-                    className="h-8 w-8 p-0 bg-white/90 hover:bg-white"
-                  >
-                    <Smartphone className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <div className="p-4">
-                <div className="flex flex-col space-y-1 mb-3">
+                <Button 
+                  onClick={triggerFileUpload} 
+                  className="w-full flex items-center justify-center h-12 text-base"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="mr-2 h-5 w-5" />
+                      Open Camera
+                    </>
+                  )}
+                </Button>
+                
+                <div className="flex flex-col space-y-1 w-full">
                   <p className="text-xs text-muted-foreground">
-                    Position the QR code within the camera view
+                    Alternative method for checking tickets
                   </p>
                   <p className="text-xs text-muted-foreground font-medium">
                     Make sure there's good lighting for best results
                   </p>
                 </div>
-                {cameraPermission === false && (
-                  <Alert variant="destructive" className="mb-2">
-                    <AlertTitle className="text-sm">Camera Access Denied</AlertTitle>
-                    <AlertDescription className="text-xs">
-                      Please allow camera access in your browser settings to use the scanner.
-                    </AlertDescription>
-                  </Alert>
-                )}
               </div>
             </CardContent>
           </Card>
