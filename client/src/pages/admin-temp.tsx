@@ -674,15 +674,6 @@ export default function AdminTemp() {
                         >
                           {isCheckingLocalEvents ? "Checking..." : "Check for Deleted Events"}
                         </Button>
-                        <Button 
-                          onClick={() => checkForDeletedEvents('', 'recent')}
-                          className="h-8 text-xs"
-                          variant="outline"
-                          size="sm"
-                          disabled={isCheckingLocalEvents}
-                        >
-                          Check Past Hour Deletions
-                        </Button>
                       </div>
                       <Button 
                         onClick={() => navigate('/events')}
