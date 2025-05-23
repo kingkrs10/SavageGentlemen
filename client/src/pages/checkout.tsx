@@ -35,6 +35,7 @@ export default function Checkout() {
   const [processingFreeTicket, setProcessingFreeTicket] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [paymentMethod, setPaymentMethod] = useState('card'); // Default to credit card
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   
