@@ -63,10 +63,37 @@ export default function AdminTemp() {
     queryFn: () => apiRequest('GET', '/api/events').then(res => res.json())
   });
   
-  // Event Mutations - Not used in the new implementation
+  // Event Mutations
   const updateEventMutation = useMutation({
-    mutationFn: async (eventData: any) => {
-      return null;
+    mutationFn: async (eventData: FormData) => {
+      const eventId = eventFormData.id;
+      if (eventId === 0) {
+        // Create new event
+        const response = await fetch('/api/events', {
+          method: 'POST',
+          body: eventData,
+          headers: {
+            'Authorization': `Bearer ${user?.token}`,
+          }
+        });
+        if (!response.ok) {
+          throw new Error('Failed to create event');
+        }
+        return await response.json();
+      } else {
+        // Update existing event
+        const response = await fetch(`/api/events/${eventId}`, {
+          method: 'PUT',
+          body: eventData,
+          headers: {
+            'Authorization': `Bearer ${user?.token}`,
+          }
+        });
+        if (!response.ok) {
+          throw new Error('Failed to update event');
+        }
+        return await response.json();
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
@@ -133,15 +160,16 @@ export default function AdminTemp() {
         formData.append('retainExistingImages', 'true');
       }
       
-      const eventId = eventFormData.id;
-      
-      // Handle the update or creation using FormData
-      if (eventId === 0) {
-        // Create new event
-        const response = await fetch('/api/events', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${user?.token}`,
+      // Submit the form data through the mutation
+      updateEventMutation.mutate(formData);
+    } catch (error) {
+      console.error("Error submitting event form:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit event data",
+        variant: "destructive"
+      });
+    }
             'user-id': user?.id?.toString() || ''
           },
           body: formData
