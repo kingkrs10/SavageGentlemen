@@ -79,17 +79,30 @@ const deletedEventsStore: Map<number, { event: Event, deletedAt: Date }> = new M
 
 // Function to store a deleted event
 const storeDeletedEvent = (event: Event) => {
+  console.log(`Storing deleted event: ${event.title} (ID: ${event.id})`);
   deletedEventsStore.set(event.id, { 
     event, 
     deletedAt: new Date() 
   });
   
   // Clean up older deleted events (keep for 24 hours max)
+  cleanupOldDeletedEvents();
+  
+  // Log what's in the store after storing
+  console.log(`Current deleted event store has ${deletedEventsStore.size} items`);
+  deletedEventsStore.forEach((value, key) => {
+    console.log(`- Deleted event in store: ID ${key}, Title: ${value.event.title}, Deleted at: ${value.deletedAt}`);
+  });
+};
+
+// Clean up older deleted events (keep for 24 hours max)
+const cleanupOldDeletedEvents = () => {
   const twentyFourHoursAgo = new Date();
   twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
   
   deletedEventsStore.forEach((value, key) => {
     if (value.deletedAt < twentyFourHoursAgo) {
+      console.log(`Cleaning up old deleted event: ${value.event.title} (ID: ${key})`);
       deletedEventsStore.delete(key);
     }
   });

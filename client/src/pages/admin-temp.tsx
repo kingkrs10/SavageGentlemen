@@ -27,6 +27,53 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 
+// Helper functions for managing deleted events in localStorage
+const storeDeletedEventLocally = (event) => {
+  try {
+    // Get existing deleted events
+    const existingEvents = JSON.parse(localStorage.getItem('sgDeletedEvents') || '[]');
+    
+    // Add new event with timestamp
+    existingEvents.push({
+      event,
+      deletedAt: new Date().toISOString()
+    });
+    
+    // Clean up events older than 24 hours
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+    
+    const filteredEvents = existingEvents.filter(item => 
+      new Date(item.deletedAt) > twentyFourHoursAgo
+    );
+    
+    // Save back to localStorage
+    localStorage.setItem('sgDeletedEvents', JSON.stringify(filteredEvents));
+    console.log(`Stored deleted event in localStorage: ${event.title}`);
+  } catch (error) {
+    console.error("Error storing deleted event in localStorage:", error);
+  }
+};
+
+const getDeletedEventsFromLocal = () => {
+  try {
+    const events = JSON.parse(localStorage.getItem('sgDeletedEvents') || '[]');
+    return events;
+  } catch (error) {
+    console.error("Error retrieving deleted events from localStorage:", error);
+    return [];
+  }
+};
+
+const getLastDeletedEventFromLocal = () => {
+  const events = getDeletedEventsFromLocal();
+  if (events.length === 0) return null;
+  
+  // Sort by deletedAt (newest first)
+  events.sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt));
+  return events[0];
+};
+
 export default function AdminTemp() {
   const [, navigate] = useLocation();
   const { isAdmin, user } = useUser();
@@ -64,28 +111,97 @@ export default function AdminTemp() {
     queryFn: () => apiRequest('GET', '/api/events').then(res => res.json())
   });
   
-  // Fetch last deleted event
-  const { 
-    data: lastDeletedEventData,
-    refetch: refetchLastDeletedEvent,
-    isLoading: isLoadingLastDeletedEvent 
-  } = useQuery({
-    queryKey: ['/api/admin/events/last-deleted'],
-    queryFn: async () => {
-      try {
-        const response = await apiRequest('GET', '/api/admin/events/last-deleted');
-        if (response.ok) {
-          return await response.json();
-        }
-        return null;
-      } catch (error) {
-        console.log("No recently deleted events found");
-        return null;
+  // Function for checking deleted events in localStorage
+  const [isCheckingLocalEvents, setIsCheckingLocalEvents] = useState(false);
+  
+  const checkForDeletedEvents = () => {
+    setIsCheckingLocalEvents(true);
+    try {
+      const lastDeletedItem = getLastDeletedEventFromLocal();
+      
+      if (lastDeletedItem) {
+        // Set the last deleted event in state for UI display
+        setLastDeletedEvent(lastDeletedItem.event);
+        setIsUndoAlertVisible(true);
+        
+        toast({
+          title: "Deleted Event Found",
+          description: `Found deleted event: "${lastDeletedItem.event.title}". You can now restore it.`,
+          action: (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleRestoreEvent(lastDeletedItem.event)}
+            >
+              Restore
+            </Button>
+          ),
+        });
+      } else {
+        toast({
+          title: "No Deleted Events",
+          description: "No recently deleted events were found."
+        });
       }
-    },
-    enabled: false, // Don't run automatically on page load
-    retry: false // Don't retry if it fails
-  });
+    } catch (error) {
+      console.error("Error checking for deleted events:", error);
+      toast({
+        title: "Error",
+        description: "Failed to check for deleted events",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCheckingLocalEvents(false);
+    }
+  };
+  
+  // Function to restore an event from localStorage
+  const handleRestoreEvent = async (eventToRestore) => {
+    try {
+      // Create formData from the stored event
+      const formData = new FormData();
+      formData.append('title', eventToRestore.title);
+      formData.append('description', eventToRestore.description || '');
+      formData.append('date', new Date(eventToRestore.date).toISOString().split('T')[0]);
+      formData.append('time', eventToRestore.time || '');
+      formData.append('location', eventToRestore.location);
+      formData.append('imageUrl', eventToRestore.imageUrl || '');
+      formData.append('category', eventToRestore.category || '');
+      formData.append('price', String(eventToRestore.price || 0));
+      
+      // Create the event
+      const response = await apiRequest('POST', '/api/admin/events', formData);
+      if (!response.ok) {
+        throw new Error('Failed to restore event');
+      }
+      
+      // Remove from localStorage
+      const allEvents = getDeletedEventsFromLocal();
+      const updatedEvents = allEvents.filter(item => item.event.id !== eventToRestore.id);
+      localStorage.setItem('sgDeletedEvents', JSON.stringify(updatedEvents));
+      
+      // Success notification
+      setIsUndoAlertVisible(false);
+      setLastDeletedEvent(null);
+      toast({
+        title: "Event Restored",
+        description: `${eventToRestore.title} has been restored successfully!`
+      });
+      
+      // Refresh events list
+      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+      
+      return await response.json();
+    } catch (error) {
+      console.error("Error restoring event:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to restore event",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
   
   // Restore deleted event mutation
   const restoreEventMutation = useMutation({
@@ -464,23 +580,7 @@ export default function AdminTemp() {
                     </div>
                     <div className="flex space-x-2">
                       <Button 
-                        onClick={() => {
-                          refetchLastDeletedEvent().then((result) => {
-                            if (result.data && result.data.event) {
-                              setLastDeletedEvent(result.data.event);
-                              setIsUndoAlertVisible(true);
-                              toast({
-                                title: "Deleted Event Found",
-                                description: `Found deleted event: "${result.data.event.title}". You can now restore it.`
-                              });
-                            } else {
-                              toast({
-                                title: "No Deleted Events",
-                                description: "No recently deleted events were found."
-                              });
-                            }
-                          });
-                        }}
+                        onClick={checkForDeletedEvents}
                         className="h-8 text-xs"
                         variant="outline"
                         size="sm"
