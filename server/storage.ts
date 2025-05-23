@@ -118,6 +118,8 @@ export interface IStorage {
   createEvent(event: InsertEvent): Promise<Event>;
   updateEvent(id: number, eventData: Partial<InsertEvent>): Promise<Event | undefined>;
   deleteEvent(id: number): Promise<boolean>;
+  getLastDeletedEvent(): Promise<{ event: Event, deletedAt: Date } | null>;
+  restoreDeletedEvent(id: number): Promise<Event | null>;
   
   // Product operations
   getProduct(id: number): Promise<Product | undefined>;
