@@ -45,7 +45,7 @@ export default function AdminTemp() {
     location: "",
     imageUrl: "",
     category: "",
-    price: "", images: [],
+    price: "",
     images: [] as string[]
   });
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
@@ -748,6 +748,41 @@ export default function AdminTemp() {
                             variant="destructive"
                             className="absolute top-1 right-1 h-5 w-5"
                             onClick={() => removeImage(index)}
+                          >
+                            <X className="h-2 w-2" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Display existing images from database */}
+                {selectedEvent && eventFormData.images && eventFormData.images.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm text-muted-foreground mb-2">Existing Images ({eventFormData.images.length})</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {eventFormData.images.map((imageUrl, index) => (
+                        <div key={`existing-${index}`} className="relative aspect-square rounded-md overflow-hidden bg-secondary/30">
+                          <img 
+                            src={imageUrl} 
+                            alt={`Existing image ${index + 1}`} 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = "https://placehold.co/400x400/222222/cccccc?text=Image+Error";
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="destructive"
+                            className="absolute top-1 right-1 h-5 w-5"
+                            onClick={() => {
+                              const updatedImages = [...eventFormData.images];
+                              updatedImages.splice(index, 1);
+                              setEventFormData({...eventFormData, images: updatedImages});
+                            }}
                           >
                             <X className="h-2 w-2" />
                           </Button>
