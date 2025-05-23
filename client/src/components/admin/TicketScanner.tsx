@@ -76,10 +76,20 @@ const TicketScanner = () => {
       
       // Show feedback to the user
       toast({
-        title: "Processing Image",
-        description: "Please enter the ticket code shown in the QR image",
+        title: "Photo Captured",
+        description: "After taking the photo, please manually enter the ticket code shown",
         variant: "default"
       });
+      
+      // After processing image, switch to manual mode for entering the code
+      setScanMode('manual');
+      
+      // Focus on the input field after a short delay
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 500);
       
       setLoading(false);
     }
