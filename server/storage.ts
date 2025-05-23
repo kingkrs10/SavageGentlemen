@@ -501,12 +501,27 @@ export class MemStorage implements IStorage {
   }
   
   async deleteEvent(id: number): Promise<boolean> {
-    const event = await this.getEvent(id);
-    if (!event) {
+    try {
+      // Check if event exists
+      const event = await this.getEvent(id);
+      if (!event) {
+        console.log(`Event with ID ${id} not found for deletion`);
+        return false;
+      }
+      
+      console.log(`Deleting event with ID: ${id}`);
+      
+      // Delete the event from the database
+      const result = await db
+        .delete(events)
+        .where(eq(events.id, id));
+      
+      console.log(`Event deletion result:`, result);
+      return true;
+    } catch (error) {
+      console.error(`Error deleting event with ID ${id}:`, error);
       return false;
     }
-    
-    return this.events.delete(id);
   }
 
   // Product operations
