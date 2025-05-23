@@ -108,19 +108,20 @@ export default function AdminTemp() {
       
       // Add main image if selected
       if (uploadedImage) {
-        formData.append('mainImage', uploadedImage);
+        formData.append('image', uploadedImage);
       } else if (eventFormData.imageUrl) {
         formData.append('imageUrl', eventFormData.imageUrl);
       }
       
       // Add all additional images
-      uploadedImages.forEach((image, index) => {
-        formData.append(`additionalImages`, image);
+      uploadedImages.forEach((image) => {
+        formData.append('additionalImages', image);
       });
       
       // Add existing additional image URLs if there are any
       if (eventFormData.images && eventFormData.images.length > 0) {
-        formData.append('existingAdditionalImages', JSON.stringify(eventFormData.images));
+        formData.append('additionalImages', JSON.stringify(eventFormData.images));
+        formData.append('retainExistingImages', 'true');
       }
       
       const eventId = eventFormData.id;
