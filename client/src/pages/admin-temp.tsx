@@ -500,17 +500,29 @@ export default function AdminTemp() {
                                   onClick={async () => {
                                     if (confirm(`Are you sure you want to delete ${event.title}?`)) {
                                       try {
-                                        const response = await apiRequest('DELETE', `/api/events/${event.id}`);
+                                        // Use the admin-specific endpoint to ensure proper authorization
+                                        const response = await apiRequest('DELETE', `/api/admin/events/${event.id}`);
                                         if (response.ok) {
                                           queryClient.invalidateQueries({ queryKey: ['/api/events'] });
                                           toast({
                                             title: "Event Deleted",
-                                            description: `${event.title} has been deleted`
+                                            description: `${event.title} has been deleted successfully`
                                           });
                                         } else {
-                                          throw new Error(`Failed to delete event: ${response.statusText}`);
+                                          // Get detailed error message if available
+                                          let errorMessage = `Failed to delete event: ${response.statusText}`;
+                                          try {
+                                            const errorData = await response.json();
+                                            if (errorData && errorData.message) {
+                                              errorMessage = errorData.message;
+                                            }
+                                          } catch (e) {
+                                            // If we can't parse the response, use the original error message
+                                          }
+                                          throw new Error(errorMessage);
                                         }
                                       } catch (error: any) {
+                                        console.error("Delete event error:", error);
                                         toast({
                                           title: "Error",
                                           description: error.message || "Failed to delete event",

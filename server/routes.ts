@@ -1671,15 +1671,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  router.delete("/admin/events/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+  // Delete event endpoint - using both paths for compatibility
+  router.delete(["/admin/events/:id", "/api/admin/events/:id"], authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      // Assuming deleteEvent method exists in storage
+      console.log(`Admin user ${req.user?.id} deleting event ID: ${id}`);
+      
+      // First check if the event exists
+      const event = await storage.getEvent(id);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      // Delete event
       await storage.deleteEvent(id);
-      return res.status(204).send();
+      
+      // Return success
+      return res.status(200).json({ 
+        success: true, 
+        message: "Event deleted successfully" 
+      });
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({ message: "Internal server error" });
+      console.error("Error deleting event:", err);
+      return res.status(500).json({ message: "Failed to delete event" });
     }
   });
   
