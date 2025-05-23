@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Ticket, PlusCircle, Edit, Trash2, Plus, X, Info, ArrowLeft, Calendar, MapPin } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/formatters';
 
