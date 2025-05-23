@@ -506,7 +506,7 @@ export default function AdminSimplePage() {
                                       price: (parseFloat(ticket.price) / 100).toFixed(2),
                                       quantity: ticket.quantity?.toString() || '100',
                                       status: ticket.status || 'active',
-                                      eventId: String(ticket.eventId || ''),
+                                      eventId: Number(ticket.eventId || 0),
                                       description: ticket.description || '',
                                       ticketType: 'essential',
                                       priceType: 'standard',
