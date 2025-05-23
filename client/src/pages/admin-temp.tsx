@@ -120,8 +120,14 @@ export default function AdminTemp() {
                     <Button 
                       onClick={() => {
                         // Navigate to admin with event tab active
-                        navigate('/admin');
-                        setActiveTab("content");
+                        navigate('/admin', { replace: true });
+                        // Use setTimeout to ensure navigation completes before setting the tab
+                        setTimeout(() => {
+                          const contentTab = document.querySelector('[data-value="content"]');
+                          if (contentTab) {
+                            (contentTab as HTMLElement).click();
+                          }
+                        }, 100);
                       }}
                       className="w-full h-10 text-sm"
                     >
