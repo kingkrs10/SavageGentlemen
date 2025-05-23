@@ -603,7 +603,12 @@ export default function Checkout() {
             </div>
           </div>
           
-          <Tabs defaultValue="card" className="mt-6">
+          <Tabs 
+            value={paymentMethod} 
+            onValueChange={setPaymentMethod} 
+            defaultValue="card" 
+            className="mt-6"
+          >
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="card">Credit Card</TabsTrigger>
               <TabsTrigger value="paypal">PayPal</TabsTrigger>
