@@ -74,6 +74,19 @@ const getLastDeletedEventFromLocal = () => {
   return events[0];
 };
 
+// Function to find a deleted event by partial name match
+const findDeletedEventByName = (nameFragment) => {
+  const events = getDeletedEventsFromLocal();
+  if (events.length === 0) return null;
+  
+  // Find any event with a title containing the nameFragment (case insensitive)
+  const matchingEvent = events.find(item => 
+    item.event.title.toLowerCase().includes(nameFragment.toLowerCase())
+  );
+  
+  return matchingEvent;
+};
+
 export default function AdminTemp() {
   const [, navigate] = useLocation();
   const { isAdmin, user } = useUser();
@@ -114,24 +127,42 @@ export default function AdminTemp() {
   // Function for checking deleted events in localStorage
   const [isCheckingLocalEvents, setIsCheckingLocalEvents] = useState(false);
   
-  const checkForDeletedEvents = () => {
+  const checkForDeletedEvents = (specificName = '') => {
     setIsCheckingLocalEvents(true);
     try {
-      const lastDeletedItem = getLastDeletedEventFromLocal();
+      let deletedItem;
       
-      if (lastDeletedItem) {
+      if (specificName) {
+        // Look for a specific event name if provided
+        deletedItem = findDeletedEventByName(specificName);
+        
+        if (!deletedItem) {
+          toast({
+            title: "Event Not Found",
+            description: `Could not find deleted event containing "${specificName}" in the name.`,
+            variant: "destructive"
+          });
+          setIsCheckingLocalEvents(false);
+          return;
+        }
+      } else {
+        // Otherwise just get the last deleted event
+        deletedItem = getLastDeletedEventFromLocal();
+      }
+      
+      if (deletedItem) {
         // Set the last deleted event in state for UI display
-        setLastDeletedEvent(lastDeletedItem.event);
+        setLastDeletedEvent(deletedItem.event);
         setIsUndoAlertVisible(true);
         
         toast({
           title: "Deleted Event Found",
-          description: `Found deleted event: "${lastDeletedItem.event.title}". You can now restore it.`,
+          description: `Found deleted event: "${deletedItem.event.title}". You can now restore it.`,
           action: (
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleRestoreEvent(lastDeletedItem.event)}
+              onClick={() => handleRestoreEvent(deletedItem.event)}
             >
               Restore
             </Button>
@@ -579,15 +610,26 @@ export default function AdminTemp() {
                       Events Management
                     </div>
                     <div className="flex space-x-2">
-                      <Button 
-                        onClick={checkForDeletedEvents}
-                        className="h-8 text-xs"
-                        variant="outline"
-                        size="sm"
-                        disabled={isCheckingLocalEvents}
-                      >
-                        {isCheckingLocalEvents ? "Checking..." : "Check for Deleted Events"}
-                      </Button>
+                      <div className="flex space-x-2">
+                        <Button 
+                          onClick={checkForDeletedEvents}
+                          className="h-8 text-xs"
+                          variant="outline"
+                          size="sm"
+                          disabled={isCheckingLocalEvents}
+                        >
+                          {isCheckingLocalEvents ? "Checking..." : "Check for Deleted Events"}
+                        </Button>
+                        <Button 
+                          onClick={() => checkForDeletedEvents('Riddim')}
+                          className="h-8 text-xs"
+                          variant="outline"
+                          size="sm"
+                          disabled={isCheckingLocalEvents}
+                        >
+                          Find "RiddimRiot" Event
+                        </Button>
+                      </div>
                       <Button 
                         onClick={() => navigate('/events')}
                         className="h-8 text-xs"
