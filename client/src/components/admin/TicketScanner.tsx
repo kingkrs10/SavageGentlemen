@@ -157,49 +157,54 @@ const TicketScanner = () => {
     return (
       <Card className={`mt-4 shadow-md ${isScanned ? 'border-amber-500' : 'border-green-500'}`}>
         <CardHeader className={`pb-3 ${isScanned ? 'bg-amber-500/10' : 'bg-green-500/10'}`}>
-          <div className="flex items-center gap-2">
-            {isScanned ? (
-              <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-amber-500 shrink-0" />
-            ) : (
-              <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-500 shrink-0" />
-            )}
+          <div className="flex flex-col items-center text-center pb-2 sm:pb-3">
+            <div className="rounded-full bg-white p-2 mb-2 shadow-sm">
+              {isScanned ? (
+                <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 text-amber-500 shrink-0" />
+              ) : (
+                <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 text-green-500 shrink-0" />
+              )}
+            </div>
             <CardTitle className="text-lg sm:text-xl">
               {isScanned ? 'Ticket Already Scanned' : 'Ticket Valid'}
             </CardTitle>
+            <CardDescription className="text-xs sm:text-sm mt-1">
+              {isScanned && ticketInfo.scannedAt
+                ? `This ticket was previously scanned on ${new Date(ticketInfo.scannedAt as string).toLocaleString()}`
+                : 'This ticket is valid and has been marked as scanned'}
+            </CardDescription>
           </div>
-          <CardDescription className="text-xs sm:text-sm">
-            {isScanned && ticketInfo.scannedAt
-              ? `This ticket was previously scanned on ${new Date(ticketInfo.scannedAt as string).toLocaleString()}`
-              : 'This ticket is valid and has been marked as scanned'}
-          </CardDescription>
+          
+          <div className="w-full h-px bg-border my-2"></div>
+          
+          <div className="font-bold text-lg sm:text-xl text-center">
+            {ticketInfo.eventName}
+          </div>
         </CardHeader>
         <CardContent className="pt-3 sm:pt-4">
-          <div className="space-y-2 text-sm sm:text-base">
-            <div className="font-bold text-lg sm:text-xl">
-              {ticketInfo.eventName}
-            </div>
-            <div className="grid grid-cols-3 gap-1">
+          <div className="space-y-3 text-sm sm:text-base">
+            <div className="grid grid-cols-3 gap-1 border-b pb-2">
               <span className="font-semibold col-span-1">Ticket:</span> 
-              <span className="col-span-2">{ticketInfo.ticketName}</span>
+              <span className="col-span-2 font-medium">{ticketInfo.ticketName}</span>
             </div>
-            <div className="grid grid-cols-3 gap-1">
+            <div className="grid grid-cols-3 gap-1 border-b pb-2">
               <span className="font-semibold col-span-1">Date:</span> 
               <span className="col-span-2">{new Date(ticketInfo.eventDate).toLocaleDateString()} {new Date(ticketInfo.eventDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
             </div>
-            <div className="grid grid-cols-3 gap-1">
+            <div className="grid grid-cols-3 gap-1 border-b pb-2">
               <span className="font-semibold col-span-1">Location:</span> 
               <span className="col-span-2">{ticketInfo.eventLocation}</span>
             </div>
-            <div className="grid grid-cols-3 gap-1">
+            <div className="grid grid-cols-3 gap-1 border-b pb-2">
               <span className="font-semibold col-span-1">Ticket ID:</span> 
               <span className="col-span-2">{ticketInfo.ticketId}</span>
             </div>
-            <div className="grid grid-cols-3 gap-1">
+            <div className="grid grid-cols-3 gap-1 border-b pb-2">
               <span className="font-semibold col-span-1">Order ID:</span> 
               <span className="col-span-2">{ticketInfo.orderId}</span>
             </div>
             {ticketInfo.scannedAt && (
-              <div className="grid grid-cols-3 gap-1 text-amber-700">
+              <div className="grid grid-cols-3 gap-1 text-amber-700 border-b pb-2">
                 <span className="font-semibold col-span-1">Scanned:</span> 
                 <span className="col-span-2">{new Date(ticketInfo.scannedAt as string).toLocaleString()}</span>
               </div>
@@ -207,7 +212,11 @@ const TicketScanner = () => {
           </div>
         </CardContent>
         <CardFooter className="pt-2">
-          <Button onClick={resetScanner} className="w-full">
+          <Button 
+            onClick={resetScanner} 
+            className="w-full h-12 text-base font-medium"
+            size="lg"
+          >
             Scan Another Ticket
           </Button>
         </CardFooter>

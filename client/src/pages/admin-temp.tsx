@@ -193,8 +193,7 @@ export default function AdminTemp() {
                     </Button>
                     <Button 
                       onClick={() => {
-                        // Navigate to the event management section
-                        navigate('/admin');
+                        // Open ticket management view
                         setActiveTab("content");
                       }}
                       className="w-full h-10 text-sm"
