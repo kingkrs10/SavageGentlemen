@@ -1,16 +1,152 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUser } from "@/context/UserContext";
 import SEOHead from "@/components/SEOHead";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Ticket, Users, LineChart, ShoppingBag, Calendar } from "lucide-react";
+import { 
+  Ticket, 
+  Users, 
+  LineChart, 
+  ShoppingBag, 
+  Calendar, 
+  Pencil, 
+  MapPin, 
+  Clock, 
+  X, 
+  Save,
+  Trash
+} from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, QueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+
+const queryClient = new QueryClient();
 
 export default function AdminTemp() {
   const [, navigate] = useLocation();
-  const { isAdmin } = useUser();
+  const { isAdmin, user } = useUser();
   const [activeTab, setActiveTab] = useState("tools");
+  const { toast } = useToast();
+  
+  // Event management state
+  const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false);
+  const [eventFormData, setEventFormData] = useState({
+    id: 0,
+    title: "",
+    description: "",
+    date: "",
+    time: "",
+    location: "",
+    imageUrl: "",
+    category: "",
+    price: ""
+  });
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  
+  // Fetch events
+  const { 
+    data: events = [], 
+    isLoading: eventsLoading 
+  } = useQuery({ 
+    queryKey: ['/api/events'], 
+    queryFn: () => apiRequest('GET', '/api/events').then(res => res.json())
+  });
+  
+  // Event Mutations
+  const updateEventMutation = useMutation({
+    mutationFn: async (eventData: FormData) => {
+      const eventId = eventFormData.id;
+      if (eventId === 0) {
+        // Create new event
+        return await apiRequest('POST', '/api/events', {}, eventData, true).then(res => res.json());
+      } else {
+        // Update existing event
+        return await apiRequest('PUT', `/api/events/${eventId}`, {}, eventData, true).then(res => res.json());
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+      setIsEditEventModalOpen(false);
+      toast({
+        title: "Event Updated",
+        description: "Event has been updated successfully"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update event",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Handle event form submission
+  const handleEventFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Create FormData for event update with image if needed
+    const formData = new FormData();
+    formData.append('title', eventFormData.title);
+    formData.append('description', eventFormData.description);
+    formData.append('date', eventFormData.date);
+    formData.append('time', eventFormData.time);
+    formData.append('location', eventFormData.location);
+    
+    if (eventFormData.category) {
+      formData.append('category', eventFormData.category);
+    }
+    
+    if (eventFormData.price) {
+      formData.append('price', eventFormData.price);
+    }
+    
+    if (uploadedImage) {
+      formData.append('image', uploadedImage);
+    } else if (eventFormData.imageUrl) {
+      formData.append('imageUrl', eventFormData.imageUrl);
+    }
+    
+    updateEventMutation.mutate(formData);
+  };
+  
+  // Handle image upload
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setUploadedImage(file);
+      
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  // Clear image preview
+  const clearImagePreview = () => {
+    setImagePreview(null);
+    setUploadedImage(null);
+    setEventFormData({ ...eventFormData, imageUrl: "" });
+  };
+  
+  useEffect(() => {
+    // Preload image preview for edit modal
+    if (selectedEvent && selectedEvent.imageUrl) {
+      setImagePreview(selectedEvent.imageUrl);
+    } else {
+      setImagePreview(null);
+    }
+  }, [selectedEvent]);
   
   if (!isAdmin) {
     return (
@@ -41,13 +177,11 @@ export default function AdminTemp() {
               <Ticket className="h-3 w-3 sm:h-4 sm:w-4 mr-0 sm:mr-1" />
               <span className="hidden sm:inline">Tools</span>
             </TabsTrigger>
-            <TabsTrigger value="content" className="flex items-center gap-1 text-xs sm:text-sm">
+            <TabsTrigger value="content" className="flex items-center gap-1 text-xs sm:text-sm" data-value="content">
               <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-0 sm:mr-1" />
               <span className="hidden sm:inline">Events</span>
             </TabsTrigger>
             <TabsTrigger value="tickets" className="flex items-center gap-1 text-xs sm:text-sm">
-              <Ticket className="h-3 w-3 sm:h-4 sm:w-4 mr-0 sm:mr-1" />
-              <span className="hidden sm:inline">Tickets</span>
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-1 text-xs sm:text-sm">
               <LineChart className="h-3 w-3 sm:h-4 sm:w-4 mr-0 sm:mr-1" />
@@ -98,42 +232,154 @@ export default function AdminTemp() {
           </TabsContent>
           
           <TabsContent value="content" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Events Card */}
+            <div className="grid grid-cols-1 gap-4">
+              {/* Events List */}
               <Card className="shadow-md">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base sm:text-lg flex items-center">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Events
+                  <CardTitle className="text-base sm:text-lg flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Events Management
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button 
+                        onClick={() => navigate('/events')}
+                        className="h-8 text-xs"
+                        variant="outline"
+                        size="sm"
+                      >
+                        View Public Page
+                      </Button>
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-xs sm:text-sm">Manage events and tickets.</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button 
-                      onClick={() => navigate('/events')}
-                      className="w-full h-10 text-sm"
-                      variant="outline"
-                    >
-                      View Events
-                    </Button>
-                    <Button 
-                      onClick={() => {
-                        // Navigate to admin with event tab active
-                        navigate('/admin', { replace: true });
-                        // Use setTimeout to ensure navigation completes before setting the tab
-                        setTimeout(() => {
-                          const contentTab = document.querySelector('[data-value="content"]');
-                          if (contentTab) {
-                            (contentTab as HTMLElement).click();
-                          }
-                        }, 100);
-                      }}
-                      className="w-full h-10 text-sm"
-                    >
-                      Manage Events
-                    </Button>
-                  </div>
+                  {eventsLoading ? (
+                    <div className="text-center py-4">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                      <p className="mt-2 text-sm">Loading events...</p>
+                    </div>
+                  ) : events.length === 0 ? (
+                    <div className="text-center py-6">
+                      <p className="text-muted-foreground">No events found</p>
+                      <Button 
+                        onClick={() => {
+                          setEventFormData({
+                            id: 0,
+                            title: "",
+                            description: "",
+                            date: new Date().toISOString().split('T')[0],
+                            time: "19:00",
+                            location: "",
+                            imageUrl: "",
+                            category: "",
+                            price: ""
+                          });
+                          setIsEditEventModalOpen(true);
+                        }}
+                        className="mt-2"
+                      >
+                        Create New Event
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {events.map((event: any) => (
+                          <Card key={event.id} className="overflow-hidden">
+                            <div className="relative aspect-video w-full overflow-hidden bg-secondary/30">
+                              {event.imageUrl ? (
+                                <img 
+                                  src={event.imageUrl.startsWith('/') ? event.imageUrl.substring(1) : event.imageUrl} 
+                                  alt={event.title}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = "https://placehold.co/600x400/222222/FF4136?text=No+Image";
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-secondary flex items-center justify-center">
+                                  <span className="text-muted-foreground">No Image</span>
+                                </div>
+                              )}
+                            </div>
+                            <CardContent className="p-3">
+                              <h3 className="font-semibold truncate">{event.title}</h3>
+                              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                {event.date}
+                                {event.time && (
+                                  <>
+                                    <Clock className="h-3 w-3 ml-2 mr-1" />
+                                    {event.time}
+                                  </>
+                                )}
+                              </div>
+                              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                                <MapPin className="h-3 w-3 mr-1" />
+                                {event.location || 'No location set'}
+                              </div>
+                              <div className="flex justify-between mt-3">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 text-xs"
+                                  onClick={() => {
+                                    setSelectedEvent(event);
+                                    setEventFormData({
+                                      id: event.id,
+                                      title: event.title,
+                                      description: event.description || '',
+                                      date: event.date,
+                                      time: event.time || '19:00',
+                                      location: event.location || '',
+                                      imageUrl: event.imageUrl || '',
+                                      category: event.category || '',
+                                      price: event.price ? event.price.toString() : ''
+                                    });
+                                    setImagePreview(event.imageUrl);
+                                    setIsEditEventModalOpen(true);
+                                  }}
+                                >
+                                  <Pencil className="h-3 w-3 mr-1" />
+                                  Edit
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 text-xs"
+                                  onClick={() => navigate(`/ticket-management?eventId=${event.id}`)}
+                                >
+                                  <Ticket className="h-3 w-3 mr-1" />
+                                  Tickets
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                      <Button 
+                        onClick={() => {
+                          setEventFormData({
+                            id: 0,
+                            title: "",
+                            description: "",
+                            date: new Date().toISOString().split('T')[0],
+                            time: "19:00",
+                            location: "",
+                            imageUrl: "",
+                            category: "",
+                            price: ""
+                          });
+                          setIsEditEventModalOpen(true);
+                        }}
+                        className="mt-4"
+                      >
+                        Create New Event
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
               
@@ -236,6 +482,150 @@ export default function AdminTemp() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Event Edit Modal */}
+      <Dialog open={isEditEventModalOpen} onOpenChange={setIsEditEventModalOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedEvent ? `Edit Event: ${selectedEvent.title}` : 'Create New Event'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEventFormSubmit} className="space-y-4">
+            <div className="space-y-3">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-event-title">Title *</Label>
+                <Input
+                  id="edit-event-title"
+                  value={eventFormData.title}
+                  onChange={(e) => setEventFormData({...eventFormData, title: e.target.value})}
+                  required
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-event-date">Date *</Label>
+                  <Input
+                    id="edit-event-date"
+                    type="date"
+                    value={eventFormData.date}
+                    onChange={(e) => setEventFormData({...eventFormData, date: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-event-time">Time</Label>
+                  <Input
+                    id="edit-event-time"
+                    type="time"
+                    value={eventFormData.time}
+                    onChange={(e) => setEventFormData({...eventFormData, time: e.target.value})}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-event-location">Location *</Label>
+                  <Input
+                    id="edit-event-location"
+                    value={eventFormData.location}
+                    onChange={(e) => setEventFormData({...eventFormData, location: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-event-price">Price</Label>
+                  <Input
+                    id="edit-event-price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={eventFormData.price}
+                    onChange={(e) => setEventFormData({...eventFormData, price: e.target.value})}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="edit-event-category">Category</Label>
+                <Input
+                  id="edit-event-category"
+                  value={eventFormData.category}
+                  onChange={(e) => setEventFormData({...eventFormData, category: e.target.value})}
+                  placeholder="Optional category"
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="edit-event-description">Description</Label>
+                <Textarea
+                  id="edit-event-description"
+                  className="min-h-[100px]"
+                  value={eventFormData.description}
+                  onChange={(e) => setEventFormData({...eventFormData, description: e.target.value})}
+                  placeholder="Event description..."
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="edit-event-image">Event Image</Label>
+                {imagePreview && (
+                  <div className="relative aspect-video mb-2 bg-secondary/30 rounded-lg overflow-hidden">
+                    <img 
+                      src={imagePreview} 
+                      alt="Event preview" 
+                      className="w-full h-full object-contain"
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="destructive"
+                      className="absolute top-2 right-2 h-6 w-6"
+                      onClick={clearImagePreview}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+                <Input
+                  id="edit-event-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                />
+              </div>
+            </div>
+            
+            <DialogFooter className="flex space-x-2 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsEditEventModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={updateEventMutation.isPending}
+                className="flex items-center"
+              >
+                {updateEventMutation.isPending ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Event
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
