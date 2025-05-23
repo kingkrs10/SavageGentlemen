@@ -60,17 +60,10 @@ export default function AdminTemp() {
     queryFn: () => apiRequest('GET', '/api/events').then(res => res.json())
   });
   
-  // Event Mutations
+  // Event Mutations - Not used in the new implementation
   const updateEventMutation = useMutation({
-    mutationFn: async (eventData: FormData) => {
-      const eventId = eventFormData.id;
-      if (eventId === 0) {
-        // Create new event
-        return await apiRequest('POST', '/api/events', {}, eventData, true).then(res => res.json());
-      } else {
-        // Update existing event
-        return await apiRequest('PUT', `/api/events/${eventId}`, {}, eventData, true).then(res => res.json());
-      }
+    mutationFn: async (eventData: any) => {
+      return null;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
@@ -93,29 +86,75 @@ export default function AdminTemp() {
   const handleEventFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Create FormData for event update with image if needed
-    const formData = new FormData();
-    formData.append('title', eventFormData.title);
-    formData.append('description', eventFormData.description);
-    formData.append('date', eventFormData.date);
-    formData.append('time', eventFormData.time);
-    formData.append('location', eventFormData.location);
-    
-    if (eventFormData.category) {
-      formData.append('category', eventFormData.category);
+    try {
+      // For non-FormData approach (direct JSON)
+      const eventData = {
+        title: eventFormData.title,
+        description: eventFormData.description,
+        date: eventFormData.date,
+        time: eventFormData.time,
+        location: eventFormData.location,
+        category: eventFormData.category || null,
+        price: eventFormData.price ? parseFloat(eventFormData.price) : null,
+        imageUrl: eventFormData.imageUrl || null
+      };
+      
+      const eventId = eventFormData.id;
+      
+      // Handle the update using direct JSON instead of FormData
+      if (eventId === 0) {
+        // Create new event
+        const response = await fetch('/api/events', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${user?.token}`,
+            'user-id': user?.id?.toString() || ''
+          },
+          body: JSON.stringify(eventData)
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to create event');
+        }
+          
+        queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+        setIsEditEventModalOpen(false);
+        toast({
+          title: "Event Created",
+          description: "Event has been created successfully"
+        });
+      } else {
+        // Update existing event
+        const response = await fetch(`/api/events/${eventId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${user?.token}`,
+            'user-id': user?.id?.toString() || ''
+          },
+          body: JSON.stringify(eventData)
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to update event');
+        }
+          
+        queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+        setIsEditEventModalOpen(false);
+        toast({
+          title: "Event Updated",
+          description: "Event has been updated successfully"
+        });
+      }
+    } catch (error: any) {
+      console.error("Error saving event:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save event",
+        variant: "destructive"
+      });
     }
-    
-    if (eventFormData.price) {
-      formData.append('price', eventFormData.price);
-    }
-    
-    if (uploadedImage) {
-      formData.append('image', uploadedImage);
-    } else if (eventFormData.imageUrl) {
-      formData.append('imageUrl', eventFormData.imageUrl);
-    }
-    
-    updateEventMutation.mutate(formData);
   };
   
   // Handle image upload
