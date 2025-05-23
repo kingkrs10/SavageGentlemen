@@ -68,7 +68,7 @@ export default function AdminTemp() {
       const eventId = eventFormData.id;
       if (eventId === 0) {
         // Create new event
-        const response = await fetch('/api/events', {
+        const response = await fetch('/api/admin/events', {
           method: 'POST',
           body: eventData,
           headers: {
@@ -81,7 +81,7 @@ export default function AdminTemp() {
         return await response.json();
       } else {
         // Update existing event
-        const response = await fetch(`/api/events/${eventId}`, {
+        const response = await fetch(`/api/admin/events/${eventId}`, {
           method: 'PUT',
           body: eventData,
           headers: {
