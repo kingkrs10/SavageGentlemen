@@ -10,9 +10,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Ticket as TicketIcon, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { 
+  Ticket as TicketIcon, 
+  CheckCircle, 
+  XCircle, 
+  Loader2, 
+  Camera, 
+  CameraOff,
+  Smartphone,
+  KeyboardIcon
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from '@/lib/queryClient';
+import QrReader from 'react-qr-scanner';
 
 interface TicketInfo {
   ticketId: number;
@@ -30,40 +40,78 @@ const TicketScanner = () => {
   const [ticketInfo, setTicketInfo] = useState<TicketInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [scanMode, setScanMode] = useState<'manual' | 'camera'>('manual');
+  const [cameraPermission, setCameraPermission] = useState<boolean | null>(null);
+  const [facingMode, setFacingMode] = useState<'rear' | 'front'>('rear');
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {
-    // Focus input on component mount
-    if (inputRef.current) {
+    // Focus input on component mount if we're in manual mode
+    if (scanMode === 'manual' && inputRef.current) {
       inputRef.current.focus();
     }
-  }, []);
+  }, [scanMode]);
   
   const resetScanner = () => {
     setTicketCode('');
     setTicketInfo(null);
     setError(null);
     
-    // Re-focus the input
-    setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
-    }, 0);
+    // Re-focus the input if in manual mode
+    if (scanMode === 'manual') {
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 0);
+    }
   };
   
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!ticketCode.trim()) {
+  // Function to handle QR scanner errors
+  const handleScanError = (err: any) => {
+    console.error('QR Scanner error:', err);
+    if (err.name === 'NotAllowedError') {
+      setCameraPermission(false);
+      setError('Camera access denied. Please enable camera permissions.');
+    } else {
+      setError(`Scanner error: ${err.message || 'Unknown error'}`);
+    }
+  };
+  
+  // Function to handle successful QR code scan
+  const handleScanSuccess = (data: any) => {
+    if (data && !loading && !ticketInfo) {
+      // Extract the text from scanned QR code
+      const scannedText = data.text;
+      if (scannedText && scannedText.trim() !== '') {
+        setTicketCode(scannedText);
+        validateTicket(scannedText);
+      }
+    }
+  };
+  
+  // Function to toggle camera facing mode
+  const toggleCamera = () => {
+    setFacingMode(facingMode === 'rear' ? 'front' : 'rear');
+  };
+  
+  // Function to toggle between manual and camera scanning modes
+  const toggleScanMode = () => {
+    setScanMode(scanMode === 'manual' ? 'camera' : 'manual');
+    setError(null);
+  };
+  
+  // Extract the validation logic to a separate function for reuse
+  const validateTicket = async (code: string) => {
+    if (!code.trim()) {
       setError('Please enter a ticket code');
       return;
     }
 
     // For this demo, we'll create fake success data in case the API isn't returning the expected response
     // This allows you to see how the UI will look with a valid ticket
-    if (ticketCode === "DEMO-TICKET") {
+    if (code === "DEMO-TICKET") {
       const demoTicket: TicketInfo = {
         ticketId: 7,
         orderId: 1,
@@ -87,17 +135,17 @@ const TicketScanner = () => {
     setError(null);
     
     try {
-      console.log('Sending ticket code for validation:', ticketCode);
+      console.log('Sending ticket code for validation:', code);
       
       // Validate format before sending to server
-      const codeParts = ticketCode.split('-');
+      const codeParts = code.split('-');
       if (codeParts.length !== 4 || codeParts[0] !== 'SGX' || codeParts[1] !== 'TIX') {
         setError('Invalid ticket format. Expected format: SGX-TIX-ticketId-orderId');
         setLoading(false);
         return;
       }
 
-      const response = await apiRequest('POST', '/api/tickets/scan', { ticketCode });
+      const response = await apiRequest('POST', '/api/tickets/scan', { ticketCode: code });
       
       if (!response.ok) {
         // Get the error details
@@ -147,6 +195,12 @@ const TicketScanner = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle form submission for manual entry
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await validateTicket(ticketCode);
   };
   
   const renderStatusCard = () => {
