@@ -45,7 +45,7 @@ export default function AdminTemp() {
     location: "",
     imageUrl: "",
     category: "",
-    price: "",
+    price: "", images: [],
     images: [] as string[]
   });
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
@@ -396,7 +396,7 @@ export default function AdminTemp() {
                             location: "",
                             imageUrl: "",
                             category: "",
-                            price: ""
+                            price: "", images: []
                           });
                           setIsEditEventModalOpen(true);
                         }}
@@ -494,7 +494,7 @@ export default function AdminTemp() {
                             location: "",
                             imageUrl: "",
                             category: "",
-                            price: ""
+                            price: "", images: []
                           });
                           setIsEditEventModalOpen(true);
                         }}
