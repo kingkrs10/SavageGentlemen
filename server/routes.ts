@@ -1554,12 +1554,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Ticket management
   router.post("/admin/tickets", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
-      const ticketData = insertTicketSchema.parse(req.body);
-      // Assuming createTicket method exists in storage
-      const ticket = await storage.createTicket(ticketData);
+      // Process date fields and data conversion before validation
+      const processedData = { ...req.body };
+      
+      // Handle price conversion
+      if (typeof processedData.price === 'string') {
+        const priceValue = parseFloat(processedData.price);
+        if (!isNaN(priceValue)) {
+          processedData.price = Math.round(priceValue * 100); // Convert to cents
+        }
+      }
+      
+      // Handle quantity conversion
+      if (typeof processedData.quantity === 'string') {
+        processedData.quantity = parseInt(processedData.quantity, 10);
+      }
+      
+      // Handle date fields
+      const dateFields = ['salesStartDate', 'salesEndDate', 'sales_start_date', 'sales_end_date'];
+      for (const field of dateFields) {
+        if (field in processedData) {
+          if (processedData[field] === '' || processedData[field] === undefined) {
+            processedData[field] = null;
+          } else if (typeof processedData[field] === 'string' && processedData[field]) {
+            try {
+              const parsedDate = new Date(processedData[field]);
+              if (!isNaN(parsedDate.getTime())) {
+                processedData[field] = parsedDate;
+              } else {
+                processedData[field] = null;
+              }
+            } catch (e) {
+              console.warn(`Failed to parse date for field ${field}:`, processedData[field]);
+              processedData[field] = null;
+            }
+          }
+        }
+      }
+      
+      // Make sure eventId is properly formatted as a number
+      if (processedData.eventId) {
+        processedData.eventId = parseInt(String(processedData.eventId));
+      }
+      
+      console.log("Processed ticket data:", processedData);
+      
+      // Create the ticket with processed data
+      const ticket = await storage.createTicket(processedData);
       return res.status(201).json(ticket);
     } catch (err) {
-      return handleZodError(err, res);
+      console.error("Error creating ticket:", err);
+      if (err instanceof Error) {
+        return res.status(400).json({ errors: [{ path: "server", message: err.message }] });
+      }
+      return res.status(500).json({ message: "Failed to create ticket" });
     }
   });
   

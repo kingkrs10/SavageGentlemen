@@ -713,9 +713,35 @@ export class MemStorage implements IStorage {
       return undefined;
     }
     
+    // Handle date fields
+    const dateFields = ['salesStartDate', 'salesEndDate', 'sales_start_date', 'sales_end_date', 'createdAt', 'updatedAt'];
+    const cleanedData = { ...ticketData };
+    
+    // Clean date fields
+    for (const field of dateFields) {
+      if (field in cleanedData) {
+        // If it's an empty string, make it null
+        if (cleanedData[field] === '') {
+          cleanedData[field] = null;
+        }
+        // If it's a string but not empty, try to parse it as a date
+        else if (typeof cleanedData[field] === 'string' && cleanedData[field]) {
+          try {
+            cleanedData[field] = new Date(cleanedData[field]);
+          } catch (e) {
+            console.warn(`Failed to parse date for field ${field}:`, cleanedData[field]);
+            cleanedData[field] = null;
+          }
+        }
+      }
+    }
+    
+    // Force updatedAt to be a valid Date
+    cleanedData.updatedAt = new Date();
+    
     const updatedTicket: Ticket = {
       ...ticket,
-      ...ticketData
+      ...cleanedData
     };
     
     this.tickets.set(id, updatedTicket);
