@@ -1456,10 +1456,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Event management
-  router.post("/admin/events", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+  router.post("/admin/events", authenticateUser, authorizeAdmin, upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'additionalImages', maxCount: 10 }
+  ]), async (req: Request, res: Response) => {
     try {
-      // Properly handle date string conversion
+      // Get the request data
       const requestData = req.body;
+      
+      // Process uploaded files if present
+      if (req.files) {
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+        
+        // Process main image
+        if (files['image'] && files['image'][0]) {
+          const mainImage = files['image'][0];
+          const mainImagePath = `/uploads/${mainImage.filename}`;
+          requestData.imageUrl = mainImagePath;
+        }
+        
+        // Process additional images
+        if (files['additionalImages'] && files['additionalImages'].length > 0) {
+          const additionalImagePaths = files['additionalImages'].map(
+            file => `/uploads/${file.filename}`
+          );
+          requestData.additionalImages = additionalImagePaths;
+        }
+      }
       
       // Always ensure date is properly converted to a Date object
       if (requestData.date) {
@@ -1497,7 +1520,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  router.put("/admin/events/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+  router.put("/admin/events/:id", authenticateUser, authorizeAdmin, upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'additionalImages', maxCount: 10 }
+  ]), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const event = await storage.getEvent(id);
@@ -1506,8 +1532,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Event not found" });
       }
 
-      // Properly handle date string conversion for the database
+      // Get the request data
       const requestData = req.body;
+      
+      // Process uploaded files if present
+      if (req.files) {
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+        
+        // Process main image
+        if (files['image'] && files['image'][0]) {
+          const mainImage = files['image'][0];
+          const mainImagePath = `/uploads/${mainImage.filename}`;
+          requestData.imageUrl = mainImagePath;
+        }
+        
+        // Process additional images
+        if (files['additionalImages'] && files['additionalImages'].length > 0) {
+          const additionalImagePaths = files['additionalImages'].map(
+            file => `/uploads/${file.filename}`
+          );
+          
+          // If we're retaining existing images and adding new ones
+          if (requestData.retainExistingImages === 'true' && event.additionalImages) {
+            // Combine with existing images (if event.additionalImages is not null)
+            requestData.additionalImages = [
+              ...(Array.isArray(event.additionalImages) ? event.additionalImages : []),
+              ...additionalImagePaths
+            ];
+          } else {
+            // Only use the newly uploaded images
+            requestData.additionalImages = additionalImagePaths;
+          }
+        } else if (requestData.additionalImages) {
+          // If no new files but additionalImages comes as a string, convert to array
+          if (typeof requestData.additionalImages === 'string') {
+            requestData.additionalImages = [requestData.additionalImages];
+          }
+        }
+      }
+      
+      // Parse additionalImages from JSON string if it comes in that format
+      if (typeof requestData.additionalImages === 'string' && requestData.additionalImages.startsWith('[')) {
+        try {
+          requestData.additionalImages = JSON.parse(requestData.additionalImages);
+        } catch (e) {
+          console.error('Error parsing additionalImages JSON:', e);
+        }
+      }
       
       // Always ensure date is properly converted to a Date object
       if (requestData.date) {
@@ -1527,8 +1598,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Log the date being saved
+      // Log the update details
       console.log(`Updating event ${id} with date:`, requestData.date);
+      console.log(`Image URL:`, requestData.imageUrl);
+      console.log(`Additional Images:`, requestData.additionalImages);
+      
+      // Clean up by removing properties we don't want to persist
+      delete requestData.retainExistingImages;
       
       // Now update the event with the processed data
       const updatedEvent = await storage.updateEvent(id, requestData);

@@ -66,6 +66,7 @@ export const events = pgTable("events", {
   location: text("location").notNull(),
   price: integer("price"),
   imageUrl: text("image_url"),
+  additionalImages: text("additional_images").array(), // Array of additional image URLs
   category: text("category"),
   featured: boolean("featured").default(false),
   organizerName: text("organizer_name").default("Savage Gentlemen"),
@@ -84,6 +85,7 @@ export const insertEventSchema = createInsertSchema(events)
     duration: true,
     location: true,
     imageUrl: true,
+    additionalImages: true,
     category: true,
     featured: true,
     organizerName: true,
