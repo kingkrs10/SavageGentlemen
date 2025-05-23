@@ -35,6 +35,8 @@ export default function AdminTemp() {
   
   // Event management state
   const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false);
+  const [isUndoAlertVisible, setIsUndoAlertVisible] = useState(false);
+  const [lastDeletedEvent, setLastDeletedEvent] = useState<any>(null);
   const [eventFormData, setEventFormData] = useState({
     id: 0,
     title: "",
@@ -60,6 +62,34 @@ export default function AdminTemp() {
   } = useQuery({ 
     queryKey: ['/api/events'], 
     queryFn: () => apiRequest('GET', '/api/events').then(res => res.json())
+  });
+  
+  // Restore deleted event mutation
+  const restoreEventMutation = useMutation({
+    mutationFn: async (eventId: number) => {
+      const response = await apiRequest('POST', `/api/admin/events/restore/${eventId}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to restore event: ${errorText}`);
+      }
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+      setIsUndoAlertVisible(false);
+      setLastDeletedEvent(null);
+      toast({
+        title: "Event Restored",
+        description: `${data.event.title} has been restored successfully!`
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to restore event",
+        variant: "destructive"
+      });
+    }
   });
   
   // Event Mutations
@@ -296,6 +326,42 @@ export default function AdminTemp() {
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
         <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Admin Dashboard</h1>
         
+        {/* Undo deletion alert */}
+        {isUndoAlertVisible && lastDeletedEvent && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="flex-shrink-0 text-yellow-400">
+                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-yellow-700">
+                    Event "{lastDeletedEvent.title}" was deleted.
+                    <button 
+                      onClick={() => restoreEventMutation.mutate(lastDeletedEvent.id)}
+                      className="font-medium underline text-yellow-700 hover:text-yellow-600 ml-1"
+                    >
+                      Undo
+                    </button>
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                className="text-yellow-400 hover:text-yellow-500 focus:outline-none"
+                onClick={() => setIsUndoAlertVisible(false)}
+              >
+                <span className="sr-only">Dismiss</span>
+                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+        
         <Tabs 
           defaultValue="tools" 
           className="w-full"
@@ -500,13 +566,17 @@ export default function AdminTemp() {
                                   onClick={async () => {
                                     if (confirm(`Are you sure you want to delete ${event.title}?`)) {
                                       try {
+                                        // Store the event info for potential undo operation
+                                        setLastDeletedEvent(event);
+                                        
                                         // Use the admin-specific endpoint to ensure proper authorization
                                         const response = await apiRequest('DELETE', `/api/admin/events/${event.id}`);
                                         if (response.ok) {
                                           queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+                                          setIsUndoAlertVisible(true);
                                           toast({
                                             title: "Event Deleted",
-                                            description: `${event.title} has been deleted successfully`
+                                            description: `${event.title} has been deleted successfully. You can undo this deletion if needed.`
                                           });
                                         } else {
                                           // Get detailed error message if available
