@@ -93,9 +93,23 @@ const TicketManager: React.FC = () => {
     queryFn: async () => {
       if (!selectedEvent?.id) return [];
       console.log("Fetching tickets for event:", selectedEvent.id);
-      const response = await fetch(`/api/admin/tickets/event/${selectedEvent.id}`);
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const token = user?.token;
+      
+      const response = await fetch(`/api/admin/tickets/event/${selectedEvent.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'user-id': String(user?.id || ''),
+          'x-user-data': JSON.stringify({
+            id: user?.id,
+            username: user?.username,
+            role: user?.role
+          })
+        }
+      });
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch tickets');
+        throw new Error(`Failed to fetch tickets: ${response.status}`);
       }
       return response.json();
     },
