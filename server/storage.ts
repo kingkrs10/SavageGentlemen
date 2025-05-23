@@ -74,25 +74,7 @@ import { eq, desc, and, gt, sql, lte, lt, isNotNull } from "drizzle-orm";
 
 // Interface for storage operations
 // Store for recently deleted events (for undo functionality)
-const deletedEventsStore: Map<number, { event: Event, deletedAt: Date }> = new Map();
-
-// Function to store a deleted event
-const storeDeletedEvent = (event: Event) => {
-  deletedEventsStore.set(event.id, { 
-    event, 
-    deletedAt: new Date() 
-  });
-  
-  // Clean up older deleted events (keep for 24 hours max)
-  const twentyFourHoursAgo = new Date();
-  twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
-  
-  deletedEventsStore.forEach((value, key) => {
-    if (value.deletedAt < twentyFourHoursAgo) {
-      deletedEventsStore.delete(key);
-    }
-  });
-};
+// No longer needed since we've fixed the deletion directly
 
 export interface IStorage {
   // User operations
@@ -511,12 +493,9 @@ export class MemStorage implements IStorage {
       
       console.log(`Deleting event with ID: ${id}`);
       
-      // Delete the event from the database
-      const result = await db
-        .delete(events)
-        .where(eq(events.id, id));
-      
-      console.log(`Event deletion result:`, result);
+      // Using db directly since this is a PostgreSQL implementation
+      await db.delete(events).where(eq(events.id, id));
+      console.log(`Event with ID ${id} deleted successfully`);
       return true;
     } catch (error) {
       console.error(`Error deleting event with ID ${id}:`, error);
