@@ -193,8 +193,8 @@ export default function AdminTemp() {
                     </Button>
                     <Button 
                       onClick={() => {
-                        // Navigate to events page where tickets can be managed
-                        navigate('/events');
+                        // Navigate to dedicated ticket management interface
+                        navigate('/ticket-management');
                       }}
                       className="w-full h-10 text-sm"
                     >
