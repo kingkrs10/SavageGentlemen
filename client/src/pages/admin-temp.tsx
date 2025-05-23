@@ -45,11 +45,14 @@ export default function AdminTemp() {
     location: "",
     imageUrl: "",
     category: "",
-    price: ""
+    price: "",
+    images: [] as string[]
   });
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  const [uploadedImages, setUploadedImages] = useState<File[]>([]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   
   // Fetch events
   const { 
@@ -157,7 +160,7 @@ export default function AdminTemp() {
     }
   };
   
-  // Handle image upload
+  // Handle single image upload
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -169,6 +172,44 @@ export default function AdminTemp() {
       };
       reader.readAsDataURL(file);
     }
+  };
+  
+  // Handle multiple image upload
+  const handleMultipleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const filesArray = Array.from(e.target.files);
+      setUploadedImages([...uploadedImages, ...filesArray]);
+      
+      // Create preview URLs for the new images
+      const newPreviewUrls = filesArray.map(file => {
+        const reader = new FileReader();
+        const url = URL.createObjectURL(file);
+        
+        reader.onload = () => {
+          // Nothing needed here as we're using URL.createObjectURL
+        };
+        reader.readAsDataURL(file);
+        
+        return url;
+      });
+      
+      setImagePreviewUrls([...imagePreviewUrls, ...newPreviewUrls]);
+    }
+  };
+  
+  // Remove an image from the multiple upload list
+  const removeImage = (index: number) => {
+    const newImages = [...uploadedImages];
+    const newPreviewUrls = [...imagePreviewUrls];
+    
+    // Release the object URL to avoid memory leaks
+    URL.revokeObjectURL(newPreviewUrls[index]);
+    
+    newImages.splice(index, 1);
+    newPreviewUrls.splice(index, 1);
+    
+    setUploadedImages(newImages);
+    setImagePreviewUrls(newPreviewUrls);
   };
   
   // Clear image preview
