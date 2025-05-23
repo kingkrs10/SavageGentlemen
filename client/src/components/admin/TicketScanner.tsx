@@ -24,6 +24,9 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from '@/lib/queryClient';
 import QrReader from 'react-qr-scanner';
 
+// Add TypeScript declaration for react-qr-scanner
+declare module 'react-qr-scanner';
+
 interface TicketInfo {
   ticketId: number;
   orderId: number;
@@ -283,6 +286,33 @@ const TicketScanner = () => {
       <div className="w-full max-w-md">
         <h1 className="text-2xl sm:text-3xl font-bold mb-4 text-center">Ticket Scanner</h1>
         
+        {!ticketInfo && (
+          <div className="mb-4 flex justify-center">
+            <div className="bg-muted rounded-lg p-1 inline-flex">
+              <Button
+                type="button"
+                variant={scanMode === 'manual' ? 'default' : 'outline'}
+                size="sm"
+                className="flex items-center text-xs sm:text-sm"
+                onClick={() => setScanMode('manual')}
+              >
+                <KeyboardIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                Manual Entry
+              </Button>
+              <Button
+                type="button"
+                variant={scanMode === 'camera' ? 'default' : 'outline'}
+                size="sm"
+                className="flex items-center text-xs sm:text-sm"
+                onClick={() => setScanMode('camera')}
+              >
+                <Camera className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                Camera Scan
+              </Button>
+            </div>
+          </div>
+        )}
+        
         {error && (
           <Alert variant="destructive" className="mb-4">
             <XCircle className="h-4 w-4" />
@@ -291,12 +321,12 @@ const TicketScanner = () => {
           </Alert>
         )}
         
-        {!ticketInfo && (
+        {!ticketInfo && scanMode === 'manual' && (
           <Card className="shadow-md">
             <CardHeader className="pb-2 sm:pb-3">
-              <CardTitle className="text-lg sm:text-xl">Scan Ticket</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">Enter Ticket Code</CardTitle>
               <CardDescription className="text-xs sm:text-sm">
-                Enter the ticket code from the QR code
+                Type or paste the ticket code
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -340,6 +370,68 @@ const TicketScanner = () => {
                   )}
                 </Button>
               </form>
+            </CardContent>
+          </Card>
+        )}
+        
+        {!ticketInfo && scanMode === 'camera' && (
+          <Card className="shadow-md overflow-hidden">
+            <CardHeader className="pb-2 sm:pb-3">
+              <CardTitle className="text-lg sm:text-xl">Scan QR Code</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                Point your camera at the ticket QR code
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="relative">
+                <div className="aspect-square overflow-hidden bg-black">
+                  <QrReader
+                    delay={300}
+                    onError={handleScanError}
+                    onScan={handleScanSuccess}
+                    style={{ width: '100%' }}
+                    constraints={{
+                      video: {
+                        facingMode: facingMode === 'rear' ? 'environment' : 'user'
+                      }
+                    }}
+                  />
+                  {loading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                      <Loader2 className="h-10 w-10 animate-spin text-white" />
+                    </div>
+                  )}
+                </div>
+                
+                <div className="absolute top-3 right-3">
+                  <Button 
+                    onClick={toggleCamera} 
+                    size="sm"
+                    variant="outline"
+                    className="h-8 w-8 p-0 bg-white/90 hover:bg-white"
+                  >
+                    <Smartphone className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="p-4">
+                <div className="flex flex-col space-y-1 mb-3">
+                  <p className="text-xs text-muted-foreground">
+                    Position the QR code within the camera view
+                  </p>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Make sure there's good lighting for best results
+                  </p>
+                </div>
+                {cameraPermission === false && (
+                  <Alert variant="destructive" className="mb-2">
+                    <AlertTitle className="text-sm">Camera Access Denied</AlertTitle>
+                    <AlertDescription className="text-xs">
+                      Please allow camera access in your browser settings to use the scanner.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
             </CardContent>
           </Card>
         )}
