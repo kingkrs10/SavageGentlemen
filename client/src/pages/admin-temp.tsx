@@ -113,10 +113,24 @@ export default function AdminTemp() {
         formData.append('imageUrl', eventFormData.imageUrl);
       }
       
+      // Log form data structure for debugging
+      console.log("Form data being submitted:", {
+        title: eventFormData.title,
+        description: eventFormData.description,
+        date: eventFormData.date,
+        images: uploadedImages.length,
+        existingImages: eventFormData.images.length
+      });
+      
       // Add all additional images
       uploadedImages.forEach((image) => {
         formData.append('additionalImages', image);
       });
+      
+      // Add existing images that should be kept
+      if (eventFormData.images && eventFormData.images.length > 0) {
+        formData.append('existingImages', JSON.stringify(eventFormData.images));
+      }
       
       // Add existing additional image URLs if there are any
       if (eventFormData.images && eventFormData.images.length > 0) {
@@ -262,8 +276,19 @@ export default function AdminTemp() {
     
     // Set up additional images if present
     if (selectedEvent && selectedEvent.additionalImages && Array.isArray(selectedEvent.additionalImages)) {
-      setImagePreviewUrls(selectedEvent.additionalImages);
+      // Set images array in form data (for editing existing images)
+      setEventFormData(prev => ({
+        ...prev,
+        images: selectedEvent.additionalImages
+      }));
+      // Clear uploaded images since we're loading from existing data
+      setUploadedImages([]);
+      setImagePreviewUrls([]);
     } else {
+      setEventFormData(prev => ({
+        ...prev,
+        images: []
+      }));
       setImagePreviewUrls([]);
     }
     
