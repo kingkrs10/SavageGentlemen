@@ -130,11 +130,6 @@ export default function AdminTemp() {
       // Add existing images that should be kept
       if (eventFormData.images && eventFormData.images.length > 0) {
         formData.append('existingImages', JSON.stringify(eventFormData.images));
-      }
-      
-      // Add existing additional image URLs if there are any
-      if (eventFormData.images && eventFormData.images.length > 0) {
-        formData.append('additionalImages', JSON.stringify(eventFormData.images));
         formData.append('retainExistingImages', 'true');
       }
       
