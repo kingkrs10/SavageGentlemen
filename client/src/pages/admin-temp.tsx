@@ -87,6 +87,22 @@ const findDeletedEventByName = (nameFragment) => {
   return matchingEvent;
 };
 
+// Function to get recently deleted events (past hour)
+const getRecentlyDeletedEvents = () => {
+  try {
+    const events = JSON.parse(localStorage.getItem('sgDeletedEvents') || '[]');
+    
+    // Filter for events deleted within the past hour
+    const oneHourAgo = new Date();
+    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+    
+    return events.filter(item => new Date(item.deletedAt) > oneHourAgo);
+  } catch (error) {
+    console.error("Error retrieving recent deleted events:", error);
+    return [];
+  }
+};
+
 export default function AdminTemp() {
   const [, navigate] = useLocation();
   const { isAdmin, user } = useUser();
@@ -127,16 +143,18 @@ export default function AdminTemp() {
   // Function for checking deleted events in localStorage
   const [isCheckingLocalEvents, setIsCheckingLocalEvents] = useState(false);
   
-  const checkForDeletedEvents = (specificName = '') => {
+  const checkForDeletedEvents = (specificName = '', timeWindow = null) => {
     setIsCheckingLocalEvents(true);
     try {
-      let deletedItem;
+      let deletedItems = [];
       
       if (specificName) {
         // Look for a specific event name if provided
-        deletedItem = findDeletedEventByName(specificName);
+        const foundItem = findDeletedEventByName(specificName);
         
-        if (!deletedItem) {
+        if (foundItem) {
+          deletedItems = [foundItem];
+        } else {
           toast({
             title: "Event Not Found",
             description: `Could not find deleted event containing "${specificName}" in the name.`,
@@ -145,33 +163,69 @@ export default function AdminTemp() {
           setIsCheckingLocalEvents(false);
           return;
         }
+      } else if (timeWindow === 'recent') {
+        // Get events deleted in the past hour
+        deletedItems = getRecentlyDeletedEvents();
+        
+        if (deletedItems.length === 0) {
+          toast({
+            title: "No Recent Deletions",
+            description: "No events were deleted within the past hour.",
+            variant: "destructive"
+          });
+          setIsCheckingLocalEvents(false);
+          return;
+        }
       } else {
-        // Otherwise just get the last deleted event
-        deletedItem = getLastDeletedEventFromLocal();
+        // Just get the last deleted event
+        const lastItem = getLastDeletedEventFromLocal();
+        if (lastItem) deletedItems = [lastItem];
       }
       
-      if (deletedItem) {
-        // Set the last deleted event in state for UI display
-        setLastDeletedEvent(deletedItem.event);
-        setIsUndoAlertVisible(true);
-        
-        toast({
-          title: "Deleted Event Found",
-          description: `Found deleted event: "${deletedItem.event.title}". You can now restore it.`,
-          action: (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleRestoreEvent(deletedItem.event)}
-            >
-              Restore
-            </Button>
-          ),
-        });
+      if (deletedItems.length > 0) {
+        // Show notifications for found events
+        if (deletedItems.length === 1) {
+          // Single event found - show it in UI
+          const deletedItem = deletedItems[0];
+          setLastDeletedEvent(deletedItem.event);
+          setIsUndoAlertVisible(true);
+          
+          toast({
+            title: "Deleted Event Found",
+            description: `Found deleted event: "${deletedItem.event.title}". You can now restore it.`,
+            action: (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleRestoreEvent(deletedItem.event)}
+              >
+                Restore
+              </Button>
+            ),
+          });
+        } else {
+          // Multiple events found - show count and first one
+          setLastDeletedEvent(deletedItems[0].event);
+          setIsUndoAlertVisible(true);
+          
+          toast({
+            title: `${deletedItems.length} Deleted Events Found`,
+            description: `Found ${deletedItems.length} recently deleted events. First one: "${deletedItems[0].event.title}"`,
+            action: (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleRestoreEvent(deletedItems[0].event)}
+              >
+                Restore First
+              </Button>
+            ),
+          });
+        }
       } else {
         toast({
           title: "No Deleted Events",
-          description: "No recently deleted events were found."
+          description: "No deleted events were found."
         });
       }
     } catch (error) {
@@ -610,7 +664,7 @@ export default function AdminTemp() {
                       Events Management
                     </div>
                     <div className="flex space-x-2">
-                      <div className="flex space-x-2">
+                      <div className="flex flex-wrap gap-2">
                         <Button 
                           onClick={checkForDeletedEvents}
                           className="h-8 text-xs"
@@ -628,6 +682,15 @@ export default function AdminTemp() {
                           disabled={isCheckingLocalEvents}
                         >
                           Find "RiddimRiot" Event
+                        </Button>
+                        <Button 
+                          onClick={() => checkForDeletedEvents('', 'recent')}
+                          className="h-8 text-xs"
+                          variant="outline"
+                          size="sm"
+                          disabled={isCheckingLocalEvents}
+                        >
+                          Check Past Hour Deletions
                         </Button>
                       </div>
                       <Button 
