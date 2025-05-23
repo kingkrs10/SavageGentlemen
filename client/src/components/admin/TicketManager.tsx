@@ -113,7 +113,7 @@ const TicketManager: React.FC = () => {
       });
       setIsNewTicketDialogOpen(false);
       resetTicketForm();
-      queryClient.invalidateQueries({ queryKey: ['/api/tickets', selectedEvent?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/tickets/event', selectedEvent?.id] });
     },
     onError: (error: any) => {
       toast({
@@ -136,7 +136,7 @@ const TicketManager: React.FC = () => {
       });
       setIsEditTicketDialogOpen(false);
       resetTicketForm();
-      queryClient.invalidateQueries({ queryKey: ['/api/tickets', selectedEvent?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/tickets/event', selectedEvent?.id] });
     },
     onError: (error: any) => {
       toast({
@@ -157,7 +157,7 @@ const TicketManager: React.FC = () => {
         title: 'Success',
         description: 'Ticket deleted successfully',
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/tickets', selectedEvent?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/tickets/event', selectedEvent?.id] });
     },
     onError: (error: any) => {
       toast({
