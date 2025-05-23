@@ -1591,7 +1591,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   router.put("/admin/tickets/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
       const ticketId = parseInt(req.params.id);
-      const updatedTicket = await storage.updateTicket(ticketId, req.body);
+      console.log(`Updating ticket with ID: ${ticketId} Data:`, req.body);
+      
+      // Convert price from dollars to cents if needed
+      let price = req.body.price;
+      if (typeof price === 'string' || typeof price === 'number') {
+        const priceValue = parseFloat(String(price));
+        if (!isNaN(priceValue)) {
+          if (priceValue < 100) { // Assuming values under 100 are in dollars, not cents
+            price = Math.round(priceValue * 100);
+            console.log(`Converting price from ${req.body.price} to ${price} cents`);
+          }
+        }
+      }
+      
+      // Clean up empty date fields
+      const updateData = { 
+        ...req.body,
+        price,
+        updatedAt: new Date()
+      };
+      
+      // Handle empty date strings
+      if (updateData.salesStartDate === '') updateData.salesStartDate = null;
+      if (updateData.salesEndDate === '') updateData.salesEndDate = null;
+      
+      // Make sure eventId is properly formatted
+      if (updateData.eventId) {
+        updateData.eventId = parseInt(String(updateData.eventId));
+        // For database schema that uses event_id instead of eventId
+        updateData.event_id = updateData.eventId;
+      }
+      
+      console.log("Processed update data:", updateData);
+      
+      const updatedTicket = await storage.updateTicket(ticketId, updateData);
       if (!updatedTicket) {
         return res.status(404).json({ message: "Ticket not found" });
       }
