@@ -292,7 +292,7 @@ const EventDetail = () => {
               
               <div className="flex items-center text-muted-foreground">
                 <Clock className="h-5 w-5 mr-2" />
-                <span>{event.id === 4 && event.title === "Riddem Riot" ? "11:00 PM" : formatEventTime(event.date, event.time)}</span>
+                <span>{formatEventTime(event.date, event.time)}</span>
                 {event.endTime && <span> - {formatEventTime(event.date, event.endTime)}</span>}
               </div>
               
