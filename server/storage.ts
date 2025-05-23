@@ -2226,15 +2226,10 @@ export class DatabaseStorage implements IStorage {
                 console.warn(`Invalid price format: ${ticketData.price}, skipping price update`);
               }
             } else if (typeof ticketData.price === 'number') {
-              // If price is already a number, ensure it's an integer (cents)
-              if (Number.isInteger(ticketData.price)) {
-                dataToUpdate.price = ticketData.price;
-              } else {
-                // If it's a float, convert to cents
-                const priceCents = Math.round(ticketData.price * 100);
-                console.log(`Converting number price from ${ticketData.price} to ${priceCents} cents`);
-                dataToUpdate.price = priceCents;
-              }
+              // Always convert the price to cents
+              const priceCents = Math.round(ticketData.price * 100);
+              console.log(`Converting number price from ${ticketData.price} to ${priceCents} cents`);
+              dataToUpdate.price = priceCents;
             }
           } else {
             dataToUpdate[key] = ticketData[key];
