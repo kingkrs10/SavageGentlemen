@@ -216,23 +216,23 @@ const TicketScanner = () => {
   };
   
   return (
-    <div className="flex flex-col items-center px-4 py-4">
+    <div className="flex flex-col items-center px-2 sm:px-4 py-4">
       <div className="w-full max-w-md">
         <h1 className="text-2xl sm:text-3xl font-bold mb-4 text-center">Ticket Scanner</h1>
         
         {error && (
           <Alert variant="destructive" className="mb-4">
             <XCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
+            <AlertTitle className="text-base">Error</AlertTitle>
+            <AlertDescription className="text-sm">{error}</AlertDescription>
           </Alert>
         )}
         
         {!ticketInfo && (
           <Card className="shadow-md">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-xl">Scan Ticket</CardTitle>
-              <CardDescription>
+            <CardHeader className="pb-2 sm:pb-3">
+              <CardTitle className="text-lg sm:text-xl">Scan Ticket</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
                 Enter the ticket code from the QR code
               </CardDescription>
             </CardHeader>
@@ -245,7 +245,7 @@ const TicketScanner = () => {
                     placeholder="SGX-TIX-123-456"
                     value={ticketCode}
                     onChange={(e) => setTicketCode(e.target.value)}
-                    className="w-full"
+                    className="w-full text-base sm:text-lg h-12 px-3"
                     autoFocus
                     autoComplete="off"
                     disabled={loading}
@@ -261,17 +261,17 @@ const TicketScanner = () => {
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full flex items-center justify-center" 
+                  className="w-full flex items-center justify-center h-12 text-base" 
                   disabled={loading || !ticketCode.trim()}
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       Validating...
                     </>
                   ) : (
                     <>
-                      <TicketIcon className="mr-2 h-4 w-4" />
+                      <TicketIcon className="mr-2 h-5 w-5" />
                       Validate Ticket
                     </>
                   )}
