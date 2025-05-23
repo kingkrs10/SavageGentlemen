@@ -1697,6 +1697,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get last deleted event (for undo functionality)
+  router.get(["/admin/events/last-deleted", "/api/admin/events/last-deleted"], authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      console.log(`Admin user ${req.user?.id} checking last deleted event`);
+      
+      const lastDeletedEvent = await storage.getLastDeletedEvent();
+      if (!lastDeletedEvent) {
+        return res.status(404).json({ message: "No recently deleted events found" });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        event: lastDeletedEvent.event,
+        deletedAt: lastDeletedEvent.deletedAt
+      });
+    } catch (err) {
+      console.error("Error getting last deleted event:", err);
+      return res.status(500).json({ message: "Failed to get last deleted event" });
+    }
+  });
+  
+  // Restore deleted event endpoint
+  router.post(["/admin/events/restore/:id", "/api/admin/events/restore/:id"], authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      console.log(`Admin user ${req.user?.id} restoring deleted event ID: ${id}`);
+      
+      const restoredEvent = await storage.restoreDeletedEvent(id);
+      if (!restoredEvent) {
+        return res.status(404).json({ message: "Event not found or could not be restored" });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: "Event restored successfully",
+        event: restoredEvent
+      });
+    } catch (err) {
+      console.error("Error restoring deleted event:", err);
+      return res.status(500).json({ message: "Failed to restore deleted event" });
+    }
+  });
+  
   // Ticket management
   router.post("/admin/tickets", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {

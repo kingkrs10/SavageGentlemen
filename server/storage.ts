@@ -74,7 +74,26 @@ import { eq, desc, and, gt, sql, lte, lt, isNotNull } from "drizzle-orm";
 
 // Interface for storage operations
 // Store for recently deleted events (for undo functionality)
-// No longer needed since we've fixed the deletion directly
+// Store for recently deleted events (for undo functionality)
+const deletedEventsStore: Map<number, { event: Event, deletedAt: Date }> = new Map();
+
+// Function to store a deleted event
+const storeDeletedEvent = (event: Event) => {
+  deletedEventsStore.set(event.id, { 
+    event, 
+    deletedAt: new Date() 
+  });
+  
+  // Clean up older deleted events (keep for 24 hours max)
+  const twentyFourHoursAgo = new Date();
+  twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+  
+  deletedEventsStore.forEach((value, key) => {
+    if (value.deletedAt < twentyFourHoursAgo) {
+      deletedEventsStore.delete(key);
+    }
+  });
+};
 
 export interface IStorage {
   // User operations
@@ -493,6 +512,9 @@ export class MemStorage implements IStorage {
       
       console.log(`Deleting event with ID: ${id}`);
       
+      // Store the event in memory before deleting (for undo functionality)
+      storeDeletedEvent(event);
+      
       // Using db directly since this is a PostgreSQL implementation
       await db.delete(events).where(eq(events.id, id));
       console.log(`Event with ID ${id} deleted successfully`);
@@ -500,6 +522,90 @@ export class MemStorage implements IStorage {
     } catch (error) {
       console.error(`Error deleting event with ID ${id}:`, error);
       return false;
+    }
+  }
+  
+  async getLastDeletedEvent(): Promise<{ event: Event, deletedAt: Date } | null> {
+    try {
+      // Find the most recently deleted event
+      let mostRecentDeletedEvent: { event: Event, deletedAt: Date } | null = null;
+      
+      deletedEventsStore.forEach((entry) => {
+        if (!mostRecentDeletedEvent || entry.deletedAt > mostRecentDeletedEvent.deletedAt) {
+          mostRecentDeletedEvent = entry;
+        }
+      });
+      
+      return mostRecentDeletedEvent;
+    } catch (error) {
+      console.error("Error getting last deleted event:", error);
+      return null;
+    }
+  }
+  
+  async restoreDeletedEvent(id: number): Promise<Event | null> {
+    try {
+      // Get the deleted event data
+      const deletedEventData = deletedEventsStore.get(id);
+      if (!deletedEventData) {
+        console.log(`No deleted event found with ID ${id} for restoration`);
+        return null;
+      }
+      
+      const eventToRestore = deletedEventData.event;
+      console.log(`Restoring deleted event: ${eventToRestore.title} (ID: ${id})`);
+      
+      // Insert the event back into the database with all its original data
+      const result = await db.insert(events).values({
+        id: eventToRestore.id,
+        title: eventToRestore.title,
+        description: eventToRestore.description,
+        date: new Date(eventToRestore.date),
+        time: eventToRestore.time,
+        endTime: eventToRestore.endTime,
+        duration: eventToRestore.duration,
+        location: eventToRestore.location,
+        imageUrl: eventToRestore.imageUrl,
+        category: eventToRestore.category,
+        price: eventToRestore.price,
+        externalUrl: eventToRestore.externalUrl,
+        featured: eventToRestore.featured,
+        organizerName: eventToRestore.organizerName,
+        organizerEmail: eventToRestore.organizerEmail,
+        additionalImages: eventToRestore.additionalImages || [],
+        // Set updated timestamps
+        createdAt: eventToRestore.createdAt,
+        updatedAt: new Date()
+      }).onConflictDoUpdate({
+        target: events.id,
+        set: {
+          title: eventToRestore.title,
+          description: eventToRestore.description,
+          date: new Date(eventToRestore.date),
+          time: eventToRestore.time,
+          endTime: eventToRestore.endTime,
+          duration: eventToRestore.duration,
+          location: eventToRestore.location,
+          imageUrl: eventToRestore.imageUrl,
+          category: eventToRestore.category,
+          price: eventToRestore.price,
+          externalUrl: eventToRestore.externalUrl,
+          featured: eventToRestore.featured,
+          organizerName: eventToRestore.organizerName,
+          organizerEmail: eventToRestore.organizerEmail,
+          additionalImages: eventToRestore.additionalImages || [],
+          updatedAt: new Date()
+        }
+      }).returning();
+      
+      // Remove from deleted events store
+      deletedEventsStore.delete(id);
+      
+      console.log(`Event successfully restored: ${eventToRestore.title} (ID: ${id})`);
+      return result[0];
+    } catch (error) {
+      console.error(`Error restoring deleted event ${id}:`, error);
+      return null;
     }
   }
 

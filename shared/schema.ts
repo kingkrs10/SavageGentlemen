@@ -75,6 +75,16 @@ export const events = pgTable("events", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Deleted Events schema (for recovery/undo functionality)
+export const deletedEvents = pgTable("deleted_events", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").notNull(),
+  eventData: jsonb("event_data").notNull(),
+  deletedAt: timestamp("deleted_at").defaultNow(),
+  deletedBy: integer("deleted_by"),
+  recovered: boolean("recovered").default(false),
+});
+
 export const insertEventSchema = createInsertSchema(events)
   .pick({
     title: true,
