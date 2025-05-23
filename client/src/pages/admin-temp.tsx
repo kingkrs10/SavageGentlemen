@@ -64,6 +64,29 @@ export default function AdminTemp() {
     queryFn: () => apiRequest('GET', '/api/events').then(res => res.json())
   });
   
+  // Fetch last deleted event
+  const { 
+    data: lastDeletedEventData,
+    refetch: refetchLastDeletedEvent,
+    isLoading: isLoadingLastDeletedEvent 
+  } = useQuery({
+    queryKey: ['/api/admin/events/last-deleted'],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest('GET', '/api/admin/events/last-deleted');
+        if (response.ok) {
+          return await response.json();
+        }
+        return null;
+      } catch (error) {
+        console.log("No recently deleted events found");
+        return null;
+      }
+    },
+    enabled: false, // Don't run automatically on page load
+    retry: false // Don't retry if it fails
+  });
+  
   // Restore deleted event mutation
   const restoreEventMutation = useMutation({
     mutationFn: async (eventId: number) => {
@@ -440,6 +463,31 @@ export default function AdminTemp() {
                       Events Management
                     </div>
                     <div className="flex space-x-2">
+                      <Button 
+                        onClick={() => {
+                          refetchLastDeletedEvent().then((result) => {
+                            if (result.data && result.data.event) {
+                              setLastDeletedEvent(result.data.event);
+                              setIsUndoAlertVisible(true);
+                              toast({
+                                title: "Deleted Event Found",
+                                description: `Found deleted event: "${result.data.event.title}". You can now restore it.`
+                              });
+                            } else {
+                              toast({
+                                title: "No Deleted Events",
+                                description: "No recently deleted events were found."
+                              });
+                            }
+                          });
+                        }}
+                        className="h-8 text-xs"
+                        variant="outline"
+                        size="sm"
+                        disabled={isLoadingLastDeletedEvent}
+                      >
+                        {isLoadingLastDeletedEvent ? "Checking..." : "Check for Deleted Events"}
+                      </Button>
                       <Button 
                         onClick={() => navigate('/events')}
                         className="h-8 text-xs"
