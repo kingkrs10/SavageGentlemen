@@ -1830,15 +1830,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ticketId = parseInt(req.params.id);
       console.log(`Updating ticket with ID: ${ticketId} Data:`, req.body);
       
-      // Convert price from dollars to cents if needed
+      // Convert price from dollars to cents properly
       let price = req.body.price;
       if (typeof price === 'string' || typeof price === 'number') {
         const priceValue = parseFloat(String(price));
         if (!isNaN(priceValue)) {
-          if (priceValue < 100) { // Assuming values under 100 are in dollars, not cents
-            price = Math.round(priceValue * 100);
-            console.log(`Converting price from ${req.body.price} to ${price} cents`);
-          }
+          // Always convert to cents by multiplying by 100
+          price = Math.round(priceValue * 100);
+          console.log(`Converting price from ${req.body.price} to ${price} cents`);
         }
       }
       
