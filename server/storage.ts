@@ -73,6 +73,27 @@ import { db } from "./db";
 import { eq, desc, and, gt, sql, lte, lt, isNotNull } from "drizzle-orm";
 
 // Interface for storage operations
+// Store for recently deleted events (for undo functionality)
+const deletedEventsStore: Map<number, { event: Event, deletedAt: Date }> = new Map();
+
+// Function to store a deleted event
+const storeDeletedEvent = (event: Event) => {
+  deletedEventsStore.set(event.id, { 
+    event, 
+    deletedAt: new Date() 
+  });
+  
+  // Clean up older deleted events (keep for 24 hours max)
+  const twentyFourHoursAgo = new Date();
+  twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+  
+  deletedEventsStore.forEach((value, key) => {
+    if (value.deletedAt < twentyFourHoursAgo) {
+      deletedEventsStore.delete(key);
+    }
+  });
+};
+
 export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
