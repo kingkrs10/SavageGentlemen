@@ -90,31 +90,51 @@ export default function AdminTemp() {
     e.preventDefault();
     
     try {
-      // For non-FormData approach (direct JSON)
-      const eventData = {
-        title: eventFormData.title,
-        description: eventFormData.description,
-        date: eventFormData.date,
-        time: eventFormData.time,
-        location: eventFormData.location,
-        category: eventFormData.category || null,
-        price: eventFormData.price ? parseFloat(eventFormData.price) : null,
-        imageUrl: eventFormData.imageUrl || null
-      };
+      // Need to use FormData approach to handle multiple images
+      const formData = new FormData();
+      formData.append('title', eventFormData.title);
+      formData.append('description', eventFormData.description);
+      formData.append('date', eventFormData.date);
+      formData.append('time', eventFormData.time);
+      formData.append('location', eventFormData.location);
+      
+      if (eventFormData.category) {
+        formData.append('category', eventFormData.category);
+      }
+      
+      if (eventFormData.price) {
+        formData.append('price', eventFormData.price);
+      }
+      
+      // Add main image if selected
+      if (uploadedImage) {
+        formData.append('mainImage', uploadedImage);
+      } else if (eventFormData.imageUrl) {
+        formData.append('imageUrl', eventFormData.imageUrl);
+      }
+      
+      // Add all additional images
+      uploadedImages.forEach((image, index) => {
+        formData.append(`additionalImages`, image);
+      });
+      
+      // Add existing additional image URLs if there are any
+      if (eventFormData.images && eventFormData.images.length > 0) {
+        formData.append('existingAdditionalImages', JSON.stringify(eventFormData.images));
+      }
       
       const eventId = eventFormData.id;
       
-      // Handle the update using direct JSON instead of FormData
+      // Handle the update or creation using FormData
       if (eventId === 0) {
         // Create new event
         const response = await fetch('/api/events', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${user?.token}`,
             'user-id': user?.id?.toString() || ''
           },
-          body: JSON.stringify(eventData)
+          body: formData
         });
         
         if (!response.ok) {
@@ -132,11 +152,10 @@ export default function AdminTemp() {
         const response = await fetch(`/api/events/${eventId}`, {
           method: 'PUT',
           headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${user?.token}`,
             'user-id': user?.id?.toString() || ''
           },
-          body: JSON.stringify(eventData)
+          body: formData
         });
         
         if (!response.ok) {
@@ -149,6 +168,10 @@ export default function AdminTemp() {
           title: "Event Updated",
           description: "Event has been updated successfully"
         });
+        
+        // Clear uploaded images
+        setUploadedImages([]);
+        setImagePreviewUrls([]);
       }
     } catch (error: any) {
       console.error("Error saving event:", error);
@@ -416,7 +439,8 @@ export default function AdminTemp() {
                                       location: event.location || '',
                                       imageUrl: event.imageUrl || '',
                                       category: event.category || '',
-                                      price: event.price ? event.price.toString() : ''
+                                      price: event.price ? event.price.toString() : '',
+                                      images: event.additionalImages || []
                                     });
                                     setImagePreview(event.imageUrl);
                                     setIsEditEventModalOpen(true);
@@ -649,7 +673,7 @@ export default function AdminTemp() {
               </div>
               
               <div className="grid gap-2">
-                <Label htmlFor="edit-event-image">Event Image</Label>
+                <Label htmlFor="edit-event-image">Main Event Image</Label>
                 {imagePreview && (
                   <div className="relative aspect-video mb-2 bg-secondary/30 rounded-lg overflow-hidden">
                     <img 
@@ -674,6 +698,44 @@ export default function AdminTemp() {
                   accept="image/*"
                   onChange={handleImageUpload}
                 />
+              </div>
+              
+              {/* Multiple Image Upload Section */}
+              <div className="grid gap-2 mt-4">
+                <Label htmlFor="edit-event-additional-images">Additional Event Images</Label>
+                <Input
+                  id="edit-event-additional-images"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleMultipleImageUpload}
+                />
+                
+                {imagePreviewUrls.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-sm text-muted-foreground mb-2">Additional Images ({imagePreviewUrls.length})</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {imagePreviewUrls.map((url, index) => (
+                        <div key={index} className="relative aspect-square rounded-md overflow-hidden bg-secondary/30">
+                          <img 
+                            src={url} 
+                            alt={`Additional image ${index + 1}`}
+                            className="w-full h-full object-cover" 
+                          />
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="destructive"
+                            className="absolute top-1 right-1 h-5 w-5"
+                            onClick={() => removeImage(index)}
+                          >
+                            <X className="h-2 w-2" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             
