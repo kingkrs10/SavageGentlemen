@@ -89,10 +89,11 @@ const TicketManager: React.FC = () => {
     isLoading: ticketsLoading,
     refetch: refetchTickets
   } = useQuery<Ticket[]>({
-    queryKey: ['/api/events/tickets', selectedEvent?.id],
+    queryKey: ['/api/admin/tickets/event', selectedEvent?.id],
     queryFn: async () => {
       if (!selectedEvent?.id) return [];
-      const response = await fetch(`/api/events/${selectedEvent.id}/tickets`);
+      console.log("Fetching tickets for event:", selectedEvent.id);
+      const response = await fetch(`/api/admin/tickets/event/${selectedEvent.id}`);
       if (!response.ok) {
         throw new Error('Failed to fetch tickets');
       }
@@ -105,7 +106,7 @@ const TicketManager: React.FC = () => {
   const createTicketMutation = useMutation({
     mutationFn: async (ticketData: any) => {
       console.log("Creating ticket with data:", ticketData);
-      return apiRequest('POST', `/api/events/${ticketData.eventId}/tickets`, ticketData);
+      return apiRequest('POST', `/api/admin/tickets`, ticketData);
     },
     onSuccess: () => {
       toast({
@@ -129,7 +130,7 @@ const TicketManager: React.FC = () => {
   const updateTicketMutation = useMutation({
     mutationFn: async ({ ticketId, ticketData }: { ticketId: number, ticketData: any }) => {
       console.log("Updating ticket", ticketId, "with data:", ticketData);
-      return apiRequest('PUT', `/api/tickets/${ticketId}`, ticketData);
+      return apiRequest('PUT', `/api/admin/tickets/${ticketId}`, ticketData);
     },
     onSuccess: () => {
       toast({
@@ -153,7 +154,7 @@ const TicketManager: React.FC = () => {
   const deleteTicketMutation = useMutation({
     mutationFn: async (ticketId: number) => {
       console.log("Deleting ticket:", ticketId);
-      return apiRequest('DELETE', `/api/tickets/${ticketId}`);
+      return apiRequest('DELETE', `/api/admin/tickets/${ticketId}`);
     },
     onSuccess: () => {
       toast({
