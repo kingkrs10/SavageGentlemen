@@ -584,9 +584,9 @@ export default function AdminTemp() {
                         className="h-8 text-xs"
                         variant="outline"
                         size="sm"
-                        disabled={isLoadingLastDeletedEvent}
+                        disabled={isCheckingLocalEvents}
                       >
-                        {isLoadingLastDeletedEvent ? "Checking..." : "Check for Deleted Events"}
+                        {isCheckingLocalEvents ? "Checking..." : "Check for Deleted Events"}
                       </Button>
                       <Button 
                         onClick={() => navigate('/events')}
