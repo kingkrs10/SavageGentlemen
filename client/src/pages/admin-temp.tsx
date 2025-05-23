@@ -242,6 +242,15 @@ export default function AdminTemp() {
     setEventFormData({ ...eventFormData, imageUrl: "" });
   };
   
+  // Clear multiple image previews
+  const clearAllImagePreviews = () => {
+    // Release all object URLs to avoid memory leaks
+    imagePreviewUrls.forEach(url => URL.revokeObjectURL(url));
+    
+    setImagePreviewUrls([]);
+    setUploadedImages([]);
+  };
+  
   useEffect(() => {
     // Preload image preview for edit modal
     if (selectedEvent && selectedEvent.imageUrl) {
@@ -249,6 +258,16 @@ export default function AdminTemp() {
     } else {
       setImagePreview(null);
     }
+    
+    // Set up additional images if present
+    if (selectedEvent && selectedEvent.additionalImages && Array.isArray(selectedEvent.additionalImages)) {
+      setImagePreviewUrls(selectedEvent.additionalImages);
+    } else {
+      setImagePreviewUrls([]);
+    }
+    
+    // Reset uploaded images
+    setUploadedImages([]);
   }, [selectedEvent]);
   
   if (!isAdmin) {
