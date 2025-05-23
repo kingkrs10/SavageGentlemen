@@ -1612,9 +1612,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedAt: new Date()
       };
       
-      // Handle empty date strings
-      if (updateData.salesStartDate === '') updateData.salesStartDate = null;
-      if (updateData.salesEndDate === '') updateData.salesEndDate = null;
+      // Handle date fields - convert empty strings to null or ensure proper Date objects
+      const dateFields = ['salesStartDate', 'salesEndDate', 'sales_start_date', 'sales_end_date', 'createdAt', 'updatedAt'];
+      
+      for (const field of dateFields) {
+        if (field in updateData) {
+          if (updateData[field] === '' || updateData[field] === undefined) {
+            updateData[field] = null;
+          } else if (typeof updateData[field] === 'string' && updateData[field]) {
+            try {
+              // Try to parse as Date if it's not empty
+              const parsedDate = new Date(updateData[field]);
+              if (!isNaN(parsedDate.getTime())) {
+                updateData[field] = parsedDate;
+              } else {
+                updateData[field] = null;
+              }
+            } catch (e) {
+              console.warn(`Failed to parse date for field ${field}:`, updateData[field]);
+              updateData[field] = null;
+            }
+          }
+        }
+      }
       
       // Make sure eventId is properly formatted
       if (updateData.eventId) {
