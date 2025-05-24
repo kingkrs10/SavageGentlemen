@@ -182,13 +182,53 @@ export default function SimpleStripeCheckout({
   const { toast } = useToast();
   
   // Create payment intent on component mount
+  // Helper function to detect user's country by timezone
+  const detectCurrency = (): string => {
+    try {
+      // Check if we have a URL parameter for currency
+      const urlParams = new URLSearchParams(window.location.search);
+      const currencyParam = urlParams.get('currency');
+      if (currencyParam && ['USD', 'CAD'].includes(currencyParam.toUpperCase())) {
+        return currencyParam.toLowerCase();
+      }
+
+      // Check if we can detect timezone
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      // Canadian timezones
+      const canadianTimezones = [
+        'America/Dawson', 'America/Vancouver', 'America/Whitehorse',
+        'America/Edmonton', 'America/Yellowknife', 'America/Cambridge_Bay',
+        'America/Inuvik', 'America/Dawson_Creek', 'America/Fort_Nelson',
+        'America/Creston', 'America/Regina', 'America/Swift_Current',
+        'America/Winnipeg', 'America/Rainy_River', 'America/Resolute',
+        'America/Rankin_Inlet', 'America/Iqaluit', 'America/Toronto',
+        'America/Thunder_Bay', 'America/Nipigon', 'America/Montreal',
+        'America/Moncton', 'America/Halifax', 'America/Glace_Bay',
+        'America/St_Johns'
+      ];
+      
+      if (canadianTimezones.includes(timezone)) {
+        return 'cad';
+      }
+      
+      // Default to USD
+      return 'usd';
+    } catch (error) {
+      // Default to USD in case of errors
+      return 'usd';
+    }
+  };
+
   useEffect(() => {
     const createIntent = async () => {
       try {
+        // Detect currency based on user's location or URL parameter
+        const currency = detectCurrency();
+        
         // Try both endpoints - first with API prefix, then without if that fails
         let response = await apiRequest("POST", "/api/payment/create-intent", { 
           amount: amount,
-          currency: 'usd',
+          currency: currency,
           eventId: eventId,
           eventTitle: eventTitle,
           ticketId: ticketId,
@@ -204,7 +244,7 @@ export default function SimpleStripeCheckout({
         if (!response.ok) {
           response = await apiRequest("POST", "/payment/create-intent", { 
             amount: amount,
-            currency: 'usd',
+            currency: currency, // Use the detected currency
             eventId: eventId,
             eventTitle: eventTitle,
             ticketId: ticketId,
