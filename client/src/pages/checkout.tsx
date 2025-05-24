@@ -595,12 +595,17 @@ export default function Checkout() {
             )}
             <div className="flex justify-between mt-2">
               <span>Subtotal:</span>
-              <span>${amount.toFixed(2)}</span>
+              <span>{currency === 'CAD' ? 'C$' : '$'}{amount.toFixed(2)}</span>
             </div>
             <div className="flex justify-between mt-1 text-lg font-bold">
               <span>Total:</span>
-              <span>${amount.toFixed(2)} {currency}</span>
+              <span>{currency === 'CAD' ? 'C$' : '$'}{amount.toFixed(2)}</span>
             </div>
+            {currency === 'CAD' && (
+              <div className="text-sm text-gray-500 mt-1">
+                Canadian currency (CAD) detected based on your location
+              </div>
+            )}
           </div>
           
           <Tabs 
