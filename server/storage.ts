@@ -45,6 +45,9 @@ import {
   InsertUserEvent,
   DailyStat,
   InsertDailyStat,
+  // Sponsored Content schemas
+  SponsoredContent,
+  InsertSponsoredContent,
   users,
   events,
   products,
@@ -67,7 +70,9 @@ import {
   eventAnalytics,
   productAnalytics,
   userEvents,
-  dailyStats
+  dailyStats,
+  // Sponsored content table
+  sponsoredContent
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, sql, lte, lt, isNotNull } from "drizzle-orm";
@@ -3087,6 +3092,64 @@ export class DatabaseStorage implements IStorage {
         return [];
       }
     }
+  }
+
+  // Sponsored Content Management
+  async getAllSponsoredContent(): Promise<SponsoredContent[]> {
+    try {
+      return await db.select().from(sponsoredContent).orderBy(desc(sponsoredContent.priority), desc(sponsoredContent.createdAt));
+    } catch (error) {
+      console.error('Error fetching sponsored content:', error);
+      return [];
+    }
+  }
+
+  async getActiveSponsoredContent(): Promise<SponsoredContent[]> {
+    try {
+      const now = new Date();
+      return await db.select().from(sponsoredContent)
+        .where(
+          and(
+            eq(sponsoredContent.isActive, true),
+            // Check if within date range or no date restrictions
+            sql`(${sponsoredContent.startDate} IS NULL OR ${sponsoredContent.startDate} <= ${now})`,
+            sql`(${sponsoredContent.endDate} IS NULL OR ${sponsoredContent.endDate} >= ${now})`
+          )
+        )
+        .orderBy(desc(sponsoredContent.priority), desc(sponsoredContent.createdAt));
+    } catch (error) {
+      console.error('Error fetching active sponsored content:', error);
+      return [];
+    }
+  }
+
+  async createSponsoredContent(data: InsertSponsoredContent): Promise<SponsoredContent> {
+    const [content] = await db.insert(sponsoredContent).values(data).returning();
+    return content;
+  }
+
+  async updateSponsoredContent(id: number, data: Partial<InsertSponsoredContent>): Promise<SponsoredContent> {
+    const [content] = await db.update(sponsoredContent)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(sponsoredContent.id, id))
+      .returning();
+    return content;
+  }
+
+  async deleteSponsoredContent(id: number): Promise<void> {
+    await db.delete(sponsoredContent).where(eq(sponsoredContent.id, id));
+  }
+
+  async incrementSponsoredContentClicks(id: number): Promise<void> {
+    await db.update(sponsoredContent)
+      .set({ clicks: sql`${sponsoredContent.clicks} + 1` })
+      .where(eq(sponsoredContent.id, id));
+  }
+
+  async incrementSponsoredContentViews(id: number): Promise<void> {
+    await db.update(sponsoredContent)
+      .set({ views: sql`${sponsoredContent.views} + 1` })
+      .where(eq(sponsoredContent.id, id));
   }
 }
 
