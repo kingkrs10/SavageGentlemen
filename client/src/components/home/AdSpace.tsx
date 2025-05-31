@@ -13,13 +13,15 @@ interface AdData {
   backgroundColor?: string;
   textColor?: string;
   ctaText?: string;
+  logoUrl?: string;
 }
 
 const AdSpace = () => {
   const [dismissedAds, setDismissedAds] = useState<string[]>([]);
 
-  // Sample ad data - in a real app, this would come from your CMS or ad management system
+  // Sponsored content - replace with your actual sponsors and partners
   const ads: AdData[] = [
+    // Add your sponsored content here by replacing these examples:
     {
       id: "sponsor-1",
       title: "Premium Sound Systems",
@@ -27,16 +29,16 @@ const AdSpace = () => {
       backgroundColor: "bg-gradient-to-r from-blue-600 to-purple-600",
       textColor: "text-white",
       ctaText: "Learn More",
-      linkUrl: "#"
+      linkUrl: "#" // Replace with actual sponsor website
     },
     {
-      id: "partner-1",
+      id: "partner-1", 
       title: "Caribbean Food Catering",
       description: "Authentic Caribbean cuisine for your next event. Book now for special rates!",
       backgroundColor: "bg-gradient-to-r from-orange-500 to-red-500",
       textColor: "text-white",
       ctaText: "Get Quote",
-      linkUrl: "#"
+      linkUrl: "#" // Replace with actual partner website
     },
     {
       id: "event-promo",
@@ -73,6 +75,15 @@ const AdSpace = () => {
             </button>
             
             <div className="pr-8">
+              {ad.logoUrl && (
+                <div className="mb-3">
+                  <img 
+                    src={ad.logoUrl} 
+                    alt={`${ad.title} logo`}
+                    className="h-8 object-contain"
+                  />
+                </div>
+              )}
               <h3 className={`font-bold text-lg mb-2 ${ad.textColor}`}>
                 {ad.title}
               </h3>
