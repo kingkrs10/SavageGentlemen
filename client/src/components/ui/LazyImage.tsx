@@ -93,8 +93,19 @@ export function LazyImage({
     if (src?.includes('uploads/') && !attemptedFallback) {
       setAttemptedFallback(true);
       
-      // If URL has a leading slash, try without; if it doesn't have one, try with it
-      const alternativeSrc = src.startsWith('/') ? src.substring(1) : `/${src}`;
+      // Try multiple alternative formats for better compatibility
+      let alternativeSrc;
+      if (src.startsWith('/uploads/')) {
+        // Try without the leading slash
+        alternativeSrc = src.substring(1);
+      } else if (src.startsWith('uploads/')) {
+        // Try with a leading slash
+        alternativeSrc = `/${src}`;
+      } else {
+        // Try with uploads/ prefix
+        alternativeSrc = `uploads/${src.replace(/^\/+/, '')}`;
+      }
+      
       setCurrentSrc(alternativeSrc);
       
       if (process.env.NODE_ENV !== 'production') {

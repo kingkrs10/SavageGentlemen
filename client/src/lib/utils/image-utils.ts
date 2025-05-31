@@ -14,24 +14,22 @@ export function getNormalizedImageUrl(url: string | null): string {
 
   // Handle local upload URLs (containing uploads/)
   if (url.includes('uploads/')) {
-    // Format 1: No leading slash (uploads/image-xyz.png)
-    if (url.startsWith('uploads/')) {
-      // This format works directly with our static file server
-      return url;
-    }
-    
-    // Format 2: With leading slash (/uploads/image-xyz.png)
+    // Always try the format without leading slash first as it works best
     if (url.startsWith('/uploads/')) {
-      // This also works, return as is
+      // Remove leading slash for better compatibility
+      return url.substring(1);
+    }
+    
+    // If it already starts with uploads/, return as is
+    if (url.startsWith('uploads/')) {
       return url;
     }
     
-    // Any other format, try to normalize by adding uploads/ prefix
-    if (!url.startsWith('/') && !url.startsWith('uploads/')) {
-      return 'uploads/' + url;
+    // Any other format, normalize by adding uploads/ prefix
+    if (!url.startsWith('uploads/')) {
+      return 'uploads/' + url.replace(/^\/+/, ''); // Remove any leading slashes
     }
     
-    // Has slash but not at the right place
     return url;
   }
 
