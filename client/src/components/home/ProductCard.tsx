@@ -64,7 +64,16 @@ const ProductCard = ({
       <div className="bg-gray-900 rounded-lg overflow-hidden shadow-lg">
         <div className="relative">
           <Link href={`/product/${id}`} className="block">
-            {imgError ? (
+            <img 
+              src={imgSrc} 
+              alt={title} 
+              className="w-full h-48 object-cover" 
+              loading="lazy"
+              onError={handleImageError}
+              onLoad={handleImageLoad}
+              style={{ display: imgError ? 'none' : 'block' }}
+            />
+            {imgError && (
               <div className="w-full h-48 bg-gray-800 flex items-center justify-center">
                 <img 
                   src={SGFlyerLogoPng} 
@@ -72,15 +81,6 @@ const ProductCard = ({
                   className="h-32 object-contain"
                 />
               </div>
-            ) : (
-              <img 
-                src={imgSrc} 
-                alt={title} 
-                className="w-full h-48 object-cover" 
-                loading="lazy"
-                onError={handleImageError}
-                onLoad={handleImageLoad}
-              />
             )}
           </Link>
           <Button
@@ -135,14 +135,26 @@ const ProductCard = ({
             />
           </div>
         ) : (
-          <img 
-            src={imgSrc} 
-            alt={title} 
-            className="w-full h-40 object-cover"
-            loading="lazy"
-            onError={handleImageError}
-            onLoad={handleImageLoad}
-          />
+          <>
+            <img 
+              src={imgSrc} 
+              alt={title} 
+              className="w-full h-40 object-cover"
+              loading="lazy"
+              onError={handleImageError}
+              onLoad={handleImageLoad}
+              style={{ display: imgError ? 'none' : 'block' }}
+            />
+            {imgError && (
+              <div className="w-full h-40 bg-gray-800 flex items-center justify-center">
+                <img 
+                  src={SGFlyerLogoPng} 
+                  alt={title} 
+                  className="h-24 object-contain"
+                />
+              </div>
+            )}
+          </>
         )}
       </Link>
       <div className="p-3">
