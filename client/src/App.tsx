@@ -288,6 +288,7 @@ function AppContent() {
               onContinueAsGuest={handleContinueAsGuest}
             />
             <Toaster />
+            <PerformanceInsights />
           </div>
         </TooltipProvider>
       </ThemeProvider>
