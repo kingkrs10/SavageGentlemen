@@ -37,18 +37,19 @@ const ProductCard = ({
   }, [title, imageUrl, id]);
   
   useEffect(() => {
-    // Try to load the image initially
+    // Reset state when imageUrl changes
+    setImgError(false);
+    setImgSrc(imageUrl);
+    
+    // Try to load the image to verify it's accessible
     const img = new Image();
     img.onload = () => {
       console.log("Image loaded successfully:", imageUrl);
-      setImgSrc(imageUrl);
       setImgError(false);
     };
     img.onerror = () => {
       console.log("Image failed to load:", imageUrl);
       setImgError(true);
-      // Use SG Flyer Logo as fallback
-      setImgSrc(SGFlyerLogoPng);
     };
     img.src = imageUrl;
     
