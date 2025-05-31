@@ -729,10 +729,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Sponsored Content API Routes (public endpoints first)
+  router.get("/sponsored-content", async (req: Request, res: Response) => {
+    try {
+      const sponsoredContent = await storage.getAllSponsoredContent();
+      return res.status(200).json(sponsoredContent);
+    } catch (err) {
+      console.error("Error fetching sponsored content:", err);
+      return res.status(500).json({ message: "Failed to fetch sponsored content" });
+    }
+  });
+
+  router.get("/sponsored-content/active", async (req: Request, res: Response) => {
+    try {
+      const sponsoredContent = await storage.getActiveSponsoredContent();
+      return res.status(200).json(sponsoredContent);
+    } catch (err) {
+      console.error("Error fetching active sponsored content:", err);
+      return res.status(500).json({ message: "Failed to fetch active sponsored content" });
+    }
+  });
+
+  router.post("/sponsored-content/:id/click", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.incrementSponsoredContentClicks(id);
+      return res.status(200).json({ success: true });
+    } catch (err) {
+      console.error("Error tracking sponsored content click:", err);
+      return res.status(500).json({ message: "Failed to track click" });
+    }
+  });
+
+  router.post("/sponsored-content/:id/view", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.incrementSponsoredContentViews(id);
+      return res.status(200).json({ success: true });
+    } catch (err) {
+      console.error("Error tracking sponsored content view:", err);
+      return res.status(500).json({ message: "Failed to track view" });
+    }
+  });
+
+  // Admin-only sponsored content routes
+  router.post("/admin/sponsored-content", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const sponsoredContentData = insertSponsoredContentSchema.parse({
+        ...req.body,
+        createdBy: req.user!.id
+      });
+      const sponsoredContent = await storage.createSponsoredContent(sponsoredContentData);
+      return res.status(201).json(sponsoredContent);
+    } catch (err) {
+      return handleZodError(err, res);
+    }
+  });
+
+  router.put("/admin/sponsored-content/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const sponsoredContentData = insertSponsoredContentSchema.partial().parse(req.body);
+      const sponsoredContent = await storage.updateSponsoredContent(id, sponsoredContentData);
+      return res.status(200).json(sponsoredContent);
+    } catch (err) {
+      return handleZodError(err, res);
+    }
+  });
+
+  router.delete("/admin/sponsored-content/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteSponsoredContent(id);
+      return res.status(204).send();
+    } catch (err) {
+      console.error("Error deleting sponsored content:", err);
+      return res.status(500).json({ message: "Failed to delete sponsored content" });
+    }
+  });
+
   // User tickets routes
   router.get("/user/tickets", authenticateUser, async (req: Request, res: Response) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user!.id;
       const purchasedTickets = await storage.getTicketPurchasesByUserId(userId);
       
       // Enhance ticket data with event information
