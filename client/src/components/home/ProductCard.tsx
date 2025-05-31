@@ -28,6 +28,7 @@ const ProductCard = ({
   const { id, title, price, imageUrl, sizes, category } = product;
   const [imgError, setImgError] = useState(false);
   const [imgSrc, setImgSrc] = useState<string>(imageUrl);
+  const [imgLoaded, setImgLoaded] = useState(false);
   
   // Track product view and log product info for debugging
   useEffect(() => {
@@ -40,24 +41,23 @@ const ProductCard = ({
     // Reset state when imageUrl changes
     setImgError(false);
     setImgSrc(imageUrl);
+    setImgLoaded(false);
     
-    // Try to load the image to verify it's accessible
-    const img = new Image();
-    img.onload = () => {
-      console.log("Image loaded successfully:", imageUrl);
-      setImgError(false);
-    };
-    img.onerror = () => {
-      console.log("Image failed to load:", imageUrl);
-      setImgError(true);
-    };
-    img.src = imageUrl;
-    
-    return () => {
-      img.onload = null;
-      img.onerror = null;
-    };
+    // For external images, don't pre-test them as it may cause CORS issues
+    // Let the img element handle loading directly
   }, [imageUrl]);
+
+  const handleImageLoad = () => {
+    console.log("Image loaded successfully:", imageUrl);
+    setImgError(false);
+    setImgLoaded(true);
+  };
+
+  const handleImageError = () => {
+    console.log("Image failed to load:", imageUrl);
+    setImgError(true);
+    setImgLoaded(false);
+  };
   
   if (variant === "large") {
     return (
@@ -78,7 +78,8 @@ const ProductCard = ({
                 alt={title} 
                 className="w-full h-48 object-cover" 
                 loading="lazy"
-                onError={() => setImgError(true)}
+                onError={handleImageError}
+                onLoad={handleImageLoad}
               />
             )}
           </Link>
@@ -139,7 +140,8 @@ const ProductCard = ({
             alt={title} 
             className="w-full h-40 object-cover"
             loading="lazy"
-            onError={() => setImgError(true)}
+            onError={handleImageError}
+            onLoad={handleImageLoad}
           />
         )}
       </Link>
