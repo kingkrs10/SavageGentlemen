@@ -855,6 +855,33 @@ export const emailCampaignStats = pgTable("email_campaign_stats", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Sponsored Content / Ads
+export const sponsoredContent = pgTable("sponsored_content", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  type: text("type").notNull().default("standard"), // standard, banner, product, event, video
+  imageUrl: text("image_url"),
+  logoUrl: text("logo_url"),
+  linkUrl: text("link_url"),
+  backgroundColor: text("background_color").default("bg-gray-800"),
+  textColor: text("text_color").default("text-white"),
+  ctaText: text("cta_text").default("Learn More"),
+  price: text("price"), // For product ads
+  eventDate: text("event_date"), // For event ads
+  location: text("location"), // For event ads
+  videoUrl: text("video_url"), // For video ads
+  isActive: boolean("is_active").default(true),
+  priority: integer("priority").default(0), // Higher priority shows first
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  clicks: integer("clicks").default(0),
+  views: integer("views").default(0),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Defining insertion schemas for email marketing entities
 export const insertEmailListSchema = createInsertSchema(emailLists)
   .pick({
@@ -890,6 +917,42 @@ export const insertEmailCampaignSchema = createInsertSchema(emailCampaigns)
   .extend({
     status: z.enum(['draft', 'scheduled', 'sent', 'cancelled']).default('draft'),
   });
+
+// Sponsored Content schema
+export const insertSponsoredContentSchema = createInsertSchema(sponsoredContent)
+  .pick({
+    title: true,
+    description: true,
+    type: true,
+    imageUrl: true,
+    logoUrl: true,
+    linkUrl: true,
+    backgroundColor: true,
+    textColor: true,
+    ctaText: true,
+    price: true,
+    eventDate: true,
+    location: true,
+    videoUrl: true,
+    isActive: true,
+    priority: true,
+    startDate: true,
+    endDate: true,
+    createdBy: true,
+  })
+  .extend({
+    type: z.enum(['standard', 'banner', 'product', 'event', 'video']).default('standard'),
+    title: z.string().min(1, 'Title is required'),
+    description: z.string().min(1, 'Description is required'),
+    backgroundColor: z.string().default('bg-gray-800'),
+    textColor: z.string().default('text-white'),
+    ctaText: z.string().default('Learn More'),
+    isActive: z.boolean().default(true),
+    priority: z.number().default(0),
+  });
+
+export type SponsoredContent = typeof sponsoredContent.$inferSelect;
+export type InsertSponsoredContent = z.infer<typeof insertSponsoredContentSchema>;
 
 // Define email marketing relations
 export const emailListsRelations = relations(emailLists, ({ many }) => ({

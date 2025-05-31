@@ -26,6 +26,7 @@ import {
   insertDiscountCodeSchema,
   insertOrderSchema,
   insertOrderItemSchema,
+  insertSponsoredContentSchema,
   loginSchema
 } from "@shared/schema";
 import { validateRequest, authRateLimiter } from "./security/middleware";
