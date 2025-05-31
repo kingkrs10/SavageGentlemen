@@ -77,6 +77,7 @@ const ProductCard = ({
                 src={imgSrc} 
                 alt={title} 
                 className="w-full h-48 object-cover" 
+                loading="lazy"
                 onError={() => setImgError(true)}
               />
             )}
@@ -137,6 +138,7 @@ const ProductCard = ({
             src={imgSrc} 
             alt={title} 
             className="w-full h-40 object-cover"
+            loading="lazy"
             onError={() => setImgError(true)}
           />
         )}

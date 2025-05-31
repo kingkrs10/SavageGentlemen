@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getNormalizedImageUrl } from "@/lib/utils/image-utils";
+import { getOptimizedImageUrl, getDeviceInfo } from "@/lib/utils/image-compression";
 
 interface LazyImageProps {
   src: string;
@@ -10,6 +11,8 @@ interface LazyImageProps {
   loadingClassName?: string;
   placeholderColor?: string;
   objectFit?: "cover" | "contain" | "fill" | "none" | "scale-down";
+  context?: 'thumbnail' | 'card' | 'hero' | 'gallery';
+  adaptive?: boolean;
 }
 
 /**
@@ -27,7 +30,9 @@ export function LazyImage({
   fallbackSrc,
   loadingClassName = "",
   placeholderColor = "bg-gray-800",
-  objectFit = "cover"
+  objectFit = "cover",
+  context = "card",
+  adaptive = true
 }: LazyImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState(false);
@@ -36,8 +41,10 @@ export function LazyImage({
   const [attemptedFallback, setAttemptedFallback] = useState(false);
   const [currentSrc, setCurrentSrc] = useState<string | null>(null);
   
-  // Properly normalize the image URL
-  const normalizedSrc = currentSrc || getNormalizedImageUrl(src);
+  // Apply adaptive compression and normalize the image URL
+  const deviceInfo = adaptive ? getDeviceInfo() : null;
+  const optimizedSrc = adaptive && deviceInfo ? getOptimizedImageUrl(src, context, deviceInfo) : src;
+  const normalizedSrc = currentSrc || getNormalizedImageUrl(optimizedSrc);
   
   // Use Intersection Observer to detect when image is in viewport
   useEffect(() => {
