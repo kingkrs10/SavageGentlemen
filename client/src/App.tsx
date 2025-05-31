@@ -21,6 +21,7 @@ import { initGA } from "@/lib/ga-analytics";
 import { trackPageView } from "@/lib/analytics";
 
 import { useToast } from "@/hooks/use-toast";
+import PerformanceInsights from "@/components/debug/PerformanceInsights";
 
 // Lazily load pages for code splitting
 const Home = lazy(() => import("@/pages/home"));

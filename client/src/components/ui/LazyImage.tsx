@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getNormalizedImageUrl } from "@/lib/utils/image-utils";
 import { getOptimizedImageUrl, getDeviceInfo } from "@/lib/utils/image-compression";
+import { measureImageLoad } from "@/lib/utils/performance-monitor";
 
 interface LazyImageProps {
   src: string;
@@ -86,6 +87,14 @@ export function LazyImage({
     if (process.env.NODE_ENV !== 'production') {
       console.log("Image loaded successfully:", normalizedSrc);
     }
+    
+    // Track performance metrics for adaptive compression
+    if (adaptive && deviceInfo) {
+      measureImageLoad(normalizedSrc, context, true).catch(() => {
+        // Silently handle measurement errors
+      });
+    }
+    
     setIsLoaded(true);
   };
 

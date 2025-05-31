@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Event } from "@/lib/types";
 import { API_ROUTES } from "@/lib/constants";
-import { getNormalizedImageUrl } from "@/lib/utils/image-utils";
+import { LazyImage } from "@/components/ui/LazyImage";
 
 const EventsBanner = () => {
   const { data: events, isLoading } = useQuery<Event[]>({
@@ -60,10 +60,12 @@ const EventsBanner = () => {
             >
               <div className="w-80 bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-gray-700">
                 <div className="relative h-32">
-                  <img
-                    src={getNormalizedImageUrl(event.imageUrl)}
+                  <LazyImage
+                    src={event.imageUrl}
                     alt={event.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full"
+                    context="card"
+                    adaptive={true}
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-30 group-hover:bg-opacity-20 transition-all duration-300"></div>
                   {event.featured && (
