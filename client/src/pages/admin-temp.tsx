@@ -592,7 +592,7 @@ export default function AdminTemp() {
           value={activeTab}
           onValueChange={setActiveTab}
         >
-          <TabsList className="w-full grid grid-cols-4 mb-6">
+          <TabsList className="w-full grid grid-cols-5 mb-6">
             <TabsTrigger value="tools" className="flex items-center gap-1 text-xs sm:text-sm">
               <Ticket className="h-3 w-3 sm:h-4 sm:w-4 mr-0 sm:mr-1" />
               <span className="hidden sm:inline">Tools</span>
@@ -600,6 +600,10 @@ export default function AdminTemp() {
             <TabsTrigger value="content" className="flex items-center gap-1 text-xs sm:text-sm" data-value="content">
               <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-0 sm:mr-1" />
               <span className="hidden sm:inline">Events</span>
+            </TabsTrigger>
+            <TabsTrigger value="ads" className="flex items-center gap-1 text-xs sm:text-sm">
+              <ShoppingBag className="h-3 w-3 sm:h-4 sm:w-4 mr-0 sm:mr-1" />
+              <span className="hidden sm:inline">Ads</span>
             </TabsTrigger>
             <TabsTrigger value="tickets" className="flex items-center gap-1 text-xs sm:text-sm">
               <Ticket className="h-3 w-3 sm:h-4 sm:w-4 mr-0 sm:mr-1" />
@@ -846,6 +850,147 @@ export default function AdminTemp() {
                       </div>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="ads" className="space-y-4">
+            <div className="grid grid-cols-1 gap-4">
+              {/* Sponsored Content Management Card */}
+              <Card className="shadow-md">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base sm:text-lg flex items-center justify-between">
+                    <div className="flex items-center">
+                      <ShoppingBag className="h-4 w-4 mr-2" />
+                      Sponsored Content Management
+                    </div>
+                    <Button 
+                      onClick={() => {
+                        // Create new ad form logic will go here
+                        toast({
+                          title: "Create New Ad",
+                          description: "Ad creation form will be implemented here"
+                        });
+                      }}
+                      className="h-8 text-xs"
+                      size="sm"
+                    >
+                      Create Ad
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm mb-4">Manage sponsored content and advertisements displayed on your site.</p>
+                  
+                  {/* Ad Types Quick Actions */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs"
+                      onClick={() => {
+                        toast({
+                          title: "Standard Ad",
+                          description: "Create a standard text-based advertisement"
+                        });
+                      }}
+                    >
+                      Standard Ad
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs"
+                      onClick={() => {
+                        toast({
+                          title: "Banner Ad",
+                          description: "Create a banner with background image"
+                        });
+                      }}
+                    >
+                      Banner Ad
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs"
+                      onClick={() => {
+                        toast({
+                          title: "Product Showcase",
+                          description: "Create a product showcase advertisement"
+                        });
+                      }}
+                    >
+                      Product Showcase
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs"
+                      onClick={() => {
+                        toast({
+                          title: "Event Promotion",
+                          description: "Create an event promotion advertisement"
+                        });
+                      }}
+                    >
+                      Event Promo
+                    </Button>
+                  </div>
+
+                  {/* Current Ads List */}
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium">Current Advertisements</h3>
+                    <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
+                      <ShoppingBag className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No ads created yet</p>
+                      <p className="text-xs">Click "Create Ad" to get started</p>
+                    </div>
+                  </div>
+
+                  {/* Ad Management Features */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-4 border-t">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs"
+                      onClick={() => {
+                        toast({
+                          title: "View Analytics",
+                          description: "Ad performance analytics will be shown here"
+                        });
+                      }}
+                    >
+                      View Analytics
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs"
+                      onClick={() => {
+                        toast({
+                          title: "Schedule Ads",
+                          description: "Ad scheduling interface will be shown here"
+                        });
+                      }}
+                    >
+                      Schedule Ads
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs"
+                      onClick={() => {
+                        toast({
+                          title: "Ad Settings",
+                          description: "Global ad settings will be shown here"
+                        });
+                      }}
+                    >
+                      Ad Settings
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </div>
