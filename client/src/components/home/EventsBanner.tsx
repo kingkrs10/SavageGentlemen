@@ -50,7 +50,7 @@ const EventsBanner = () => {
       </div>
       
       <div className="relative">
-        <div className="flex space-x-6 animate-[scroll_30s_linear_infinite] hover:[animation-play-state:paused]">
+        <div className="flex space-x-6 animate-scroll hover:animation-paused">
           {/* Duplicate events for seamless scrolling */}
           {[...activeEvents, ...activeEvents].map((event, index) => (
             <Link 

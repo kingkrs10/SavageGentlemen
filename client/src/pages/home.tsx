@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import EventCard from "@/components/home/EventCard";
 import ProductCard from "@/components/home/ProductCard";
+import EventsBanner from "@/components/home/EventsBanner";
+import AdSpace from "@/components/home/AdSpace";
 import { API_ROUTES, EXTERNAL_URLS } from "@/lib/constants";
 import { Event, Product, Livestream } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -110,6 +112,138 @@ const Home = () => {
                   SHOP COLLECTION
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Events Banner */}
+      <EventsBanner />
+
+      {/* Main Content with Sidebar */}
+      <div className="container mx-auto px-3 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-3 space-y-12">
+            {/* Featured Events Section */}
+            {featuredEvents && featuredEvents.length > 0 && (
+              <section>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-heading uppercase tracking-wide">Featured Events</h2>
+                  <Link href="/events">
+                    <Button variant="outline" className="group">
+                      View All
+                      <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {eventsLoading 
+                    ? Array(3).fill(0).map((_, i) => (
+                        <div key={i} className="space-y-3">
+                          <Skeleton className="h-48 w-full" />
+                          <Skeleton className="h-4 w-3/4" />
+                          <Skeleton className="h-4 w-1/2" />
+                        </div>
+                      ))
+                    : featuredEvents.map((event) => (
+                        <EventCard
+                          key={event.id}
+                          event={event}
+                          onGetTicket={handleGetTicket}
+                        />
+                      ))
+                  }
+                </div>
+              </section>
+            )}
+
+            {/* Featured Products Section */}
+            {featuredProducts && featuredProducts.length > 0 && (
+              <section>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-heading uppercase tracking-wide">Featured Products</h2>
+                  <Button 
+                    variant="outline" 
+                    className="group"
+                    onClick={() => window.open(EXTERNAL_URLS.ETSY_SHOP, '_blank', 'noopener,noreferrer')}
+                  >
+                    Shop All
+                    <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {productsLoading 
+                    ? Array(3).fill(0).map((_, i) => (
+                        <div key={i} className="space-y-3">
+                          <Skeleton className="h-48 w-full" />
+                          <Skeleton className="h-4 w-3/4" />
+                          <Skeleton className="h-4 w-1/2" />
+                        </div>
+                      ))
+                    : featuredProducts.map((product) => (
+                        <ProductCard
+                          key={product.id}
+                          product={product}
+                          onAddToCart={handleAddToCart}
+                        />
+                      ))
+                  }
+                </div>
+              </section>
+            )}
+
+            {/* Livestream Section */}
+            {currentLivestream && (
+              <section>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-heading uppercase tracking-wide">Live Now</h2>
+                </div>
+                
+                <div className="bg-card rounded-lg overflow-hidden shadow-lg">
+                  <div className="aspect-video relative bg-gray-900">
+                    {livestreamLoading ? (
+                      <Skeleton className="w-full h-full" />
+                    ) : currentLivestream.thumbnailUrl && !livestreamImgError ? (
+                      <img
+                        src={currentLivestream.thumbnailUrl}
+                        alt={currentLivestream.title}
+                        className="w-full h-full object-cover"
+                        onError={() => setLivestreamImgError(true)}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-800">
+                        <Play className="h-16 w-16 text-white/50" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <Button
+                        size="lg"
+                        className="bg-primary/90 hover:bg-primary text-white"
+                        onClick={() => window.open(currentLivestream.streamUrl, '_blank', 'noopener,noreferrer')}
+                      >
+                        <Play className="mr-2 h-5 w-5" />
+                        Watch Live
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold mb-2">{currentLivestream.title}</h3>
+                    {currentLivestream.description && (
+                      <p className="text-muted-foreground">{currentLivestream.description}</p>
+                    )}
+                  </div>
+                </div>
+              </section>
+            )}
+          </div>
+
+          {/* Sidebar with Ad Space */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-8">
+              <AdSpace />
             </div>
           </div>
         </div>
