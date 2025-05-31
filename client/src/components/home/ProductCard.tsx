@@ -61,72 +61,55 @@ const ProductCard = ({
   
   if (variant === "large") {
     return (
-      <div className="bg-gray-900 rounded-lg overflow-hidden shadow-lg">
-        <div className="relative">
-          <Link href={`/product/${id}`} className="block">
-            <img 
-              src={imgSrc} 
-              alt={title} 
-              className="w-full h-48 object-cover" 
-              loading="lazy"
-              onError={handleImageError}
-              onLoad={handleImageLoad}
-              style={{ display: imgError ? 'none' : 'block' }}
-            />
-            {imgError && (
-              <div className="w-full h-48 bg-gray-800 flex items-center justify-center">
-                <img 
-                  src={SGFlyerLogoPng} 
-                  alt={title} 
-                  className="h-32 object-contain"
-                />
-              </div>
-            )}
-          </Link>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-2 right-2 bg-black bg-opacity-50 p-2 rounded-full hover:bg-primary transition"
-            onClick={() => onAddToWishlist && onAddToWishlist(id)}
-          >
-            <Heart className="w-4 h-4 text-white" />
-          </Button>
-        </div>
-        <div className="p-4">
-          <Link href={`/product/${id}`} className="block">
-            <h3 className="font-semibold hover:text-primary transition">{title}</h3>
-          </Link>
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-primary font-bold">{formatCurrency(price)}</span>
-            <div className="flex space-x-2">
-              <span className="text-xs text-gray-400">
-                {sizes && sizes.join(", ")}
-              </span>
+      <div className="bg-gray-900 rounded-lg overflow-hidden shadow-lg group cursor-pointer">
+        <a 
+          href={product.etsyUrl} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="block relative group-hover:scale-105 transition-transform duration-300"
+        >
+          <img 
+            src={imgSrc} 
+            alt={title} 
+            className="w-full h-48 object-cover" 
+            loading="lazy"
+            onError={handleImageError}
+            onLoad={handleImageLoad}
+            style={{ display: imgError ? 'none' : 'block' }}
+          />
+          {imgError && (
+            <div className="w-full h-48 bg-gray-800 flex items-center justify-center">
+              <img 
+                src={SGFlyerLogoPng} 
+                alt={title} 
+                className="h-32 object-contain"
+              />
             </div>
-          </div>
-          <Button 
-            className="w-full bg-primary text-white hover:bg-red-800 transition mt-3"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onAddToCart && onAddToCart(id);
-            }}
-          >
-            Add to Cart
-          </Button>
-        </div>
+          )}
+        </a>
       </div>
     );
   }
   
   return (
-    <div className="bg-gray-900 rounded-lg overflow-hidden shadow-lg">
-      <Link 
-        href={`/product/${id}`} 
-        className="block" 
+    <div className="bg-gray-900 rounded-lg overflow-hidden shadow-lg group cursor-pointer">
+      <a 
+        href={product.etsyUrl} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="block relative group-hover:scale-105 transition-transform duration-300"
         onClick={() => trackProductDetailClick(id)}
       >
-        {imgError ? (
+        <img 
+          src={imgSrc} 
+          alt={title} 
+          className="w-full h-40 object-cover"
+          loading="lazy"
+          onError={handleImageError}
+          onLoad={handleImageLoad}
+          style={{ display: imgError ? 'none' : 'block' }}
+        />
+        {imgError && (
           <div className="w-full h-40 bg-gray-800 flex items-center justify-center">
             <img 
               src={SGFlyerLogoPng} 
@@ -134,53 +117,8 @@ const ProductCard = ({
               className="h-24 object-contain"
             />
           </div>
-        ) : (
-          <>
-            <img 
-              src={imgSrc} 
-              alt={title} 
-              className="w-full h-40 object-cover"
-              loading="lazy"
-              onError={handleImageError}
-              onLoad={handleImageLoad}
-              style={{ display: imgError ? 'none' : 'block' }}
-            />
-            {imgError && (
-              <div className="w-full h-40 bg-gray-800 flex items-center justify-center">
-                <img 
-                  src={SGFlyerLogoPng} 
-                  alt={title} 
-                  className="h-24 object-contain"
-                />
-              </div>
-            )}
-          </>
         )}
-      </Link>
-      <div className="p-3">
-        <Link 
-          href={`/product/${id}`} 
-          className="block"
-          onClick={() => trackProductDetailClick(id)}
-        >
-          <h3 className="text-md font-semibold truncate hover:text-primary transition">{title}</h3>
-        </Link>
-        <div className="flex justify-between items-center mt-1">
-          <span className="text-primary font-bold">{formatCurrency(price)}</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="bg-black text-white p-1 rounded-full h-8 w-8 flex items-center justify-center hover:bg-primary transition"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onAddToCart && onAddToCart(id);
-            }}
-          >
-            <ShoppingCart className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
+      </a>
     </div>
   );
 };
