@@ -1406,17 +1406,16 @@ export default function AdminTemp() {
             e.preventDefault();
             const formData = new FormData(e.currentTarget);
             const adData = {
-              title: formData.get('title'),
-              description: formData.get('description'),
-              adType: selectedAdType,
-              targetUrl: formData.get('targetUrl'),
-              imageUrl: formData.get('imageUrl'),
+              title: formData.get('title') as string,
+              description: formData.get('description') as string,
+              type: selectedAdType,
+              linkUrl: formData.get('targetUrl') as string || null,
+              imageUrl: formData.get('imageUrl') as string || null,
               isActive: formData.get('isActive') === 'on',
               priority: parseInt(formData.get('priority') as string) || 0,
-              backgroundColor: formData.get('backgroundColor'),
-              textColor: formData.get('textColor'),
-              buttonText: formData.get('buttonText'),
-              buttonColor: formData.get('buttonColor')
+              backgroundColor: formData.get('backgroundColor') as string || '#ffffff',
+              textColor: formData.get('textColor') as string || '#000000',
+              ctaText: formData.get('buttonText') as string || 'Learn More'
             };
             createAdMutation.mutate(adData);
           }}>
