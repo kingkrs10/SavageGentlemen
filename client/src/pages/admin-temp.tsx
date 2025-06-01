@@ -16,7 +16,11 @@ import {
   Clock, 
   X, 
   Save,
-  Trash
+  Trash,
+  Plus,
+  Edit,
+  Eye,
+  BarChart3
 } from "lucide-react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -113,6 +117,11 @@ export default function AdminTemp() {
   const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false);
   const [isUndoAlertVisible, setIsUndoAlertVisible] = useState(false);
   const [lastDeletedEvent, setLastDeletedEvent] = useState<any>(null);
+  
+  // Sponsored content state
+  const [isCreateAdModalOpen, setIsCreateAdModalOpen] = useState(false);
+  const [selectedAdType, setSelectedAdType] = useState<string>('standard');
+  const [editingAd, setEditingAd] = useState<any>(null);
   const [eventFormData, setEventFormData] = useState({
     id: 0,
     title: "",
@@ -138,6 +147,54 @@ export default function AdminTemp() {
   } = useQuery({ 
     queryKey: ['/api/events'], 
     queryFn: () => apiRequest('GET', '/api/events').then(res => res.json())
+  });
+
+  // Fetch sponsored content
+  const { 
+    data: sponsoredContent = [], 
+    isLoading: adsLoading,
+    refetch: refetchAds
+  } = useQuery({ 
+    queryKey: ['/api/sponsored-content'], 
+    queryFn: () => apiRequest('GET', '/api/sponsored-content').then(res => res.json())
+  });
+
+  // Mutations for sponsored content
+  const createAdMutation = useMutation({
+    mutationFn: (adData: any) => apiRequest('POST', '/api/admin/sponsored-content', adData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/sponsored-content'] });
+      setIsCreateAdModalOpen(false);
+      toast({
+        title: "Success",
+        description: "Advertisement created successfully"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create advertisement",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const deleteAdMutation = useMutation({
+    mutationFn: (id: number) => apiRequest('DELETE', `/api/admin/sponsored-content/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/sponsored-content'] });
+      toast({
+        title: "Success",
+        description: "Advertisement deleted successfully"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete advertisement",
+        variant: "destructive"
+      });
+    }
   });
   
   // Function for checking deleted events in localStorage
@@ -867,15 +924,14 @@ export default function AdminTemp() {
                     </div>
                     <Button 
                       onClick={() => {
-                        // Create new ad form logic will go here
-                        toast({
-                          title: "Create New Ad",
-                          description: "Ad creation form will be implemented here"
-                        });
+                        setEditingAd(null);
+                        setSelectedAdType('standard');
+                        setIsCreateAdModalOpen(true);
                       }}
                       className="h-8 text-xs"
                       size="sm"
                     >
+                      <Plus className="h-3 w-3 mr-1" />
                       Create Ad
                     </Button>
                   </CardTitle>
@@ -942,11 +998,76 @@ export default function AdminTemp() {
                   {/* Current Ads List */}
                   <div className="space-y-2">
                     <h3 className="text-sm font-medium">Current Advertisements</h3>
-                    <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
-                      <ShoppingBag className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No ads created yet</p>
-                      <p className="text-xs">Click "Create Ad" to get started</p>
-                    </div>
+                    {adsLoading ? (
+                      <div className="text-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                        <p className="mt-2 text-xs">Loading ads...</p>
+                      </div>
+                    ) : sponsoredContent.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg">
+                        <ShoppingBag className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No ads created yet</p>
+                        <p className="text-xs">Click "Create Ad" to get started</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {sponsoredContent.map((ad: any) => (
+                          <div key={ad.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-medium">{ad.title}</span>
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                  ad.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                                }`}>
+                                  {ad.isActive ? 'Active' : 'Inactive'}
+                                </span>
+                                <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full capitalize">
+                                  {ad.adType}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">{ad.description}</p>
+                              <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Eye className="h-3 w-3" />
+                                  {ad.views || 0} views
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <BarChart3 className="h-3 w-3" />
+                                  {ad.clicks || 0} clicks
+                                </span>
+                                <span>Priority: {ad.priority || 0}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 ml-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                onClick={() => {
+                                  setEditingAd(ad);
+                                  setIsCreateAdModalOpen(true);
+                                }}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                                onClick={() => {
+                                  if (confirm(`Delete "${ad.title}"?`)) {
+                                    deleteAdMutation.mutate(ad.id);
+                                  }
+                                }}
+                                disabled={deleteAdMutation.isPending}
+                              >
+                                <Trash className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Ad Management Features */}
@@ -1266,6 +1387,188 @@ export default function AdminTemp() {
                     <Save className="h-4 w-4 mr-2" />
                     Save Event
                   </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Ad Creation/Edit Modal */}
+      <Dialog open={isCreateAdModalOpen} onOpenChange={setIsCreateAdModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingAd ? 'Edit Advertisement' : 'Create New Advertisement'}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const adData = {
+              title: formData.get('title'),
+              description: formData.get('description'),
+              adType: selectedAdType,
+              targetUrl: formData.get('targetUrl'),
+              imageUrl: formData.get('imageUrl'),
+              isActive: formData.get('isActive') === 'on',
+              priority: parseInt(formData.get('priority') as string) || 0,
+              backgroundColor: formData.get('backgroundColor'),
+              textColor: formData.get('textColor'),
+              buttonText: formData.get('buttonText'),
+              buttonColor: formData.get('buttonColor')
+            };
+            createAdMutation.mutate(adData);
+          }}>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="adType">Ad Type</Label>
+                <select 
+                  id="adType"
+                  value={selectedAdType}
+                  onChange={(e) => setSelectedAdType(e.target.value)}
+                  className="w-full p-2 border rounded-md"
+                >
+                  <option value="standard">Standard Ad</option>
+                  <option value="banner">Banner Ad</option>
+                  <option value="product_showcase">Product Showcase</option>
+                  <option value="event_promotion">Event Promotion</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  name="title"
+                  defaultValue={editingAd?.title || ''}
+                  placeholder="Enter ad title"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  defaultValue={editingAd?.description || ''}
+                  placeholder="Enter ad description"
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="targetUrl">Target URL</Label>
+                <Input
+                  id="targetUrl"
+                  name="targetUrl"
+                  type="url"
+                  defaultValue={editingAd?.targetUrl || ''}
+                  placeholder="https://example.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="imageUrl">Image URL</Label>
+                <Input
+                  id="imageUrl"
+                  name="imageUrl"
+                  type="url"
+                  defaultValue={editingAd?.imageUrl || ''}
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="priority">Priority</Label>
+                  <Input
+                    id="priority"
+                    name="priority"
+                    type="number"
+                    defaultValue={editingAd?.priority || 0}
+                    placeholder="0"
+                    min="0"
+                  />
+                </div>
+                <div className="space-y-2 flex items-end">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      name="isActive"
+                      defaultChecked={editingAd?.isActive !== false}
+                      className="rounded"
+                    />
+                    <span className="text-sm">Active</span>
+                  </label>
+                </div>
+              </div>
+
+              {selectedAdType === 'banner' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="backgroundColor">Background Color</Label>
+                    <Input
+                      id="backgroundColor"
+                      name="backgroundColor"
+                      type="color"
+                      defaultValue={editingAd?.backgroundColor || '#ffffff'}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="textColor">Text Color</Label>
+                    <Input
+                      id="textColor"
+                      name="textColor"
+                      type="color"
+                      defaultValue={editingAd?.textColor || '#000000'}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="buttonText">Button Text</Label>
+                  <Input
+                    id="buttonText"
+                    name="buttonText"
+                    defaultValue={editingAd?.buttonText || 'Learn More'}
+                    placeholder="Learn More"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="buttonColor">Button Color</Label>
+                  <Input
+                    id="buttonColor"
+                    name="buttonColor"
+                    type="color"
+                    defaultValue={editingAd?.buttonColor || '#3b82f6'}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsCreateAdModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={createAdMutation.isPending}
+              >
+                {createAdMutation.isPending ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Creating...
+                  </>
+                ) : (
+                  editingAd ? 'Update Ad' : 'Create Ad'
                 )}
               </Button>
             </DialogFooter>
