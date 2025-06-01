@@ -164,7 +164,9 @@ export default function AdminTemp() {
     mutationFn: (adData: any) => apiRequest('POST', '/api/admin/sponsored-content', adData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/sponsored-content'] });
+      refetchAds();
       setIsCreateAdModalOpen(false);
+      setEditingAd(null);
       toast({
         title: "Success",
         description: "Advertisement created successfully"
