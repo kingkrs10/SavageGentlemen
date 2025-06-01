@@ -3,6 +3,8 @@ import { Link } from "wouter";
 import { ExternalLink, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 interface AdData {
   id: string;
@@ -24,8 +26,32 @@ interface AdData {
 const AdSpace = () => {
   const [dismissedAds, setDismissedAds] = useState<string[]>([]);
 
-  // Sponsored content with different ad types
-  const ads: AdData[] = [
+  // Fetch active sponsored content from database
+  const { data: sponsoredContent = [], isLoading } = useQuery({
+    queryKey: ['/api/sponsored-content/active'],
+    queryFn: () => apiRequest('GET', '/api/sponsored-content/active').then(res => res.json())
+  });
+
+  // Convert database ads to AdData format
+  const ads: AdData[] = sponsoredContent.map((ad: any) => ({
+    id: ad.id.toString(),
+    title: ad.title,
+    description: ad.description,
+    imageUrl: ad.imageUrl,
+    linkUrl: ad.linkUrl,
+    backgroundColor: ad.backgroundColor || 'bg-gray-800',
+    textColor: ad.textColor || 'text-white',
+    ctaText: ad.ctaText || 'Learn More',
+    logoUrl: ad.logoUrl,
+    type: ad.type,
+    videoUrl: ad.videoUrl,
+    price: ad.price,
+    eventDate: ad.eventDate,
+    location: ad.location
+  }));
+
+  // Fallback placeholder ads only if no database content
+  const placeholderAds: AdData[] = [
     // Standard ad
     {
       id: "sponsor-1",
@@ -80,10 +106,22 @@ const AdSpace = () => {
     }
   ];
 
-  const visibleAds = ads.filter(ad => !dismissedAds.includes(ad.id));
+  // Use real ads if available, otherwise show nothing during loading
+  const displayAds = ads.length > 0 ? ads : (isLoading ? [] : placeholderAds.slice(0, 1));
+
+  const visibleAds = displayAds.filter(ad => !dismissedAds.includes(ad.id));
 
   const dismissAd = (adId: string) => {
     setDismissedAds(prev => [...prev, adId]);
+  };
+
+  // Track ad clicks
+  const trackAdClick = async (adId: string) => {
+    try {
+      await apiRequest('POST', `/api/sponsored-content/${adId}/click`);
+    } catch (error) {
+      console.error('Failed to track ad click:', error);
+    }
   };
 
   const renderAdContent = (ad: AdData) => {
@@ -231,6 +269,7 @@ const AdSpace = () => {
                     variant="secondary" 
                     size="sm"
                     className="bg-white/20 hover:bg-white/30 text-white border-white/30 w-full"
+                    onClick={() => trackAdClick(ad.id)}
                   >
                     {ad.ctaText || "Learn More"}
                     <ExternalLink className="w-4 h-4 ml-2" />
