@@ -264,17 +264,31 @@ const AdSpace = () => {
             
             {ad.linkUrl && (
               <div className="p-4 bg-gray-900">
-                <Link href={ad.linkUrl}>
-                  <Button 
-                    variant="secondary" 
-                    size="sm"
-                    className="bg-white/20 hover:bg-white/30 text-white border-white/30 w-full"
-                    onClick={() => trackAdClick(ad.id)}
-                  >
-                    {ad.ctaText || "Learn More"}
-                    <ExternalLink className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
+                {ad.linkUrl.startsWith('http') ? (
+                  <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer">
+                    <Button 
+                      variant="secondary" 
+                      size="sm"
+                      className="bg-white/20 hover:bg-white/30 text-white border-white/30 w-full"
+                      onClick={() => trackAdClick(ad.id)}
+                    >
+                      {ad.ctaText || "Learn More"}
+                      <ExternalLink className="w-4 h-4 ml-2" />
+                    </Button>
+                  </a>
+                ) : (
+                  <Link href={ad.linkUrl}>
+                    <Button 
+                      variant="secondary" 
+                      size="sm"
+                      className="bg-white/20 hover:bg-white/30 text-white border-white/30 w-full"
+                      onClick={() => trackAdClick(ad.id)}
+                    >
+                      {ad.ctaText || "Learn More"}
+                      <ExternalLink className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                )}
               </div>
             )}
           </CardContent>
