@@ -41,6 +41,7 @@ const TicketScanner = lazy(() => import("@/pages/ticket-scanner"));
 const UserManagement = lazy(() => import("@/pages/user-management"));
 const TicketManagement = lazy(() => import("@/pages/ticket-management"));
 const FreeTicketsDashboard = lazy(() => import("@/pages/free-tickets-dashboard"));
+const EmailManagement = lazy(() => import("@/pages/email-management"));
 
 function Router() {
   // Use location hook for tracking page views
