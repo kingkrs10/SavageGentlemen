@@ -3712,5 +3712,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Free ticket monitoring endpoint
+  app.get("/api/admin/free-tickets", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated() || req.user?.role !== 'admin') {
+      return res.status(401).json({ message: "Admin access required" });
+    }
+
+    try {
+      const freeTickets = await storage.getFreeTicketPurchases();
+      
+      // Calculate summary statistics
+      const summary = {
+        totalFreeTickets: freeTickets.length,
+        uniqueUsers: new Set(freeTickets.map(ticket => ticket.userId)).size,
+        events: [...new Set(freeTickets.map(ticket => ticket.eventTitle))],
+        recentPurchases: freeTickets.slice(0, 10), // Last 10 purchases
+        userBreakdown: freeTickets.reduce((acc, ticket) => {
+          const key = ticket.username || 'Unknown';
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
+      };
+
+      res.json({
+        summary,
+        tickets: freeTickets
+      });
+    } catch (error) {
+      console.error('Error fetching free tickets:', error);
+      res.status(500).json({ message: "Failed to fetch free ticket data" });
+    }
+  });
+
   return httpServer;
 }

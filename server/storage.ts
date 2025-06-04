@@ -186,6 +186,7 @@ export interface IStorage {
   getTicketPurchasesByEventId(eventId: number): Promise<TicketPurchase[]>;
   getTicketPurchase(id: number): Promise<TicketPurchase | undefined>;
   getTicketPurchaseByQrCodeData(qrCodeData: string): Promise<TicketPurchase | undefined>;
+  getFreeTicketPurchases(): Promise<any[]>;
   
   // Ticket scan operations
   createTicketScan(ticketScan: InsertTicketScan): Promise<TicketScan>;
@@ -3150,6 +3151,39 @@ export class DatabaseStorage implements IStorage {
     await db.update(sponsoredContent)
       .set({ views: sql`${sponsoredContent.views} + 1` })
       .where(eq(sponsoredContent.id, id));
+  }
+
+  async getFreeTicketPurchases(): Promise<any[]> {
+    try {
+      const result = await db
+        .select({
+          id: ticketPurchases.id,
+          userId: ticketPurchases.userId,
+          eventId: ticketPurchases.eventId,
+          ticketId: ticketPurchases.ticketId,
+          orderId: ticketPurchases.orderId,
+          purchaseDate: ticketPurchases.purchaseDate,
+          price: ticketPurchases.price,
+          status: ticketPurchases.status,
+          attendeeEmail: ticketPurchases.attendeeEmail,
+          attendeeName: ticketPurchases.attendeeName,
+          username: users.username,
+          displayName: users.displayName,
+          eventTitle: events.title,
+          ticketName: tickets.name
+        })
+        .from(ticketPurchases)
+        .leftJoin(users, eq(ticketPurchases.userId, users.id))
+        .leftJoin(events, eq(ticketPurchases.eventId, events.id))
+        .leftJoin(tickets, eq(ticketPurchases.ticketId, tickets.id))
+        .where(eq(ticketPurchases.price, '0'))
+        .orderBy(desc(ticketPurchases.purchaseDate));
+      
+      return result;
+    } catch (error) {
+      console.error('Error fetching free ticket purchases:', error);
+      return [];
+    }
   }
 }
 
