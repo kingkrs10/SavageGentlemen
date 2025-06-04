@@ -27,7 +27,7 @@ export default function EmailManagement() {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
   // Fetch all users
-  const { data: users = [], isLoading } = useQuery({
+  const { data: users = [], isLoading } = useQuery<User[]>({
     queryKey: ['/api/admin/users'],
   });
 
@@ -163,7 +163,7 @@ export default function EmailManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((user: User) => (
+                    {users.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">{user.username}</TableCell>
                         <TableCell>{user.displayName}</TableCell>

@@ -2451,6 +2451,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Update user email (admin only)
+  router.put("/admin/users/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: "Invalid email format" });
+      }
+
+      // Check if user exists
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Check if email is already in use by another user
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser && existingUser.id !== userId) {
+        return res.status(400).json({ message: "Email is already in use by another user" });
+      }
+
+      // Update the user's email
+      const updatedUser = await storage.updateUser(userId, { email });
+      if (!updatedUser) {
+        return res.status(500).json({ message: "Failed to update user email" });
+      }
+
+      // Remove sensitive information
+      const { password, ...userWithoutPassword } = updatedUser;
+      return res.status(200).json(userWithoutPassword);
+    } catch (err) {
+      console.error("Error updating user email:", err);
+      return res.status(500).json({ message: "Failed to update user email" });
+    }
+  });
+
   router.put("/admin/users/:id/role", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);

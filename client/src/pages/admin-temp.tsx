@@ -732,6 +732,25 @@ export default function AdminTemp() {
                   </Button>
                 </CardContent>
               </Card>
+
+              {/* Email Management Card */}
+              <Card className="shadow-md">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base sm:text-lg flex items-center">
+                    <Users className="h-4 w-4 mr-2" />
+                    Email Management
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs sm:text-sm mb-4">Manage user emails and password resets.</p>
+                  <Button 
+                    onClick={() => navigate('/email-management')}
+                    className="w-full h-10 text-sm"
+                  >
+                    Manage Emails
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
           

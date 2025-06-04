@@ -82,6 +82,7 @@ function Router() {
         <Route path="/user-management" component={UserManagement} />
         <Route path="/ticket-management" component={TicketManagement} />
         <Route path="/free-tickets" component={FreeTicketsDashboard} />
+        <Route path="/email-management" component={EmailManagement} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
