@@ -360,6 +360,23 @@ export class MemStorage implements IStorage {
   async getAllUsers(): Promise<User[]> {
     return Array.from(this.users.values());
   }
+
+  async getUserById(id: number): Promise<User | undefined> {
+    return this.getUser(id);
+  }
+
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const user = await this.getUser(id);
+    if (!user) {
+      return undefined;
+    }
+    
+    // Update user fields
+    Object.assign(user, userData);
+    user.updatedAt = new Date();
+    this.users.set(id, user);
+    return user;
+  }
   
   async updateUserRole(id: number, role: string): Promise<User | undefined> {
     const user = await this.getUser(id);
@@ -1527,6 +1544,26 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  async getUserById(id: number): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id));
+    return user;
+  }
+
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ 
+        ...userData,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
   async updateUserPassword(id: number, newPassword: string): Promise<User | undefined> {
     const [user] = await db
       .update(users)
