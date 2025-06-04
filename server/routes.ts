@@ -3713,10 +3713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Free ticket monitoring endpoint
-  app.get("/api/admin/free-tickets", async (req: Request, res: Response) => {
-    if (!req.isAuthenticated() || req.user?.role !== 'admin') {
-      return res.status(401).json({ message: "Admin access required" });
-    }
+  router.get("/admin/free-tickets", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
 
     try {
       const freeTickets = await storage.getFreeTicketPurchases();
