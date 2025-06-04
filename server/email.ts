@@ -29,6 +29,10 @@ export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
   try {
     const { to, subject, text, html, from = DEFAULT_FROM_EMAIL, attachments, cc, bcc } = options;
     
+    console.log(`[EMAIL] Attempting to send email to: ${to}, subject: ${subject}`);
+    console.log(`[EMAIL] From: ${from}`);
+    console.log(`[EMAIL] SendGrid API Key configured: ${process.env.SENDGRID_API_KEY ? 'Yes' : 'No'}`);
+    
     const msg = {
       to,
       from,
@@ -40,11 +44,27 @@ export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
       bcc
     };
     
-    await sgMail.send(msg);
-    console.log(`Email sent successfully to ${to}`);
+    console.log(`[EMAIL] Message object prepared:`, {
+      to: msg.to,
+      from: msg.from,
+      subject: msg.subject,
+      hasHtml: Boolean(msg.html),
+      hasText: Boolean(msg.text)
+    });
+    
+    const result = await sgMail.send(msg);
+    console.log(`[EMAIL] SendGrid response:`, result[0]?.statusCode);
+    console.log(`[EMAIL] Email sent successfully to ${to}`);
     return true;
   } catch (error) {
-    console.error('Email sending failed:', error);
+    console.error('[EMAIL] SendGrid error details:', error);
+    
+    if (error && typeof error === 'object' && 'response' in error) {
+      const sgError = error as any;
+      console.error('[EMAIL] SendGrid response body:', sgError.response?.body);
+      console.error('[EMAIL] SendGrid status code:', sgError.response?.statusCode);
+    }
+    
     return false;
   }
 };

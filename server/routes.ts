@@ -584,25 +584,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   router.post("/auth/password-reset/request", async (req: Request, res: Response) => {
     try {
       const { email } = req.body;
+      console.log(`[PASSWORD RESET] Request received for email: ${email}`);
       
       if (!email) {
+        console.log("[PASSWORD RESET] Error: Email is required");
         return res.status(400).json({ message: "Email is required" });
       }
       
       // Find user by email
+      console.log(`[PASSWORD RESET] Looking up user by email: ${email}`);
       const user = await storage.getUserByEmail(email);
       
       if (!user) {
+        console.log(`[PASSWORD RESET] No user found for email: ${email}`);
         // Don't reveal if email exists for security
         return res.status(200).json({ message: "If your email is registered, you will receive a reset link" });
       }
+      
+      console.log(`[PASSWORD RESET] User found: ${user.username} (ID: ${user.id})`);
       
       // Generate reset token (64 bytes = 128 hex characters)
       const resetToken = crypto.randomBytes(64).toString('hex');
       const resetExpiry = new Date(Date.now() + 3600000); // Token valid for 1 hour
       
+      console.log(`[PASSWORD RESET] Generated token for user ${user.id}, expires: ${resetExpiry}`);
+      
       // Store the token in the database
       await storage.storePasswordResetToken(user.id, resetToken, resetExpiry);
+      console.log(`[PASSWORD RESET] Token stored in database for user ${user.id}`);
       
       // Create reset link
       const baseUrl = process.env.NODE_ENV === 'production' 
@@ -610,8 +619,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : `${req.protocol}://${req.get('host')}`;
       
       const resetUrl = `${baseUrl}/password-reset?token=${resetToken}`;
+      console.log(`[PASSWORD RESET] Reset URL generated: ${resetUrl}`);
       
       // Send reset email
+      console.log(`[PASSWORD RESET] Attempting to send email to: ${email}`);
       const emailSent = await sendPasswordResetEmail(
         user.displayName || user.username,
         email,
@@ -619,12 +630,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       if (!emailSent) {
-        return res.status(500).json({ message: "Failed to send password reset email" });
+        console.error(`[PASSWORD RESET] Failed to send email to: ${email}`);
+        return res.status(500).json({ message: "Failed to send password reset email. Please check if the email service is configured correctly." });
       }
       
+      console.log(`[PASSWORD RESET] Email sent successfully to: ${email}`);
       return res.status(200).json({ message: "Password reset link sent to your email" });
     } catch (err) {
-      console.error("Password reset request error:", err);
+      console.error("[PASSWORD RESET] Error:", err);
       return res.status(500).json({ message: "An error occurred while processing your request" });
     }
   });
