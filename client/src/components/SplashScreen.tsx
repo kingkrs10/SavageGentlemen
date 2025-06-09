@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import SGLogo from "@/assets/sg-logo.png";
-import SGFlyerLogoPng from "@/assets/SGFLYERLOGO.png";
-import IntroVideo from "@/assets/videos/intro.mp4";
+import SGFlyerLogoPng from "@assets/SGFLYERLOGO.png";
 
 // Debug helper
 console.log("Loading SplashScreen component");
@@ -12,26 +10,18 @@ interface SplashScreenProps {
 }
 
 const SplashScreen = ({ onComplete }: SplashScreenProps) => {
-  const [videoEnded, setVideoEnded] = useState(false);
+  const [showLogo, setShowLogo] = useState(true);
   const [animationComplete, setAnimationComplete] = useState(false);
   
-  // Handle video end and trigger logo animation
-  const handleVideoEnd = () => {
-    console.log("Video ended, showing logo animation");
-    setVideoEnded(true);
-  };
-  
-  // Auto-proceed to logo after video or if video fails to load (fallback)
+  // Auto-proceed to main app
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!videoEnded) {
-        console.log("Video play timeout reached, forcing logo animation");
-        setVideoEnded(true);
-      }
-    }, 7000); // Fallback timeout for video
+      setAnimationComplete(true);
+      onComplete();
+    }, 2000); // Show logo for 2 seconds
     
     return () => clearTimeout(timer);
-  }, [videoEnded]);
+  }, [onComplete]);
   
   // Handle the end of the logo animation and dismiss splash screen
   useEffect(() => {
