@@ -6,6 +6,9 @@ import { ThemeProvider } from "next-themes";
 import SplashScreen from "@/components/SplashScreen";
 import Header from "@/components/layout/Header";
 import BottomNavigation from "@/components/layout/BottomNavigation";
+import { MobileNavigation } from "@/components/layout/MobileNavigation";
+import { PWAPrompt } from "@/components/layout/PWAPrompt";
+import { OfflineIndicator } from "@/components/layout/OfflineIndicator";
 import AuthModal from "@/components/auth/AuthModal";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import SEOHead from "@/components/SEOHead";
@@ -21,6 +24,7 @@ import { initGA } from "@/lib/ga-analytics";
 import { trackPageView } from "@/lib/analytics";
 
 import { useToast } from "@/hooks/use-toast";
+import { useViewportHeight, useIsMobile } from "@/hooks/use-mobile";
 import PerformanceInsights from "@/components/debug/PerformanceInsights";
 
 // Lazily load pages for code splitting
@@ -103,6 +107,10 @@ function AppContent() {
   
   // Get user from our new context
   const { user, login, logout } = useUser();
+  
+  // Initialize mobile app features
+  const vh = useViewportHeight();
+  const isMobile = useIsMobile();
 
   const guestLoginMutation = useMutation({
     mutationFn: async () => {
@@ -272,17 +280,19 @@ function AppContent() {
               />
             ) : (
               <>
+                <OfflineIndicator />
                 <Header
                   user={user}
                   onProfileClick={() => setShowAuthModal(true)}
                   onLogout={handleLogout}
                 />
-                <main className="flex-grow container mx-auto px-3 py-4 pb-16">
+                <main className={`flex-grow ${isMobile ? 'mobile-container pb-20' : 'container mx-auto px-3 py-4 pb-16'}`}>
                   <ErrorBoundary>
                     <Router />
                   </ErrorBoundary>
                 </main>
-                <BottomNavigation />
+                {isMobile ? <MobileNavigation /> : <BottomNavigation />}
+                <PWAPrompt />
               </>
             )}
             <AuthModal
