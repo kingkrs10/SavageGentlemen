@@ -3650,7 +3650,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     purchaseDate: new Date(),
                     qrCodeData: `EVENT-${eventId}-ORDER-${order.id}-${Date.now()}`,
                     ticketType: ticketName,
-                    price: Math.round(amount * 100), // Convert to cents
+                    price: Math.round(amount * 100).toString(), // Convert to cents and stringify
                     attendeeEmail: email,
                     attendeeName: customerName
                   };
