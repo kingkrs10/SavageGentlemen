@@ -13,23 +13,30 @@ const SimpleProductCard = ({ product, onAddToCart }: {
   product: Product; 
   onAddToCart: (id: number) => void;
 }) => {
-  // Use product image when available, fallback to logo
+  // Use actual product image URL, fallback to logo only if no imageUrl
   const imageUrl = product.imageUrl || SGFlyerLogoPng;
   const [imgError, setImgError] = useState(false);
   
+  console.log('Product rendering:', product.title, 'Image URL:', imageUrl);
+  
   return (
-    <div className="group bg-black rounded-xl overflow-hidden shadow-xl border border-gray-800 transition-all hover:border-primary hover:shadow-primary/20">
+    <div className="group bg-black rounded-xl overflow-hidden shadow-xl border border-gray-800 transition-all hover:border-primary hover:shadow-primary/20 h-full flex flex-col">
       <div className="relative h-72 bg-gray-900 flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-50 transition-opacity z-10"></div>
         <img 
-          src={!imgError ? imageUrl : SGFlyerLogoPng} 
+          src={!imgError && product.imageUrl ? product.imageUrl : SGFlyerLogoPng} 
           alt={product.title} 
-          className="h-full w-full object-contain p-4 transition-transform group-hover:scale-105"
-          onError={() => setImgError(true)}
+          className="h-full w-full object-cover transition-transform group-hover:scale-105"
+          onError={() => {
+            console.log('Image failed to load:', product.imageUrl);
+            setImgError(true);
+          }}
+          loading="lazy"
+          crossOrigin="anonymous"
         />
         <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-full group-hover:translate-y-0 transition-transform z-20">
           <a 
-            href={product.printifyUrl || EXTERNAL_URLS.PRINTIFY_SHOP} 
+            href={product.etsyUrl || EXTERNAL_URLS.PRINTIFY_SHOP} 
             target="_blank" 
             rel="noopener noreferrer"
             className="w-full block"
@@ -43,9 +50,11 @@ const SimpleProductCard = ({ product, onAddToCart }: {
           </a>
         </div>
       </div>
-      <div className="p-5">
-        <h3 className="font-bold text-lg text-white mb-2 group-hover:text-primary transition-colors">{product.title}</h3>
-        <div className="flex justify-between items-center">
+      <div className="p-5 flex-1 flex flex-col justify-between">
+        <div>
+          <h3 className="font-bold text-lg text-white mb-2 group-hover:text-primary transition-colors line-clamp-2">{product.title}</h3>
+        </div>
+        <div className="flex justify-between items-center mt-auto">
           <span className="text-primary font-bold text-xl">${(product.price / 100).toFixed(2)}</span>
           <span className="text-sm text-gray-400 uppercase tracking-wider">
             {product.sizes && product.sizes.join(" · ")}
@@ -94,10 +103,10 @@ const Shop = () => {
     const product = products.find(p => p.id === productId);
     if (product) {
       toast({
-        title: "Opening Printify shop",
-        description: `Redirecting to ${product.title} on Printify`
+        title: "Opening Etsy shop",
+        description: `Redirecting to ${product.title} on Etsy`
       });
-      window.open(product.printifyUrl || EXTERNAL_URLS.PRINTIFY_SHOP, "_blank");
+      window.open(product.etsyUrl || EXTERNAL_URLS.PRINTIFY_SHOP, "_blank");
     }
   };
   
@@ -185,7 +194,7 @@ const Shop = () => {
             <Skeleton className="h-[400px] rounded-lg bg-gray-800/50 backdrop-blur" />
           </div>
         ) : filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
             {filteredProducts.map((product) => (
               <SimpleProductCard 
                 key={product.id} 

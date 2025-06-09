@@ -49,6 +49,19 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Text utilities for consistent card layouts */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Grid utilities for consistent card heights */
+.auto-rows-fr {
+  grid-auto-rows: 1fr;
+}
+
 /* Mobile button enhancements */
 button, [role="button"], .clickable {
   touch-action: manipulation;
