@@ -1,0 +1,59 @@
+{
+  "name": "Savage Gentlemen",
+  "short_name": "SavGent",
+  "description": "Caribbean-American event and lifestyle brand. Explore events, shop merchandise, and connect with the community.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#8B0000",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/generated-icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/generated-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["entertainment", "music", "lifestyle"],
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Events",
+      "short_name": "Events",
+      "description": "Browse upcoming events",
+      "url": "/events",
+      "icons": [{ "src": "/generated-icon.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "My Tickets",
+      "short_name": "Tickets",
+      "description": "View your tickets",
+      "url": "/my-tickets",
+      "icons": [{ "src": "/generated-icon.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Shop",
+      "short_name": "Shop",
+      "description": "Browse merchandise",
+      "url": "/shop",
+      "icons": [{ "src": "/generated-icon.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Live Stream",
+      "short_name": "Live",
+      "description": "Watch live content",
+      "url": "/live",
+      "icons": [{ "src": "/generated-icon.png", "sizes": "96x96" }]
+    }
+  ]
+}
