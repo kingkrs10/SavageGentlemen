@@ -3021,6 +3021,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint to manually create a ticket for a user (for missed purchases)
+  router.post("/api/tickets/manual-create", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const { username, eventId, ticketType, amount, notes } = req.body;
+      
+      console.log(`Manually creating ticket for user: ${username}`);
+      
+      // Get user information
+      const user = await storage.getUserByUsername(username);
+      if (!user || !user.email) {
+        return res.status(404).json({ message: "User not found or no email address" });
+      }
+
+      // Get event details
+      const event = await storage.getEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      // Create order record
+      const order = await storage.createOrder({
+        userId: user.id,
+        totalAmount: amount || 0,
+        status: 'completed',
+        paymentMethod: 'manual',
+        paymentId: `manual-${Date.now()}`
+      });
+
+      // Generate QR code data
+      const qrCodeData = `EVENT-${eventId}-ORDER-${order.id}-${Date.now()}`;
+
+      // Create ticket purchase record
+      const ticketData = {
+        userId: user.id,
+        eventId: eventId,
+        ticketId: null,
+        orderId: order.id,
+        qrCodeData: qrCodeData,
+        status: 'valid',
+        ticketType: ticketType || 'General Admission',
+        price: amount?.toString() || '0',
+        attendeeEmail: user.email,
+        attendeeName: user.displayName || user.username,
+        purchaseDate: new Date()
+      };
+
+      const ticket = await storage.createTicketPurchase(ticketData);
+
+      // Send ticket email with delivery monitoring
+      const { ticketMonitor } = await import('./ticket-monitor');
+      await ticketMonitor.ensureTicketDelivery(
+        ticket.id,
+        order.id,
+        user.id,
+        user.email,
+        event.title,
+        ticket.qrCodeData,
+        event.location,
+        event.date,
+        ticketType || 'General Admission',
+        amount || 0
+      );
+
+      res.json({
+        success: true,
+        message: `Manual ticket created and delivered for ${username}`,
+        ticket: {
+          id: ticket.id,
+          orderId: order.id,
+          eventTitle: event.title,
+          qrCode: ticket.qrCodeData,
+          email: user.email
+        },
+        notes: notes || 'Manual ticket creation'
+      });
+
+    } catch (error: any) {
+      console.error("Error creating manual ticket:", error);
+      res.status(500).json({ error: "Failed to create manual ticket: " + error.message });
+    }
+  });
+
   // Endpoint to manually retry ticket delivery for a specific user
   router.post("/api/tickets/retry-delivery/:username", async (req: Request, res: Response) => {
     try {
