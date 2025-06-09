@@ -4046,5 +4046,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Serve PWA files
+  app.get('/manifest.json', (req: Request, res: Response) => {
+    res.sendFile(path.join(process.cwd(), 'public/manifest.json'));
+  });
+
+  app.get('/sw.js', (req: Request, res: Response) => {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.sendFile(path.join(process.cwd(), 'public/sw.js'));
+  });
+
   return httpServer;
 }
