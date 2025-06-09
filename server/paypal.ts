@@ -151,22 +151,88 @@ export async function capturePaypalOrder(req: Request, res: Response) {
     // If this is an event ticket purchase, create a ticket record
     if (jsonResponse.status === 'COMPLETED' && eventId) {
       try {
+        // Import storage and email functions dynamically to avoid circular dependencies
+        const { storage } = await import('./storage');
+        const { sendTicketEmail } = await import('./email');
+        
         // Extract purchase details
-        const amount = jsonResponse.purchase_units[0]?.amount?.value || 0;
+        const amount = parseFloat(jsonResponse.purchase_units[0]?.amount?.value || '0');
+        const payerEmail = jsonResponse.payer?.email_address;
+        const payerName = jsonResponse.payer?.name?.given_name + ' ' + jsonResponse.payer?.name?.surname;
         
-        // Here you would typically:
-        // 1. Find the user by payment information
-        // 2. Create an order record in your database
-        // 3. Generate a ticket record
-        // 4. Send a confirmation email with the ticket details
+        // Get event details
+        const event = await storage.getEvent(Number(eventId));
+        if (!event) {
+          throw new Error(`Event ${eventId} not found`);
+        }
         
-        // This would be handled by your webhook for completed processing
-        
-        const ticketInfo = ticketId && ticketName 
-          ? ` (${ticketName} #${ticketId})` 
-          : '';
+        // Try to find user by email or create guest user
+        let user = null;
+        if (payerEmail) {
+          user = await storage.getUserByEmail(payerEmail);
           
-        console.log(`Successfully processed PayPal payment for event ${eventId}: ${eventTitle}${ticketInfo} - Amount: ${amount}`);
+          // If no user found, create a guest user
+          if (!user) {
+            user = await storage.createUser({
+              username: `guest_${Date.now()}`,
+              password: '',
+              displayName: payerName || 'Guest User',
+              email: payerEmail,
+              isGuest: true,
+              role: 'user'
+            });
+          }
+        }
+        
+        if (user) {
+          // Create order record
+          const order = await storage.createOrder({
+            userId: user.id,
+            totalAmount: Math.round(amount * 100), // Convert to cents
+            status: 'completed',
+            paymentMethod: 'paypal',
+            paymentId: orderID
+          });
+          
+          // Create ticket record
+          const ticketData = {
+            orderId: order.id,
+            eventId: event.id,
+            ticketId: ticketId ? Number(ticketId) : 1, // Default to 1 if no specific ticket
+            status: 'valid',
+            userId: user.id,
+            purchaseDate: new Date(),
+            qrCodeData: `EVENT-${event.id}-ORDER-${order.id}-${Date.now()}`,
+            ticketType: ticketName || 'General Admission',
+            price: Math.round(amount * 100).toString(), // Convert to cents and stringify
+            attendeeEmail: payerEmail,
+            attendeeName: payerName || user.displayName
+          };
+          
+          const ticket = await storage.createTicketPurchase(ticketData);
+          
+          // Send ticket email automatically
+          if (payerEmail) {
+            try {
+              await sendTicketEmail({
+                ticketId: ticket.id.toString(),
+                qrCodeDataUrl: ticket.qrCodeData,
+                eventName: event.title,
+                eventLocation: event.location,
+                eventDate: event.date,
+                ticketType: ticketName || 'General Admission',
+                ticketPrice: amount,
+                purchaseDate: new Date()
+              }, payerEmail);
+              
+              console.log(`Ticket email sent to ${payerEmail} for PayPal order ${orderID}`);
+            } catch (emailError) {
+              console.error('Failed to send ticket email:', emailError);
+            }
+          }
+          
+          console.log(`Successfully processed PayPal payment and created ticket for event ${eventId}: ${eventTitle} - Amount: $${amount}`);
+        }
       } catch (err) {
         console.error('Error handling event ticket purchase:', err);
         // We still return success to the client since the payment was successful

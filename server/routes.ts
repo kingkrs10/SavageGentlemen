@@ -3572,91 +3572,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`PaymentIntent for ${paymentIntent.amount} was successful!`);
         
         try {
-          // Get customer email from payment intent
+          // Get customer and payment details
           const customerId = paymentIntent.customer;
+          const payerEmail = paymentIntent.receipt_email;
+          const amount = paymentIntent.amount / 100;
+          
+          // Check if this is an event ticket purchase
+          const eventId = paymentIntent.metadata?.eventId ? parseInt(paymentIntent.metadata.eventId) : null;
+          const eventTitle = paymentIntent.metadata?.eventTitle || null;
+          const ticketId = paymentIntent.metadata?.ticketId ? parseInt(paymentIntent.metadata.ticketId) : null;
+          const ticketName = paymentIntent.metadata?.ticketName || 'General Admission';
+          
+          let user = null;
+          let email = payerEmail;
+          let customerName = 'Guest User';
+          
+          // Try to get customer details if customer ID exists
           if (customerId) {
-            const customer = await stripe.customers.retrieve(customerId as string);
-            if (customer && !customer.deleted) {
-              const items = paymentIntent.metadata?.items ? JSON.parse(paymentIntent.metadata.items) : [];
-              const email = customer.email;
-              
-              // Check if this is an event ticket purchase
-              const eventId = paymentIntent.metadata?.eventId ? parseInt(paymentIntent.metadata.eventId) : null;
-              const eventTitle = paymentIntent.metadata?.eventTitle || null;
-              
-              if (email) {
-                // Create order record
-                const order = await storage.createOrder({
-                  userId: customer.metadata?.userId ? parseInt(customer.metadata.userId) : 0,
-                  totalAmount: paymentIntent.amount / 100,
-                  status: 'completed',
-                  paymentMethod: 'stripe',
-                  paymentId: paymentIntent.id
-                });
+            try {
+              const customer = await stripe.customers.retrieve(customerId as string);
+              if (customer && !customer.deleted) {
+                email = customer.email || payerEmail;
+                customerName = customer.name || customerName;
                 
-                // If this is an event ticket purchase, create a ticket record
-                if (eventId) {
-                  try {
-                    // Get the event info
-                    const event = await storage.getEvent(eventId);
-                    
-                    if (event) {
-                      // Create ticket record
-                      const ticketData = {
-                        orderId: order.id,
-                        eventId: eventId,
-                        status: 'valid',
-                        userId: order.userId,
-                        purchaseDate: new Date(),
-                        qrCodeData: `EVENT-${eventId}-ORDER-${order.id}-${Date.now()}`,
-                        ticketType: 'standard'
-                      };
-                      
-                      const ticket = await storage.createTicketPurchase(ticketData);
-                      
-                      // Send ticket email with QR code
-                      await sendTicketEmail({
-                        ticketId: ticket.id,
-                        qrCodeDataUrl: ticket.qrCodeData,
-                        eventName: event.title,
-                        eventLocation: event.location,
-                        eventDate: event.date,
-                        ticketType: ticket.ticketType,
-                        ticketPrice: parseFloat((paymentIntent.amount / 100).toFixed(2)),
-                        purchaseDate: new Date()
-                      }, email);
-                    }
-                  } catch (err) {
-                    console.error('Error creating ticket record:', err);
-                  }
-                } else {
-                  // For non-ticket purchases, send regular order confirmation
-                  await sendOrderConfirmation({
-                    orderId: paymentIntent.id,
-                    orderDate: new Date(paymentIntent.created * 1000),
-                    items: items.map((item: any) => ({
-                      name: item.name || 'Product',
-                      quantity: item.quantity || 1,
-                      price: item.price || (paymentIntent.amount / 100)
-                    })),
-                    totalAmount: paymentIntent.amount / 100
-                  }, email);
+                // Try to find existing user by customer metadata or email
+                if (customer.metadata?.userId) {
+                  user = await storage.getUser(parseInt(customer.metadata.userId));
+                } else if (email) {
+                  user = await storage.getUserByEmail(email);
                 }
-                
-                // Notify admins about the successful payment
-                await sendAdminNotification(
-                  'New Successful Payment',
-                  `Payment for order ${paymentIntent.id} was successful.`,
-                  {
-                    Amount: `$${(paymentIntent.amount / 100).toFixed(2)}`,
-                    Customer: email,
-                    PaymentId: paymentIntent.id,
-                    PaymentMethod: paymentIntent.payment_method_types?.[0] || 'card',
-                    ...(eventId ? { EventId: eventId.toString(), EventTitle: eventTitle } : {})
-                  }
-                );
               }
+            } catch (customerError) {
+              console.error('Error retrieving Stripe customer:', customerError);
             }
+          }
+          
+          // If no user found and we have an email, create a guest user
+          if (!user && email) {
+            try {
+              user = await storage.createUser({
+                username: `guest_${Date.now()}`,
+                password: '',
+                displayName: customerName,
+                email: email,
+                isGuest: true,
+                role: 'user'
+              });
+            } catch (userError) {
+              console.error('Error creating guest user:', userError);
+            }
+          }
+          
+          if (user && email) {
+            // Create order record
+            const order = await storage.createOrder({
+              userId: user.id,
+              totalAmount: Math.round(amount * 100), // Convert back to cents for storage
+              status: 'completed',
+              paymentMethod: 'stripe',
+              paymentId: paymentIntent.id
+            });
+            
+            // If this is an event ticket purchase, create a ticket record
+            if (eventId) {
+              try {
+                // Get the event info
+                const event = await storage.getEvent(eventId);
+                
+                if (event) {
+                  // Create ticket record
+                  const ticketData = {
+                    orderId: order.id,
+                    eventId: eventId,
+                    ticketId: ticketId,
+                    status: 'valid',
+                    userId: user.id,
+                    purchaseDate: new Date(),
+                    qrCodeData: `EVENT-${eventId}-ORDER-${order.id}-${Date.now()}`,
+                    ticketType: ticketName,
+                    price: Math.round(amount * 100), // Convert to cents
+                    attendeeEmail: email,
+                    attendeeName: customerName
+                  };
+                  
+                  const ticket = await storage.createTicketPurchase(ticketData);
+                  
+                  // Send ticket email with QR code automatically
+                  try {
+                    await sendTicketEmail({
+                      ticketId: ticket.id.toString(),
+                      qrCodeDataUrl: ticket.qrCodeData,
+                      eventName: event.title,
+                      eventLocation: event.location,
+                      eventDate: event.date,
+                      ticketType: ticketName,
+                      ticketPrice: amount,
+                      purchaseDate: new Date()
+                    }, email);
+                    
+                    console.log(`Ticket email sent to ${email} for Stripe payment ${paymentIntent.id}`);
+                  } catch (emailError) {
+                    console.error('Failed to send ticket email:', emailError);
+                  }
+                  
+                  console.log(`Successfully processed Stripe payment and created ticket for event ${eventId}: ${eventTitle} - Amount: $${amount}`);
+                }
+              } catch (err) {
+                console.error('Error creating ticket record:', err);
+              }
+            } else {
+              // For non-ticket purchases, send regular order confirmation
+              const items = paymentIntent.metadata?.items ? JSON.parse(paymentIntent.metadata.items) : [];
+              await sendOrderConfirmation({
+                orderId: paymentIntent.id,
+                orderDate: new Date(paymentIntent.created * 1000),
+                items: items.map((item: any) => ({
+                  name: item.name || 'Product',
+                  quantity: item.quantity || 1,
+                  price: item.price || (paymentIntent.amount / 100)
+                })),
+                totalAmount: paymentIntent.amount / 100
+              }, email);
+            }
+            
+            // Notify admins about the successful payment
+            await sendAdminNotification(
+              'New Successful Payment',
+              `Payment for order ${paymentIntent.id} was successful.`,
+              {
+                Amount: `$${amount.toFixed(2)}`,
+                Customer: email,
+                PaymentId: paymentIntent.id,
+                PaymentMethod: paymentIntent.payment_method_types?.[0] || 'card',
+                ...(eventId ? { EventId: eventId.toString(), EventTitle: eventTitle } : {})
+              }
+            );
           }
         } catch (error) {
           console.error('Error handling payment success webhook:', error);
