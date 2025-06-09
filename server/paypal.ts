@@ -211,23 +211,26 @@ export async function capturePaypalOrder(req: Request, res: Response) {
           
           const ticket = await storage.createTicketPurchase(ticketData);
           
-          // Send ticket email automatically
+          // Send ticket email automatically with delivery monitoring
           if (payerEmail) {
             try {
-              await sendTicketEmail({
-                ticketId: ticket.id.toString(),
-                qrCodeDataUrl: ticket.qrCodeData,
-                eventName: event.title,
-                eventLocation: event.location,
-                eventDate: event.date,
-                ticketType: ticketName || 'General Admission',
-                ticketPrice: amount,
-                purchaseDate: new Date()
-              }, payerEmail);
+              const { ticketMonitor } = await import('./ticket-monitor');
+              await ticketMonitor.ensureTicketDelivery(
+                ticket.id,
+                order.id,
+                user.id,
+                payerEmail,
+                event.title,
+                ticket.qrCodeData,
+                event.location,
+                event.date,
+                ticketName || 'General Admission',
+                amount
+              );
               
-              console.log(`Ticket email sent to ${payerEmail} for PayPal order ${orderID}`);
+              console.log(`Ticket email delivery initiated for ${payerEmail} for PayPal order ${orderID}`);
             } catch (emailError) {
-              console.error('Failed to send ticket email:', emailError);
+              console.error('Failed to initiate ticket email delivery:', emailError);
             }
           }
           
