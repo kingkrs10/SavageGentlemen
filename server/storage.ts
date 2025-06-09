@@ -2425,6 +2425,14 @@ export class DatabaseStorage implements IStorage {
       
     return ticketPurchase;
   }
+
+  async getTicketsByUserId(userId: number): Promise<TicketPurchase[]> {
+    return await db
+      .select()
+      .from(ticketPurchases)
+      .where(eq(ticketPurchases.userId, userId))
+      .orderBy(desc(ticketPurchases.purchaseDate));
+  }
   
   // Discount code operations
   async createDiscountCode(discountCodeData: InsertDiscountCode): Promise<DiscountCode> {

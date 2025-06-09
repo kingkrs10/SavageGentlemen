@@ -129,7 +129,7 @@ class TicketDeliveryMonitor {
       return [];
     }
 
-    const tickets = await storage.getUserTickets(user.id);
+    const tickets = await storage.getTicketsByUserId(user.id);
     const deliveryStatuses: TicketDeliveryStatus[] = [];
 
     for (const ticket of tickets) {

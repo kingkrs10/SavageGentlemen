@@ -1,4 +1,4 @@
-import { sendTicketEmail } from './server/email.js';
+import { sendTicketEmail } from './server/email.ts';
 
 // Test ticket email delivery for user "Blitzz8125"
 async function testTicketEmailForBlitzz8125() {
