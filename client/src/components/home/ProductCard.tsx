@@ -27,24 +27,29 @@ const ProductCard = ({
 }: ProductCardProps) => {
   const { id, title, price, imageUrl, sizes, category } = product;
   const [imgError, setImgError] = useState(false);
-  const [imgSrc, setImgSrc] = useState<string>(imageUrl);
   const [imgLoaded, setImgLoaded] = useState(false);
+  
+  // Use image proxy for external URLs to bypass CORS issues
+  const getImageUrl = (url: string) => {
+    if (!url) return SGFlyerLogoPng;
+    if (url.startsWith('http')) {
+      return `/api/proxy-image?url=${encodeURIComponent(url)}`;
+    }
+    return url;
+  };
+  
+  const imgSrc = getImageUrl(imageUrl);
   
   // Track product view and log product info for debugging
   useEffect(() => {
     console.log("Product rendering:", title, "Image URL:", imageUrl);
-    // Track product view for analytics
     trackProductView(id);
   }, [title, imageUrl, id]);
   
   useEffect(() => {
     // Reset state when imageUrl changes
     setImgError(false);
-    setImgSrc(imageUrl);
     setImgLoaded(false);
-    
-    // For external images, don't pre-test them as it may cause CORS issues
-    // Let the img element handle loading directly
   }, [imageUrl]);
 
   const handleImageLoad = () => {

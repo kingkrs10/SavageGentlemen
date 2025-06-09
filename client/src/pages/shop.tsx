@@ -13,8 +13,16 @@ const SimpleProductCard = ({ product, onAddToCart }: {
   product: Product; 
   onAddToCart: (id: number) => void;
 }) => {
-  // Use actual product image URL, fallback to logo only if no imageUrl
-  const imageUrl = product.imageUrl || SGFlyerLogoPng;
+  // Use image proxy for external URLs to bypass CORS issues
+  const getImageUrl = (url: string) => {
+    if (!url) return SGFlyerLogoPng;
+    if (url.startsWith('http')) {
+      return `/api/proxy-image?url=${encodeURIComponent(url)}`;
+    }
+    return url;
+  };
+  
+  const imageUrl = getImageUrl(product.imageUrl);
   const [imgError, setImgError] = useState(false);
   
   console.log('Product rendering:', product.title, 'Image URL:', imageUrl);

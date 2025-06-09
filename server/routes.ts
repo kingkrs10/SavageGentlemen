@@ -4046,6 +4046,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Image proxy for external images (Etsy, etc.)
+  app.get('/api/proxy-image', async (req: Request, res: Response) => {
+    try {
+      const { url } = req.query;
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({ error: 'URL parameter required' });
+      }
+
+      // Validate URL is from allowed domains
+      const allowedDomains = ['i.etsystatic.com', 'printify.com'];
+      const urlObj = new URL(url);
+      if (!allowedDomains.includes(urlObj.hostname)) {
+        return res.status(403).json({ error: 'Domain not allowed' });
+      }
+
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept': 'image/*,*/*;q=0.8',
+        }
+      });
+
+      if (!response.ok) {
+        return res.status(404).json({ error: 'Image not found' });
+      }
+
+      const contentType = response.headers.get('content-type') || 'image/jpeg';
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+      
+      const buffer = await response.arrayBuffer();
+      res.send(Buffer.from(buffer));
+    } catch (error) {
+      console.error('Image proxy error:', error);
+      res.status(500).json({ error: 'Failed to fetch image' });
+    }
+  });
+
   // Serve PWA files
   app.get('/manifest.json', (req: Request, res: Response) => {
     res.sendFile(path.join(process.cwd(), 'public/manifest.json'));
