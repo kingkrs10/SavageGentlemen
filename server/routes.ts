@@ -2974,6 +2974,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to get PayPal order details: " + error.message });
     }
   });
+
+  // Endpoint to monitor ticket delivery status for specific users
+  router.get("/api/tickets/delivery-status/:username", async (req: Request, res: Response) => {
+    try {
+      const { username } = req.params;
+      const { ticketMonitor } = await import('./ticket-monitor');
+      
+      console.log(`Checking ticket delivery status for user: ${username}`);
+      
+      // Get user information
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Get all tickets for the user
+      const tickets = await storage.getTicketsByUserId(user.id);
+      
+      // Check delivery status for each ticket
+      const deliveryStatuses = [];
+      for (const ticket of tickets) {
+        const status = ticketMonitor.getDeliveryStatus(ticket.id, ticket.orderId);
+        deliveryStatuses.push({
+          ticketId: ticket.id,
+          orderId: ticket.orderId,
+          eventTitle: 'Event Title', // Would fetch from event table
+          delivered: !status || status.delivered,
+          attempts: status?.deliveryAttempts || 1,
+          lastAttempt: status?.lastAttempt || ticket.purchaseDate,
+          error: status?.errorMessage
+        });
+      }
+
+      res.json({
+        username: user.username,
+        email: user.email,
+        totalTickets: tickets.length,
+        deliveryStatuses,
+        pendingDeliveries: ticketMonitor.getPendingDeliveries().filter(d => d.userId === user.id)
+      });
+
+    } catch (error: any) {
+      console.error("Error checking delivery status:", error);
+      res.status(500).json({ error: "Failed to check delivery status: " + error.message });
+    }
+  });
+
+  // Endpoint to manually retry ticket delivery for a specific user
+  router.post("/api/tickets/retry-delivery/:username", async (req: Request, res: Response) => {
+    try {
+      const { username } = req.params;
+      const { ticketMonitor } = await import('./ticket-monitor');
+      
+      console.log(`Manually retrying ticket delivery for user: ${username}`);
+      
+      // Get user information
+      const user = await storage.getUserByUsername(username);
+      if (!user || !user.email) {
+        return res.status(404).json({ message: "User not found or no email address" });
+      }
+
+      // Get all tickets for the user
+      const tickets = await storage.getTicketsByUserId(user.id);
+      
+      const retryResults = [];
+      for (const ticket of tickets) {
+        try {
+          // Get event details
+          const event = await storage.getEvent(ticket.eventId);
+          if (!event) continue;
+
+          const result = await ticketMonitor.ensureTicketDelivery(
+            ticket.id,
+            ticket.orderId,
+            user.id,
+            user.email,
+            event.title,
+            ticket.qrCodeData,
+            event.location,
+            event.date,
+            ticket.ticketType || 'General Admission',
+            typeof ticket.price === 'string' ? parseFloat(ticket.price) : ticket.price || 0
+          );
+
+          retryResults.push({
+            ticketId: ticket.id,
+            success: result,
+            eventTitle: event.title
+          });
+
+        } catch (error) {
+          retryResults.push({
+            ticketId: ticket.id,
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      }
+
+      res.json({
+        username: user.username,
+        email: user.email,
+        retryResults,
+        message: `Retry attempted for ${tickets.length} tickets`
+      });
+
+    } catch (error: any) {
+      console.error("Error retrying delivery:", error);
+      res.status(500).json({ error: "Failed to retry delivery: " + error.message });
+    }
+  });
   
   // Special endpoint for free tickets (0.00) - no payment processing required
   // API prefixed endpoint
@@ -3657,22 +3768,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   
                   const ticket = await storage.createTicketPurchase(ticketData);
                   
-                  // Send ticket email with QR code automatically
+                  // Send ticket email with QR code automatically using delivery monitoring
                   try {
-                    await sendTicketEmail({
-                      ticketId: ticket.id.toString(),
-                      qrCodeDataUrl: ticket.qrCodeData,
-                      eventName: event.title,
-                      eventLocation: event.location,
-                      eventDate: event.date,
-                      ticketType: ticketName,
-                      ticketPrice: amount,
-                      purchaseDate: new Date()
-                    }, email);
+                    const { ticketMonitor } = await import('./ticket-monitor');
+                    await ticketMonitor.ensureTicketDelivery(
+                      ticket.id,
+                      order.id,
+                      user.id,
+                      email,
+                      event.title,
+                      ticket.qrCodeData,
+                      event.location,
+                      event.date,
+                      ticketName,
+                      amount
+                    );
                     
-                    console.log(`Ticket email sent to ${email} for Stripe payment ${paymentIntent.id}`);
+                    console.log(`Ticket email delivery initiated for ${email} for Stripe payment ${paymentIntent.id}`);
                   } catch (emailError) {
-                    console.error('Failed to send ticket email:', emailError);
+                    console.error('Failed to initiate ticket email delivery:', emailError);
                   }
                   
                   console.log(`Successfully processed Stripe payment and created ticket for event ${eventId}: ${eventTitle} - Amount: $${amount}`);
