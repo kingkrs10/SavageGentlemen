@@ -3242,6 +3242,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Store authenticated user in request
       (req as any).user = user;
       
+      // Ensure user has an email address for ticket delivery
+      if (!user.email || user.email.trim() === '') {
+        return res.status(400).json({ 
+          message: "Email address is required to receive tickets. Please update your profile with a valid email address.",
+          requiresEmail: true
+        });
+      }
+      
       // Handle free ticket claim logic
       if (!eventId) {
         return res.status(400).json({ message: "Event ID is required" });
@@ -3432,6 +3440,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Store authenticated user in request
       (req as any).user = user;
       
+      // Ensure user has an email address for ticket delivery
+      if (!user.email || user.email.trim() === '') {
+        return res.status(400).json({ 
+          message: "Email address is required to receive tickets. Please update your profile with a valid email address.",
+          requiresEmail: true
+        });
+      }
+      
       if (!eventId) {
         return res.status(400).json({ message: "Event ID is required" });
       }
@@ -3552,6 +3568,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API prefixed create-intent endpoint
   router.post("/api/payment/create-intent", authenticateUser, async (req: Request, res: Response) => {
     try {
+      const user = (req as any).user;
+      
+      // Ensure user has an email address for ticket delivery
+      if (!user.email || user.email.trim() === '') {
+        return res.status(400).json({ 
+          message: "Email address is required to receive tickets. Please update your profile with a valid email address.",
+          requiresEmail: true
+        });
+      }
+      
       const { 
         items, 
         amount, 
@@ -3613,6 +3639,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Non-prefixed create-intent endpoint (for backward compatibility)
   router.post("/payment/create-intent", authenticateUser, async (req: Request, res: Response) => {
     try {
+      const user = (req as any).user;
+      
+      // Ensure user has an email address for ticket delivery
+      if (!user.email || user.email.trim() === '') {
+        return res.status(400).json({ 
+          message: "Email address is required to receive tickets. Please update your profile with a valid email address.",
+          requiresEmail: true
+        });
+      }
+      
       const { 
         items, 
         amount, 

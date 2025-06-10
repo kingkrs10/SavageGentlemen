@@ -525,11 +525,31 @@ export default function Checkout() {
                     } catch (error) {
                       console.error("Error claiming free ticket:", error);
                       const errorMessage = error instanceof Error ? error.message : "Could not claim free ticket. Please try again.";
-                      toast({
-                        title: "Error",
-                        description: errorMessage,
-                        variant: "destructive",
-                      });
+                      
+                      // Check if this is an email requirement error
+                      if (errorMessage.includes("Email address is required") || errorMessage.includes("requiresEmail")) {
+                        toast({
+                          title: "Email Required",
+                          description: "Please add an email address to your profile to receive tickets. Go to your profile settings to update your email.",
+                          variant: "destructive",
+                        });
+                        
+                        // Optionally redirect to profile settings
+                        setTimeout(() => {
+                          const event = new CustomEvent('sg:open-auth-modal', { 
+                            detail: { 
+                              tab: 'profile'
+                            } 
+                          });
+                          window.dispatchEvent(event);
+                        }, 2000);
+                      } else {
+                        toast({
+                          title: "Error",
+                          description: errorMessage,
+                          variant: "destructive",
+                        });
+                      }
                     } finally {
                       setProcessingFreeTicket(false);
                     }
