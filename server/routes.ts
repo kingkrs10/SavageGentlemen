@@ -4050,18 +4050,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/proxy-image', async (req: Request, res: Response) => {
     try {
       const { url } = req.query;
+      
       if (!url || typeof url !== 'string') {
         return res.status(400).json({ error: 'URL parameter required' });
       }
 
+      // Decode HTML entities and URL decode
+      const decodedUrl = decodeURIComponent(url.replace(/&#x2F;/g, '/').replace(/&amp;/g, '&'));
+      console.log('Original URL:', url);
+      console.log('Decoded URL:', decodedUrl);
+
       // Validate URL is from allowed domains
       const allowedDomains = ['i.etsystatic.com', 'printify.com'];
-      const urlObj = new URL(url);
+      const urlObj = new URL(decodedUrl);
+      console.log('Parsed hostname:', urlObj.hostname);
+      
       if (!allowedDomains.includes(urlObj.hostname)) {
-        return res.status(403).json({ error: 'Domain not allowed' });
+        console.log('Domain not allowed:', urlObj.hostname);
+        return res.status(403).json({ error: 'Domain not allowed', hostname: urlObj.hostname });
       }
 
-      const response = await fetch(url, {
+      const response = await fetch(decodedUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           'Accept': 'image/*,*/*;q=0.8',
