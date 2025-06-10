@@ -4057,16 +4057,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Decode HTML entities and URL decode
       const decodedUrl = decodeURIComponent(url.replace(/&#x2F;/g, '/').replace(/&amp;/g, '&'));
-      console.log('Original URL:', url);
-      console.log('Decoded URL:', decodedUrl);
 
       // Validate URL is from allowed domains
       const allowedDomains = ['i.etsystatic.com', 'printify.com'];
       const urlObj = new URL(decodedUrl);
-      console.log('Parsed hostname:', urlObj.hostname);
       
       if (!allowedDomains.includes(urlObj.hostname)) {
-        console.log('Domain not allowed:', urlObj.hostname);
         return res.status(403).json({ error: 'Domain not allowed', hostname: urlObj.hostname });
       }
 

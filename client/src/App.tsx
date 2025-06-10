@@ -138,7 +138,10 @@ function AppContent() {
 
   return (
     <>
-      <SEOHead />
+      <SEOHead 
+        title="Home"
+        description="Caribbean-American event and lifestyle brand. Explore events, shop for merchandise, watch live streams, and connect with the community."
+      />
       <TooltipProvider>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <div className="min-h-screen bg-background text-foreground">
