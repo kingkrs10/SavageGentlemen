@@ -21,6 +21,13 @@ self.addEventListener('install', (event) => {
 
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
+  // Skip caching for external resources like Google Fonts
+  if (event.request.url.includes('fonts.googleapis.com') || 
+      event.request.url.includes('fonts.gstatic.com') ||
+      event.request.url.includes('replit.com')) {
+    return; // Let the browser handle these requests normally
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
