@@ -27,16 +27,16 @@ export const initGA = () => {
   script1.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
   document.head.appendChild(script1);
 
-  // Initialize gtag
+  // Initialize gtag - Safe approach without innerHTML
   const script2 = document.createElement('script');
-  script2.innerHTML = `
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', '${measurementId}', {
-      send_page_view: false  // We'll handle page views manually
-    });
-  `;
+  script2.textContent = [
+    'window.dataLayer = window.dataLayer || [];',
+    'function gtag(){dataLayer.push(arguments);}',
+    'gtag("js", new Date());',
+    `gtag("config", "${measurementId.replace(/"/g, '\\"')}", {`,
+    '  send_page_view: false',
+    '});'
+  ].join('\n');
   document.head.appendChild(script2);
 
   console.log('Google Analytics initialized with ID:', measurementId);
