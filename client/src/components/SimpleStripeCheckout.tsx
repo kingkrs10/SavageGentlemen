@@ -261,14 +261,42 @@ export default function SimpleStripeCheckout({
           const data = await response.json();
           setClientSecret(data.clientSecret);
         } else {
-          throw new Error("Failed to create payment intent on both endpoints");
+          // Handle specific error responses
+          const errorData = await response.json().catch(() => null);
+          
+          if (errorData?.requiresEmail || (errorData?.message && errorData.message.includes("Email address is required"))) {
+            toast({
+              title: "Email Required",
+              description: "Please add an email address to your profile to receive tickets. Go to your profile settings to update your email.",
+              variant: "destructive",
+            });
+            
+            // Open profile modal after a delay
+            setTimeout(() => {
+              const event = new CustomEvent('sg:open-auth-modal', { 
+                detail: { 
+                  tab: 'profile'
+                } 
+              });
+              window.dispatchEvent(event);
+            }, 2000);
+            
+            return; // Don't continue with payment setup
+          }
+          
+          throw new Error(errorData?.message || "Failed to create payment intent on both endpoints");
         }
       } catch (error) {
-        toast({
-          title: "Error",
-          description: "Could not initialize payment. Please try again.",
-          variant: "destructive",
-        });
+        const errorMessage = error instanceof Error ? error.message : "Could not initialize payment. Please try again.";
+        
+        // Don't show duplicate email error toasts
+        if (!errorMessage.includes("Email address is required")) {
+          toast({
+            title: "Error",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        }
       } finally {
         setIsLoading(false);
       }
