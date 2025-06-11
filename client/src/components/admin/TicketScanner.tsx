@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from '@/lib/queryClient';
+import QrScanner from 'qr-scanner';
 
 interface TicketInfo {
   ticketId: number;
@@ -69,29 +70,58 @@ const TicketScanner = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Function to handle file input for QR code image upload
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
       setError(null);
       setLoading(true);
       
-      // Show feedback to the user
-      toast({
-        title: "Photo Captured",
-        description: "After taking the photo, please manually enter the ticket code shown",
-        variant: "default"
-      });
-      
-      // After processing image, switch to manual mode for entering the code
-      setScanMode('manual');
-      
-      // Focus on the input field after a short delay
-      setTimeout(() => {
-        if (inputRef.current) {
-          inputRef.current.focus();
+      try {
+        // Use QrScanner to scan QR code from the uploaded image
+        const result = await QrScanner.scanImage(file, {
+          returnDetailedScanResult: true,
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+        });
+        
+        if (result && result.data) {
+          // Successfully scanned QR code
+          toast({
+            title: "QR Code Detected",
+            description: "Processing ticket information...",
+            variant: "default"
+          });
+          
+          // Set the scanned code and validate it
+          setTicketCode(result.data);
+          await validateTicket(result.data);
+        } else {
+          throw new Error("No QR code found in the image");
         }
-      }, 500);
-      
-      setLoading(false);
+      } catch (error) {
+        console.error('QR Code scanning error:', error);
+        setError("Could not detect QR code in the image. Please try again or enter the code manually.");
+        
+        toast({
+          title: "Scan Failed",
+          description: "Please try taking another photo or enter the code manually",
+          variant: "destructive"
+        });
+        
+        // Switch to manual mode for fallback
+        setScanMode('manual');
+        setTimeout(() => {
+          if (inputRef.current) {
+            inputRef.current.focus();
+          }
+        }, 500);
+      } finally {
+        setLoading(false);
+        // Clear the file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
     }
   };
   
@@ -395,27 +425,28 @@ const TicketScanner = () => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center space-y-4">
-                <div className="w-full aspect-square max-w-[250px] border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center bg-gray-50">
+                <div className="w-full aspect-square max-w-[280px] border-2 border-dashed border-blue-300 rounded-lg flex items-center justify-center bg-blue-50">
                   <div className="text-center p-4">
-                    <Camera className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-500">Take a clear photo of the QR code</p>
+                    <Camera className="h-16 w-16 mx-auto text-blue-500 mb-3" />
+                    <p className="text-sm font-medium text-blue-700 mb-1">Position QR code in frame</p>
+                    <p className="text-xs text-blue-600">Ensure good lighting for best results</p>
                   </div>
                 </div>
                 
                 <Button 
                   onClick={triggerFileUpload} 
-                  className="w-full flex items-center justify-center h-12 text-base"
+                  className="w-full flex items-center justify-center h-14 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white"
                   disabled={loading}
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Processing...
+                      <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                      Scanning QR Code...
                     </>
                   ) : (
                     <>
-                      <Camera className="mr-2 h-5 w-5" />
-                      Open Camera
+                      <Camera className="mr-2 h-6 w-6" />
+                      Take Photo & Scan
                     </>
                   )}
                 </Button>
