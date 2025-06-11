@@ -406,6 +406,7 @@ export const orderItems = pgTable("order_items", {
   sku: text("sku"), // For inventory tracking
   itemName: text("item_name"), // Name of the product/ticket
   itemDetails: jsonb("item_details").default({}), // Additional details like size, color
+  scanDate: timestamp("scan_date"), // When ticket was scanned for entry
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

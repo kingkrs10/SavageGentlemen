@@ -2179,8 +2179,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if this ticket has already been scanned
-      const alreadyScanned = orderItem.scan_date !== null;
-      let scannedAt = orderItem.scan_date;
+      const alreadyScanned = orderItem.scanDate !== null;
+      let scannedAt = orderItem.scanDate;
       
       // Mark the ticket as scanned if it hasn't been scanned yet
       if (!alreadyScanned) {
@@ -2190,7 +2190,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const [updated] = await db
           .update(orderItems)
           .set({ 
-            scan_date: new Date(),
+            scanDate: new Date(),
             updatedAt: new Date()
           })
           .where(and(
@@ -2199,7 +2199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ))
           .returning();
         
-        scannedAt = updated.scan_date;
+        scannedAt = updated.scanDate;
         
         // Also create a ticket scan record for reporting
         await storage.createTicketScan({
