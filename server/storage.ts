@@ -124,6 +124,7 @@ export interface IStorage {
   updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined>;
   updateUserRole(id: number, role: string): Promise<User | undefined>;
   updateUserPassword(id: number, newPassword: string): Promise<User | undefined>;
+  verifyPassword(userId: number, password: string): Promise<boolean>;
   deleteUser(id: number): Promise<boolean>;
   
   // Password reset operations
