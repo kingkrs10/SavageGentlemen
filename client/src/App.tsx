@@ -148,7 +148,7 @@ function AppContent() {
             <Header 
               user={user} 
               onLogout={logout} 
-              onLoginClick={() => setShowAuthModal(true)} 
+              onProfileClick={() => setShowAuthModal(true)} 
             />
             
             <main className="container mx-auto px-4 py-8">

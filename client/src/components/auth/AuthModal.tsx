@@ -31,8 +31,8 @@ import LogoImg from "@/assets/SGFLYERLOGO.png";
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: (user: User) => void;
-  onContinueAsGuest: () => void;
+  onAuthSuccess: (user: User) => void;
+  onGuestLogin: () => void;
 }
 
 const loginSchema = z.object({
@@ -59,7 +59,7 @@ const registerSchema = loginSchema.extend({
 type LoginFormValues = z.infer<typeof loginSchema>;
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
-const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalProps) => {
+const AuthModal = ({ isOpen, onClose, onAuthSuccess, onGuestLogin }: AuthModalProps) => {
   // Check for stored tab preference in localStorage
   const storedTab = localStorage.getItem('authModalSelectedTab');
   const [currentTab, setCurrentTab] = useState<"login" | "register">(
@@ -105,8 +105,8 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
         description: `Welcome back, ${data.displayName}!`,
       });
       
-      // Call the onLogin function to update user state
-      onLogin(data);
+      // Call the onAuthSuccess function to update user state
+      onAuthSuccess(data);
       loginForm.reset();
       
       // Dispatch auth changed event
@@ -238,7 +238,7 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
         title: "Registration Successful",
         description: `Welcome to Savage Gentlemen, ${data.displayName}!`,
       });
-      onLogin(data);
+      onAuthSuccess(data);
       registerForm.reset();
       
       // Check if there's a stored redirect path
@@ -449,7 +449,7 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
           <Button
             variant="ghost"
             className="text-gray-400 text-sm"
-            onClick={onContinueAsGuest}
+            onClick={onGuestLogin}
           >
             Continue as guest
           </Button>
