@@ -437,6 +437,17 @@ export class MemStorage implements IStorage {
     this.users.set(id, user);
     return user;
   }
+
+  async verifyPassword(userId: number, password: string): Promise<boolean> {
+    const user = await this.getUser(userId);
+    if (!user) {
+      return false;
+    }
+    
+    // For in-memory storage, we do a simple string comparison
+    // In production, this would use bcrypt or similar hashing
+    return user.password === password;
+  }
   
   // Password reset operations
   async storePasswordResetToken(userId: number, token: string, expiresAt: Date): Promise<void> {
@@ -1575,6 +1586,26 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return user;
+  }
+
+  async verifyPassword(userId: number, password: string): Promise<boolean> {
+    try {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId));
+      
+      if (!user) {
+        return false;
+      }
+      
+      // For now, we do a simple string comparison
+      // In production, this would use bcrypt to compare hashed passwords
+      return user.password === password;
+    } catch (error) {
+      console.error('Error verifying password:', error);
+      return false;
+    }
   }
   
   // Password reset operations
