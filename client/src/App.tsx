@@ -102,15 +102,15 @@ function AppContent() {
         localStorage.setItem("authModalSelectedTab", event.detail.tab);
       }
       
-      if (event.detail && event.detail.redirectAfterAuth) {
-        localStorage.setItem("redirectAfterAuth", event.detail.redirectAfterAuth);
+      if (event.detail && event.detail.redirectPath) {
+        localStorage.setItem("redirectAfterAuth", event.detail.redirectPath);
       }
     };
 
-    window.addEventListener("openAuthModal", handleOpenAuthModal as EventListener);
+    window.addEventListener("sg:open-auth-modal", handleOpenAuthModal as EventListener);
     
     return () => {
-      window.removeEventListener("openAuthModal", handleOpenAuthModal as EventListener);
+      window.removeEventListener("sg:open-auth-modal", handleOpenAuthModal as EventListener);
     };
   }, []);
 

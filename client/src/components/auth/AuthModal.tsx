@@ -61,7 +61,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalProps) => {
   // Check for stored tab preference in localStorage
-  const storedTab = localStorage.getItem('sg:auth:tab');
+  const storedTab = localStorage.getItem('authModalSelectedTab');
   const [currentTab, setCurrentTab] = useState<"login" | "register">(
     (storedTab === "register" ? "register" : "login")
   );
@@ -72,7 +72,7 @@ const AuthModal = ({ isOpen, onClose, onLogin, onContinueAsGuest }: AuthModalPro
   useEffect(() => {
     if (isOpen) {
       // Only clear the tab preference, keep the redirect path
-      localStorage.removeItem('sg:auth:tab');
+      localStorage.removeItem('authModalSelectedTab');
     }
   }, [isOpen]);
 
