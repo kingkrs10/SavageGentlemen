@@ -422,12 +422,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Generate authentication token
+      const token = Buffer.from(`${user.id}:${user.username}:${Date.now()}`).toString('base64');
+      
       return res.status(201).json({ 
         id: user.id, 
         username: user.username, 
         displayName: user.displayName,
         avatar: user.avatar,
-        isGuest: user.isGuest
+        isGuest: user.isGuest,
+        role: user.role,
+        token: token
       });
     } catch (err) {
       return handleZodError(err, res);

@@ -40,9 +40,7 @@ export const insertUserSchema = createInsertSchema(users)
       .max(20, 'Username must be at most 20 characters')
       .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, underscores, and hyphens'),
     password: z.string()
-      .min(8, 'Password must be at least 8 characters')
-      .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-      .regex(/[0-9]/, 'Password must contain at least one number'),
+      .min(6, 'Password must be at least 6 characters'),
     email: z.string().email('Invalid email format').nullish(),
     role: z.enum(['user', 'admin', 'moderator']).default('user'),
     displayName: z.string().min(1, 'Display name cannot be empty').nullish(),
