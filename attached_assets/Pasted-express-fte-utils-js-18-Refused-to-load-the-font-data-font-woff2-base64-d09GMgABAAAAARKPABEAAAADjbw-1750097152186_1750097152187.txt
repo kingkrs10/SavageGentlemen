@@ -1,0 +1,46 @@
+express-fte-utils.js:18 Refused to load the font 'data:font/woff2;base64,d09GMgABAAAAARKPABEAAAADjbwAARG3AAUAAAABEhwAAABzAAAAfQAAAAAAAAAAG4HSGBylaAZgAIkKCGIJgnMREAqJoziIyQUSgfk4ATYCJAOXTAuXUAAEIAWMIAe1AQyFHVuPU7MCIkXu7q36jWGYkWwF8TmifSsBF6S3fEOcwzJR9Lmdo1UHleIXP/HC2JYUM+gOCgqq/Tmp7P//////////35hMwraS2XaS7S79bIEWEBQQRdDzO0VAM+gWvUo5JUkpL+om5dx2qq8kPpgeOC5X67qd8lK7yVxHlVSvGs3wDWZxw3aH8roW42Pe58JmQmLiYTk42EoDD0RP+4ML1fr5eEJmyVUjMe7hDrZw7+hsYogvMzL4/BSROWRbw9W40xd57aeOcpB4kfh2PYrHGq12UZmKkBIND+htcx2p5/Edbd8hgy+EtIxMmoDrrdFJb6pXcVwHLGEP6ZBShZtenwrsHJKQEuE5Vuhs...7gQPudGVPUoxuMeBcZY7wXnVbC/FX5fT8BcE0CQPj+q3zeB9zZSANbq33CGyej+JODw5sja55dGgDKNj5prOqjHpj553Vrq0QECJmJ7mpZhLUm6tz67hZZKxd0GGabamzsYzNRYSxKx7G5t/mY19Y8+BxvMPyjGBM3z38y97h5QeCTWekstb7P536NDowW5Zw5c6Ks1X5uvTiuyaMt4neMUWXMWlNgV8hjhz7jvW5MmUseBY4du3PQK/aQkyLlbrTUH2Vl5ltL8kxHydyVWSuqoxd8Qgid3QDvNk9HvAMehmj4B3Gd00F/5T+cT/+EVfwF8b/FZuZ/74SD+dlFj3f75vz98whFV59pAgAbfADonQd2w8eFH1KtYYd1WBEi2IBjSXDQYXj4bZvTeuHQ0W02vJIFQRGEQQXSkiInLjo5vh3Uvh3PAZenGHkecBvWi6FYA/8udbt46PHE4flI8ZiBpkJQCFKmGZdnmet+UM7bW3pFVG0eGZPbBgRsu5JM' because it violates the following Content Security Policy directive: "font-src 'self' https://fonts.gstatic.com".
+
+addFontToDocument @ express-fte-utils.js:18
+express-fte-utils.js:18 Refused to load the font 'data:font/woff2;base64,d09GMgABAAAAARWHABEAAAADfFgAARSvAAUAAAABFRQAAABzAAAAfAAAAAAAAAAAG4HODhylaAZgAIkKCFYJgnMREAqJhXSIrDASgfk4ATYCJAOXTAuXUAAEIAWMIAe1AQyEEVuYQrMDisndfbZZDKqCKmwebfOQLiLX3vgBIw97eJbZNbzgrUXVZNYL6G2TR0DthDzVbma9zCz7//////////9fl0xEZ9LZOcnOJCVQIA2Esbrov1CMyt1QymJOZSamWFYmJnUjrtpSknRJukX/tmz7Vg99q1br9zJoVbwNN1I1lC3YKRtL9aHrAAOkjMAMslYrgmlCvd5THZJNydSc5LgxKuqTploCBm9GapOtNKud9rNQjpOYX1CpXKg8Xq+WcG9oxo6Jr9Fud1Q/bvJObccPkN0h5QieQ1JZTo8KfIqJI88NtPWaIIFOiPhp0uov75Msq1alJN2U2rpkDjvC67duYu1iZJV7wkZn...2bcybdanNJNMpO0HWfUwvLrKs377iORwAt3mIzzJ/7D+xJu31nBewCIG4Z3+/AA/MJYNAXNsO1Nd83Ftj49QaX8PvNojFMLi74VPYmlZANgPH+Tzw6mhW8lSvg3yALtjoJZ4/cGHWTS9KklGIu8RSlwmTURiNxj4yqkvB259bxzg03GRTUkVyI34QllH4a19bykdu0Lsmy6oMro/gpZhP5qkHEHA/79vffaRawpPlf0rtNsZDb3X2kx2XH5Z37PnG2KE0VcvEUH/jFfor3g1nj0Yd2RmVBhCO/qnzGN15pj8k/T3H0WxhKwsMOb+TQP5V+b/nXeunX4L8z6mf5sT+//2uACUf+v2gAG3sA6J0HdsPHhR9SrWGHdVgRItiAY0lw0GF4+G2b03rh0NFtNrySBUERhEEF0pIiJy46Ob4d1L4dzwGXpxhxHnAblhbjWAP/Lne7eOjxxOH5SPGYgaZCUAhSpgWXZ5nrflDO21t6RVQtCxmT2wYEbLtqTA==' because it violates the following Content Security Policy directive: "font-src 'self' https://fonts.gstatic.com".
+
+addFontToDocument @ express-fte-utils.js:18
+express-fte-utils.js:18 Refused to load the font 'data:font/woff2;base64,d09GMgABAAAAAQskABEAAAADijQAAQpGAAUAAAABCqwAAAB4AAAAegAAAAAAAAAAG4HNfBylaAZgAIkKCF4JgnMREAqJoHyIxhMSgfk4ATYCJAOXTAuXUAAEIAWMIAe1AQyEcVvRT7MA/k0O/0upJBSo29l2m52jrVUnKOn57U5E4/C+xJhdw6t4rFjJNv2AeLoi5HfbIIh4E9r2dvb//////////8plIjqTLs6fZDtkECDM0meslkLXv9C0m3uktpSrkdSSojRiraJLByyjce8TMKWMZTbMF9VyVa0lqywzwBK2Uc02MokvasuVeHka/Nq90NuJVK/Zs1rVkIQkJCGJMxxi0b9rH0XZ+Ygeyb3Vu3SITZ5KzqPJRnnkqOuzJFkkGdARGu6oKfGw2iIzSEKeip4y1cbkzMu+fb1KPqg8UpXfkL0ROaRwiefogo/j9zQx2adbkt2QJSW7Ko6jVBLVe4ybKknOKadYSZ8v...DC12jad/Vfab7/44d+YOXvQcbhz5PVcshqfr+U8JjcAGgrrH/85NNOliruso+PY+/mxOed7bsVaY30IAb2qAirWXLBsMdktMtp/0+qlFrEIV7mNMJ1JeM5Eddgkh9/Eta9cWUQvIielRMNb89ww9PyiYV4QYpmrEM63abXfa63gvRFS84oE2TuwPZdPp89SVLgS4dNZqXbpXMjGkHwoqdTiNgGvOgb1WLuihkUu0Z36J07Gwd3NDKp7RzEBpUOGFFysVZKoTOX+rDh1EG3kPmRP83Dwr0O6/w9RXo3P4Jh9/zQeFRBv4pfcT7ZhB9O/2XMtKqe9Xb0WIM9Hagpg/R5/tE8AAAAG3kA6J0F7t4tGJFq+cU1JwUbY3M6jhDUuL1tc0YvHDZOs9GVNJAsIQqCiRxpIG0ZnuApcuKik+PbQe3b8RxweYoZBhtwCuvzIOH6mL+s3S5ejycO7yOVxwxkkoKCmqIMLp+iW64D09Of0Wnj1bpPALctoCy5FDEC' because it violates the following Content Security Policy directive: "font-src 'self' https://fonts.gstatic.com".
+
+addFontToDocument @ express-fte-utils.js:18
+www.savgent.com/:1 Refused to load the script 'https://replit.com/public/js/replit-dev-banner.js' because it violates the following Content Security Policy directive: "script-src 'self' 'unsafe-inline' https://js.stripe.com https://www.paypal.com https://00dcd90e-d031-4095-90fd-c1ff532901ca-00-wc6t90e8ztsv.riker.replit.dev". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback.
+
+index-pSn3vdtp.js:1583 Refused to load the script 'https://www.googletagmanager.com/gtag/js?id=G-FSEHZ6JKLR' because it violates the following Content Security Policy directive: "script-src 'self' 'unsafe-inline' https://js.stripe.com https://www.paypal.com https://00dcd90e-d031-4095-90fd-c1ff532901ca-00-wc6t90e8ztsv.riker.replit.dev". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback.
+
+nk @ index-pSn3vdtp.js:1583
+www.savgent.com/:1 Error while trying to use the following icon from the Manifest: https://www.savgent.com/generated-icon.png (Download error or resource isn't a valid image)
+proxy-image:1 
+            
+            
+           Failed to load resource: the server responded with a status of 404 ()
+/api/auth/login:1 
+            
+            
+           Failed to load resource: the server responded with a status of 429 ()
+hook.js:608 API Error (429): Object
+overrideMethod @ hook.js:608
+hook.js:608 Login error: TypeError: Failed to execute 'json' on 'Response': body stream already read
+    at Object.mutationFn (index-pSn3vdtp.js:1583:9317)
+overrideMethod @ hook.js:608
+/api/auth/login:1 
+            
+            
+           Failed to load resource: the server responded with a status of 429 ()
+hook.js:608 API Error (429): Object
+overrideMethod @ hook.js:608
+hook.js:608 Login error: TypeError: Failed to execute 'json' on 'Response': body stream already read
+    at Object.mutationFn (index-pSn3vdtp.js:1583:9317)
+overrideMethod @ hook.js:608
+/api/auth/login:1 
+            
+            
+           Failed to load resource: the server responded with a status of 429 ()
+hook.js:608 API Error (429): Object
+overrideMethod @ hook.js:608
+hook.js:608 Login error: TypeError: Failed to execute 'json' on 'Response': body stream already read
+    at Object.mutationFn (index-pSn3vdtp.js:1583:9317)
+overrideMethod @ hook.js:608

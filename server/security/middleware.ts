@@ -72,7 +72,7 @@ export const createRateLimiter = (
  */
 export const authRateLimiter = createRateLimiter(
   60 * 60 * 1000, // 1 hour
-  5, // 5 attempts per hour
+  20, // 20 attempts per hour (increased from 5)
   'Too many login attempts, please try again later'
 );
 
