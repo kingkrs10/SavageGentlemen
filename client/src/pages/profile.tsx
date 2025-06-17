@@ -149,7 +149,16 @@ const ProfilePage = () => {
     );
   }
 
-  const userProfile = profile || currentUser;
+  const userProfile = profile || currentUser || {};
+  
+  // Safely access properties with fallbacks
+  const displayName = (userProfile as any)?.displayName || (userProfile as any)?.username || 'User';
+  const username = (userProfile as any)?.username || 'user';
+  const avatar = (userProfile as any)?.avatar;
+  const role = (userProfile as any)?.role || 'user';
+  const bio = (userProfile as any)?.bio;
+  const location = (userProfile as any)?.location;
+  const createdAt = (userProfile as any)?.createdAt;
   const followStatsData = followStats || { followers: 0, following: 0 };
   const attendanceData = attendance || [];
   const reviewsData = reviews || [];
@@ -166,11 +175,11 @@ const ProfilePage = () => {
               <div className="flex-shrink-0">
                 <Avatar className="h-24 w-24 md:h-32 md:w-32">
                   <AvatarImage 
-                    src={userProfile.avatar} 
-                    alt={userProfile.displayName || userProfile.username} 
+                    src={avatar} 
+                    alt={displayName} 
                   />
                   <AvatarFallback className="text-2xl">
-                    {(userProfile.displayName || userProfile.username).charAt(0).toUpperCase()}
+                    {displayName.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               </div>
@@ -179,12 +188,12 @@ const ProfilePage = () => {
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
                   <div>
                     <h1 className="text-2xl md:text-3xl font-bold">
-                      {userProfile.displayName || userProfile.username}
+                      {displayName}
                     </h1>
-                    <p className="text-muted-foreground">@{userProfile.username}</p>
-                    {userProfile.role !== 'user' && (
+                    <p className="text-muted-foreground">@{username}</p>
+                    {role !== 'user' && (
                       <Badge variant="secondary" className="mt-1">
-                        {userProfile.role}
+                        {role}
                       </Badge>
                     )}
                   </div>
@@ -199,21 +208,23 @@ const ProfilePage = () => {
                   </div>
                 </div>
 
-                {userProfile.bio && (
-                  <p className="text-sm text-muted-foreground mb-4">{userProfile.bio}</p>
+                {bio && (
+                  <p className="text-sm text-muted-foreground mb-4">{bio}</p>
                 )}
 
                 <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                  {userProfile.location && (
+                  {location && (
                     <div className="flex items-center gap-1">
                       <MapPin className="h-4 w-4" />
-                      {userProfile.location}
+                      {location}
                     </div>
                   )}
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    Joined {formatDate(userProfile.createdAt)}
-                  </div>
+                  {createdAt && (
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      Joined {formatDate(createdAt)}
+                    </div>
+                  )}
                 </div>
 
                 {/* Social Stats */}
@@ -388,9 +399,9 @@ const ProfilePage = () => {
                   <div className="text-center py-8">
                     <BrandLoader />
                   </div>
-                ) : photos && photos.length > 0 ? (
+                ) : photosData.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {photos.map((photo: EventPhoto) => (
+                    {photosData.map((photo: EventPhoto) => (
                       <div key={photo.id} className="group relative">
                         <img
                           src={photo.photoUrl}
@@ -432,9 +443,9 @@ const ProfilePage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {tickets && tickets.length > 0 ? (
+                {ticketsData.length > 0 ? (
                   <div className="grid gap-4">
-                    {tickets.map((ticket: any) => (
+                    {ticketsData.map((ticket: any) => (
                       <div key={ticket.id} className="flex items-center gap-4 p-4 border rounded-lg">
                         <div className="h-16 w-16 bg-muted rounded-lg flex items-center justify-center">
                           <Ticket className="h-8 w-8 text-muted-foreground" />
