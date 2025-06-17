@@ -61,7 +61,7 @@ interface EnhancedTicketProps {
 }
 
 const EnhancedTicket = ({ ticketPurchase, onTransfer, onRefund }: EnhancedTicketProps) => {
-  const { user } = useAuth();
+  const { currentUser } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showTransferForm, setShowTransferForm] = useState(false);

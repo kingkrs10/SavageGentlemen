@@ -82,7 +82,7 @@ interface FollowStats {
 }
 
 const ProfilePage = () => {
-  const { user: currentUser } = useAuth();
+  const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState("attendance");
   const queryClient = useQueryClient();
 

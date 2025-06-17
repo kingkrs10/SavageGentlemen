@@ -142,7 +142,7 @@ const EventReviews = ({ eventId, eventTitle }: EventReviewsProps) => {
             <Star className="h-5 w-5" />
             Reviews & Ratings
           </div>
-          {user && (
+          {currentUser && (
             <Button
               variant="outline"
               size="sm"
