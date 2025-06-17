@@ -150,6 +150,11 @@ const ProfilePage = () => {
   }
 
   const userProfile = profile || currentUser;
+  const followStatsData = followStats || { followers: 0, following: 0 };
+  const attendanceData = attendance || [];
+  const reviewsData = reviews || [];
+  const photosData = photos || [];
+  const ticketsData = tickets || [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -214,19 +219,19 @@ const ProfilePage = () => {
                 {/* Social Stats */}
                 <div className="flex gap-6 mt-4">
                   <div className="text-center">
-                    <div className="font-bold text-lg">{followStats?.followers || 0}</div>
+                    <div className="font-bold text-lg">{followStatsData.followers}</div>
                     <div className="text-sm text-muted-foreground">Followers</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-bold text-lg">{followStats?.following || 0}</div>
+                    <div className="font-bold text-lg">{followStatsData.following}</div>
                     <div className="text-sm text-muted-foreground">Following</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-bold text-lg">{attendance?.length || 0}</div>
+                    <div className="font-bold text-lg">{attendanceData.length}</div>
                     <div className="text-sm text-muted-foreground">Events Attended</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-bold text-lg">{tickets?.length || 0}</div>
+                    <div className="font-bold text-lg">{ticketsData.length}</div>
                     <div className="text-sm text-muted-foreground">Total Tickets</div>
                   </div>
                 </div>
@@ -269,9 +274,9 @@ const ProfilePage = () => {
                   <div className="text-center py-8">
                     <BrandLoader />
                   </div>
-                ) : attendance && attendance.length > 0 ? (
+                ) : attendanceData.length > 0 ? (
                   <div className="grid gap-4">
-                    {attendance.map((item: EventAttendance) => (
+                    {attendanceData.map((item: EventAttendance) => (
                       <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
                         <div className="h-16 w-16 bg-muted rounded-lg flex items-center justify-center">
                           {item.event.imageUrl ? (
@@ -326,9 +331,9 @@ const ProfilePage = () => {
                   <div className="text-center py-8">
                     <BrandLoader />
                   </div>
-                ) : reviews && reviews.length > 0 ? (
+                ) : reviewsData.length > 0 ? (
                   <div className="grid gap-4">
-                    {reviews.map((review: EventReview) => (
+                    {reviewsData.map((review: EventReview) => (
                       <div key={review.id} className="p-4 border rounded-lg">
                         <div className="flex items-start justify-between mb-2">
                           <div>

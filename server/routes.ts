@@ -2511,6 +2511,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // User profile routes
+  router.get("/users/:id/profile", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Remove sensitive information
+      const { password, ...userProfile } = user;
+      return res.status(200).json(userProfile);
+    } catch (err) {
+      console.error("Error fetching user profile:", err);
+      return res.status(500).json({ message: "Failed to fetch user profile" });
+    }
+  });
+
+  router.get("/users/:id/attendance", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
+      const tickets = await storage.getTicketPurchasesByUserId(userId);
+      const attendance = tickets.filter(ticket => ticket.status === 'confirmed' || ticket.status === 'used');
+      
+      return res.status(200).json(attendance);
+    } catch (err) {
+      console.error("Error fetching user attendance:", err);
+      return res.status(500).json({ message: "Failed to fetch user attendance" });
+    }
+  });
+
+  router.get("/users/:id/reviews", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
+      // Return empty array for now since reviews aren't implemented yet
+      return res.status(200).json([]);
+    } catch (err) {
+      console.error("Error fetching user reviews:", err);
+      return res.status(500).json({ message: "Failed to fetch user reviews" });
+    }
+  });
+
+  router.get("/users/:id/photos", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
+      // Return empty array for now since photos aren't implemented yet
+      return res.status(200).json([]);
+    } catch (err) {
+      console.error("Error fetching user photos:", err);
+      return res.status(500).json({ message: "Failed to fetch user photos" });
+    }
+  });
+
+  router.get("/users/:id/follow-stats", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
+      // Return empty stats for now since follow system isn't implemented yet
+      return res.status(200).json({ followers: 0, following: 0 });
+    } catch (err) {
+      console.error("Error fetching follow stats:", err);
+      return res.status(500).json({ message: "Failed to fetch follow stats" });
+    }
+  });
+
   // User management
   router.get("/admin/users", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
