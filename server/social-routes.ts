@@ -13,7 +13,7 @@ import {
   insertUserFollowSchema
 } from "@shared/schema";
 import { eq, desc, and, sql, count } from "drizzle-orm";
-import { authenticateUser } from "./routes";
+import { authenticateUser } from "./auth-middleware";
 
 export function registerSocialRoutes(app: Express) {
   

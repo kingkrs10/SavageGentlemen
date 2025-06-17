@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/tooltip";
 import { FaGoogle, FaMicrosoft, FaYahoo, FaApple, FaCalendarAlt } from "react-icons/fa";
 import { formatPriceFromCents, getCurrencyFromLocation } from "@/lib/currency";
+import EventReviews from "@/components/social/EventReviews";
 
 const EventDetail = () => {
   // Support both URL formats: /events/:id and /events/:id/:slug
@@ -476,6 +477,11 @@ const EventDetail = () => {
               </CardContent>
             </Card>
           </div>
+        </div>
+        
+        {/* Event Reviews Section */}
+        <div className="mt-8">
+          <EventReviews eventId={event.id} eventTitle={event.title} />
         </div>
       </div>
     </>
