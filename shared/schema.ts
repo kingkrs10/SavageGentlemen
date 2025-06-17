@@ -10,6 +10,9 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   displayName: text("display_name"),
   avatar: text("avatar"),
+  bio: text("bio"),
+  location: text("location"),
+  website: text("website"),
   isGuest: boolean("is_guest").default(false),
   role: text("role").default("user"), // Add role field: user, admin, moderator
   stripeCustomerId: text("stripe_customer_id"),
@@ -957,6 +960,118 @@ export const insertSponsoredContentSchema = createInsertSchema(sponsoredContent)
 export type SponsoredContent = typeof sponsoredContent.$inferSelect;
 export type InsertSponsoredContent = z.infer<typeof insertSponsoredContentSchema>;
 
+// Social Integration Tables
+
+// Event Check-ins
+export const eventCheckins = pgTable("event_checkins", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  eventId: integer("event_id").notNull().references(() => events.id, { onDelete: "cascade" }),
+  checkedInAt: timestamp("checked_in_at").defaultNow(),
+  location: text("location"), // GPS coordinates or venue area
+  isPublic: boolean("is_public").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Event Reviews and Ratings
+export const eventReviews = pgTable("event_reviews", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  eventId: integer("event_id").notNull().references(() => events.id, { onDelete: "cascade" }),
+  rating: integer("rating").notNull(), // 1-5 stars
+  title: text("title"),
+  review: text("review"),
+  isVerifiedAttendee: boolean("is_verified_attendee").default(false),
+  helpful: integer("helpful").default(0), // upvotes from other users
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Event Photo Galleries (User-Generated Content)
+export const eventPhotos = pgTable("event_photos", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  eventId: integer("event_id").notNull().references(() => events.id, { onDelete: "cascade" }),
+  photoUrl: text("photo_url").notNull(),
+  caption: text("caption"),
+  isApproved: boolean("is_approved").default(false), // moderation
+  likes: integer("likes").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User Follows for Social Features
+export const userFollows = pgTable("user_follows", {
+  id: serial("id").primaryKey(),
+  followerId: integer("follower_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  followingId: integer("following_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Enhanced Ticketing Tables
+
+// Enhanced Tickets with QR codes and security
+export const enhancedTickets = pgTable("enhanced_tickets", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").notNull().references(() => tickets.id, { onDelete: "cascade" }),
+  qrCode: text("qr_code").notNull().unique(), // UUID-based QR code
+  securityHash: text("security_hash").notNull(), // Additional security layer
+  isTransferable: boolean("is_transferable").default(true),
+  transferCount: integer("transfer_count").default(0),
+  maxTransfers: integer("max_transfers").default(3),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Ticket Transfers
+export const ticketTransfers = pgTable("ticket_transfers", {
+  id: serial("id").primaryKey(),
+  ticketPurchaseId: integer("ticket_purchase_id").notNull().references(() => ticketPurchases.id, { onDelete: "cascade" }),
+  fromUserId: integer("from_user_id").notNull().references(() => users.id),
+  toUserId: integer("to_user_id").references(() => users.id),
+  toEmail: text("to_email"), // For transfers to non-users
+  transferCode: text("transfer_code").notNull().unique(),
+  status: text("status").default("pending"), // pending, completed, cancelled
+  transferredAt: timestamp("transferred_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Ticket Refunds and Exchanges
+export const ticketRefunds = pgTable("ticket_refunds", {
+  id: serial("id").primaryKey(),
+  ticketPurchaseId: integer("ticket_purchase_id").notNull().references(() => ticketPurchases.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id),
+  refundType: text("refund_type").notNull(), // full, partial, exchange
+  refundAmount: integer("refund_amount"), // in cents
+  reason: text("reason"),
+  status: text("status").default("pending"), // pending, approved, rejected, processed
+  processedAt: timestamp("processed_at"),
+  stripeRefundId: text("stripe_refund_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// VIP Packages and Add-ons
+export const ticketAddons = pgTable("ticket_addons", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").notNull().references(() => events.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  price: integer("price").notNull(), // in cents
+  category: text("category"), // vip, merchandise, experience, food
+  maxQuantity: integer("max_quantity"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Ticket Addon Purchases
+export const ticketAddonPurchases = pgTable("ticket_addon_purchases", {
+  id: serial("id").primaryKey(),
+  ticketPurchaseId: integer("ticket_purchase_id").notNull().references(() => ticketPurchases.id, { onDelete: "cascade" }),
+  addonId: integer("addon_id").notNull().references(() => ticketAddons.id, { onDelete: "cascade" }),
+  quantity: integer("quantity").default(1),
+  unitPrice: integer("unit_price").notNull(), // in cents
+  totalPrice: integer("total_price").notNull(), // in cents
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Define email marketing relations
 export const emailListsRelations = relations(emailLists, ({ many }) => ({
   subscribers: many(emailListSubscribers),
@@ -990,6 +1105,104 @@ export const emailListSubscribersRelations = relations(emailListSubscribers, ({ 
   }),
 }));
 
+// Social Integration Relations
+export const eventCheckinsRelations = relations(eventCheckins, ({ one }) => ({
+  user: one(users, {
+    fields: [eventCheckins.userId],
+    references: [users.id],
+  }),
+  event: one(events, {
+    fields: [eventCheckins.eventId],
+    references: [events.id],
+  }),
+}));
+
+export const eventReviewsRelations = relations(eventReviews, ({ one }) => ({
+  user: one(users, {
+    fields: [eventReviews.userId],
+    references: [users.id],
+  }),
+  event: one(events, {
+    fields: [eventReviews.eventId],
+    references: [events.id],
+  }),
+}));
+
+export const eventPhotosRelations = relations(eventPhotos, ({ one }) => ({
+  user: one(users, {
+    fields: [eventPhotos.userId],
+    references: [users.id],
+  }),
+  event: one(events, {
+    fields: [eventPhotos.eventId],
+    references: [events.id],
+  }),
+}));
+
+export const userFollowsRelations = relations(userFollows, ({ one }) => ({
+  follower: one(users, {
+    fields: [userFollows.followerId],
+    references: [users.id],
+  }),
+  following: one(users, {
+    fields: [userFollows.followingId],
+    references: [users.id],
+  }),
+}));
+
+// Enhanced Ticketing Relations
+export const enhancedTicketsRelations = relations(enhancedTickets, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [enhancedTickets.ticketId],
+    references: [tickets.id],
+  }),
+}));
+
+export const ticketTransfersRelations = relations(ticketTransfers, ({ one }) => ({
+  ticketPurchase: one(ticketPurchases, {
+    fields: [ticketTransfers.ticketPurchaseId],
+    references: [ticketPurchases.id],
+  }),
+  fromUser: one(users, {
+    fields: [ticketTransfers.fromUserId],
+    references: [users.id],
+  }),
+  toUser: one(users, {
+    fields: [ticketTransfers.toUserId],
+    references: [users.id],
+  }),
+}));
+
+export const ticketRefundsRelations = relations(ticketRefunds, ({ one }) => ({
+  ticketPurchase: one(ticketPurchases, {
+    fields: [ticketRefunds.ticketPurchaseId],
+    references: [ticketPurchases.id],
+  }),
+  user: one(users, {
+    fields: [ticketRefunds.userId],
+    references: [users.id],
+  }),
+}));
+
+export const ticketAddonsRelations = relations(ticketAddons, ({ one, many }) => ({
+  event: one(events, {
+    fields: [ticketAddons.eventId],
+    references: [events.id],
+  }),
+  purchases: many(ticketAddonPurchases),
+}));
+
+export const ticketAddonPurchasesRelations = relations(ticketAddonPurchases, ({ one }) => ({
+  ticketPurchase: one(ticketPurchases, {
+    fields: [ticketAddonPurchases.ticketPurchaseId],
+    references: [ticketPurchases.id],
+  }),
+  addon: one(ticketAddons, {
+    fields: [ticketAddonPurchases.addonId],
+    references: [ticketAddons.id],
+  }),
+}));
+
 // Export email marketing types
 export type EmailList = typeof emailLists.$inferSelect;
 export type InsertEmailList = z.infer<typeof insertEmailListSchema>;
@@ -999,3 +1212,117 @@ export type InsertEmailSubscriber = z.infer<typeof insertEmailSubscriberSchema>;
 
 export type EmailCampaign = typeof emailCampaigns.$inferSelect;
 export type InsertEmailCampaign = z.infer<typeof insertEmailCampaignSchema>;
+
+// Social Integration Schemas
+export const insertEventCheckinSchema = createInsertSchema(eventCheckins).pick({
+  userId: true,
+  eventId: true,
+  location: true,
+  isPublic: true,
+});
+
+export const insertEventReviewSchema = createInsertSchema(eventReviews).pick({
+  userId: true,
+  eventId: true,
+  rating: true,
+  title: true,
+  review: true,
+}).extend({
+  rating: z.number().min(1).max(5),
+  title: z.string().max(100).optional(),
+  review: z.string().max(1000).optional(),
+});
+
+export const insertEventPhotoSchema = createInsertSchema(eventPhotos).pick({
+  userId: true,
+  eventId: true,
+  photoUrl: true,
+  caption: true,
+}).extend({
+  caption: z.string().max(500).optional(),
+});
+
+export const insertUserFollowSchema = createInsertSchema(userFollows).pick({
+  followerId: true,
+  followingId: true,
+});
+
+// Enhanced Ticketing Schemas
+export const insertEnhancedTicketSchema = createInsertSchema(enhancedTickets).pick({
+  ticketId: true,
+  qrCode: true,
+  securityHash: true,
+  isTransferable: true,
+  maxTransfers: true,
+});
+
+export const insertTicketTransferSchema = createInsertSchema(ticketTransfers).pick({
+  ticketPurchaseId: true,
+  fromUserId: true,
+  toUserId: true,
+  toEmail: true,
+  transferCode: true,
+}).extend({
+  toEmail: z.string().email().optional(),
+});
+
+export const insertTicketRefundSchema = createInsertSchema(ticketRefunds).pick({
+  ticketPurchaseId: true,
+  userId: true,
+  refundType: true,
+  refundAmount: true,
+  reason: true,
+}).extend({
+  refundType: z.enum(['full', 'partial', 'exchange']),
+  reason: z.string().max(500).optional(),
+});
+
+export const insertTicketAddonSchema = createInsertSchema(ticketAddons).pick({
+  eventId: true,
+  name: true,
+  description: true,
+  price: true,
+  category: true,
+  maxQuantity: true,
+}).extend({
+  category: z.enum(['vip', 'merchandise', 'experience', 'food']).optional(),
+  price: z.number().min(0),
+});
+
+export const insertTicketAddonPurchaseSchema = createInsertSchema(ticketAddonPurchases).pick({
+  ticketPurchaseId: true,
+  addonId: true,
+  quantity: true,
+  unitPrice: true,
+  totalPrice: true,
+}).extend({
+  quantity: z.number().min(1),
+});
+
+// Type exports for new tables
+export type EventCheckin = typeof eventCheckins.$inferSelect;
+export type InsertEventCheckin = z.infer<typeof insertEventCheckinSchema>;
+
+export type EventReview = typeof eventReviews.$inferSelect;
+export type InsertEventReview = z.infer<typeof insertEventReviewSchema>;
+
+export type EventPhoto = typeof eventPhotos.$inferSelect;
+export type InsertEventPhoto = z.infer<typeof insertEventPhotoSchema>;
+
+export type UserFollow = typeof userFollows.$inferSelect;
+export type InsertUserFollow = z.infer<typeof insertUserFollowSchema>;
+
+export type EnhancedTicket = typeof enhancedTickets.$inferSelect;
+export type InsertEnhancedTicket = z.infer<typeof insertEnhancedTicketSchema>;
+
+export type TicketTransfer = typeof ticketTransfers.$inferSelect;
+export type InsertTicketTransfer = z.infer<typeof insertTicketTransferSchema>;
+
+export type TicketRefund = typeof ticketRefunds.$inferSelect;
+export type InsertTicketRefund = z.infer<typeof insertTicketRefundSchema>;
+
+export type TicketAddon = typeof ticketAddons.$inferSelect;
+export type InsertTicketAddon = z.infer<typeof insertTicketAddonSchema>;
+
+export type TicketAddonPurchase = typeof ticketAddonPurchases.$inferSelect;
+export type InsertTicketAddonPurchase = z.infer<typeof insertTicketAddonPurchaseSchema>;
