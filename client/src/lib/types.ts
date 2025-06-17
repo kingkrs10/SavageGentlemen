@@ -7,6 +7,9 @@ export interface User {
   isGuest: boolean;
   role?: string;
   email?: string;
+  bio?: string;
+  location?: string;
+  website?: string;
   token?: string;         // Authentication token
   stripeCustomerId?: string;
   paypalCustomerId?: string;

@@ -2595,6 +2595,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user profile
+  router.put("/users/:id/profile", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      // Ensure user can only update their own profile or admin can update any
+      if (req.user?.id !== userId && req.user?.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized to update this profile" });
+      }
+
+      const updateData = {
+        displayName: req.body.displayName,
+        username: req.body.username,
+        email: req.body.email,
+        bio: req.body.bio,
+        location: req.body.location,
+        website: req.body.website,
+      };
+
+      // Remove undefined values
+      const cleanedData = Object.fromEntries(
+        Object.entries(updateData).filter(([_, value]) => value !== undefined && value !== null && value !== '')
+      );
+
+      const updatedUser = await storage.updateUser(userId, cleanedData);
+      return res.status(200).json(updatedUser);
+    } catch (err) {
+      console.error("Error updating user profile:", err);
+      return res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
   // User management
   router.get("/admin/users", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {

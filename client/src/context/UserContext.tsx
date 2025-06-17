@@ -7,6 +7,7 @@ interface UserContextType {
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   logout: () => void;
   login: (userData: User) => void;
+  updateUser: (userData: Partial<User>) => void;
   isAdmin: boolean;
   isModerator: boolean;
   isAuthenticated: boolean;
@@ -104,6 +105,25 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }));
   };
 
+  // Update user function - merge new data with existing user
+  const updateUser = (userData: Partial<User>) => {
+    if (!user) return;
+    
+    const updatedUser = { ...user, ...userData };
+    setUser(updatedUser);
+    
+    // Store updated user in localStorage
+    localStorage.setItem("user", JSON.stringify({ 
+      status: "success", 
+      data: updatedUser 
+    }));
+    
+    // Dispatch auth changed event
+    window.dispatchEvent(new CustomEvent('sg:auth:changed', { 
+      detail: { user: updatedUser } 
+    }));
+  };
+
   // Logout function - clear user from state and localStorage
   const logout = () => {
     setUser(null);
@@ -113,7 +133,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser, logout, login, isAdmin, isModerator, isAuthenticated }}>
+    <UserContext.Provider value={{ user, setUser, logout, login, updateUser, isAdmin, isModerator, isAuthenticated }}>
       {children}
     </UserContext.Provider>
   );
