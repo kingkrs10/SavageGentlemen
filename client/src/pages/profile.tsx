@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
+import { useUser } from "@/context/UserContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -82,48 +82,48 @@ interface FollowStats {
 }
 
 const ProfilePage = () => {
-  const { currentUser } = useAuth();
+  const { user } = useUser();
   const [activeTab, setActiveTab] = useState("attendance");
   const queryClient = useQueryClient();
 
-  console.log('ProfilePage - currentUser:', currentUser);
+  console.log('ProfilePage - user:', user);
 
   // Get user profile data
   const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
-    queryKey: [`/api/users/${currentUser?.id}/profile`],
-    enabled: !!currentUser?.id,
+    queryKey: [`/api/users/${user?.id}/profile`],
+    enabled: !!user?.id,
   });
 
-  console.log('Profile query - enabled:', !!currentUser?.id, 'loading:', profileLoading, 'data:', profile, 'error:', profileError);
+  console.log('Profile query - enabled:', !!user?.id, 'loading:', profileLoading, 'data:', profile, 'error:', profileError);
 
   // Get event attendance history
   const { data: attendance, isLoading: attendanceLoading } = useQuery({
-    queryKey: [`/api/users/${currentUser?.id}/attendance`],
-    enabled: !!currentUser?.id,
+    queryKey: [`/api/users/${user?.id}/attendance`],
+    enabled: !!user?.id,
   });
 
   // Get user's event reviews
   const { data: reviews, isLoading: reviewsLoading } = useQuery({
-    queryKey: [`/api/users/${currentUser?.id}/reviews`],
-    enabled: !!currentUser?.id,
+    queryKey: [`/api/users/${user?.id}/reviews`],
+    enabled: !!user?.id,
   });
 
   // Get user's event photos
   const { data: photos, isLoading: photosLoading } = useQuery({
-    queryKey: [`/api/users/${currentUser?.id}/photos`],
-    enabled: !!currentUser?.id,
+    queryKey: [`/api/users/${user?.id}/photos`],
+    enabled: !!user?.id,
   });
 
   // Get follow statistics
   const { data: followStats } = useQuery({
-    queryKey: [`/api/users/${currentUser?.id}/follow-stats`],
-    enabled: !!currentUser?.id,
+    queryKey: [`/api/users/${user?.id}/follow-stats`],
+    enabled: !!user?.id,
   });
 
   // Get user's tickets
   const { data: tickets } = useQuery({
-    queryKey: [`/api/users/${currentUser?.id}/tickets`],
-    enabled: !!currentUser?.id,
+    queryKey: [`/api/users/${user?.id}/tickets`],
+    enabled: !!user?.id,
   });
 
   if (profileLoading) {
@@ -134,7 +134,7 @@ const ProfilePage = () => {
     );
   }
 
-  if (!currentUser) {
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -153,7 +153,7 @@ const ProfilePage = () => {
     );
   }
 
-  const userProfile = profile || currentUser || {};
+  const userProfile = profile || user || {};
   
   // Safely access properties with fallbacks
   const displayName = (userProfile as any)?.displayName || (userProfile as any)?.username || 'User';
