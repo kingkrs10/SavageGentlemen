@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +48,7 @@ interface EventReviewsProps {
 }
 
 const EventReviews = ({ eventId, eventTitle }: EventReviewsProps) => {
-  const { user } = useAuth();
+  const { currentUser } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -179,7 +179,7 @@ const EventReviews = ({ eventId, eventTitle }: EventReviewsProps) => {
         )}
 
         {/* Review Form */}
-        {showReviewForm && user && (
+        {showReviewForm && currentUser && (
           <Card className="mb-6">
             <CardContent className="pt-6">
               <h3 className="font-semibold mb-4">Write a Review for {eventTitle}</h3>
@@ -311,7 +311,7 @@ const EventReviews = ({ eventId, eventTitle }: EventReviewsProps) => {
             <p className="mt-1 text-sm text-gray-500">
               Be the first to share your experience at this event
             </p>
-            {user && (
+            {currentUser && (
               <Button 
                 className="mt-4" 
                 onClick={() => setShowReviewForm(true)}
@@ -323,7 +323,7 @@ const EventReviews = ({ eventId, eventTitle }: EventReviewsProps) => {
         )}
 
         {/* Login prompt for non-authenticated users */}
-        {!user && (
+        {!currentUser && (
           <div className="mt-4 p-4 bg-muted rounded-lg text-center">
             <p className="text-sm text-muted-foreground">
               Sign in to write a review and share your experience
