@@ -2,7 +2,8 @@ import React from "react";
 import { Calendar, MapPin, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
+import { formatEventPrice } from "@/lib/currency";
 import { Event } from "@/lib/types";
 import SGFlyerLogoPng from "@assets/SGFLYERLOGO.png";
 import AddToCalendarButton from "@/components/events/AddToCalendarButton";
@@ -63,7 +64,7 @@ const EventCard = ({
                 </p>
               </div>
               <Badge variant="outline" className="bg-accent text-black font-bold px-3 py-1 rounded-full">
-                {formatCurrency(price, id, title)}
+                {formatEventPrice(event)}
               </Badge>
             </div>
             <p className="text-sm mt-3">{description}</p>
@@ -146,7 +147,7 @@ const EventCard = ({
             </p>
           </div>
           <Badge variant="outline" className="bg-accent text-black text-xs font-bold px-3 py-1 rounded-full">
-            {formatCurrency(price, id, title)}
+            {formatEventPrice(event)}
           </Badge>
         </div>
         <p className="text-sm mt-2">{description}</p>

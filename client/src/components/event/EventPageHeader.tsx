@@ -1,6 +1,7 @@
 import React from 'react';
 import { Calendar } from 'lucide-react';
 import { Event } from '@/types';
+import { formatEventPrice, formatPriceFromCents, getCurrencyFromLocation } from '@/lib/currency';
 
 type EventPageHeaderProps = {
   event: Event;
@@ -15,13 +16,13 @@ const EventPageHeader: React.FC<EventPageHeaderProps> = ({ event }) => {
     ? new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true })
     : "8:00 PM"; // Default time
   
-  // Calculate the lowest ticket price from all available tickets
+  // Calculate the lowest ticket price from all available tickets with proper currency
   const lowestPrice = event.tickets && event.tickets.length > 0
     ? Math.min(...event.tickets.map(ticket => ticket.price))
     : 0;
   
   const displayPrice = lowestPrice > 0 
-    ? `$${(lowestPrice / 100).toFixed(2)}` 
+    ? formatPriceFromCents(lowestPrice, getCurrencyFromLocation(event.location))
     : "Free";
 
   return (
