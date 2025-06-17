@@ -86,11 +86,15 @@ const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState("attendance");
   const queryClient = useQueryClient();
 
+  console.log('ProfilePage - currentUser:', currentUser);
+
   // Get user profile data
-  const { data: profile, isLoading: profileLoading } = useQuery({
+  const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
     queryKey: [`/api/users/${currentUser?.id}/profile`],
     enabled: !!currentUser?.id,
   });
+
+  console.log('Profile query - enabled:', !!currentUser?.id, 'loading:', profileLoading, 'data:', profile, 'error:', profileError);
 
   // Get event attendance history
   const { data: attendance, isLoading: attendanceLoading } = useQuery({
