@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import { Router } from "express";
 import { db } from "./db";
 import { 
   eventCheckins, 
@@ -14,6 +15,8 @@ import {
 } from "@shared/schema";
 import { eq, desc, and, sql, count } from "drizzle-orm";
 import { authenticateUser } from "./auth-middleware";
+
+export const socialRouter = Router();
 
 export function registerSocialRoutes(app: Express) {
   

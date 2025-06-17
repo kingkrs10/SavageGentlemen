@@ -41,8 +41,8 @@ import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./payp
 import { sendEmail, sendTicketEmail, sendOrderConfirmation, sendAdminNotification, sendWelcomeEmail, sendPasswordResetEmail } from "./email";
 import { analyticsRouter } from "./analytics-routes";
 import { emailMarketingRouter } from "./email-marketing-routes";
-import { socialRouter } from "./social-routes";
-import { enhancedTicketingRouter } from "./enhanced-ticketing-routes";
+import { registerSocialRoutes } from "./social-routes";
+import { registerEnhancedTicketingRoutes } from "./enhanced-ticketing-routes";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -98,11 +98,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register analytics router
   router.use("/analytics", analyticsRouter);
   
-  // Register social router
-  router.use("/social", socialRouter);
-  
-  // Register enhanced ticketing router
-  router.use("/tickets", enhancedTicketingRouter);
+  // Register social and enhanced ticketing routes
+  registerSocialRoutes(app);
+  registerEnhancedTicketingRoutes(app);
   
   // Create uploads directory for media files if it doesn't exist
   const uploadsDir = path.join(process.cwd(), 'uploads');

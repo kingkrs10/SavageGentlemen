@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import { Router } from "express";
 import { db } from "./db";
 import { 
   enhancedTickets,
@@ -17,9 +18,11 @@ import {
   insertTicketAddonPurchaseSchema
 } from "@shared/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
-import { authenticateUser } from "./routes";
+import { authenticateUser } from "./auth-middleware";
 import { v4 as uuidv4 } from "uuid";
 import crypto from "crypto";
+
+export const enhancedTicketingRouter = Router();
 
 export function registerEnhancedTicketingRoutes(app: Express) {
 
