@@ -63,6 +63,7 @@ export const events = pgTable("events", {
   duration: integer("duration"), // Duration in minutes
   location: text("location").notNull(),
   price: integer("price"),
+  currency: text("currency").default("USD"), // Currency code (USD, CAD, etc.)
   imageUrl: text("image_url"),
   additionalImages: text("additional_images").array(), // Array of additional image URLs
   category: text("category"),
@@ -92,6 +93,8 @@ export const insertEventSchema = createInsertSchema(events)
     endTime: true,
     duration: true,
     location: true,
+    price: true,
+    currency: true,
     imageUrl: true,
     additionalImages: true,
     category: true,
@@ -101,6 +104,7 @@ export const insertEventSchema = createInsertSchema(events)
   })
   .extend({
     price: z.number().nullable().optional(),
+    currency: z.enum(["USD", "CAD"]).default("USD"),
   })
   .transform((data) => {
     // If date is provided as a string, convert it to a Date object
