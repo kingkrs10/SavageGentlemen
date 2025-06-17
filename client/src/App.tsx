@@ -37,6 +37,7 @@ const TicketManagement = lazy(() => import("@/pages/ticket-management"));
 const FreeTicketsDashboard = lazy(() => import("@/pages/free-tickets-dashboard"));
 const EmailManagement = lazy(() => import("@/pages/email-management"));
 const Profile = lazy(() => import("@/pages/profile"));
+const Settings = lazy(() => import("@/pages/settings"));
 
 function Router() {
   const [location] = useLocation();
@@ -76,6 +77,7 @@ function Router() {
         <Route path="/free-tickets" component={FreeTicketsDashboard} />
         <Route path="/email-management" component={EmailManagement} />
         <Route path="/profile" component={Profile} />
+        <Route path="/settings" component={Settings} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>

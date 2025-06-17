@@ -164,10 +164,10 @@ const ProfilePage = () => {
   const location = (userProfile as any)?.location;
   const createdAt = (userProfile as any)?.createdAt;
   const followStatsData = followStats || { followers: 0, following: 0 };
-  const attendanceData = attendance || [];
-  const reviewsData = reviews || [];
-  const photosData = photos || [];
-  const ticketsData = tickets || [];
+  const attendanceData = Array.isArray(attendance) ? attendance : [];
+  const reviewsData = Array.isArray(reviews) ? reviews : [];
+  const photosData = Array.isArray(photos) ? photos : [];
+  const ticketsData = Array.isArray(tickets) ? tickets : [];
 
   return (
     <div className="min-h-screen bg-background">
