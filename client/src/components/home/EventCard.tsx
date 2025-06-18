@@ -25,11 +25,41 @@ const EventCard = ({
   onGetTicket 
 }: EventCardProps) => {
   const { id, title, description, date, time, location, price, imageUrl } = event;
+  const { user, isAuthenticated } = useUser();
+  const { toast } = useToast();
   
   // Track event view when card is rendered
   React.useEffect(() => {
     trackEventView(id);
   }, [id]);
+
+  const handleGetTickets = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Check if user is authenticated before proceeding
+    if (!isAuthenticated) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in or create an account to purchase tickets.",
+        variant: "destructive",
+      });
+      
+      // Open authentication modal
+      const authEvent = new CustomEvent('sg:open-auth-modal', { 
+        detail: { 
+          tab: 'login',
+          redirectPath: `/events/${id}`
+        } 
+      });
+      window.dispatchEvent(authEvent);
+      return;
+    }
+    
+    // Track ticket click for analytics
+    trackEventTicketClick(id);
+    onGetTicket && onGetTicket(id);
+  };
   
   if (variant === "horizontal") {
     return (
@@ -88,13 +118,7 @@ const EventCard = ({
                 </Link>
                 <Button 
                   className="bg-primary text-white hover:bg-red-800 transition"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    // Track ticket click for analytics
-                    trackEventTicketClick(id);
-                    onGetTicket && onGetTicket(id);
-                  }}
+                  onClick={handleGetTickets}
                 >
                   Get Tickets
                 </Button>
@@ -170,13 +194,7 @@ const EventCard = ({
             <Button 
               className="bg-primary text-white hover:bg-red-800 transition"
               size="sm"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                // Track ticket click for analytics
-                trackEventTicketClick(id);
-                onGetTicket && onGetTicket(id);
-              }}
+              onClick={handleGetTickets}
             >
               Get Tickets
             </Button>
