@@ -15,6 +15,7 @@ import WebSocket from "ws";
 import { storage } from "./storage";
 import { 
   insertUserSchema, 
+  registrationSchema,
   insertEventSchema, 
   insertProductSchema, 
   insertLivestreamSchema, 
@@ -374,7 +375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   router.post(
     "/auth/register", 
     authRateLimiter,
-    validateRequest(insertUserSchema),
+    validateRequest(registrationSchema),
     async (req: Request, res: Response) => {
       try {
         // The data is already validated by the middleware

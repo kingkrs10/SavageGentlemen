@@ -44,10 +44,24 @@ export const insertUserSchema = createInsertSchema(users)
       .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, underscores, and hyphens'),
     password: z.string()
       .min(6, 'Password must be at least 6 characters'),
-    email: z.string().email('Invalid email format').nullish(),
+    email: z.string().email('Invalid email format').optional(),
     role: z.enum(['user', 'admin', 'moderator']).default('user'),
     displayName: z.string().min(1, 'Display name cannot be empty').nullish(),
   });
+
+// Registration schema that requires email
+export const registrationSchema = insertUserSchema.extend({
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number'),
+}).pick({
+  username: true,
+  email: true,
+  displayName: true,
+  password: true,
+});
 
 // Login schema for validation
 export const loginSchema = z.object({
