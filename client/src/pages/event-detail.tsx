@@ -32,6 +32,7 @@ import {
 import { FaGoogle, FaMicrosoft, FaYahoo, FaApple, FaCalendarAlt } from "react-icons/fa";
 import { formatPriceFromCents, getCurrencyFromLocation } from "@/lib/currency";
 import EventReviews from "@/components/social/EventReviews";
+import { useUser } from "@/context/UserContext";
 
 const EventDetail = () => {
   // Support both URL formats: /events/:id and /events/:id/:slug
@@ -39,6 +40,7 @@ const EventDetail = () => {
   const [matchWithSlug, paramsWithSlug] = useRoute("/events/:id/:slug");
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user, isAuthenticated } = useUser();
   
   // Get the event ID from either URL format
   const eventIdParam = matchWithSlug ? paramsWithSlug?.id : paramsSimple?.id;
@@ -347,6 +349,25 @@ const EventDetail = () => {
                         <Button 
                           className="w-full mt-2"
                           onClick={() => {
+                            // Check if user is authenticated before proceeding
+                            if (!isAuthenticated) {
+                              toast({
+                                title: "Sign in required",
+                                description: "Please sign in or create an account to purchase tickets.",
+                                variant: "destructive",
+                              });
+                              
+                              // Open authentication modal with current ticket details preserved
+                              const authEvent = new CustomEvent('sg:open-auth-modal', { 
+                                detail: { 
+                                  tab: 'login',
+                                  redirectPath: `/checkout?eventId=${event.id}&ticketId=${ticket.id}&amount=${ticket.price / 100}&currency=${getCurrencyFromLocation(event.location)}&title=${encodeURIComponent(event.title)}`
+                                } 
+                              });
+                              window.dispatchEvent(authEvent);
+                              return;
+                            }
+                            
                             toast({
                               title: "Processing",
                               description: "Redirecting to secure checkout..."

@@ -10,6 +10,8 @@ import AddToCalendarButton from "@/components/events/AddToCalendarButton";
 import LazyImage from "@/components/ui/LazyImage";
 import { Link } from "wouter";
 import { trackEventView, trackEventTicketClick } from "@/lib/analytics";
+import { useUser } from "@/context/UserContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface EventCardProps {
   event: Event;
