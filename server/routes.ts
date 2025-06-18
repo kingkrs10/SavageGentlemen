@@ -3393,8 +3393,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Event not found" });
       }
       
-      // Make sure the event price is actually zero
-      if (event.price > 0) {
+      // Make sure the event price is actually zero or null (free)
+      if (event.price && event.price > 0) {
         return res.status(400).json({ 
           message: "This endpoint is only for free tickets. Use payment endpoints for paid tickets." 
         });
@@ -3590,8 +3590,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Event not found" });
       }
       
-      // Make sure the event price is actually zero
-      if (event.price > 0) {
+      // Make sure the event price is actually zero or null (free)
+      if (event.price && event.price > 0) {
         return res.status(400).json({ 
           message: "This endpoint is only for free tickets. Use payment endpoints for paid tickets." 
         });
