@@ -47,6 +47,7 @@ const passwordSchema = z.string()
   .regex(/[0-9]/, "Password must contain at least one number");
 
 const registerSchema = loginSchema.extend({
+  email: z.string().email("Please enter a valid email address"),
   displayName: z.string().min(3, "Display name must be at least 3 characters"),
   // Use the enhanced password validation for registration
   password: passwordSchema,
@@ -88,6 +89,7 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess, onGuestLogin }: AuthModalPr
     resolver: zodResolver(registerSchema),
     defaultValues: {
       username: "",
+      email: "",
       displayName: "",
       password: "",
       confirmPassword: "",
@@ -387,6 +389,19 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess, onGuestLogin }: AuthModalPr
                       <FormLabel>Username</FormLabel>
                       <FormControl>
                         <Input placeholder="Choose a username" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={registerForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="Enter your email address" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
