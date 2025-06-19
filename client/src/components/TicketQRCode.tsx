@@ -125,7 +125,7 @@ const TicketQRCode: React.FC<TicketQRCodeProps> = ({
         ticketId: qrCodeData.split('-').pop() || "0", // Extract ticket ID from QR code data
         orderId,
         email: userEmail,
-        qrCodeDataUrl: qrCodeImage,
+        qrCodeDataUrl: qrCodeData, // Pass the raw QR code data, not the image data URL
         eventName: eventName || 'Untitled Event',
         ticketName: ticketName || 'Standard Ticket',
         ticketPrice: 0, // Default price

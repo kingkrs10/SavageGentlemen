@@ -1,4 +1,5 @@
 import sgMail from '@sendgrid/mail';
+import QRCode from 'qrcode';
 
 // Initialize SendGrid with API key
 if (!process.env.SENDGRID_API_KEY) {
@@ -86,6 +87,22 @@ export const sendTicketEmail = async (
   userEmail: string
 ): Promise<boolean> => {
   const { eventName, eventDate, eventLocation, ticketId, ticketType, ticketPrice, purchaseDate, qrCodeDataUrl } = ticketInfo;
+  
+  // Generate QR code as buffer for email attachment
+  let qrCodeBuffer: Buffer;
+  try {
+    qrCodeBuffer = await QRCode.toBuffer(qrCodeDataUrl, {
+      width: 300,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    });
+  } catch (error) {
+    console.error('Error generating QR code:', error);
+    return false;
+  }
   
   const formattedDate = new Date(eventDate).toLocaleDateString('en-US', {
     weekday: 'long',
@@ -181,7 +198,7 @@ export const sendTicketEmail = async (
         </div>
         
         <div class="qr-container">
-          <img src="${qrCodeDataUrl}" alt="Ticket QR Code" width="250" />
+          <img src="cid:qrcode" alt="Ticket QR Code" width="250" />
         </div>
         
         <div class="ticket-id">Ticket ID: ${ticketId}</div>
@@ -199,7 +216,16 @@ export const sendTicketEmail = async (
   return sendEmail({
     to: userEmail,
     subject: `Your ticket for ${eventName}`,
-    html
+    html,
+    attachments: [
+      {
+        content: qrCodeBuffer.toString('base64'),
+        filename: 'qrcode.png',
+        type: 'image/png',
+        disposition: 'inline',
+        content_id: 'qrcode'
+      }
+    ]
   });
 };
 
