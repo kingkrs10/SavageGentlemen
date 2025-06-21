@@ -3235,6 +3235,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Endpoint to manually retry ticket delivery for a specific user
+  // Admin endpoint to resend tickets for recent purchases
+  router.post("/admin/tickets/resend-recent", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const { startDate = '2025-06-18', endDate = '2025-06-21' } = req.body;
+      
+      // Get recent ticket purchases
+      const query = `
+        SELECT tp.*, u.email, u.username, e.title as event_title, e.location as event_location, e.date as event_date
+        FROM ticket_purchases tp 
+        JOIN users u ON tp.user_id = u.id 
+        JOIN events e ON tp.event_id = e.id 
+        WHERE tp.purchase_date >= $1 AND tp.purchase_date < $2
+        ORDER BY tp.purchase_date DESC
+      `;
+      
+      const tickets = await storage.db.query(query, [startDate + ' 00:00:00', endDate + ' 23:59:59']);
+      
+      let successCount = 0;
+      let failureCount = 0;
+      const results = [];
+      
+      for (const ticket of tickets.rows) {
+        try {
+          const emailSent = await sendTicketEmail({
+            ticketId: ticket.id.toString(),
+            qrCodeDataUrl: ticket.qr_code_data,
+            eventName: ticket.event_title,
+            eventLocation: ticket.event_location || 'Event Venue',
+            eventDate: new Date(ticket.event_date),
+            ticketType: ticket.ticket_type,
+            ticketPrice: parseFloat(ticket.price) || 0,
+            purchaseDate: new Date(ticket.purchase_date)
+          }, ticket.email);
+          
+          if (emailSent) {
+            successCount++;
+            results.push({ ticketId: ticket.id, email: ticket.email, status: 'sent' });
+          } else {
+            failureCount++;
+            results.push({ ticketId: ticket.id, email: ticket.email, status: 'failed' });
+          }
+        } catch (error) {
+          failureCount++;
+          results.push({ ticketId: ticket.id, email: ticket.email, status: 'error', error: error.message });
+        }
+      }
+      
+      res.json({
+        success: true,
+        message: `Processed ${tickets.rows.length} tickets: ${successCount} sent, ${failureCount} failed`,
+        results,
+        summary: { total: tickets.rows.length, sent: successCount, failed: failureCount }
+      });
+      
+    } catch (error: any) {
+      console.error("Error resending recent tickets:", error);
+      res.status(500).json({ error: "Failed to resend tickets: " + error.message });
+    }
+  });
+
   router.post("/api/tickets/retry-delivery/:username", async (req: Request, res: Response) => {
     try {
       const { username } = req.params;
