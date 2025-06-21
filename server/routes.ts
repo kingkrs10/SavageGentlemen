@@ -3240,23 +3240,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { startDate = '2025-06-18', endDate = '2025-06-21' } = req.body;
       
-      // Get recent ticket purchases
-      const query = `
-        SELECT tp.*, u.email, u.username, e.title as event_title, e.location as event_location, e.date as event_date
-        FROM ticket_purchases tp 
-        JOIN users u ON tp.user_id = u.id 
-        JOIN events e ON tp.event_id = e.id 
-        WHERE tp.purchase_date >= $1 AND tp.purchase_date < $2
-        ORDER BY tp.purchase_date DESC
-      `;
-      
-      const tickets = await storage.db.query(query, [startDate + ' 00:00:00', endDate + ' 23:59:59']);
+      // Get recent ticket purchases using execute_sql_tool equivalent
+      const recentTickets = await storage.getRecentTicketPurchases(startDate, endDate);
       
       let successCount = 0;
       let failureCount = 0;
       const results = [];
       
-      for (const ticket of tickets.rows) {
+      for (const ticket of recentTickets) {
         try {
           const emailSent = await sendTicketEmail({
             ticketId: ticket.id.toString(),
@@ -3284,9 +3275,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         success: true,
-        message: `Processed ${tickets.rows.length} tickets: ${successCount} sent, ${failureCount} failed`,
+        message: `Processed ${recentTickets.length} tickets: ${successCount} sent, ${failureCount} failed`,
         results,
-        summary: { total: tickets.rows.length, sent: successCount, failed: failureCount }
+        summary: { total: recentTickets.length, sent: successCount, failed: failureCount }
       });
       
     } catch (error: any) {

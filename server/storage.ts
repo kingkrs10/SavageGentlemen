@@ -3264,6 +3264,40 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+
+  async getRecentTicketPurchases(startDate: string, endDate: string): Promise<any[]> {
+    try {
+      const result = await db
+        .select({
+          id: ticketPurchases.id,
+          user_id: ticketPurchases.userId,
+          email: users.email,
+          username: users.username,
+          qr_code_data: ticketPurchases.qrCodeData,
+          purchase_date: ticketPurchases.purchaseDate,
+          ticket_type: ticketPurchases.ticketType,
+          price: ticketPurchases.price,
+          event_title: events.title,
+          event_location: events.location,
+          event_date: events.date
+        })
+        .from(ticketPurchases)
+        .leftJoin(users, eq(ticketPurchases.userId, users.id))
+        .leftJoin(events, eq(ticketPurchases.eventId, events.id))
+        .where(
+          and(
+            gte(ticketPurchases.purchaseDate, new Date(startDate + ' 00:00:00')),
+            lt(ticketPurchases.purchaseDate, new Date(endDate + ' 23:59:59'))
+          )
+        )
+        .orderBy(desc(ticketPurchases.purchaseDate));
+      
+      return result;
+    } catch (error) {
+      console.error('Error fetching recent ticket purchases:', error);
+      return [];
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
