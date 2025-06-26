@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import SEOHead from "@/components/SEOHead";
 import { Calendar, MapPin, Clock, ArrowLeft, CalendarClock, Share2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { getNormalizedImageUrl } from "@/lib/utils/image-utils";
+import { getNormalizedImageUrl, normalizeAdditionalImages } from "@/lib/utils/image-utils";
 import { format } from "date-fns";
 import BrandLoader from "@/components/ui/BrandLoader";
 import { useToast } from "@/hooks/use-toast";
@@ -265,21 +265,43 @@ const EventDetail = () => {
           </Link>
         </div>
         
-        {/* Event Image */}
-        <div className="w-full h-[300px] md:h-[400px] rounded-lg overflow-hidden mb-6 bg-gray-800 relative">
-          <LazyImage 
-            src={event.imageUrl || ''} 
-            alt={event.title} 
-            className="w-full h-full" 
-            fallbackSrc={SGFlyerLogoPng}
-            placeholderColor="#1f2937"
-            loadingClassName="w-full h-full bg-gray-800 animate-pulse"
-            objectFit="contain"
-          />
-          {/* Add subtle gradient at the bottom for better text visibility */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none">
-            {/* Gradient overlay */}
+        {/* Event Images - Main and Additional */}
+        <div className="mb-6">
+          {/* Main Event Image */}
+          <div className="w-full h-[300px] md:h-[400px] rounded-lg overflow-hidden mb-4 bg-gray-800 relative">
+            <LazyImage 
+              src={event.imageUrl || ''} 
+              alt={event.title} 
+              className="w-full h-full" 
+              fallbackSrc={SGFlyerLogoPng}
+              placeholderColor="#1f2937"
+              loadingClassName="w-full h-full bg-gray-800 animate-pulse"
+              objectFit="contain"
+            />
+            {/* Add subtle gradient at the bottom for better text visibility */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none">
+              {/* Gradient overlay */}
+            </div>
           </div>
+          
+          {/* Additional Images */}
+          {event.additionalImages && normalizeAdditionalImages(event.additionalImages).length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {normalizeAdditionalImages(event.additionalImages).map((imageUrl, index) => (
+                <div key={index} className="aspect-square rounded-lg overflow-hidden bg-gray-800">
+                  <LazyImage 
+                    src={imageUrl} 
+                    alt={`${event.title} - Image ${index + 1}`} 
+                    className="w-full h-full" 
+                    fallbackSrc={SGFlyerLogoPng}
+                    placeholderColor="#1f2937"
+                    loadingClassName="w-full h-full bg-gray-800 animate-pulse"
+                    objectFit="cover"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         
         {/* Event Details */}

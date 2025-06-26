@@ -68,3 +68,29 @@ export function isValidImageUrl(url: string | null): boolean {
   
   return hasValidExtension || isGoogleDrive;
 }
+
+// Normalize additional images array from database
+export function normalizeAdditionalImages(additionalImages: string[] | string | null): string[] {
+  if (!additionalImages) return [];
+  
+  // Handle string format (JSON string from database)
+  if (typeof additionalImages === 'string') {
+    try {
+      const parsed = JSON.parse(additionalImages);
+      if (Array.isArray(parsed)) {
+        return parsed.map(img => getNormalizedImageUrl(img));
+      }
+      return [getNormalizedImageUrl(parsed)];
+    } catch {
+      // If parsing fails, treat as single image path
+      return [getNormalizedImageUrl(additionalImages)];
+    }
+  }
+  
+  // Handle array format
+  if (Array.isArray(additionalImages)) {
+    return additionalImages.map(img => getNormalizedImageUrl(img));
+  }
+  
+  return [];
+}
