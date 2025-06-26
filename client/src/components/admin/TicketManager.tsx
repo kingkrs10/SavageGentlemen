@@ -93,8 +93,32 @@ const TicketManager: React.FC = () => {
     queryFn: async () => {
       if (!selectedEvent?.id) return [];
       console.log("Fetching tickets for event:", selectedEvent.id);
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const token = user?.token;
+      
+      // Get user data from localStorage
+      const userDataStr = localStorage.getItem('user');
+      let user = null;
+      let token = null;
+      
+      if (userDataStr) {
+        try {
+          const parsedData = JSON.parse(userDataStr);
+          // Handle nested user data structure
+          if (parsedData.data && parsedData.data.data) {
+            user = parsedData.data.data;
+          } else if (parsedData.data) {
+            user = parsedData.data;
+          } else {
+            user = parsedData;
+          }
+          token = user?.token;
+        } catch (e) {
+          console.error('Error parsing user data:', e);
+        }
+      }
+      
+      if (!token || !user?.id) {
+        throw new Error('Authentication required');
+      }
       
       const response = await fetch(`/api/admin/tickets/event/${selectedEvent.id}`, {
         headers: {
