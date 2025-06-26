@@ -414,16 +414,26 @@ const TicketScanner = () => {
         
         {!ticketInfo && (
           <div className="mb-4 flex justify-center">
-            <div className="bg-muted rounded-lg p-1 inline-flex">
+            <div className="bg-muted rounded-lg p-1 inline-flex flex-wrap">
               <Button
                 type="button"
                 variant={scanMode === 'manual' ? 'default' : 'outline'}
                 size="sm"
-                className="flex items-center text-xs sm:text-sm"
+                className="flex items-center text-xs sm:text-sm mb-1 sm:mb-0"
                 onClick={() => setScanMode('manual')}
               >
                 <KeyboardIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                Manual Entry
+                Manual
+              </Button>
+              <Button
+                type="button"
+                variant={scanMode === 'camera' ? 'default' : 'outline'}
+                size="sm"
+                className="flex items-center text-xs sm:text-sm mb-1 sm:mb-0"
+                onClick={() => setScanMode('camera')}
+              >
+                <Video className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                Live Scan
               </Button>
               <Button
                 type="button"
@@ -433,7 +443,7 @@ const TicketScanner = () => {
                 onClick={() => setScanMode('upload')}
               >
                 <Camera className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                Take Photo
+                Photo
               </Button>
               <input
                 type="file"
@@ -504,6 +514,83 @@ const TicketScanner = () => {
                   )}
                 </Button>
               </form>
+            </CardContent>
+          </Card>
+        )}
+        
+        {!ticketInfo && scanMode === 'camera' && (
+          <Card className="shadow-md">
+            <CardHeader className="pb-2 sm:pb-3">
+              <CardTitle className="text-lg sm:text-xl">Live QR Scanner</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                Use your camera to scan QR codes in real-time
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center space-y-4">
+                {!cameraActive ? (
+                  <>
+                    <div className="w-full aspect-square max-w-[280px] border-2 border-dashed border-green-300 rounded-lg flex items-center justify-center bg-green-50">
+                      <div className="text-center p-4">
+                        <Video className="h-16 w-16 mx-auto text-green-500 mb-3" />
+                        <p className="text-sm font-medium text-green-700 mb-1">Start Live Scanner</p>
+                        <p className="text-xs text-green-600">Point camera at QR code for instant scanning</p>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      onClick={startCamera} 
+                      className="w-full flex items-center justify-center h-14 text-lg font-semibold bg-green-600 hover:bg-green-700 text-white"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                          Starting Camera...
+                        </>
+                      ) : (
+                        <>
+                          <Video className="mr-2 h-6 w-6" />
+                          Start Camera
+                        </>
+                      )}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-full aspect-square max-w-[280px] rounded-lg overflow-hidden bg-black relative">
+                      <video 
+                        ref={videoRef}
+                        className="w-full h-full object-cover"
+                        playsInline
+                        muted
+                      />
+                      <div className="absolute inset-0 border-2 border-green-400 rounded-lg"></div>
+                      <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-medium">
+                        Live Scanner Active
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      onClick={stopCamera} 
+                      variant="outline"
+                      className="w-full flex items-center justify-center h-12 text-base border-red-200 text-red-600 hover:bg-red-50"
+                    >
+                      <StopCircle className="mr-2 h-5 w-5" />
+                      Stop Camera
+                    </Button>
+                  </>
+                )}
+                
+                <div className="flex flex-col space-y-1 w-full">
+                  <p className="text-xs text-muted-foreground">
+                    Most accurate method for scanning tickets
+                  </p>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Automatically detects QR codes and validates tickets
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
