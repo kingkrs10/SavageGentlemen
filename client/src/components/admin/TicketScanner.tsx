@@ -88,20 +88,46 @@ const TicketScanner = () => {
   // Start camera for live QR scanning
   const startCamera = async () => {
     try {
-      if (!videoRef.current) return;
+      if (!videoRef.current) {
+        setError('Video element not ready');
+        return;
+      }
       
+      setError(null);
+      setLoading(true);
+      
+      // Request camera permission first
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: 'environment', // Use back camera on mobile
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          } 
+        });
+        
+        // Stop the test stream immediately
+        stream.getTracks().forEach(track => track.stop());
+        
+        console.log('Camera permission granted, initializing QR scanner...');
+      } catch (permissionError) {
+        console.error('Camera permission denied:', permissionError);
+        setError('Camera permission denied. Please allow camera access in your browser settings.');
+        setLoading(false);
+        return;
+      }
+
       // Check if QR scanner is supported
       const hasCamera = await QrScanner.hasCamera();
       if (!hasCamera) {
         setError('No camera found on this device');
+        setLoading(false);
         return;
       }
 
-      setError(null);
-      setLoading(true);
       setCameraActive(true);
 
-      // Create QR scanner instance
+      // Create QR scanner instance with better error handling
       qrScannerRef.current = new QrScanner(
         videoRef.current,
         (result) => {
@@ -121,10 +147,13 @@ const TicketScanner = () => {
         {
           highlightScanRegion: true,
           highlightCodeOutline: true,
-          maxScansPerSecond: 5,
+          maxScansPerSecond: 3,
+          preferredCamera: 'environment', // Prefer back camera
+          returnDetailedScanResult: true
         }
       );
 
+      // Start the QR scanner
       await qrScannerRef.current.start();
       setLoading(false);
       
@@ -133,15 +162,34 @@ const TicketScanner = () => {
         description: "Point your camera at a QR code to scan",
         variant: "default"
       });
+      
+      console.log('QR Scanner started successfully');
+      
     } catch (error) {
       console.error('Error starting camera:', error);
-      setError('Failed to start camera. Please check camera permissions.');
+      let errorMessage = 'Failed to start camera. ';
+      
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          errorMessage += 'Please allow camera access and try again.';
+        } else if (error.name === 'NotFoundError') {
+          errorMessage += 'No camera found on this device.';
+        } else if (error.name === 'NotReadableError') {
+          errorMessage += 'Camera is being used by another application.';
+        } else {
+          errorMessage += 'Please check your camera and try again.';
+        }
+      } else {
+        errorMessage += 'Please check your camera and try again.';
+      }
+      
+      setError(errorMessage);
       setCameraActive(false);
       setLoading(false);
       
       toast({
         title: "Camera Error",
-        description: "Please allow camera access and try again",
+        description: errorMessage,
         variant: "destructive"
       });
     }
