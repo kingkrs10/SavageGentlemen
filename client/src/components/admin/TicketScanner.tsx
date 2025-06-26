@@ -18,7 +18,9 @@ import {
   Camera, 
   CameraOff,
   Smartphone,
-  KeyboardIcon
+  KeyboardIcon,
+  Video,
+  StopCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from '@/lib/queryClient';
@@ -40,16 +42,33 @@ const TicketScanner = () => {
   const [ticketInfo, setTicketInfo] = useState<TicketInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [scanMode, setScanMode] = useState<'manual' | 'upload'>('manual');
+  const [scanMode, setScanMode] = useState<'manual' | 'upload' | 'camera'>('manual');
+  const [cameraActive, setCameraActive] = useState<boolean>(false);
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const qrScannerRef = useRef<QrScanner | null>(null);
   
   useEffect(() => {
     // Focus input on component mount if we're in manual mode
     if (scanMode === 'manual' && inputRef.current) {
       inputRef.current.focus();
     }
+    
+    // Clean up camera when switching modes
+    if (scanMode !== 'camera' && qrScannerRef.current) {
+      stopCamera();
+    }
   }, [scanMode]);
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      if (qrScannerRef.current) {
+        stopCamera();
+      }
+    };
+  }, []);
   
   const resetScanner = () => {
     setTicketCode('');
@@ -65,6 +84,78 @@ const TicketScanner = () => {
       }, 0);
     }
   };
+
+  // Start camera for live QR scanning
+  const startCamera = async () => {
+    try {
+      if (!videoRef.current) return;
+      
+      // Check if QR scanner is supported
+      const hasCamera = await QrScanner.hasCamera();
+      if (!hasCamera) {
+        setError('No camera found on this device');
+        return;
+      }
+
+      setError(null);
+      setLoading(true);
+      setCameraActive(true);
+
+      // Create QR scanner instance
+      qrScannerRef.current = new QrScanner(
+        videoRef.current,
+        (result) => {
+          console.log('QR Code detected:', result.data);
+          
+          // Process the detected QR code
+          toast({
+            title: "QR Code Detected",
+            description: "Processing ticket information...",
+            variant: "default"
+          });
+          
+          setTicketCode(result.data);
+          validateTicket(result.data);
+          stopCamera(); // Stop camera after successful scan
+        },
+        {
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+          maxScansPerSecond: 5,
+        }
+      );
+
+      await qrScannerRef.current.start();
+      setLoading(false);
+      
+      toast({
+        title: "Camera Started",
+        description: "Point your camera at a QR code to scan",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Error starting camera:', error);
+      setError('Failed to start camera. Please check camera permissions.');
+      setCameraActive(false);
+      setLoading(false);
+      
+      toast({
+        title: "Camera Error",
+        description: "Please allow camera access and try again",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Stop camera
+  const stopCamera = () => {
+    if (qrScannerRef.current) {
+      qrScannerRef.current.stop();
+      qrScannerRef.current.destroy();
+      qrScannerRef.current = null;
+    }
+    setCameraActive(false);
+  };
   
   // Reference for the file input element
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -78,13 +169,9 @@ const TicketScanner = () => {
       
       try {
         // Use QrScanner to scan QR code from the uploaded image
-        const result = await QrScanner.scanImage(file, {
-          returnDetailedScanResult: true,
-          highlightScanRegion: true,
-          highlightCodeOutline: true,
-        });
+        const result = await QrScanner.scanImage(file);
         
-        if (result && result.data) {
+        if (result) {
           // Successfully scanned QR code
           toast({
             title: "QR Code Detected",
@@ -93,8 +180,8 @@ const TicketScanner = () => {
           });
           
           // Set the scanned code and validate it
-          setTicketCode(result.data);
-          await validateTicket(result.data);
+          setTicketCode(result);
+          await validateTicket(result);
         } else {
           throw new Error("No QR code found in the image");
         }
@@ -132,9 +219,15 @@ const TicketScanner = () => {
     }
   };
   
-  // Function to toggle between manual and upload scanning modes
-  const toggleScanMode = () => {
-    setScanMode(scanMode === 'manual' ? 'upload' : 'manual');
+  // Function to cycle between scanning modes
+  const cycleScanMode = () => {
+    if (scanMode === 'manual') {
+      setScanMode('camera');
+    } else if (scanMode === 'camera') {
+      setScanMode('upload');
+    } else {
+      setScanMode('manual');
+    }
     setError(null);
   };
   
