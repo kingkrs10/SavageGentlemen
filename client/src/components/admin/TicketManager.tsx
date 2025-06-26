@@ -137,7 +137,8 @@ const TicketManager: React.FC = () => {
       }
       return response.json();
     },
-    enabled: !!selectedEvent
+    enabled: !!selectedEvent,
+    retry: 1
   });
   
   // Create ticket mutation

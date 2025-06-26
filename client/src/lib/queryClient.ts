@@ -44,8 +44,13 @@ export async function apiRequest(
       try {
         const user = JSON.parse(storedUser);
         
-        // Handle both data formats: { data: { id: ... } } and direct { id: ... }
-        const userData = user.data || user;
+        // Handle nested data structures: { data: { data: { id: ... } } }, { data: { id: ... } }, { id: ... }
+        let userData = user;
+        if (user.data && user.data.data) {
+          userData = user.data.data;
+        } else if (user.data) {
+          userData = user.data;
+        }
         
         if (userData && userData.id) {
           userId = userData.id.toString();
