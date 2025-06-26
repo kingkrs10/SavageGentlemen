@@ -110,7 +110,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   // Serve uploaded files
-  app.use('/uploads', express.static(uploadsDir));
+  // Serve static files (uploads) with proper headers
+  app.use('/uploads', express.static(uploadsDir, {
+    setHeaders: (res, filePath) => {
+      // Set proper MIME types for images
+      const ext = path.extname(filePath).toLowerCase();
+      if (ext === '.png') res.setHeader('Content-Type', 'image/png');
+      else if (ext === '.jpg' || ext === '.jpeg') res.setHeader('Content-Type', 'image/jpeg');
+      else if (ext === '.gif') res.setHeader('Content-Type', 'image/gif');
+      else if (ext === '.webp') res.setHeader('Content-Type', 'image/webp');
+      
+      // Set cache headers for better performance
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // 24 hours
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    }
+  }));
   
   // Authentication middleware
   const authenticateUser = async (req: Request, res: Response, next: NextFunction) => {

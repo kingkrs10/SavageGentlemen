@@ -16,9 +16,11 @@ A comprehensive mobile-first web application for Savage Gentlemen, empowering Ca
 - **June 26, 2025**: Sent ticket confirmations to all recent purchasers with working QR codes
 - **June 26, 2025**: Resolved Stripe payment disconnection issues for June 20 purchases
 - **June 26, 2025**: Enhanced admin ticket management system authentication
+- **June 26, 2025**: Fixed image loading across entire site with proper static file serving
+- **June 26, 2025**: Added additional images display functionality for events
+- **June 26, 2025**: Updated frontend authentication to handle nested user data structure
 
 ## Current Issues
-- Admin ticket management authentication needs fixing
 - Event creation with pricing and calendar functionality
 - Advanced ticket options vs general ticket creation
 - Database connectivity for new events
@@ -34,3 +36,6 @@ A comprehensive mobile-first web application for Savage Gentlemen, empowering Ca
 - Token-based authentication with fallback mechanisms
 - Mobile-first design approach
 - Real-time analytics tracking
+- Static file serving with proper MIME types and caching headers
+- Additional images stored as JSON arrays in database
+- Normalized image URL handling for consistent display
