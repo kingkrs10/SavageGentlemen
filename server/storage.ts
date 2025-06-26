@@ -2643,6 +2643,36 @@ export class DatabaseStorage implements IStorage {
       .where(eq(ticketScans.orderId, orderId))
       .orderBy(desc(ticketScans.scannedAt));
   }
+
+  async getAllTicketScans(): Promise<any[]> {
+    try {
+      // Join ticket_scans with tickets, events, and users for comprehensive scan data
+      const scanRecords = await db
+        .select({
+          id: ticketScans.id,
+          ticketId: ticketScans.ticketId,
+          orderId: ticketScans.orderId,
+          scannedAt: ticketScans.scannedAt,
+          scannedBy: ticketScans.scannedBy,
+          status: ticketScans.status,
+          notes: ticketScans.notes,
+          ticketName: tickets.name,
+          eventName: events.title,
+          scannerName: users.displayName
+        })
+        .from(ticketScans)
+        .leftJoin(tickets, eq(ticketScans.ticketId, tickets.id))
+        .leftJoin(events, eq(tickets.eventId, events.id))
+        .leftJoin(users, eq(ticketScans.scannedBy, users.id))
+        .orderBy(desc(ticketScans.scannedAt))
+        .limit(100); // Limit to prevent excessive data loading
+
+      return scanRecords;
+    } catch (error) {
+      console.error('Error fetching all ticket scans:', error);
+      throw error;
+    }
+  }
   
   // Analytics operations
   

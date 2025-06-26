@@ -48,8 +48,12 @@ const ScanDataViewer = () => {
       setError(null);
       
       // Get all scan records from the database
-      const response = await apiRequest('/admin/scan-data', {
-        method: 'GET'
+      const response = await fetch('/api/admin/scan-data', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'user-id': localStorage.getItem('userId') || '2' // Use stored user ID
+        }
       });
       
       if (response.ok) {

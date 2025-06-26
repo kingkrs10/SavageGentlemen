@@ -32,6 +32,7 @@ const PasswordReset = lazy(() => import("@/pages/password-reset"));
 const AnalyticsDashboard = lazy(() => import("@/pages/analytics-dashboard"));
 const MyTickets = lazy(() => import("@/pages/my-tickets"));
 const TicketScanner = lazy(() => import("@/pages/ticket-scanner"));
+const ScanDataPage = lazy(() => import("@/pages/ScanDataPage"));
 const UserManagement = lazy(() => import("@/pages/user-management"));
 const TicketManagement = lazy(() => import("@/pages/ticket-management"));
 const FreeTicketsDashboard = lazy(() => import("@/pages/free-tickets-dashboard"));
@@ -72,6 +73,7 @@ function Router() {
         <Route path="/analytics" component={AnalyticsDashboard} />
         <Route path="/my-tickets" component={MyTickets} />
         <Route path="/ticket-scanner" component={TicketScanner} />
+        <Route path="/scan-data" component={ScanDataPage} />
         <Route path="/user-management" component={UserManagement} />
         <Route path="/ticket-management" component={TicketManagement} />
         <Route path="/free-tickets" component={FreeTicketsDashboard} />

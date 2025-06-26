@@ -1267,6 +1267,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
+  // Get all scan data for admin dashboard
+  router.get("/admin/scan-data", authenticateUser, authorizeModerator, async (req: Request, res: Response) => {
+    try {
+      console.log(`Fetching scan data requested by ${req.user.username} (${req.user.role})`);
+      
+      // Get all scan records with ticket and event information
+      const scanRecords = await storage.getAllTicketScans();
+      
+      return res.status(200).json(scanRecords);
+    } catch (err) {
+      console.error("Error fetching scan data:", err);
+      return res.status(500).json({ message: "Failed to fetch scan data" });
+    }
+  });
+
   // Endpoint to scan tickets at events
   router.post("/tickets/scan", authenticateUser, authorizeModerator, async (req: Request, res: Response) => {
     try {
