@@ -125,11 +125,41 @@ const TicketScanner = () => {
         return;
       }
 
+      // Ensure video element is ready before initializing scanner
+      const video = videoRef.current;
+      if (!video) {
+        setError('Video element not available');
+        setLoading(false);
+        return;
+      }
+
+      // Wait for video element to be properly loaded
+      await new Promise<void>((resolve) => {
+        if (video.readyState >= 2) {
+          resolve();
+        } else {
+          const onLoadedData = () => {
+            video.removeEventListener('loadeddata', onLoadedData);
+            video.removeEventListener('loadedmetadata', onLoadedData);
+            resolve();
+          };
+          video.addEventListener('loadeddata', onLoadedData);
+          video.addEventListener('loadedmetadata', onLoadedData);
+          
+          // Fallback timeout in case events don't fire
+          setTimeout(() => {
+            video.removeEventListener('loadeddata', onLoadedData);
+            video.removeEventListener('loadedmetadata', onLoadedData);
+            resolve();
+          }, 2000);
+        }
+      });
+
       setCameraActive(true);
 
       // Create QR scanner instance with better error handling
       qrScannerRef.current = new QrScanner(
-        videoRef.current,
+        video,
         (result) => {
           console.log('QR Code detected:', result.data);
           
@@ -153,6 +183,9 @@ const TicketScanner = () => {
         }
       );
 
+      // Add a small delay before starting to ensure everything is ready
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
       // Start the QR scanner
       await qrScannerRef.current.start();
       setLoading(false);
@@ -612,6 +645,11 @@ const TicketScanner = () => {
                         className="w-full h-full object-cover"
                         playsInline
                         muted
+                        autoPlay
+                        controls={false}
+                        onLoadedMetadata={() => console.log('Video metadata loaded')}
+                        onLoadedData={() => console.log('Video data loaded')}
+                        onCanPlay={() => console.log('Video can play')}
                       />
                       <div className="absolute inset-0 border-2 border-green-400 rounded-lg"></div>
                       <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-medium">
