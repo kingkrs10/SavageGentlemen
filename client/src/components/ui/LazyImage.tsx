@@ -47,6 +47,11 @@ export function LazyImage({
   const optimizedSrc = adaptive && deviceInfo ? getOptimizedImageUrl(src, context, deviceInfo) : src;
   const normalizedSrc = currentSrc || getNormalizedImageUrl(optimizedSrc);
   
+  // For uploads, ensure we use the correct path format that works with static serving
+  const finalSrc = normalizedSrc.includes('uploads/') && !normalizedSrc.startsWith('/') 
+    ? `/${normalizedSrc}` 
+    : normalizedSrc;
+  
   // Use Intersection Observer to detect when image is in viewport
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -155,7 +160,7 @@ export function LazyImage({
       {/* The actual image */}
       <img
         ref={imgRef}
-        src={error && fallbackSrc ? fallbackSrc : (inView ? normalizedSrc : "")}
+        src={error && fallbackSrc ? fallbackSrc : (inView ? finalSrc : "")}
         alt={alt}
         className={`${className} ${objectFitClass} ${isLoaded ? "opacity-100" : "opacity-0"} transition-opacity duration-300`}
         onLoad={onLoad}
