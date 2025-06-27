@@ -12,9 +12,10 @@ A comprehensive mobile-first web application for Savage Gentlemen, empowering Ca
 - **Analytics**: Comprehensive tracking with Google Analytics
 
 ## Recent Changes
+- **June 27, 2025**: ✓ RESOLVED Bello's payment issue - created Order #67 and Ticket #62 for $40 USD payment
+- **June 27, 2025**: ✓ Confirmed Bello's bank statement payment: $40 USD converted to $56.31 CAD (ref: 517723839496)
 - **June 27, 2025**: ✓ RiddemRiot men's tickets now process in CAD currency (Event ID 6, Ticket ID 11)
 - **June 27, 2025**: ✓ Investigated Stripe errors - confirmed historical issues unrelated to current functionality
-- **June 27, 2025**: ✓ Verified Bello's ticket status - received free tickets, no Stripe payment involved
 - **June 27, 2025**: ✓ STRIPE_WEBHOOK_SECRET configured - payment completion issue RESOLVED
 - **June 27, 2025**: ✓ Webhook endpoint now processing payments successfully at /payment/stripe-webhook
 - **June 27, 2025**: ✓ Payment flow verified: Intent creation → Payment success → Webhook processing → Order completion
