@@ -2471,6 +2471,19 @@ export class DatabaseStorage implements IStorage {
       
     return ticketPurchase;
   }
+  
+  async updateTicketPurchase(id: number, updates: Partial<InsertTicketPurchase>): Promise<TicketPurchase | undefined> {
+    const [ticketPurchase] = await db
+      .update(ticketPurchases)
+      .set({
+        ...updates,
+        updatedAt: new Date()
+      })
+      .where(eq(ticketPurchases.id, id))
+      .returning();
+      
+    return ticketPurchase;
+  }
 
   async getTicketsByUserId(userId: number): Promise<TicketPurchase[]> {
     return await db

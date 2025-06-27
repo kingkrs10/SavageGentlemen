@@ -2155,8 +2155,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ticket = ticketPurchase.ticketId ? await storage.getTicket(ticketPurchase.ticketId) : null;
       
       // Check if this ticket has already been scanned
-      const alreadyScanned = ticketPurchase.scannedAt !== null && ticketPurchase.scannedAt !== undefined;
-      let scannedAt = ticketPurchase.scannedAt;
+      const alreadyScanned = ticketPurchase.firstScanAt !== null && ticketPurchase.firstScanAt !== undefined;
+      let scannedAt = ticketPurchase.lastScanAt;
       
       // Mark the ticket as scanned if it hasn't been scanned yet
       if (!alreadyScanned) {
@@ -2165,7 +2165,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Update the ticket purchase with scan date
         const nowTime = new Date();
         await storage.updateTicketPurchase(ticketPurchase.id, {
-          scannedAt: nowTime,
           scanned: true,
           scanCount: (ticketPurchase.scanCount || 0) + 1,
           firstScanAt: ticketPurchase.firstScanAt || nowTime,
