@@ -20,7 +20,8 @@ import {
   Smartphone,
   KeyboardIcon,
   Video,
-  StopCircle
+  StopCircle,
+  X
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from '@/lib/queryClient';
@@ -446,18 +447,18 @@ const TicketScanner = () => {
     const isScanned = ticketInfo.scannedAt !== undefined;
     
     return (
-      <Card className={`mt-4 shadow-md ${isScanned ? 'border-amber-500' : 'border-green-500'}`}>
-        <CardHeader className={`pb-3 ${isScanned ? 'bg-amber-500/10' : 'bg-green-500/10'}`}>
+      <Card className={`mt-4 shadow-md ${isScanned ? 'border-red-500' : 'border-green-500'}`}>
+        <CardHeader className={`pb-3 ${isScanned ? 'bg-red-500/10' : 'bg-green-500/10'}`}>
           <div className="flex flex-col items-center text-center pb-2 sm:pb-3">
             <div className="rounded-full bg-white p-2 mb-2 shadow-sm">
               {isScanned ? (
-                <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 text-amber-500 shrink-0" />
+                <XCircle className="h-10 w-10 sm:h-12 sm:w-12 text-red-500 shrink-0" />
               ) : (
                 <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 text-green-500 shrink-0" />
               )}
             </div>
             <CardTitle className="text-lg sm:text-xl">
-              {isScanned ? 'Ticket Already Scanned' : 'Ticket Valid'}
+              {isScanned ? 'TICKET ALREADY USED' : 'Ticket Valid'}
             </CardTitle>
             <CardDescription className="text-xs sm:text-sm mt-1">
               {isScanned && ticketInfo.scannedAt
