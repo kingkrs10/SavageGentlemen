@@ -346,77 +346,95 @@ const EventDetail = () => {
           <div className="md:col-span-1">
             <Card>
               <CardContent className="p-6">
-                {event.tickets && event.tickets.length > 0 ? (
-                  <>
-                    <h3 className="text-xl font-bold mb-3">Available Tickets</h3>
-                    
-                    {event.tickets.filter(ticket => ticket.isActive && ticket.status === 'on_sale').map((ticket) => (
-                      <div key={ticket.id} className="border rounded-md p-3 mb-3">
-                        <div className="flex justify-between items-center mb-1">
-                          <h4 className="font-medium">{ticket.name}</h4>
-                          {ticket.price > 0 && (
-                            <p className="font-bold text-primary">
-                              {formatPriceFromCents(ticket.price, getCurrencyFromLocation(event.location))}
-                            </p>
-                          )}
-                          {ticket.price === 0 && (
-                            <span className="px-2 py-1 bg-primary text-white rounded-full text-xs font-medium">
-                              FREE
-                            </span>
-                          )}
-                        </div>
-                        {ticket.description && (
-                          <p className="text-sm text-muted-foreground mb-2">{ticket.description}</p>
-                        )}
+                {(() => {
+                  const availableTickets = event.tickets?.filter(ticket => 
+                    ticket.isActive && 
+                    ticket.status !== 'sold_out' && 
+                    ticket.status !== 'soldout' && 
+                    ticket.status !== 'off_sale' && 
+                    ticket.status !== 'staff_only'
+                  ) || [];
+                  
+                  if (availableTickets.length > 0) {
+                    return (
+                      <>
+                        <h3 className="text-xl font-bold mb-3">Available Tickets</h3>
+                        {availableTickets.map((ticket) => (
+                          <div key={ticket.id} className="border rounded-md p-3 mb-3">
+                            <div className="flex justify-between items-center mb-1">
+                              <h4 className="font-medium">{ticket.name}</h4>
+                              {ticket.price > 0 && (
+                                <p className="font-bold text-primary">
+                                  {formatPriceFromCents(ticket.price, getCurrencyFromLocation(event.location))}
+                                </p>
+                              )}
+                              {ticket.price === 0 && (
+                                <span className="px-2 py-1 bg-primary text-white rounded-full text-xs font-medium">
+                                  FREE
+                                </span>
+                              )}
+                            </div>
+                            {ticket.description && (
+                              <p className="text-sm text-muted-foreground mb-2">{ticket.description}</p>
+                            )}
+                            <Button 
+                              className="w-full mt-2"
+                              onClick={() => {
+                                // Check if user is authenticated before proceeding
+                                if (!isAuthenticated) {
+                                  toast({
+                                    title: "Sign in required",
+                                    description: "Please sign in or create an account to purchase tickets.",
+                                    variant: "destructive",
+                                  });
+                                  
+                                  // Open authentication modal with current ticket details preserved
+                                  const authEvent = new CustomEvent('sg:open-auth-modal', { 
+                                    detail: { 
+                                      tab: 'login',
+                                      redirectPath: `/checkout?eventId=${event.id}&ticketId=${ticket.id}&amount=${ticket.price / 100}&currency=${getCurrencyFromLocation(event.location)}&title=${encodeURIComponent(event.title)}`
+                                    } 
+                                  });
+                                  window.dispatchEvent(authEvent);
+                                  return;
+                                }
+                                
+                                toast({
+                                  title: "Processing",
+                                  description: "Redirecting to secure checkout..."
+                                });
+                                
+                                // Redirect to checkout page with ticket details
+                                const currency = getCurrencyFromLocation(event.location);
+                                window.location.href = `/checkout?eventId=${event.id}&ticketId=${ticket.id}&amount=${ticket.price / 100}&currency=${currency}&title=${encodeURIComponent(event.title)}`;
+                              }}
+                            >
+                              {ticket.price === 0 ? 'Claim Free Ticket' : 'Purchase Ticket'}
+                            </Button>
+                          </div>
+                        ))}
+                      </>
+                    );
+                  } else {
+                    return (
+                      <div className="py-3">
+                        <h3 className="text-xl font-bold mb-1">Tickets</h3>
+                        <p className="text-muted-foreground">
+                          {event.tickets && event.tickets.length > 0 
+                            ? "All tickets for this event are currently sold out or unavailable." 
+                            : "Tickets are not available for this event yet."
+                          }
+                        </p>
                         <Button 
-                          className="w-full mt-2"
-                          onClick={() => {
-                            // Check if user is authenticated before proceeding
-                            if (!isAuthenticated) {
-                              toast({
-                                title: "Sign in required",
-                                description: "Please sign in or create an account to purchase tickets.",
-                                variant: "destructive",
-                              });
-                              
-                              // Open authentication modal with current ticket details preserved
-                              const authEvent = new CustomEvent('sg:open-auth-modal', { 
-                                detail: { 
-                                  tab: 'login',
-                                  redirectPath: `/checkout?eventId=${event.id}&ticketId=${ticket.id}&amount=${ticket.price / 100}&currency=${getCurrencyFromLocation(event.location)}&title=${encodeURIComponent(event.title)}`
-                                } 
-                              });
-                              window.dispatchEvent(authEvent);
-                              return;
-                            }
-                            
-                            toast({
-                              title: "Processing",
-                              description: "Redirecting to secure checkout..."
-                            });
-                            
-                            // Redirect to checkout page with ticket details
-                            const currency = getCurrencyFromLocation(event.location);
-                            window.location.href = `/checkout?eventId=${event.id}&ticketId=${ticket.id}&amount=${ticket.price / 100}&currency=${currency}&title=${encodeURIComponent(event.title)}`;
-                          }}
+                          className="w-full bg-gray-500 hover:bg-gray-600 mt-4 py-6 text-lg"
+                          disabled
                         >
-                          {ticket.price === 0 ? 'Claim Free Ticket' : 'Purchase Ticket'}
+                          {event.tickets && event.tickets.length > 0 ? "Sold Out" : "Coming Soon"}
                         </Button>
                       </div>
-                    ))}
-                  </>
-                ) : (
-                  <div className="py-3">
-                    <h3 className="text-xl font-bold mb-1">Tickets</h3>
-                    <p className="text-muted-foreground">Tickets are not available for this event yet.</p>
-                    <Button 
-                      className="w-full bg-primary hover:bg-primary/90 mt-4 py-6 text-lg"
-                      disabled
-                    >
-                      Coming Soon
-                    </Button>
-                  </div>
-                )}
+                    );
+                  }
+                })()}
                 
                 {/* Add to Calendar Section */}
                 <div className="mb-4">
