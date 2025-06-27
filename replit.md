@@ -12,6 +12,14 @@ A comprehensive mobile-first web application for Savage Gentlemen, empowering Ca
 - **Analytics**: Comprehensive tracking with Google Analytics
 
 ## Recent Changes
+- **June 27, 2025**: ✓ CRITICAL FIX: Resolved QR code scanning failures at events
+- **June 27, 2025**: ✓ Fixed QR scanner validation logic to properly handle EVENT-{eventId}-ORDER-{orderId}-{timestamp} format
+- **June 27, 2025**: ✓ Updated backend storage scanTicket method to support both new EVENT format and legacy SGX format
+- **June 27, 2025**: ✓ Removed duplicate scanning endpoints causing format conflicts
+- **June 27, 2025**: ✓ Enhanced duplicate prevention system using firstScanAt/lastScanAt/scanCount fields
+- **June 27, 2025**: ✓ Verified ticket scanning working: Jaytapper's ticket (EVENT-6-ORDER-MANUAL-1751038715755) ✓
+- **June 27, 2025**: ✓ Verified ticket scanning working: Bello's ticket (EVENT-6-ORDER-67-1750996460) ✓
+- **June 27, 2025**: ✓ Confirmed duplicate scan prevention: already scanned tickets return proper status
 - **June 27, 2025**: ✓ RESOLVED Bello's payment issue - created Order #67 and Ticket #62 for $40 USD payment
 - **June 27, 2025**: ✓ Confirmed Bello's bank statement payment: $40 USD converted to $56.31 CAD (ref: 517723839496)
 - **June 27, 2025**: ✓ RiddemRiot men's tickets now process in CAD currency (Event ID 6, Ticket ID 11)
