@@ -85,7 +85,7 @@ const TicketScanner = () => {
     }
   };
 
-  // Start camera for live QR scanning
+  // Start camera for live QR scanning with alternative initialization
   const startCamera = async () => {
     try {
       setError(null);
@@ -98,73 +98,84 @@ const TicketScanner = () => {
         return;
       }
 
-      // Wait for DOM to be ready and video element to be available
-      let attempts = 0;
-      const maxAttempts = 10;
-      
-      while (!videoRef.current && attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 200));
-        attempts++;
-      }
-      
-      if (!videoRef.current) {
-        setError('Video element not ready. Please refresh the page and try again.');
+      // First, request camera permission to ensure it's available
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: 'environment',
+            width: { ideal: 1280, max: 1920 },
+            height: { ideal: 720, max: 1080 }
+          } 
+        });
+        // Stop the test stream immediately
+        stream.getTracks().forEach(track => track.stop());
+      } catch (permissionError) {
         setLoading(false);
+        const error = permissionError as any;
+        if (error?.name === 'NotAllowedError') {
+          setError('Camera permission denied. Please allow camera access in your browser settings.');
+        } else if (error?.name === 'NotFoundError') {
+          setError('No camera found on this device.');
+        } else {
+          setError('Camera access failed. Please check your camera permissions.');
+        }
         return;
       }
 
-      // Check if QR scanner is supported
-      const hasCamera = await QrScanner.hasCamera();
-      if (!hasCamera) {
-        setError('No camera found on this device');
-        setLoading(false);
-        return;
+      // Alternative approach: Create video element manually if ref is not ready
+      let video = videoRef.current;
+      if (!video) {
+        // Force component re-render to ensure video element exists
+        setCameraActive(true);
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        video = videoRef.current;
+        if (!video) {
+          setError('Unable to initialize video element. Please try refreshing the page.');
+          setLoading(false);
+          return;
+        }
       }
 
-      const video = videoRef.current;
-      
-      // Set video element properties for better mobile compatibility
+      // Set video element properties for mobile compatibility
       video.setAttribute('playsinline', 'true');
       video.setAttribute('webkit-playsinline', 'true');
       video.setAttribute('disablepictureinpicture', 'true');
       video.muted = true;
       video.autoplay = true;
-      
-      // Ensure video dimensions are set
-      video.style.width = '100%';
-      video.style.height = '100%';
-      video.style.objectFit = 'cover';
 
       setCameraActive(true);
 
-      // Create QR scanner with enhanced mobile support
-      qrScannerRef.current = new QrScanner(
-        video,
-        (result) => {
-          console.log('QR Code detected:', result.data);
-          
-          toast({
-            title: "QR Code Detected",
-            description: "Processing ticket information...",
-            variant: "default"
-          });
-          
-          setTicketCode(result.data);
-          validateTicket(result.data);
-          stopCamera();
-        },
-        {
-          highlightScanRegion: true,
-          highlightCodeOutline: true,
-          maxScansPerSecond: 2,
-          preferredCamera: 'environment',
-          returnDetailedScanResult: true
-        }
-      );
-
-      // Start the scanner with enhanced error handling
+      // Use QrScanner with a more robust initialization
       try {
+        qrScannerRef.current = new QrScanner(
+          video,
+          (result) => {
+            console.log('QR Code detected:', result.data);
+            
+            toast({
+              title: "QR Code Detected", 
+              description: "Processing ticket information...",
+              variant: "default"
+            });
+            
+            setTicketCode(result.data);
+            validateTicket(result.data);
+            stopCamera();
+          },
+          {
+            highlightScanRegion: true,
+            highlightCodeOutline: true,
+            maxScansPerSecond: 2,
+            preferredCamera: 'environment',
+            returnDetailedScanResult: true
+          }
+        );
+
+        // Start scanner with delay to ensure video is ready
+        await new Promise(resolve => setTimeout(resolve, 300));
         await qrScannerRef.current.start();
+        
         setLoading(false);
         
         toast({
@@ -174,24 +185,25 @@ const TicketScanner = () => {
         });
         
         console.log('QR Scanner started successfully');
-      } catch (startError) {
-        console.error('Failed to start QR scanner:', startError);
+        
+      } catch (scannerError) {
+        console.error('QR Scanner initialization failed:', scannerError);
         setCameraActive(false);
         setLoading(false);
         
-        const error = startError as any;
-        if (error?.name === 'NotAllowedError') {
-          setError('Camera permission denied. Please allow camera access and try again.');
-        } else if (error?.name === 'NotFoundError') {
-          setError('No camera found on this device.');
-        } else if (error?.name === 'NotReadableError') {
-          setError('Camera is being used by another application.');
+        const error = scannerError as any;
+        if (error?.message?.includes('video element')) {
+          setError('Camera initialization failed. Please try using the "Photo" mode instead.');
         } else {
-          setError(`Camera error: ${error?.message || 'Failed to start camera'}`);
+          setError(`Scanner error: ${error?.message || 'Failed to start QR scanner'}`);
         }
         
         if (qrScannerRef.current) {
-          qrScannerRef.current.destroy();
+          try {
+            qrScannerRef.current.destroy();
+          } catch (e) {
+            console.warn('Error destroying scanner:', e);
+          }
           qrScannerRef.current = null;
         }
       }
@@ -617,23 +629,40 @@ const TicketScanner = () => {
                       </div>
                     </div>
                     
-                    <Button 
-                      onClick={startCamera} 
-                      className="w-full flex items-center justify-center h-14 text-lg font-semibold bg-green-600 hover:bg-green-700 text-white"
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        <>
-                          <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                          Starting Camera...
-                        </>
-                      ) : (
-                        <>
-                          <Video className="mr-2 h-6 w-6" />
-                          Start Camera
-                        </>
-                      )}
-                    </Button>
+                    <div className="space-y-3">
+                      <Button 
+                        onClick={startCamera} 
+                        className="w-full flex items-center justify-center h-14 text-lg font-semibold bg-green-600 hover:bg-green-700 text-white"
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <>
+                            <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                            Starting Camera...
+                          </>
+                        ) : (
+                          <>
+                            <Video className="mr-2 h-6 w-6" />
+                            Start Camera
+                          </>
+                        )}
+                      </Button>
+                      
+                      <div className="text-center">
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Camera not working? Try photo mode instead
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setScanMode('upload')}
+                          className="text-xs"
+                        >
+                          Switch to Photo Mode
+                        </Button>
+                      </div>
+                    </div>
                   </>
                 ) : (
                   <>
