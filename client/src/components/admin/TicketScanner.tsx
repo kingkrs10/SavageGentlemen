@@ -88,31 +88,27 @@ const TicketScanner = () => {
   // Start camera for live QR scanning
   const startCamera = async () => {
     try {
-      if (!videoRef.current) {
-        setError('Video element not ready');
-        return;
-      }
-      
       setError(null);
       setLoading(true);
+
+      // Check if camera is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setError('Camera not supported in this browser');
+        setLoading(false);
+        return;
+      }
+
+      // Wait for DOM to be ready and video element to be available
+      let attempts = 0;
+      const maxAttempts = 10;
       
-      // Request camera permission first
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            facingMode: 'environment', // Use back camera on mobile
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          } 
-        });
-        
-        // Stop the test stream immediately
-        stream.getTracks().forEach(track => track.stop());
-        
-        console.log('Camera permission granted, initializing QR scanner...');
-      } catch (permissionError) {
-        console.error('Camera permission denied:', permissionError);
-        setError('Camera permission denied. Please allow camera access in your browser settings.');
+      while (!videoRef.current && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        attempts++;
+      }
+      
+      if (!videoRef.current) {
+        setError('Video element not ready. Please refresh the page and try again.');
         setLoading(false);
         return;
       }
@@ -125,45 +121,22 @@ const TicketScanner = () => {
         return;
       }
 
-      // Ensure video element is ready before initializing scanner
       const video = videoRef.current;
-      if (!video) {
-        setError('Video element not available');
-        setLoading(false);
-        return;
-      }
-
-      // Wait for video element to be properly loaded
-      await new Promise<void>((resolve) => {
-        if (video.readyState >= 2) {
-          resolve();
-        } else {
-          const onLoadedData = () => {
-            video.removeEventListener('loadeddata', onLoadedData);
-            video.removeEventListener('loadedmetadata', onLoadedData);
-            resolve();
-          };
-          video.addEventListener('loadeddata', onLoadedData);
-          video.addEventListener('loadedmetadata', onLoadedData);
-          
-          // Fallback timeout in case events don't fire
-          setTimeout(() => {
-            video.removeEventListener('loadeddata', onLoadedData);
-            video.removeEventListener('loadedmetadata', onLoadedData);
-            resolve();
-          }, 2000);
-        }
-      });
+      
+      // Set video element properties for better mobile compatibility
+      video.setAttribute('playsinline', 'true');
+      video.setAttribute('webkit-playsinline', 'true');
+      video.muted = true;
+      video.autoplay = true;
 
       setCameraActive(true);
 
-      // Create QR scanner instance with better error handling
+      // Create QR scanner with enhanced mobile support
       qrScannerRef.current = new QrScanner(
         video,
         (result) => {
           console.log('QR Code detected:', result.data);
           
-          // Process the detected QR code
           toast({
             title: "QR Code Detected",
             description: "Processing ticket information...",
@@ -172,31 +145,50 @@ const TicketScanner = () => {
           
           setTicketCode(result.data);
           validateTicket(result.data);
-          stopCamera(); // Stop camera after successful scan
+          stopCamera();
         },
         {
           highlightScanRegion: true,
           highlightCodeOutline: true,
-          maxScansPerSecond: 3,
-          preferredCamera: 'environment', // Prefer back camera
+          maxScansPerSecond: 2,
+          preferredCamera: 'environment',
           returnDetailedScanResult: true
         }
       );
 
-      // Add a small delay before starting to ensure everything is ready
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      // Start the QR scanner
-      await qrScannerRef.current.start();
-      setLoading(false);
-      
-      toast({
-        title: "Camera Started",
-        description: "Point your camera at a QR code to scan",
-        variant: "default"
-      });
-      
-      console.log('QR Scanner started successfully');
+      // Start the scanner with enhanced error handling
+      try {
+        await qrScannerRef.current.start();
+        setLoading(false);
+        
+        toast({
+          title: "Camera Started",
+          description: "Point your camera at a QR code to scan",
+          variant: "default"
+        });
+        
+        console.log('QR Scanner started successfully');
+      } catch (startError) {
+        console.error('Failed to start QR scanner:', startError);
+        setCameraActive(false);
+        setLoading(false);
+        
+        const error = startError as any;
+        if (error?.name === 'NotAllowedError') {
+          setError('Camera permission denied. Please allow camera access and try again.');
+        } else if (error?.name === 'NotFoundError') {
+          setError('No camera found on this device.');
+        } else if (error?.name === 'NotReadableError') {
+          setError('Camera is being used by another application.');
+        } else {
+          setError(`Camera error: ${error?.message || 'Failed to start camera'}`);
+        }
+        
+        if (qrScannerRef.current) {
+          qrScannerRef.current.destroy();
+          qrScannerRef.current = null;
+        }
+      }
       
     } catch (error) {
       console.error('Error starting camera:', error);
