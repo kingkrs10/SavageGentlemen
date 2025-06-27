@@ -3351,6 +3351,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 message: "This endpoint is only for free tickets. Use payment endpoints for paid tickets." 
               });
             }
+
+            // CRITICAL: Check if ticket is sold out or not available for sale
+            if (selectedTicket.status === 'sold_out') {
+              return res.status(400).json({ 
+                message: "This ticket type is sold out and no longer available." 
+              });
+            }
+            
+            if (selectedTicket.status === 'off_sale') {
+              return res.status(400).json({ 
+                message: "This ticket type is not currently available for purchase." 
+              });
+            }
+            
+            if (selectedTicket.status === 'staff_only') {
+              return res.status(400).json({ 
+                message: "This ticket type is restricted and not available for public purchase." 
+              });
+            }
+            
+            // Check remaining quantity if available
+            if (selectedTicket.remainingQuantity !== undefined && selectedTicket.remainingQuantity <= 0) {
+              return res.status(400).json({ 
+                message: "This ticket type has no remaining capacity." 
+              });
+            }
           }
         } catch (err) {
           console.error("Error fetching ticket:", err);
@@ -3546,6 +3572,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (ticketPrice > 0) {
               return res.status(400).json({ 
                 message: "This endpoint is only for free tickets. Use payment endpoints for paid tickets." 
+              });
+            }
+
+            // CRITICAL: Check if ticket is sold out or not available for sale
+            if (selectedTicket.status === 'sold_out') {
+              return res.status(400).json({ 
+                message: "This ticket type is sold out and no longer available." 
+              });
+            }
+            
+            if (selectedTicket.status === 'off_sale') {
+              return res.status(400).json({ 
+                message: "This ticket type is not currently available for purchase." 
+              });
+            }
+            
+            if (selectedTicket.status === 'staff_only') {
+              return res.status(400).json({ 
+                message: "This ticket type is restricted and not available for public purchase." 
+              });
+            }
+            
+            // Check remaining quantity if available
+            if (selectedTicket.remainingQuantity !== undefined && selectedTicket.remainingQuantity <= 0) {
+              return res.status(400).json({ 
+                message: "This ticket type has no remaining capacity." 
               });
             }
           }
