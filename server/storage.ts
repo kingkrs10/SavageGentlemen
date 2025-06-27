@@ -2465,6 +2465,50 @@ export class DatabaseStorage implements IStorage {
       .where(eq(ticketPurchases.userId, userId))
       .orderBy(desc(ticketPurchases.purchaseDate));
   }
+
+  async getTodaysTicketPurchases(): Promise<any[]> {
+    try {
+      // Use SQL to get today's ticket purchases with joined event and ticket data
+      const result = await db.execute(
+        sql`
+          SELECT 
+            tp.id,
+            tp.attendee_email as "attendeeEmail",
+            tp.attendee_name as "attendeeName", 
+            tp.purchase_date as "purchaseDate",
+            tp.qr_code_data as "qrCodeData",
+            tp.price,
+            e.title as "eventTitle",
+            e.date as "eventDate",
+            e.location as "eventLocation",
+            t.name as "ticketName"
+          FROM ticket_purchases tp
+          LEFT JOIN events e ON tp.event_id = e.id
+          LEFT JOIN tickets t ON tp.ticket_id = t.id
+          WHERE tp.purchase_date >= CURRENT_DATE
+            AND tp.attendee_email IS NOT NULL
+            AND tp.attendee_email != ''
+          ORDER BY tp.purchase_date DESC
+        `
+      );
+      
+      return result.rows.map(row => ({
+        id: row.id,
+        attendeeEmail: row.attendeeEmail,
+        attendeeName: row.attendeeName,
+        purchaseDate: row.purchaseDate,
+        qrCodeData: row.qrCodeData,
+        price: row.price,
+        eventTitle: row.eventTitle,
+        eventDate: row.eventDate,
+        eventLocation: row.eventLocation,
+        ticketName: row.ticketName
+      }));
+    } catch (error) {
+      console.error("Error getting today's ticket purchases:", error);
+      return [];
+    }
+  }
   
   // Discount code operations
   async createDiscountCode(discountCodeData: InsertDiscountCode): Promise<DiscountCode> {

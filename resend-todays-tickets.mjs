@@ -1,6 +1,4 @@
-// Resend ticket confirmations for today's purchases
-// Run with: node resend-tickets-today.js
-
+// Simple script to resend today's tickets directly
 import { sendTicketEmail } from './server/email.js';
 import { pool } from './server/db.js';
 
@@ -8,10 +6,10 @@ async function resendTodaysTickets() {
   console.log('🎫 Starting ticket email resend process for today\'s purchases...');
   
   try {
-    // Get today's ticket purchases with email addresses
+    // Get today's ticket purchases with email addresses using raw SQL
     const query = `
       SELECT 
-        tp.id as purchase_id,
+        tp.id,
         tp.attendee_email,
         tp.attendee_name,
         tp.purchase_date,
@@ -37,10 +35,14 @@ async function resendTodaysTickets() {
     
     if (purchases.length === 0) {
       console.log('No tickets with email addresses found for today');
+      await pool.end();
       return;
     }
     
     // Send email for each purchase
+    let successCount = 0;
+    let errorCount = 0;
+    
     for (const purchase of purchases) {
       console.log(`\n📮 Sending ticket to: ${purchase.attendee_email}`);
       console.log(`   Event: ${purchase.event_title}`);
@@ -57,24 +59,29 @@ async function resendTodaysTickets() {
           eventLocation: purchase.event_location,
           qrCode: purchase.qr_code_data,
           purchaseDate: new Date(purchase.purchase_date),
-          orderId: purchase.purchase_id.toString()
+          orderId: purchase.id.toString()
         });
         
         if (emailSent) {
+          successCount++;
           console.log(`   ✅ Email sent successfully!`);
         } else {
+          errorCount++;
           console.log(`   ❌ Failed to send email`);
         }
         
-        // Wait 2 seconds between emails to prevent rate limiting
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Wait 3 seconds between emails to prevent rate limiting
+        await new Promise(resolve => setTimeout(resolve, 3000));
         
       } catch (error) {
-        console.error(`   ❌ Error sending email: ${error.message}`);
+        errorCount++;
+        console.error(`   ❌ Error sending email:`, error.message);
       }
     }
     
-    console.log('\n🎉 Ticket resend process completed!');
+    console.log(`\n🎉 Ticket resend process completed!`);
+    console.log(`   📤 Successfully sent: ${successCount}`);
+    console.log(`   ❌ Failed to send: ${errorCount}`);
     
   } catch (error) {
     console.error('💥 Error in resend process:', error);

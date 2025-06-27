@@ -3117,6 +3117,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Failed to send ticket email" });
     }
   });
+
+  // Admin endpoint to resend ticket confirmations for today's purchases
+  router.post("/api/admin/resend-todays-tickets", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      console.log(`Admin ${req.user?.username} requesting to resend today's tickets`);
+      
+      // Get today's ticket purchases with email addresses
+      const tickets = await storage.getTodaysTicketPurchases();
+      
+      if (!tickets || tickets.length === 0) {
+        return res.status(200).json({ 
+          message: "No tickets found for today",
+          ticketsSent: 0
+        });
+      }
+      
+      const results = [];
+      let successCount = 0;
+      let errorCount = 0;
+      
+      for (const ticket of tickets) {
+        if (!ticket.attendeeEmail) {
+          console.log(`Skipping ticket ${ticket.id} - no email address`);
+          continue;
+        }
+        
+        try {
+          console.log(`Resending ticket to: ${ticket.attendeeEmail}`);
+          
+          const emailSent = await sendTicketEmail({
+            email: ticket.attendeeEmail,
+            customerName: ticket.attendeeName || 'Valued Customer',
+            eventName: ticket.eventTitle || 'Event',
+            ticketName: ticket.ticketName || 'Ticket',
+            eventDate: ticket.eventDate ? new Date(ticket.eventDate) : new Date(),
+            eventLocation: ticket.eventLocation || 'Location TBA',
+            qrCode: ticket.qrCodeData,
+            purchaseDate: ticket.purchaseDate ? new Date(ticket.purchaseDate) : new Date(),
+            orderId: ticket.id.toString()
+          });
+          
+          if (emailSent) {
+            successCount++;
+            results.push({
+              ticketId: ticket.id,
+              email: ticket.attendeeEmail,
+              status: 'sent'
+            });
+            console.log(`✅ Successfully resent ticket to ${ticket.attendeeEmail}`);
+          } else {
+            errorCount++;
+            results.push({
+              ticketId: ticket.id,
+              email: ticket.attendeeEmail,
+              status: 'failed',
+              error: 'Email service returned false'
+            });
+            console.log(`❌ Failed to resend ticket to ${ticket.attendeeEmail}`);
+          }
+          
+          // Wait 2 seconds between emails to prevent rate limiting
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+        } catch (error) {
+          errorCount++;
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          results.push({
+            ticketId: ticket.id,
+            email: ticket.attendeeEmail,
+            status: 'error',
+            error: errorMessage
+          });
+          console.error(`Error resending ticket ${ticket.id}:`, error);
+        }
+      }
+      
+      res.status(200).json({
+        message: `Ticket resend completed. ${successCount} sent, ${errorCount} failed.`,
+        ticketsSent: successCount,
+        ticketsFailed: errorCount,
+        details: results
+      });
+      
+    } catch (error) {
+      console.error("Error in resend tickets endpoint:", error);
+      res.status(500).json({ 
+        message: "Failed to resend tickets",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
   
   // Endpoint to get PayPal order details for the payment success page
   router.get("/payment/paypal-order/:orderID/details", async (req: Request, res: Response) => {
