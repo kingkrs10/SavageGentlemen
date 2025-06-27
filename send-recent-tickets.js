@@ -1,4 +1,4 @@
-const { sendTicketEmail } = require('./server/email.ts');
+import { sendTicketEmail } from './server/email.js';
 
 async function sendRecentTicketConfirmations() {
   // Recent ticket data that needs confirmations sent
@@ -13,7 +13,7 @@ async function sendRecentTicketConfirmations() {
       customerEmail: 'savgmen@gmail.com',
       customerName: 'SavageGentlemen',
       purchaseDate: new Date('2025-06-27T00:24:48.593Z'),
-      qrCodeData: 'EVENT-6-ORDER-66-1750983888593'
+      qrCodeDataUrl: 'EVENT-6-ORDER-66-1750983888593'
     },
     {
       orderId: 65,
@@ -25,7 +25,7 @@ async function sendRecentTicketConfirmations() {
       customerEmail: 'aprylhen@yahoo.ca',
       customerName: 'Apryl',
       purchaseDate: new Date('2025-06-27T00:16:32.386Z'),
-      qrCodeData: 'EVENT-6-ORDER-65-1750983392386'
+      qrCodeDataUrl: 'EVENT-6-ORDER-65-1750983392386'
     },
     {
       orderId: 64,
@@ -37,7 +37,7 @@ async function sendRecentTicketConfirmations() {
       customerEmail: 'nataliesnow@rogers.com',
       customerName: 'Natalie',
       purchaseDate: new Date('2025-06-27T00:15:01.226Z'),
-      qrCodeData: 'EVENT-6-ORDER-64-1750983301226'
+      qrCodeDataUrl: 'EVENT-6-ORDER-64-1750983301226'
     }
   ];
 
@@ -47,7 +47,16 @@ async function sendRecentTicketConfirmations() {
     try {
       console.log(`Sending ticket to ${ticket.customerName} (${ticket.customerEmail})...`);
       
-      const sent = await sendTicketEmail(ticket);
+      const sent = await sendTicketEmail({
+        eventName: ticket.eventName,
+        eventDate: ticket.eventDate,
+        eventLocation: ticket.eventLocation,
+        ticketId: ticket.ticketId,
+        ticketType: ticket.ticketName,
+        ticketPrice: 0,
+        purchaseDate: ticket.purchaseDate,
+        qrCodeDataUrl: ticket.qrCodeDataUrl
+      }, ticket.customerEmail);
       
       if (sent) {
         console.log(`✓ Successfully sent ticket confirmation to ${ticket.customerEmail}`);
