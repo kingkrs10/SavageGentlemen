@@ -12,6 +12,8 @@ A comprehensive mobile-first web application for Savage Gentlemen, empowering Ca
 - **Analytics**: Comprehensive tracking with Google Analytics
 
 ## Recent Changes
+- **June 27, 2025**: ✓ CRITICAL SECURITY FIX: Added sold out validation to free ticket endpoints - prevents bypassing sold out status
+- **June 27, 2025**: ✓ Enhanced ticket purchase protection with comprehensive status validation (sold_out, off_sale, staff_only)
 - **June 27, 2025**: ✓ RESOLVED: Jaytapper@hotmail.com missing ticket email - manually resent via API endpoint
 - **June 27, 2025**: ✓ CRITICAL FIX: Fixed scan data recording system - live scans now appear in cross-reference table
 - **June 27, 2025**: ✓ Enhanced scan record creation with proper user ID tracking for scanner identification
