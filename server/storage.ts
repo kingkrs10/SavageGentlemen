@@ -1659,106 +1659,131 @@ export class DatabaseStorage implements IStorage {
     scannedAt?: Date;
   }> {
     try {
-      // Parse the ticket identifier (SGX-TIX-orderId-ticketId)
+      console.log(`Processing ticket scan for code: ${ticketIdentifier}`);
+      
+      // Parse the ticket identifier
+      // Support multiple formats:
+      // 1. New format: EVENT-{eventId}-ORDER-{orderId}-{timestamp}
+      // 2. Manual format: EVENT-{eventId}-ORDER-MANUAL-{timestamp}
+      // 3. Legacy format: SGX-TIX-{ticketId}-{orderId}
       const parts = ticketIdentifier.split('-');
       
-      if (parts.length !== 4 || parts[0] !== 'SGX' || parts[1] !== 'TIX') {
+      let isValidFormat = false;
+      let ticketPurchase = null;
+      
+      if (parts.length >= 4) {
+        // Check for EVENT-X-ORDER format
+        if (parts[0] === 'EVENT' && parts[2] === 'ORDER') {
+          isValidFormat = true;
+          console.log(`Processing EVENT format QR code: ${ticketIdentifier}`);
+          
+          // Look up ticket by QR code data directly
+          ticketPurchase = await this.getTicketPurchaseByQrCodeData(ticketIdentifier);
+          if (!ticketPurchase) {
+            console.log(`No ticket purchase found for QR code: ${ticketIdentifier}`);
+            return {
+              valid: false,
+              error: 'Ticket not found in our system.'
+            };
+          }
+        }
+        // Check for legacy SGX-TIX format
+        else if (parts.length === 4 && parts[0] === 'SGX' && parts[1] === 'TIX') {
+          isValidFormat = true;
+          console.log(`Processing legacy SGX format QR code: ${ticketIdentifier}`);
+          
+          const ticketId = parseInt(parts[2]);
+          const orderId = parseInt(parts[3]);
+          
+          if (isNaN(ticketId) || isNaN(orderId)) {
+            console.log(`Invalid ticket or order ID: ticketId=${parts[2]}, orderId=${parts[3]}`);
+            return {
+              valid: false,
+              error: 'Invalid ticket identifier. Ticket ID and Order ID must be numbers.'
+            };
+          }
+          
+          // For legacy format, look up by ticket/order IDs
+          ticketPurchase = await this.getTicketPurchaseByIds(ticketId, orderId);
+          if (!ticketPurchase) {
+            console.log(`No ticket purchase found for ticketId=${ticketId}, orderId=${orderId}`);
+            return {
+              valid: false,
+              error: 'Ticket not found in our system.'
+            };
+          }
+        }
+      }
+      
+      if (!isValidFormat) {
+        console.log(`Invalid ticket format: ${ticketIdentifier}`);
         return {
           valid: false,
-          error: 'Invalid ticket format. Expected format: SGX-TIX-orderId-ticketId'
+          error: 'Invalid ticket format. Expected: EVENT-{eventId}-ORDER-{orderId}-{timestamp} or SGX-TIX-{ticketId}-{orderId}'
         };
       }
       
-      const orderId = parseInt(parts[2]);
-      const ticketId = parseInt(parts[3]);
-      
-      if (isNaN(orderId) || isNaN(ticketId)) {
-        return {
-          valid: false,
-          error: 'Invalid ticket identifier. Order ID and Ticket ID must be numbers.'
-        };
-      }
-      
-      // Get the order item with this order ID and ticket ID
-      const orderItemsTable = orderItems; // Create a reference to the table
-      const orderItemsList = await db
-        .select()
-        .from(orderItemsTable)
-        .where(and(
-          eq(orderItemsTable.orderId, orderId),
-          eq(orderItemsTable.ticketId, ticketId)
-        ));
-      
-      if (!orderItemsList || orderItemsList.length === 0) {
+      if (!ticketPurchase) {
+        console.log(`Ticket purchase not found for code: ${ticketIdentifier}`);
         return {
           valid: false,
           error: 'Ticket not found in our system.'
         };
       }
       
-      const orderItem = orderItemsList[0];
-      
-      // Check if this ticket has already been scanned
-      if (orderItem.scan_date) {
-        return {
-          valid: true,
-          alreadyScanned: true,
-          scannedAt: orderItem.scan_date,
-          ticketInfo: {
-            orderId,
-            ticketId,
-            purchaseDate: orderItem.createdAt,
-            scannedAt: orderItem.scan_date
-          }
-        };
-      }
-      
-      // Get the ticket information
-      const ticket = await db
-        .select()
-        .from(tickets)
-        .where(eq(tickets.id, ticketId))
-        .then(rows => rows[0]);
-      
-      if (!ticket) {
+      // Get event information
+      const event = await this.getEvent(ticketPurchase.eventId);
+      if (!event) {
+        console.log(`Event not found for ticket purchase: ${ticketPurchase.id}`);
         return {
           valid: false,
-          error: 'Ticket information not found.'
+          error: 'Event information not found'
         };
       }
       
-      // Get the event information
-      const event = await db
-        .select()
-        .from(events)
-        .where(eq(events.id, ticket.eventId))
-        .then(rows => rows[0]);
+      // Get ticket information
+      const ticket = ticketPurchase.ticketId ? await this.getTicket(ticketPurchase.ticketId) : null;
       
-      // Mark the ticket as scanned
-      const [updated] = await db
-        .update(orderItemsTable)
-        .set({ 
-          scan_date: new Date(),
-          updated_at: new Date()
-        })
-        .where(and(
-          eq(orderItemsTable.orderId, orderId),
-          eq(orderItemsTable.ticketId, ticketId)
-        ))
-        .returning();
+      // Check if this ticket has already been scanned
+      const alreadyScanned = ticketPurchase.firstScanAt !== null && ticketPurchase.firstScanAt !== undefined;
+      let scannedAt = ticketPurchase.lastScanAt;
+      
+      // Mark the ticket as scanned if it hasn't been scanned yet
+      if (!alreadyScanned) {
+        console.log(`Marking ticket as scanned: ticketPurchase ID=${ticketPurchase.id}`);
+        
+        // Update the ticket purchase with scan date
+        const nowTime = new Date();
+        await this.updateTicketPurchase(ticketPurchase.id, {
+          scanCount: (ticketPurchase.scanCount || 0) + 1,
+          firstScanAt: ticketPurchase.firstScanAt || nowTime,
+          lastScanAt: nowTime
+        });
+        
+        scannedAt = nowTime;
+        
+        console.log(`Successfully marked ticket as scanned at: ${scannedAt}`);
+      } else {
+        console.log(`Ticket already scanned at: ${scannedAt}`);
+      }
+      
+      // Format and return ticket info
+      const ticketInfo = {
+        ticketId: ticketPurchase.ticketId || 0,
+        orderId: ticketPurchase.orderId,
+        ticketName: ticket?.name || "General Admission",
+        eventName: event.title,
+        eventDate: event.date,
+        eventLocation: event.location || "Not specified",
+        purchaseDate: ticketPurchase.purchaseDate || ticketPurchase.createdAt,
+        scannedAt: scannedAt
+      };
       
       return {
         valid: true,
-        ticketInfo: {
-          orderId,
-          ticketId,
-          ticketName: ticket.name,
-          eventName: event?.title || 'Unknown Event',
-          eventDate: event?.date || null,
-          eventLocation: event?.location || 'Unknown Location',
-          purchaseDate: orderItem.createdAt,
-          scannedAt: updated.scan_date
-        }
+        alreadyScanned,
+        ticketInfo,
+        scannedAt
       };
     } catch (error) {
       console.error('Error scanning ticket:', error);
