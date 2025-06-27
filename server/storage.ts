@@ -1651,7 +1651,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Verify and scan a ticket
-  async scanTicket(ticketIdentifier: string): Promise<{ 
+  async scanTicket(ticketIdentifier: string, scannedBy: number = 1): Promise<{ 
     valid: boolean; 
     ticketInfo?: any; 
     error?: string;
@@ -1759,6 +1759,18 @@ export class DatabaseStorage implements IStorage {
           firstScanAt: ticketPurchase.firstScanAt || nowTime,
           lastScanAt: nowTime
         });
+        
+        // Create a scan record in the ticket_scans table
+        try {
+          await db.execute(sql`
+            INSERT INTO ticket_scans (ticket_id, order_id, scanned_at, scanned_by, status, notes, created_at, updated_at)
+            VALUES (${ticketPurchase.ticketId || 0}, ${ticketPurchase.orderId}, ${nowTime}, ${scannedBy}, 'valid', 'Live ticket scan', ${nowTime}, ${nowTime})
+          `);
+          console.log(`Created scan record for ticket ID ${ticketPurchase.ticketId}, order ID ${ticketPurchase.orderId}`);
+        } catch (scanRecordError) {
+          console.error('Error creating scan record:', scanRecordError);
+          // Don't fail the scan if we can't create the record
+        }
         
         scannedAt = nowTime;
         
