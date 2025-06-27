@@ -126,8 +126,14 @@ const TicketScanner = () => {
       // Set video element properties for better mobile compatibility
       video.setAttribute('playsinline', 'true');
       video.setAttribute('webkit-playsinline', 'true');
+      video.setAttribute('disablepictureinpicture', 'true');
       video.muted = true;
       video.autoplay = true;
+      
+      // Ensure video dimensions are set
+      video.style.width = '100%';
+      video.style.height = '100%';
+      video.style.objectFit = 'cover';
 
       setCameraActive(true);
 
