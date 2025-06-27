@@ -2072,35 +2072,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Parse the ticket code
-      // Format: SGX-TIX-{ticketId}-{orderId}
+      // Parse the ticket code and validate format
+      // Support multiple formats:
+      // 1. New format: EVENT-{eventId}-ORDER-{orderId}-{timestamp}
+      // 2. Manual format: EVENT-{eventId}-ORDER-MANUAL-{timestamp}
+      // 3. Legacy format: SGX-TIX-{ticketId}-{orderId}
       const parts = ticketCode.split('-');
+      let isValidFormat = false;
+      let ticketPurchase = null;
       
-      if (parts.length !== 4 || parts[0] !== 'SGX' || parts[1] !== 'TIX') {
+      if (parts.length >= 4) {
+        // Check for EVENT-X-ORDER format
+        if (parts[0] === 'EVENT' && parts[2] === 'ORDER') {
+          isValidFormat = true;
+          console.log(`Processing EVENT format QR code: ${ticketCode}`);
+          
+          // Look up ticket by QR code data directly
+          ticketPurchase = await storage.getTicketPurchaseByQrCodeData(ticketCode);
+          if (!ticketPurchase) {
+            console.log(`No ticket purchase found for QR code: ${ticketCode}`);
+            return res.status(404).json({ 
+              valid: false, 
+              error: "Ticket not found in our system." 
+            });
+          }
+        }
+        // Check for legacy SGX-TIX format
+        else if (parts.length === 4 && parts[0] === 'SGX' && parts[1] === 'TIX') {
+          isValidFormat = true;
+          console.log(`Processing legacy SGX format QR code: ${ticketCode}`);
+          
+          const ticketId = parseInt(parts[2]);
+          const orderId = parseInt(parts[3]);
+          
+          if (isNaN(ticketId) || isNaN(orderId)) {
+            console.log(`Invalid ticket or order ID: ticketId=${parts[2]}, orderId=${parts[3]}`);
+            return res.status(400).json({ 
+              valid: false, 
+              error: "Invalid ticket identifier. Ticket ID and Order ID must be numbers." 
+            });
+          }
+          
+          // For legacy format, look up by ticket/order IDs
+          ticketPurchase = await storage.getTicketPurchaseByIds(ticketId, orderId);
+          if (!ticketPurchase) {
+            console.log(`No ticket purchase found for ticketId=${ticketId}, orderId=${orderId}`);
+            return res.status(404).json({ 
+              valid: false, 
+              error: "Ticket not found in our system." 
+            });
+          }
+        }
+      }
+      
+      if (!isValidFormat) {
         console.log(`Invalid ticket format: ${ticketCode}`);
         return res.status(400).json({ 
           valid: false, 
-          error: "Invalid ticket format. Expected: SGX-TIX-ticketId-orderId" 
+          error: "Invalid ticket format. Expected: EVENT-{eventId}-ORDER-{orderId}-{timestamp} or SGX-TIX-{ticketId}-{orderId}" 
         });
       }
       
-      const ticketId = parseInt(parts[2]);
-      const orderId = parseInt(parts[3]);
-      
-      if (isNaN(ticketId) || isNaN(orderId)) {
-        console.log(`Invalid ticket or order ID: ticketId=${parts[2]}, orderId=${parts[3]}`);
-        return res.status(400).json({ 
-          valid: false, 
-          error: "Invalid ticket identifier. Ticket ID and Order ID must be numbers." 
-        });
-      }
-      
-      console.log(`Processing scan for ticketId=${ticketId}, orderId=${orderId}`);
-      
-      // Verify the ticket exists
-      const ticket = await storage.getTicket(ticketId);
-      if (!ticket) {
-        console.log(`Ticket not found in database: ${ticketId}`);
+      if (!ticketPurchase) {
+        console.log(`Ticket purchase not found for code: ${ticketCode}`);
         return res.status(404).json({ 
           valid: false, 
           error: "Ticket not found in our system." 
@@ -2108,77 +2142,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get event information
-      const event = await storage.getEvent(ticket.eventId);
+      const event = await storage.getEvent(ticketPurchase.eventId);
       if (!event) {
-        console.log(`Event not found for ticket: ${ticketId}`);
+        console.log(`Event not found for ticket purchase: ${ticketPurchase.id}`);
         return res.status(404).json({ 
           valid: false, 
           error: "Event information not found" 
         });
       }
       
-      // Check the order item in the database
-      const orderItem = await db
-        .select()
-        .from(orderItems)
-        .where(and(
-          eq(orderItems.orderId, orderId),
-          eq(orderItems.ticketId, ticketId)
-        ))
-        .then(rows => rows[0]);
-      
-      if (!orderItem) {
-        console.log(`No order item found for ticketId=${ticketId}, orderId=${orderId}`);
-        return res.status(404).json({ 
-          valid: false, 
-          error: "Ticket not found in our system." 
-        });
-      }
+      // Get ticket information
+      const ticket = ticketPurchase.ticketId ? await storage.getTicket(ticketPurchase.ticketId) : null;
       
       // Check if this ticket has already been scanned
-      const alreadyScanned = orderItem.scanDate !== null;
-      let scannedAt = orderItem.scanDate;
+      const alreadyScanned = ticketPurchase.scannedAt !== null && ticketPurchase.scannedAt !== undefined;
+      let scannedAt = ticketPurchase.scannedAt;
       
       // Mark the ticket as scanned if it hasn't been scanned yet
       if (!alreadyScanned) {
-        console.log(`Marking ticket as scanned: ticketId=${ticketId}, orderId=${orderId}`);
+        console.log(`Marking ticket as scanned: ticketPurchase ID=${ticketPurchase.id}`);
         
-        // Update the order item with scan date
-        const [updated] = await db
-          .update(orderItems)
-          .set({ 
-            scanDate: new Date(),
-            updatedAt: new Date()
-          })
-          .where(and(
-            eq(orderItems.orderId, orderId),
-            eq(orderItems.ticketId, ticketId)
-          ))
-          .returning();
-        
-        scannedAt = updated.scanDate;
-        
-        // Also create a ticket scan record for reporting
-        await storage.createTicketScan({
-          ticketId: ticketId,
-          orderId: orderId,
-          scannedBy: user.id,
-          scannedAt: new Date(),
-          notes: "Scanned via ticket scanner"
+        // Update the ticket purchase with scan date
+        const nowTime = new Date();
+        await storage.updateTicketPurchase(ticketPurchase.id, {
+          scannedAt: nowTime,
+          scanned: true,
+          scanCount: (ticketPurchase.scanCount || 0) + 1,
+          firstScanAt: ticketPurchase.firstScanAt || nowTime,
+          lastScanAt: nowTime
         });
+        
+        scannedAt = nowTime;
+        
+        console.log(`Successfully marked ticket as scanned at: ${scannedAt}`);
       } else {
         console.log(`Ticket already scanned at: ${scannedAt}`);
       }
       
       // Format and return ticket info
       const ticketInfo = {
-        ticketId: ticketId,
-        orderId: orderId,
-        ticketName: ticket.name,
+        ticketId: ticketPurchase.ticketId || 0,
+        orderId: ticketPurchase.orderId,
+        ticketName: ticket?.name || "General Admission",
         eventName: event.title,
         eventDate: event.date,
         eventLocation: event.location || "Not specified",
-        purchaseDate: orderItem.createdAt,
+        purchaseDate: ticketPurchase.purchaseDate || ticketPurchase.createdAt,
         scannedAt: scannedAt
       };
       

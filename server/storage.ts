@@ -2457,6 +2457,20 @@ export class DatabaseStorage implements IStorage {
       
     return ticketPurchase;
   }
+  
+  async getTicketPurchaseByIds(ticketId: number, orderId: number): Promise<TicketPurchase | undefined> {
+    const [ticketPurchase] = await db
+      .select()
+      .from(ticketPurchases)
+      .where(
+        and(
+          eq(ticketPurchases.ticketId, ticketId),
+          eq(ticketPurchases.orderId, orderId)
+        )
+      );
+      
+    return ticketPurchase;
+  }
 
   async getTicketsByUserId(userId: number): Promise<TicketPurchase[]> {
     return await db

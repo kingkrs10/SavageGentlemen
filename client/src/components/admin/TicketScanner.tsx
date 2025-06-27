@@ -358,9 +358,26 @@ const TicketScanner = () => {
       console.log('Sending ticket code for validation:', code);
       
       // Validate format before sending to server
+      // Support multiple formats:
+      // 1. New format: EVENT-{eventId}-ORDER-{orderId}-{timestamp}
+      // 2. Manual format: EVENT-{eventId}-ORDER-MANUAL-{timestamp}
+      // 3. Legacy format: SGX-TIX-ticketId-orderId
       const codeParts = code.split('-');
-      if (codeParts.length !== 4 || codeParts[0] !== 'SGX' || codeParts[1] !== 'TIX') {
-        setError('Invalid ticket format. Expected format: SGX-TIX-ticketId-orderId');
+      let isValidFormat = false;
+      
+      if (codeParts.length >= 4) {
+        // Check for EVENT-X-ORDER format
+        if (codeParts[0] === 'EVENT' && codeParts[2] === 'ORDER') {
+          isValidFormat = true;
+        }
+        // Check for legacy SGX-TIX format
+        else if (codeParts.length === 4 && codeParts[0] === 'SGX' && codeParts[1] === 'TIX') {
+          isValidFormat = true;
+        }
+      }
+      
+      if (!isValidFormat) {
+        setError('Invalid ticket format. Expected format: EVENT-{eventId}-ORDER-{orderId}-{timestamp} or SGX-TIX-ticketId-orderId');
         setLoading(false);
         return;
       }
