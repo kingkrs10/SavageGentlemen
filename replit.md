@@ -28,6 +28,7 @@ A comprehensive mobile-first web application for Savage Gentlemen, empowering Ca
 - Event creation with pricing and calendar functionality
 - Advanced ticket options vs general ticket creation
 - Database connectivity for new events
+- Webhook endpoint not properly configured for payment completion (payments succeed but may not complete orders)
 
 ## User Preferences
 - Focus on functionality over aesthetics
