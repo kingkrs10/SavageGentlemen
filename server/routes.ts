@@ -1282,40 +1282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Endpoint to scan tickets at events
-  router.post("/tickets/scan", authenticateUser, authorizeModerator, async (req: Request, res: Response) => {
-    try {
-      const { ticketCode } = req.body;
-      
-      if (!ticketCode) {
-        return res.status(400).json({ message: "Ticket code is required" });
-      }
-      
-      // Log the scan attempt with user info
-      console.log(`Ticket scan attempt by ${req.user.username} (${req.user.role}): ${ticketCode}`);
-      
-      // Use the storage function to scan the ticket
-      const scanResult = await storage.scanTicket(ticketCode);
-      
-      if (!scanResult.valid) {
-        return res.status(400).json({ 
-          valid: false,
-          error: scanResult.error || "Invalid ticket"
-        });
-      }
-      
-      // Return scan result with information about the ticket
-      return res.status(200).json({
-        valid: true,
-        alreadyScanned: scanResult.alreadyScanned || false,
-        scannedAt: scanResult.scannedAt,
-        ticketInfo: scanResult.ticketInfo
-      });
-    } catch (err) {
-      console.error("Error scanning ticket:", err);
-      return res.status(500).json({ message: "Failed to scan ticket" });
-    }
-  });
+  // NOTE: Removed duplicate scan endpoint - using the enhanced one below
   
   // Livestream management
   router.post("/admin/livestreams", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
