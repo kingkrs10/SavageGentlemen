@@ -12,6 +12,11 @@ A comprehensive mobile-first web application for Savage Gentlemen, empowering Ca
 - **Analytics**: Comprehensive tracking with Google Analytics
 
 ## Recent Changes
+- **June 27, 2025**: ✓ CRITICAL FIX: Fixed scan data recording system - live scans now appear in cross-reference table
+- **June 27, 2025**: ✓ Enhanced scan record creation with proper user ID tracking for scanner identification
+- **June 27, 2025**: ✓ Unified scan logic: replaced duplicate implementation with centralized storage layer method
+- **June 27, 2025**: ✓ Verified scan data table functionality: new scans immediately appear in /scan-data cross-reference
+- **June 27, 2025**: ✓ Confirmed duplicate scan prevention working correctly with proper visual feedback
 - **June 27, 2025**: ✓ CRITICAL FIX: Resolved QR code scanning failures at events
 - **June 27, 2025**: ✓ Fixed QR scanner validation logic to properly handle EVENT-{eventId}-ORDER-{orderId}-{timestamp} format
 - **June 27, 2025**: ✓ Updated backend storage scanTicket method to support both new EVENT format and legacy SGX format
