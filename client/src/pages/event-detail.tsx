@@ -350,7 +350,7 @@ const EventDetail = () => {
                   <>
                     <h3 className="text-xl font-bold mb-3">Available Tickets</h3>
                     
-                    {event.tickets.filter(ticket => ticket.isActive).map((ticket) => (
+                    {event.tickets.filter(ticket => ticket.isActive && ticket.status === 'on_sale').map((ticket) => (
                       <div key={ticket.id} className="border rounded-md p-3 mb-3">
                         <div className="flex justify-between items-center mb-1">
                           <h4 className="font-medium">{ticket.name}</h4>
