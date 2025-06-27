@@ -17,6 +17,7 @@ A comprehensive mobile-first web application for Savage Gentlemen, empowering Ca
 - **June 27, 2025**: ✓ RiddemRiot men's tickets now process in CAD currency (Event ID 6, Ticket ID 11)
 - **June 27, 2025**: ✓ Updated RiddemRiot location to "Toronto, ON" for proper Canadian currency detection
 - **June 27, 2025**: ✓ Verified complete CAD pricing system: location detection → currency display → payment processing
+- **June 27, 2025**: ✓ Updated organizer email to info@savgent.com across all events and admin forms
 - **June 27, 2025**: ✓ Investigated Stripe errors - confirmed historical issues unrelated to current functionality
 - **June 27, 2025**: ✓ STRIPE_WEBHOOK_SECRET configured - payment completion issue RESOLVED
 - **June 27, 2025**: ✓ Webhook endpoint now processing payments successfully at /payment/stripe-webhook
