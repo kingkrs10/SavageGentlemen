@@ -1324,9 +1324,9 @@ export default function AdminSimplePage() {
                 id="eventOrganizerEmail"
                 className="col-span-3"
                 type="email"
-                value={eventFormData.organizerEmail || "info@savagegentlemen.com"}
+                value={eventFormData.organizerEmail || "info@savgent.com"}
                 onChange={(e) => setEventFormData({...eventFormData, organizerEmail: e.target.value})}
-                placeholder="info@savagegentlemen.com"
+                placeholder="info@savgent.com"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -1421,7 +1421,7 @@ export default function AdminSimplePage() {
                   location: eventFormData.location || null,
                   imageUrl: eventFormData.imageUrl || null,
                   organizerName: eventFormData.organizerName || "Savage Gentlemen",
-                  organizerEmail: eventFormData.organizerEmail || "info@savagegentlemen.com"
+                  organizerEmail: eventFormData.organizerEmail || "info@savgent.com"
                 };
                 
                 createEventMutation.mutate(newEvent, {
@@ -1579,9 +1579,9 @@ export default function AdminSimplePage() {
                 id="editEventOrganizerEmail"
                 className="col-span-3"
                 type="email"
-                value={eventFormData.organizerEmail || "info@savagegentlemen.com"}
+                value={eventFormData.organizerEmail || "info@savgent.com"}
                 onChange={(e) => setEventFormData({...eventFormData, organizerEmail: e.target.value})}
-                placeholder="info@savagegentlemen.com"
+                placeholder="info@savgent.com"
               />
             </div>
           </div>
@@ -1603,7 +1603,7 @@ export default function AdminSimplePage() {
                   location: eventFormData.location || null,
                   imageUrl: eventFormData.imageUrl || null,
                   organizerName: eventFormData.organizerName || "Savage Gentlemen",
-                  organizerEmail: eventFormData.organizerEmail || "info@savagegentlemen.com"
+                  organizerEmail: eventFormData.organizerEmail || "info@savgent.com"
                 };
                 
                 editEventMutation.mutate(updatedEvent, {

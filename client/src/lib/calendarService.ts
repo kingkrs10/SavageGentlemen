@@ -81,7 +81,7 @@ export const saveEventToCalendar = (event: Event): void => {
       status: 'CONFIRMED' as const,
       organizer: { 
         name: event.organizerName || 'Savage Gentlemen', 
-        email: event.organizerEmail || 'info@savagegentlemen.com' 
+        email: event.organizerEmail || 'info@savgent.com' 
       },
       categories: ['SavageGentlemen', 'Caribbean', 'Event'],
       busyStatus: 'BUSY' as const,
