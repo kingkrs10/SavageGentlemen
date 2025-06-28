@@ -1076,31 +1076,7 @@ export default function AdminSimplePage() {
                 </div>
               </div>
             </TabsContent>
-              
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="outline" className="bg-blue-100 text-blue-800">ADV</Badge>
-                    <Label htmlFor="priceType">Price type</Label>
-                  </div>
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Add a visual cue for non standard prices
-                  </div>
-                  <Select 
-                    value={ticketFormData.priceType}
-                    onValueChange={(value) => setTicketFormData({...ticketFormData, priceType: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select price type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="standard">🎫 Standard</SelectItem>
-                      <SelectItem value="early-bird">🐦 Early Bird</SelectItem>
-                      <SelectItem value="discount">💰 Discount</SelectItem>
-                      <SelectItem value="premium">⭐ Premium</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          </Tabs>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
