@@ -3225,6 +3225,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API prefixed endpoint
   router.post("/api/tickets/free", async (req: Request, res: Response) => {
     try {
+      console.log("=== FREE TICKET REQUEST (API) ===");
+      console.log("Request body:", req.body);
+      console.log("Request headers:", req.headers);
+      
       const { eventId, eventTitle, guestEmail } = req.body;
       
       // More flexible authentication for free tickets
@@ -3454,14 +3458,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Free ticket successfully claimed"
       });
     } catch (error) {
-      console.error("Error claiming free ticket:", error);
-      return res.status(500).json({ message: "Failed to claim free ticket" });
+      console.error("=== FREE TICKET ERROR (API) ===");
+      console.error("Error details:", error);
+      console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+      
+      const errorMessage = error instanceof Error ? error.message : "Failed to claim free ticket";
+      return res.status(500).json({ 
+        success: false,
+        message: errorMessage,
+        error: "INTERNAL_SERVER_ERROR"
+      });
     }
   });
   
   // Non-prefixed endpoint (for backward compatibility)
   router.post("/tickets/free", async (req: Request, res: Response) => {
     try {
+      console.log("=== FREE TICKET REQUEST (NON-PREFIXED) ===");
+      console.log("Request body:", req.body);
+      console.log("Request headers:", req.headers);
+      
       const { eventId, eventTitle, guestEmail } = req.body;
       
       // More flexible authentication for free tickets
@@ -3690,8 +3706,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Free ticket successfully claimed"
       });
     } catch (error) {
-      console.error("Error claiming free ticket:", error);
-      return res.status(500).json({ message: "Failed to claim free ticket" });
+      console.error("=== FREE TICKET ERROR (NON-PREFIXED) ===");
+      console.error("Error details:", error);
+      console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+      
+      const errorMessage = error instanceof Error ? error.message : "Failed to claim free ticket";
+      return res.status(500).json({ 
+        success: false,
+        message: errorMessage,
+        error: "INTERNAL_SERVER_ERROR"
+      });
     }
   });
 
