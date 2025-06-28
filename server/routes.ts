@@ -3408,14 +3408,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         qrCodeData: `EVENT-${event.id}-ORDER-${order.id}-${Date.now()}`,
         ticketType: ticketType,
         price: 0,
-        attendeeEmail: user.email || null,
+        attendeeEmail: deliveryEmail || null,
         attendeeName: user.displayName || user.username || null
       };
       
       const ticket = await storage.createTicketPurchase(ticketData);
       
       // If user has email, send ticket confirmation
-      if (user.email) {
+      if (deliveryEmail) {
         try {
           await sendTicketEmail({
             ticketId: ticket.id.toString(),
@@ -3426,7 +3426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ticketType: ticketName,
             ticketPrice: 0,
             purchaseDate: new Date()
-          }, user.email);
+          }, deliveryEmail);
         } catch (emailError) {
           console.error("Failed to send ticket email:", emailError);
           // Continue despite email failure
@@ -3462,7 +3462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Non-prefixed endpoint (for backward compatibility)
   router.post("/tickets/free", async (req: Request, res: Response) => {
     try {
-      const { eventId, eventTitle } = req.body;
+      const { eventId, eventTitle, guestEmail } = req.body;
       
       // More flexible authentication for free tickets
       let user = null;
