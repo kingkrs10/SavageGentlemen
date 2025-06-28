@@ -3532,8 +3532,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Store authenticated user in request
       (req as any).user = user;
       
-      // Ensure user has an email address for ticket delivery
-      if (!user.email || user.email.trim() === '') {
+      // Determine email for ticket delivery (support guest emails)  
+      let deliveryEmail = user.email;
+      
+      // For guest users, use provided guest email if user doesn't have email
+      if (user.isGuest && (!user.email || user.email.trim() === '')) {
+        if (!guestEmail || guestEmail.trim() === '') {
+          return res.status(400).json({ 
+            message: "Email address is required to receive tickets.",
+            requiresEmail: true,
+            isGuest: true
+          });
+        }
+        deliveryEmail = guestEmail.trim();
+        console.log("Using guest email for ticket delivery (non-prefixed):", deliveryEmail);
+      } else if (!user.email || user.email.trim() === '') {
         return res.status(400).json({ 
           message: "Email address is required to receive tickets. Please update your profile with a valid email address.",
           requiresEmail: true
@@ -3631,14 +3644,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         qrCodeData: `EVENT-${event.id}-ORDER-${order.id}-${Date.now()}`,
         ticketType: ticketType,
         price: 0,
-        attendeeEmail: user.email || null,
+        attendeeEmail: deliveryEmail || null,
         attendeeName: user.displayName || user.username || null
       };
       
       const ticket = await storage.createTicketPurchase(ticketData);
       
       // If user has email, send ticket confirmation
-      if (user.email) {
+      if (deliveryEmail) {
         try {
           await sendTicketEmail({
             ticketId: ticket.id.toString(),
@@ -3649,7 +3662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ticketType: ticketName,
             ticketPrice: 0,
             purchaseDate: new Date()
-          }, user.email);
+          }, deliveryEmail);
         } catch (emailError) {
           console.error("Failed to send ticket email:", emailError);
           // Continue despite email failure
