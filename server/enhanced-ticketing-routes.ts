@@ -471,6 +471,198 @@ export function registerEnhancedTicketingRoutes(app: Express) {
       res.status(500).json({ message: "Failed to fetch user addons" });
     }
   });
+
+  // Non-prefixed free ticket endpoint for frontend fallback compatibility
+  app.post("/tickets/free", async (req, res) => {
+    try {
+      console.log("=== FREE TICKET REQUEST (NON-PREFIXED ENHANCED) ===");
+      console.log("Request body:", req.body);
+      console.log("Request headers:", req.headers);
+
+      // Extract user info from headers (for mobile compatibility)
+      let userId = null;
+      let userRole = null;
+      
+      // Try user-id header first
+      if (req.headers['user-id']) {
+        userId = parseInt(req.headers['user-id'] as string);
+        console.log("User found via user-id header for free ticket (non-prefixed enhanced):", userId);
+      }
+      
+      // Try x-user-data header
+      if (req.headers['x-user-data']) {
+        try {
+          const userData = JSON.parse(req.headers['x-user-data'] as string);
+          if (userData.id && !userId) {
+            userId = userData.id;
+          }
+          userRole = userData.role;
+          console.log("User data from x-user-data header:", userData);
+        } catch (e) {
+          console.log("Could not parse x-user-data header:", e);
+        }
+      }
+
+      // If no user ID found, check if it's a guest free ticket claim
+      if (!userId) {
+        const { guestEmail } = req.body;
+        if (guestEmail && guestEmail.trim() !== '') {
+          console.log("Processing guest free ticket claim for email:", guestEmail);
+          // Continue with guest processing
+        } else {
+          return res.status(401).json({ 
+            message: "Authentication required or guest email needed for free ticket claim" 
+          });
+        }
+      }
+
+      const { eventId, ticketId, guestEmail } = req.body;
+      
+      if (!eventId) {
+        return res.status(400).json({ message: "Event ID is required" });
+      }
+
+      // Get event details
+      const event = await db.select()
+        .from(events)
+        .where(eq(events.id, eventId))
+        .limit(1);
+
+      if (event.length === 0) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      // Get ticket details if specified
+      let selectedTicket = null;
+      if (ticketId) {
+        const ticketResult = await db.select()
+          .from(tickets)
+          .where(and(
+            eq(tickets.id, ticketId),
+            eq(tickets.eventId, eventId)
+          ))
+          .limit(1);
+
+        if (ticketResult.length > 0) {
+          selectedTicket = ticketResult[0];
+          
+          // Check ticket status and capacity
+          if (selectedTicket.status === 'sold_out') {
+            return res.status(400).json({ 
+              message: "This ticket type is sold out and no longer available." 
+            });
+          }
+          
+          if (selectedTicket.status === 'off_sale') {
+            return res.status(400).json({ 
+              message: "This ticket type is not currently available for purchase." 
+            });
+          }
+          
+          if (selectedTicket.status === 'staff_only') {
+            return res.status(400).json({ 
+              message: "This ticket type is restricted and not available for public purchase." 
+            });
+          }
+          
+          // Enhanced capacity check for free events
+          if (selectedTicket.remainingQuantity !== null && selectedTicket.remainingQuantity !== undefined && selectedTicket.remainingQuantity <= 0) {
+            return res.status(400).json({ 
+              message: "This ticket type has no remaining capacity." 
+            });
+          }
+        }
+      }
+
+      // Process the free ticket claim
+      const purchaseEmail = guestEmail || (userId ? await getUserEmail(userId) : null);
+      
+      if (!purchaseEmail) {
+        return res.status(400).json({ 
+          message: "Email address is required for ticket delivery" 
+        });
+      }
+
+      // Create order and ticket purchase
+      const orderData = {
+        userId: userId || null,
+        eventId,
+        paymentIntentId: `free-${Date.now()}`,
+        amount: 0,
+        currency: 'USD',
+        status: 'completed',
+        guestEmail: guestEmail || null,
+        items: JSON.stringify([{
+          eventId,
+          eventTitle: event[0].title,
+          ticketId: selectedTicket?.id || null,
+          ticketName: selectedTicket?.name || 'Free Ticket',
+          quantity: 1,
+          price: 0
+        }])
+      };
+
+      const [order] = await db.insert(orders).values(orderData).returning();
+
+      const ticketPurchaseData = {
+        userId: userId || null,
+        ticketId: selectedTicket?.id || null,
+        eventId,
+        orderId: order.id,
+        quantity: 1,
+        unitPrice: 0,
+        totalPrice: 0,
+        status: 'confirmed',
+        purchaseEmail,
+        qrCode: `EVENT-${eventId}-ORDER-${order.id}-${Date.now()}`
+      };
+
+      const [ticketPurchase] = await db.insert(ticketPurchases).values(ticketPurchaseData).returning();
+
+      // Update remaining quantity if ticket type specified
+      if (selectedTicket && selectedTicket.remainingQuantity !== null) {
+        await db.update(tickets)
+          .set({ remainingQuantity: selectedTicket.remainingQuantity - 1 })
+          .where(eq(tickets.id, selectedTicket.id));
+      }
+
+      console.log("Free ticket claimed successfully:", {
+        orderId: order.id,
+        ticketPurchaseId: ticketPurchase.id,
+        email: purchaseEmail
+      });
+
+      res.status(201).json({
+        success: true,
+        message: "Free ticket claimed successfully!",
+        orderId: order.id,
+        ticketId: ticketPurchase.id,
+        qrCode: ticketPurchase.qrCode
+      });
+
+    } catch (error) {
+      console.error("Error in non-prefixed free ticket endpoint:", error);
+      res.status(500).json({ 
+        message: "Internal server error while processing free ticket claim",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+}
+
+// Helper function to get user email
+async function getUserEmail(userId: number): Promise<string | null> {
+  try {
+    const user = await db.select({ email: users.email })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    
+    return user.length > 0 ? user[0].email : null;
+  } catch (error) {
+    console.error("Error fetching user email:", error);
+    return null;
+  }
 }
 
 // Add UUID package to dependencies if not already present
