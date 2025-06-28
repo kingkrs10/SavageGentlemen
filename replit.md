@@ -12,6 +12,8 @@ A comprehensive mobile-first web application for Savage Gentlemen, empowering Ca
 - **Analytics**: Comprehensive tracking with Google Analytics
 
 ## Recent Changes
+- **June 28, 2025**: ✓ Fixed Rhythm in Riddim event image - replaced incorrect image with proper Savage Gentlemen logo
+- **June 28, 2025**: ✓ Preserved site structure while correcting event branding for featured event
 - **June 28, 2025**: ✓ Confirmed Shenell.whyte@gmail.com account setup as moderator with ticket scanning access
 - **June 27, 2025**: ✓ CRITICAL SECURITY FIX: Added sold out validation to free ticket endpoints - prevents bypassing sold out status
 - **June 27, 2025**: ✓ Enhanced ticket purchase protection with comprehensive status validation (sold_out, off_sale, staff_only)
