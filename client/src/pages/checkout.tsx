@@ -387,6 +387,70 @@ export default function Checkout() {
                   Processing your free ticket request...
                 </p>
               </div>
+            ) : showGuestEmailForm && user?.isGuest ? (
+              <div className="space-y-4">
+                <div className="text-center mb-4">
+                  <Mail className="mx-auto h-12 w-12 text-primary mb-2" />
+                  <h3 className="text-lg font-medium">Email Required</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mt-1">
+                    We need your email to send you the ticket confirmation and QR code.
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="guest-email">Email Address</Label>
+                  <Input
+                    id="guest-email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={guestEmail}
+                    onChange={(e) => {
+                      setGuestEmail(e.target.value);
+                      setEmailError('');
+                    }}
+                    className={emailError ? 'border-red-500' : ''}
+                  />
+                  {emailError && (
+                    <p className="text-sm text-red-500">{emailError}</p>
+                  )}
+                </div>
+                
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setShowGuestEmailForm(false);
+                      setGuestEmail('');
+                      setEmailError('');
+                    }}
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={() => {
+                      if (!guestEmail.trim()) {
+                        setEmailError('Email address is required');
+                        return;
+                      }
+                      
+                      if (!isValidEmail(guestEmail.trim())) {
+                        setEmailError('Please enter a valid email address');
+                        return;
+                      }
+                      
+                      setEmailError('');
+                      setShowGuestEmailForm(false);
+                      
+                      // Trigger the free ticket claim process with email now collected
+                      // This will re-run the onClick handler, but now with guestEmail set
+                    }}
+                  >
+                    Continue
+                  </Button>
+                </div>
+              </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-6">
                 <div className="text-center mb-4">
@@ -397,6 +461,7 @@ export default function Checkout() {
                 </div>
                 <Button 
                   className="w-full" 
+                  data-free-ticket-btn
                   onClick={async () => {
                     // Basic validation before proceeding
                     if (!user) {
