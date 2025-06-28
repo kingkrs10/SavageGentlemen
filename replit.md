@@ -12,6 +12,11 @@ A comprehensive mobile-first web application for Savage Gentlemen, empowering Ca
 - **Analytics**: Comprehensive tracking with Google Analytics
 
 ## Recent Changes
+- **June 28, 2025**: ✓ FIXED FREE TICKET CLAIMING JSON ERROR - Enhanced mobile browser authentication handling
+- **June 28, 2025**: ✓ Added robust error detection for HTML responses (authentication failures) vs JSON responses
+- **June 28, 2025**: ✓ Improved guest authentication header injection for mobile environments  
+- **June 28, 2025**: ✓ Enhanced free ticket claim error messages with response truncation for debugging
+- **June 28, 2025**: ✓ Added complete account deletion functionality with confirmation dialog and admin notifications
 - **June 28, 2025**: ✓ COMPLETE GUEST FREE TICKET SYSTEM - Fixed database constraint and enabled guest email collection
 - **June 28, 2025**: ✓ Made ticket_id nullable in ticket_purchases table to support free events without specific ticket types
 - **June 28, 2025**: ✓ Guest users can now successfully claim free tickets by providing email addresses

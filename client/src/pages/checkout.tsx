@@ -501,7 +501,7 @@ export default function Checkout() {
                       };
                       
                       // Get standardized authentication headers from our utility
-                      const headers = {
+                      const headers: Record<string, string> = {
                         ...getAuthHeaders(),
                         'Content-Type': 'application/json'
                       };
@@ -509,10 +509,23 @@ export default function Checkout() {
                       console.log("Current user object:", user);
                       console.log("Using standardized auth headers for free ticket claim:", headers);
                       
-                      // Try with different endpoint patterns and handle response properly
+                      // Enhanced error handling for mobile browsers and authentication issues
                       let response;
                       let responseText;
                       let responseData;
+                      
+                      // Ensure we have basic authentication headers for guests
+                      if (user.isGuest && (!headers['user-id'] || !headers['x-user-data'])) {
+                        console.log("Guest user detected, ensuring authentication headers are set");
+                        headers['user-id'] = user.id.toString();
+                        headers['x-user-data'] = JSON.stringify({
+                          id: user.id,
+                          username: user.username,
+                          isGuest: true
+                        });
+                      }
+                      
+                      console.log("Final headers for free ticket request:", headers);
                       
                       try {
                         // First try with /api prefix
@@ -528,12 +541,18 @@ export default function Checkout() {
                         responseText = await response.text();
                         console.log(`API response status: ${response.status}, text:`, responseText);
                         
+                        // Check if response looks like HTML (common when auth fails and returns error page)
+                        if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
+                          console.error("Received HTML response instead of JSON - likely authentication error");
+                          throw new Error("Authentication failed - received HTML response");
+                        }
+                        
                         // If it's valid JSON, parse it
                         try {
                           responseData = JSON.parse(responseText);
                         } catch (jsonError) {
                           console.error("Not valid JSON response:", responseText);
-                          throw new Error("Server returned invalid JSON");
+                          throw new Error("Server returned invalid JSON: " + responseText.substring(0, 100));
                         }
                         
                         // Check if we got an error response
@@ -557,12 +576,18 @@ export default function Checkout() {
                           responseText = await response.text();
                           console.log(`Non-API response status: ${response.status}, text:`, responseText);
                           
+                          // Check if response looks like HTML
+                          if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
+                            console.error("Received HTML response instead of JSON - likely authentication error");
+                            throw new Error("Authentication failed - received HTML response");
+                          }
+                          
                           // If it's valid JSON, parse it
                           try {
                             responseData = JSON.parse(responseText);
                           } catch (jsonError) {
                             console.error("Not valid JSON response:", responseText);
-                            throw new Error("Server returned invalid JSON");
+                            throw new Error("Server returned invalid JSON: " + responseText.substring(0, 100));
                           }
                           
                           // Check if we got an error response
