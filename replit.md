@@ -12,6 +12,10 @@ A comprehensive mobile-first web application for Savage Gentlemen, empowering Ca
 - **Analytics**: Comprehensive tracking with Google Analytics
 
 ## Recent Changes
+- **June 28, 2025**: ✓ COMPLETE GUEST FREE TICKET SYSTEM - Fixed database constraint and enabled guest email collection
+- **June 28, 2025**: ✓ Made ticket_id nullable in ticket_purchases table to support free events without specific ticket types
+- **June 28, 2025**: ✓ Guest users can now successfully claim free tickets by providing email addresses
+- **June 28, 2025**: ✓ Verified end-to-end flow: guest access → email collection → ticket generation → QR scanning
 - **June 28, 2025**: ✓ Fixed Rhythm in Riddim event image - replaced incorrect image with proper Savage Gentlemen logo
 - **June 28, 2025**: ✓ Preserved site structure while correcting event branding for featured event
 - **June 28, 2025**: ✓ Confirmed Shenell.whyte@gmail.com account setup as moderator with ticket scanning access
