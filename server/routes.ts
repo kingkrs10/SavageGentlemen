@@ -103,6 +103,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerSocialRoutes(app);
   registerEnhancedTicketingRoutes(app);
   
+  // Initialize ticket database synchronization
+  (async () => {
+    try {
+      const { TicketDatabaseSync } = await import("./storage");
+      await TicketDatabaseSync.syncTicketDatabases();
+      await TicketDatabaseSync.reconcileTicketData();
+      console.log("✓ Ticket database synchronization completed on startup");
+    } catch (error) {
+      console.error("Warning: Ticket database sync failed on startup:", error);
+    }
+  })();
+  
   // Create uploads directory for media files if it doesn't exist
   const uploadsDir = path.join(process.cwd(), 'uploads');
   if (!fs.existsSync(uploadsDir)) {

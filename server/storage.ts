@@ -3439,3 +3439,191 @@ export class DatabaseStorage implements IStorage {
 }
 
 export const storage = new DatabaseStorage();
+
+// Enhanced ticket database synchronization utilities
+export class TicketDatabaseSync {
+  // Comprehensive ticket database synchronization system
+  static async syncTicketDatabases(): Promise<void> {
+    try {
+      console.log('Starting comprehensive ticket database synchronization...');
+      
+      // 1. Verify all ticket-event relationships and fix remaining quantities
+      await db.execute(sql`
+        UPDATE tickets 
+        SET remaining_quantity = CASE 
+          WHEN remaining_quantity IS NULL THEN quantity 
+          ELSE remaining_quantity 
+        END 
+        WHERE remaining_quantity IS NULL AND quantity IS NOT NULL
+      `);
+      
+      // 2. Sync ticket purchase counts with actual inventory
+      await db.execute(sql`
+        UPDATE tickets 
+        SET remaining_quantity = GREATEST(0, 
+          quantity - COALESCE((
+            SELECT COUNT(*) 
+            FROM ticket_purchases tp 
+            WHERE tp.ticket_id = tickets.id 
+            AND tp.status IN ('confirmed', 'valid')
+          ), 0)
+        )
+        WHERE quantity IS NOT NULL
+      `);
+      
+      // 3. Ensure all ticket purchases have valid QR codes
+      await db.execute(sql`
+        UPDATE ticket_purchases 
+        SET qr_code_data = CONCAT('EVENT-', event_id, '-ORDER-', COALESCE(order_id, 'FREE'), '-', EXTRACT(EPOCH FROM NOW())::bigint)
+        WHERE qr_code_data IS NULL OR qr_code_data = ''
+      `);
+      
+      // 4. Update ticket status based on inventory
+      await db.execute(sql`
+        UPDATE tickets 
+        SET status = CASE 
+          WHEN remaining_quantity <= 0 THEN 'sold_out'
+          WHEN remaining_quantity > 0 THEN 'on_sale'
+          ELSE status
+        END
+        WHERE remaining_quantity IS NOT NULL
+      `);
+      
+      console.log('Ticket database synchronization completed successfully');
+    } catch (error) {
+      console.error('Error during ticket database synchronization:', error);
+      throw error;
+    }
+  }
+
+  // Real-time ticket inventory management
+  static async updateTicketInventory(ticketId: number, quantityChange: number): Promise<void> {
+    try {
+      await db
+        .update(tickets)
+        .set({
+          remainingQuantity: sql`GREATEST(0, COALESCE(remaining_quantity, quantity) + ${quantityChange})`,
+          updatedAt: new Date()
+        })
+        .where(eq(tickets.id, ticketId));
+        
+      // Update status based on new inventory
+      await db.execute(sql`
+        UPDATE tickets 
+        SET status = CASE 
+          WHEN remaining_quantity <= 0 THEN 'sold_out'
+          WHEN remaining_quantity > 0 AND status = 'sold_out' THEN 'on_sale'
+          ELSE status
+        END
+        WHERE id = ${ticketId}
+      `);
+    } catch (error) {
+      console.error('Error updating ticket inventory:', error);
+      throw error;
+    }
+  }
+
+  // Site-wide ticket status validation
+  static async validateTicketSystemIntegrity(): Promise<{ valid: boolean; issues: string[] }> {
+    try {
+      const issues: string[] = [];
+      
+      // Check for orphaned records
+      const orphanedPurchases = await db.execute(sql`
+        SELECT COUNT(*) as count
+        FROM ticket_purchases tp
+        LEFT JOIN events e ON tp.event_id = e.id
+        WHERE e.id IS NULL
+      `);
+      
+      if (Number(orphanedPurchases.rows[0]?.count) > 0) {
+        issues.push(`${orphanedPurchases.rows[0]?.count} ticket purchases with invalid events`);
+      }
+      
+      // Check for negative inventory
+      const negativeInventory = await db.execute(sql`
+        SELECT COUNT(*) as count
+        FROM tickets
+        WHERE remaining_quantity < 0
+      `);
+      
+      if (Number(negativeInventory.rows[0]?.count) > 0) {
+        issues.push(`${negativeInventory.rows[0]?.count} tickets with negative inventory`);
+      }
+      
+      // Check for duplicate QR codes
+      const duplicateQRCodes = await db.execute(sql`
+        SELECT COUNT(*) as count
+        FROM (
+          SELECT qr_code_data
+          FROM ticket_purchases
+          GROUP BY qr_code_data
+          HAVING COUNT(*) > 1
+        ) duplicates
+      `);
+      
+      if (Number(duplicateQRCodes.rows[0]?.count) > 0) {
+        issues.push(`${duplicateQRCodes.rows[0]?.count} duplicate QR codes found`);
+      }
+      
+      return {
+        valid: issues.length === 0,
+        issues
+      };
+    } catch (error) {
+      console.error('Error validating ticket system integrity:', error);
+      return {
+        valid: false,
+        issues: ['Failed to validate ticket system integrity']
+      };
+    }
+  }
+
+  // Cross-database ticket data reconciliation
+  static async reconcileTicketData(): Promise<void> {
+    try {
+      // Reconcile ticket purchases with scan records
+      await db.execute(sql`
+        UPDATE ticket_purchases 
+        SET 
+          scanned = CASE WHEN scan_count > 0 THEN true ELSE false END,
+          scan_count = COALESCE((
+            SELECT COUNT(*) 
+            FROM ticket_scans ts 
+            WHERE ts.ticket_id = ticket_purchases.ticket_id 
+            AND ts.order_id = ticket_purchases.order_id
+          ), 0)
+        WHERE ticket_id IS NOT NULL
+      `);
+      
+      // Update first and last scan timestamps
+      await db.execute(sql`
+        UPDATE ticket_purchases 
+        SET 
+          first_scan_at = (
+            SELECT MIN(scanned_at) 
+            FROM ticket_scans ts 
+            WHERE ts.ticket_id = ticket_purchases.ticket_id 
+            AND ts.order_id = ticket_purchases.order_id
+          ),
+          last_scan_at = (
+            SELECT MAX(scanned_at) 
+            FROM ticket_scans ts 
+            WHERE ts.ticket_id = ticket_purchases.ticket_id 
+            AND ts.order_id = ticket_purchases.order_id
+          )
+        WHERE ticket_id IS NOT NULL
+        AND EXISTS (
+          SELECT 1 FROM ticket_scans ts 
+          WHERE ts.ticket_id = ticket_purchases.ticket_id 
+          AND ts.order_id = ticket_purchases.order_id
+        )
+      `);
+      
+      console.log('Ticket data reconciliation completed');
+    } catch (error) {
+      console.error('Error reconciling ticket data:', error);
+      throw error;
+    }
+  }
+}
