@@ -3225,7 +3225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API prefixed endpoint
   router.post("/api/tickets/free", async (req: Request, res: Response) => {
     try {
-      const { eventId, eventTitle } = req.body;
+      const { eventId, eventTitle, guestEmail } = req.body;
       
       // More flexible authentication for free tickets
       let user = null;
@@ -3295,8 +3295,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Store authenticated user in request
       (req as any).user = user;
       
-      // Ensure user has an email address for ticket delivery
-      if (!user.email || user.email.trim() === '') {
+      // Determine email for ticket delivery (support guest emails)
+      let deliveryEmail = user.email;
+      
+      // For guest users, use provided guest email if user doesn't have email
+      if (user.isGuest && (!user.email || user.email.trim() === '')) {
+        if (!guestEmail || guestEmail.trim() === '') {
+          return res.status(400).json({ 
+            message: "Email address is required to receive tickets.",
+            requiresEmail: true,
+            isGuest: true
+          });
+        }
+        deliveryEmail = guestEmail.trim();
+        console.log("Using guest email for ticket delivery:", deliveryEmail);
+      } else if (!user.email || user.email.trim() === '') {
         return res.status(400).json({ 
           message: "Email address is required to receive tickets. Please update your profile with a valid email address.",
           requiresEmail: true
