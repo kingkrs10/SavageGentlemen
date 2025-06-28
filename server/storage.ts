@@ -3474,7 +3474,12 @@ export class TicketDatabaseSync {
       // 3. Ensure all ticket purchases have valid QR codes
       await db.execute(sql`
         UPDATE ticket_purchases 
-        SET qr_code_data = CONCAT('EVENT-', event_id, '-ORDER-', COALESCE(order_id, 'FREE'), '-', EXTRACT(EPOCH FROM NOW())::bigint)
+        SET qr_code_data = CONCAT('EVENT-', event_id, '-ORDER-', 
+          CASE 
+            WHEN order_id IS NULL THEN 'FREE'
+            ELSE order_id::text
+          END, 
+          '-', EXTRACT(EPOCH FROM NOW())::bigint)
         WHERE qr_code_data IS NULL OR qr_code_data = ''
       `);
       

@@ -1166,11 +1166,11 @@ export default function AdminSimplePage() {
                 
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Badge variant="outline">OPT</Badge>
-                    <Label htmlFor="secretCode">Secret code</Label>
+                    <Badge variant="outline" className="bg-blue-100 text-blue-800">ADV</Badge>
+                    <Label htmlFor="secretCode">🔒 Secret code</Label>
                   </div>
                   <div className="text-xs text-muted-foreground mb-1">
-                    Show this ticket type only to those who enter this code
+                    Show this ticket type only to those who enter this code (VIP access)
                   </div>
                   <Input
                     id="secretCode"
@@ -1182,8 +1182,8 @@ export default function AdminSimplePage() {
                 
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Badge variant="outline">OPT</Badge>
-                    <Label htmlFor="hideIfSoldOut">Hide if sold out</Label>
+                    <Badge variant="outline" className="bg-blue-100 text-blue-800">ADV</Badge>
+                    <Label htmlFor="hideIfSoldOut">👁️ Hide if sold out</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Checkbox 
@@ -1197,8 +1197,8 @@ export default function AdminSimplePage() {
                 
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Badge variant="outline">OPT</Badge>
-                    <Label htmlFor="hidePriceIfSoldOut">Hide the price if sold out</Label>
+                    <Badge variant="outline" className="bg-blue-100 text-blue-800">ADV</Badge>
+                    <Label htmlFor="hidePriceIfSoldOut">💰 Hide the price if sold out</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Checkbox 
