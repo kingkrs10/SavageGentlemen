@@ -2514,6 +2514,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // User self-deletion endpoint
+  router.delete("/users/profile", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const currentUser = (req as any).user;
+      if (!currentUser) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const userId = currentUser.id;
+      
+      // Get user data for notification before deletion
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Store user info before deletion
+      const deletedUserInfo = {
+        id: user.id,
+        username: user.username,
+        displayName: user.displayName || 'Not provided',
+        email: user.email || 'Not provided',
+        role: user.role || 'user'
+      };
+
+      // Delete the user account
+      await storage.deleteUser(userId);
+
+      // Send notification to admin about self-deletion
+      try {
+        await sendAdminNotification(
+          'User Self-Deletion',
+          `A user has deleted their own account.`,
+          {
+            UserID: deletedUserInfo.id,
+            Username: deletedUserInfo.username,
+            DisplayName: deletedUserInfo.displayName,
+            Email: deletedUserInfo.email,
+            Role: deletedUserInfo.role,
+            DeletionTime: new Date().toLocaleString()
+          }
+        );
+      } catch (emailError) {
+        console.error('Failed to send admin notification for user deletion:', emailError);
+        // Continue with deletion even if notification fails
+      }
+
+      // Send farewell email to user if they have an email
+      if (user.email) {
+        try {
+          await sendEmail({
+            to: user.email,
+            subject: 'Your Savage Gentlemen account has been deleted',
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #c01c28;">Account Deletion Confirmation</h2>
+                <p>Hello ${user.displayName || user.username},</p>
+                <p>We're sorry to see you go! Your Savage Gentlemen account has been successfully deleted as requested.</p>
+                <p>Your account data has been permanently removed from our systems.</p>
+                <p>If you change your mind, you're always welcome to create a new account and rejoin our community.</p>
+                <p>Thank you for being part of the Savage Gentlemen family.</p>
+                <p>Best regards,<br>The Savage Gentlemen Team</p>
+              </div>
+            `
+          });
+        } catch (emailError) {
+          console.error('Failed to send farewell email:', emailError);
+        }
+      }
+
+      return res.status(200).json({ 
+        success: true,
+        message: "Account successfully deleted" 
+      });
+    } catch (err) {
+      console.error("Error deleting user account:", err);
+      return res.status(500).json({ message: "Failed to delete account" });
+    }
+  });
+
   router.delete("/admin/users/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);

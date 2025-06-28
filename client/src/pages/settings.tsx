@@ -10,13 +10,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, User, Bell, Shield, CreditCard } from "lucide-react";
-import { Link } from "wouter";
+import { ArrowLeft, User, Bell, Shield, CreditCard, AlertTriangle } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const SettingsPage = () => {
-  const { user, updateUser } = useUser();
+  const { user, updateUser, logout } = useUser();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   const [profileData, setProfileData] = useState({
     displayName: user?.displayName || "",
@@ -55,9 +67,37 @@ const SettingsPage = () => {
     },
   });
 
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("DELETE", "/api/users/profile");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Account deleted",
+        description: "Your account has been permanently deleted. We're sorry to see you go.",
+      });
+      
+      // Clear user data and redirect to home
+      logout();
+      setLocation("/");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete account. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleProfileSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     updateProfileMutation.mutate(profileData);
+  };
+
+  const handleDeleteAccount = () => {
+    deleteAccountMutation.mutate();
   };
 
   if (!user) {
@@ -258,9 +298,49 @@ const SettingsPage = () => {
                 Privacy Settings
               </Button>
               <Separator />
-              <Button variant="destructive" className="w-full">
-                Delete Account
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="destructive" 
+                    className="w-full"
+                    disabled={deleteAccountMutation.isPending}
+                  >
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    {deleteAccountMutation.isPending ? "Deleting..." : "Delete Account"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-red-500" />
+                      Delete Account
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-left">
+                      <strong className="text-red-600">This action cannot be undone.</strong>
+                      <br /><br />
+                      Deleting your account will permanently remove:
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li>Your profile and personal information</li>
+                        <li>All your posts and comments</li>
+                        <li>Your event attendance history</li>
+                        <li>Your purchase history and tickets</li>
+                        <li>All associated data</li>
+                      </ul>
+                      <br />
+                      Are you absolutely sure you want to delete your account?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteAccount}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Yes, Delete My Account
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </CardContent>
           </Card>
 
