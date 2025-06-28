@@ -890,13 +890,7 @@ export default function AdminSimplePage() {
             <TabsContent value="essential" className="space-y-4">
               <div className="grid gap-4">
                 <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="outline" className="bg-red-100 text-red-800">ESSENTIAL</Badge>
-                    <Label htmlFor="ticketName">📝 Name</Label>
-                  </div>
-                  <div className="text-xs text-muted-foreground mb-1">
-                    e.g. General admission, Adult, Kid, VIP, Press
-                  </div>
+                  <Label htmlFor="ticketName">Name</Label>
                   <Input
                     id="ticketName"
                     value={ticketFormData.name}
@@ -905,33 +899,20 @@ export default function AdminSimplePage() {
                   />
                 </div>
                 
+                <div className="space-y-2">
+                  <Label htmlFor="ticketDescription">Description</Label>
+                  <Textarea
+                    id="ticketDescription"
+                    value={ticketFormData.description}
+                    onChange={(e) => setTicketFormData({...ticketFormData, description: e.target.value})}
+                    placeholder="Describe what this ticket includes or any special instructions"
+                    rows={3}
+                  />
+                </div>
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Badge variant="outline" className="bg-red-100 text-red-800">ESSENTIAL</Badge>
-                      <Label htmlFor="ticketQuantity">🔢 Quantity</Label>
-                    </div>
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Availability for each date of the event
-                    </div>
-                    <Input
-                      id="ticketQuantity"
-                      type="number"
-                      min="1"
-                      value={ticketFormData.quantity}
-                      onChange={(e) => setTicketFormData({...ticketFormData, quantity: e.target.value})}
-                      placeholder="100"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Badge variant="outline" className="bg-red-100 text-red-800">ESSENTIAL</Badge>
-                      <Label htmlFor="ticketPrice">💰 Price</Label>
-                    </div>
-                    <div className="text-xs text-muted-foreground mb-1">
-                      The price per unit
-                    </div>
+                    <Label htmlFor="ticketPrice">Price</Label>
                     <div className="flex items-center">
                       <span className="mr-2">$</span>
                       <Input
@@ -945,30 +926,22 @@ export default function AdminSimplePage() {
                       />
                     </div>
                   </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="ticketQuantity">Quantity</Label>
+                    <Input
+                      id="ticketQuantity"
+                      type="number"
+                      min="1"
+                      value={ticketFormData.quantity}
+                      onChange={(e) => setTicketFormData({...ticketFormData, quantity: e.target.value})}
+                      placeholder="100"
+                    />
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="outline" className="bg-red-100 text-red-800">ESSENTIAL</Badge>
-                    <Label htmlFor="ticketDescription">📝 Description</Label>
-                  </div>
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Essential information about this ticket type (recommended)
-                  </div>
-                  <Textarea
-                    id="ticketDescription"
-                    value={ticketFormData.description}
-                    onChange={(e) => setTicketFormData({...ticketFormData, description: e.target.value})}
-                    placeholder="Describe what this ticket includes or any special instructions"
-                    rows={4}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="outline" className="bg-red-100 text-red-800">ESSENTIAL</Badge>
-                    <Label htmlFor="ticketStatus">🔄 Status</Label>
-                  </div>
+                  <Label htmlFor="ticketStatus">Status</Label>
                   <Select 
                     value={ticketFormData.status}
                     onValueChange={(value) => setTicketFormData({...ticketFormData, status: value})}
@@ -982,14 +955,127 @@ export default function AdminSimplePage() {
                     </SelectContent>
                   </Select>
                 </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="startDate">Start Date</Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={ticketFormData.salesStartDate}
+                      onChange={(e) => setTicketFormData({...ticketFormData, salesStartDate: e.target.value})}
+                      placeholder="mm/dd/yyyy"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="startTime">Start Time</Label>
+                    <Input
+                      id="startTime"
+                      type="time"
+                      value={ticketFormData.salesStartTime}
+                      onChange={(e) => setTicketFormData({...ticketFormData, salesStartTime: e.target.value})}
+                      placeholder="--:-- --"
+                    />
+                  </div>
+                </div>
               </div>
             </TabsContent>
             
             <TabsContent value="advanced" className="space-y-4">
-              <div className="bg-slate-50 p-4 rounded-lg border-l-4 border-blue-500 mb-4">
-                <h4 className="font-semibold text-blue-900 mb-1">Advanced Configuration</h4>
-                <p className="text-sm text-blue-700">Configure detailed ticket settings, sales periods, and purchase restrictions.</p>
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="advancedName">Name</Label>
+                  <Input
+                    id="advancedName"
+                    value={ticketFormData.name}
+                    onChange={(e) => setTicketFormData({...ticketFormData, name: e.target.value})}
+                    placeholder="Enter ticket name"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="advancedDescription">Description</Label>
+                  <Textarea
+                    id="advancedDescription"
+                    value={ticketFormData.description}
+                    onChange={(e) => setTicketFormData({...ticketFormData, description: e.target.value})}
+                    placeholder="Describe what this ticket includes or any special instructions"
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="advancedPrice">Price</Label>
+                    <div className="flex items-center">
+                      <span className="mr-2">$</span>
+                      <Input
+                        id="advancedPrice"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={ticketFormData.price}
+                        onChange={(e) => setTicketFormData({...ticketFormData, price: e.target.value})}
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="advancedQuantity">Quantity</Label>
+                    <Input
+                      id="advancedQuantity"
+                      type="number"
+                      min="1"
+                      value={ticketFormData.quantity}
+                      onChange={(e) => setTicketFormData({...ticketFormData, quantity: e.target.value})}
+                      placeholder="100"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="advancedStatus">Status</Label>
+                  <Select 
+                    value={ticketFormData.status}
+                    onValueChange={(value) => setTicketFormData({...ticketFormData, status: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="endDate">End Date</Label>
+                    <Input
+                      id="endDate"
+                      type="date"
+                      value={ticketFormData.salesEndDate}
+                      onChange={(e) => setTicketFormData({...ticketFormData, salesEndDate: e.target.value})}
+                      placeholder="mm/dd/yyyy"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="endTime">End Time</Label>
+                    <Input
+                      id="endTime"
+                      type="time"
+                      value={ticketFormData.salesEndTime}
+                      onChange={(e) => setTicketFormData({...ticketFormData, salesEndTime: e.target.value})}
+                      placeholder="--:-- --"
+                    />
+                  </div>
+                </div>
               </div>
+            </TabsContent>
               
               <div className="grid gap-4">
                 <div className="space-y-2">
