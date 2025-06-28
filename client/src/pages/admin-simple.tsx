@@ -891,8 +891,8 @@ export default function AdminSimplePage() {
               <div className="grid gap-4">
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Badge variant="outline" className="bg-pink-950 text-white">REQ</Badge>
-                    <Label htmlFor="ticketName">Name</Label>
+                    <Badge variant="outline" className="bg-red-100 text-red-800">ESSENTIAL</Badge>
+                    <Label htmlFor="ticketName">📝 Name</Label>
                   </div>
                   <div className="text-xs text-muted-foreground mb-1">
                     e.g. General admission, Adult, Kid, VIP, Press
@@ -908,8 +908,8 @@ export default function AdminSimplePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
-                      <Badge variant="outline" className="bg-pink-950 text-white">REQ</Badge>
-                      <Label htmlFor="ticketQuantity">Quantity</Label>
+                      <Badge variant="outline" className="bg-red-100 text-red-800">ESSENTIAL</Badge>
+                      <Label htmlFor="ticketQuantity">🔢 Quantity</Label>
                     </div>
                     <div className="text-xs text-muted-foreground mb-1">
                       Availability for each date of the event
@@ -926,8 +926,8 @@ export default function AdminSimplePage() {
                   
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
-                      <Badge variant="outline" className="bg-pink-950 text-white">REQ</Badge>
-                      <Label htmlFor="ticketPrice">Price</Label>
+                      <Badge variant="outline" className="bg-red-100 text-red-800">ESSENTIAL</Badge>
+                      <Label htmlFor="ticketPrice">💰 Price</Label>
                     </div>
                     <div className="text-xs text-muted-foreground mb-1">
                       The price per unit
@@ -949,11 +949,11 @@ export default function AdminSimplePage() {
                 
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Badge variant="outline">OPT</Badge>
-                    <Label htmlFor="ticketDescription">Description</Label>
+                    <Badge variant="outline" className="bg-red-100 text-red-800">ESSENTIAL</Badge>
+                    <Label htmlFor="ticketDescription">📝 Description</Label>
                   </div>
                   <div className="text-xs text-muted-foreground mb-1">
-                    Provide more information about this ticket type
+                    Essential information about this ticket type (recommended)
                   </div>
                   <Textarea
                     id="ticketDescription"
@@ -966,8 +966,8 @@ export default function AdminSimplePage() {
                 
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Badge variant="outline">OPT</Badge>
-                    <Label htmlFor="ticketStatus">Status</Label>
+                    <Badge variant="outline" className="bg-red-100 text-red-800">ESSENTIAL</Badge>
+                    <Label htmlFor="ticketStatus">🔄 Status</Label>
                   </div>
                   <Select 
                     value={ticketFormData.status}
