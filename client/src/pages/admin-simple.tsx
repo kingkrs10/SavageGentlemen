@@ -873,8 +873,18 @@ export default function AdminSimplePage() {
           
           <Tabs value={ticketFormData.ticketType} onValueChange={(value) => setTicketFormData({...ticketFormData, ticketType: value})}>
             <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="essential">Essential</TabsTrigger>
-              <TabsTrigger value="advanced">Advanced</TabsTrigger>
+              <TabsTrigger value="essential" className="font-medium">
+                <div className="flex flex-col items-center space-y-1">
+                  <span>Basics</span>
+                  <span className="text-xs text-muted-foreground">Essential fields</span>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger value="advanced" className="font-medium">
+                <div className="flex flex-col items-center space-y-1">
+                  <span>Advanced</span>
+                  <span className="text-xs text-muted-foreground">Extra options</span>
+                </div>
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="essential" className="space-y-4">
@@ -976,10 +986,15 @@ export default function AdminSimplePage() {
             </TabsContent>
             
             <TabsContent value="advanced" className="space-y-4">
+              <div className="bg-slate-50 p-4 rounded-lg border-l-4 border-blue-500 mb-4">
+                <h4 className="font-semibold text-blue-900 mb-1">Advanced Configuration</h4>
+                <p className="text-sm text-blue-700">Configure detailed ticket settings, sales periods, and purchase restrictions.</p>
+              </div>
+              
               <div className="grid gap-4">
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Badge variant="outline">OPT</Badge>
+                    <Badge variant="outline" className="bg-blue-100 text-blue-800">ADV</Badge>
                     <Label htmlFor="priceType">Price type</Label>
                   </div>
                   <div className="text-xs text-muted-foreground mb-1">
@@ -993,10 +1008,10 @@ export default function AdminSimplePage() {
                       <SelectValue placeholder="Select price type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="standard">Standard</SelectItem>
-                      <SelectItem value="early-bird">Early Bird</SelectItem>
-                      <SelectItem value="discount">Discount</SelectItem>
-                      <SelectItem value="premium">Premium</SelectItem>
+                      <SelectItem value="standard">🎫 Standard</SelectItem>
+                      <SelectItem value="early-bird">🐦 Early Bird</SelectItem>
+                      <SelectItem value="discount">💰 Discount</SelectItem>
+                      <SelectItem value="premium">⭐ Premium</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1004,11 +1019,11 @@ export default function AdminSimplePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
-                      <Badge variant="outline">OPT</Badge>
+                      <Badge variant="outline" className="bg-blue-100 text-blue-800">ADV</Badge>
                       <Label htmlFor="minQuantityPerOrder">Min quantity per order</Label>
                     </div>
                     <div className="text-xs text-muted-foreground mb-1">
-                      Minimum purchase quantity per order
+                      Minimum purchase quantity per order (prevents single ticket purchases)
                     </div>
                     <Input
                       id="minQuantityPerOrder"
@@ -1022,11 +1037,11 @@ export default function AdminSimplePage() {
                   
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
-                      <Badge variant="outline">OPT</Badge>
+                      <Badge variant="outline" className="bg-blue-100 text-blue-800">ADV</Badge>
                       <Label htmlFor="maxQuantityPerOrder">Max quantity per order</Label>
                     </div>
                     <div className="text-xs text-muted-foreground mb-1">
-                      Maximum purchase quantity per order
+                      Maximum purchase quantity per order (prevents bulk buying)
                     </div>
                     <Input
                       id="maxQuantityPerOrder"
@@ -1041,7 +1056,7 @@ export default function AdminSimplePage() {
                 
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Badge variant="outline">OPT</Badge>
+                    <Badge variant="outline" className="bg-blue-100 text-blue-800">ADV</Badge>
                     <Label htmlFor="displayRemainingQuantity">Display remaining quantity</Label>
                   </div>
                   <div className="text-xs text-muted-foreground mb-1">
@@ -1063,7 +1078,7 @@ export default function AdminSimplePage() {
                 
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Badge variant="outline">OPT</Badge>
+                    <Badge variant="outline" className="bg-blue-100 text-blue-800">ADV</Badge>
                     <Label htmlFor="payWhatYouCan">Pay What You Can</Label>
                   </div>
                   <div className="text-xs text-muted-foreground mb-1">
@@ -1085,8 +1100,11 @@ export default function AdminSimplePage() {
                 
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Badge variant="outline">OPT</Badge>
-                    <Label>Sales time frame</Label>
+                    <Badge variant="outline" className="bg-blue-100 text-blue-800">ADV</Badge>
+                    <Label>📅 Sales time frame</Label>
+                  </div>
+                  <div className="text-xs text-muted-foreground mb-2">
+                    Schedule when tickets become available and when sales end
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
