@@ -476,7 +476,7 @@ export type InsertTicket = z.infer<typeof insertTicketSchema>;
 export const ticketPurchases = pgTable("ticket_purchases", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
-  ticketId: integer("ticket_id").notNull(),
+  ticketId: integer("ticket_id"), // Made nullable to support free tickets without specific ticket types
   eventId: integer("event_id").notNull(),
   orderId: integer("order_id").notNull(),
   purchaseDate: timestamp("purchase_date").defaultNow().notNull(),
@@ -502,6 +502,8 @@ export const insertTicketPurchaseSchema = createInsertSchema(ticketPurchases).om
   scanned: true,
   firstScanAt: true,
   lastScanAt: true,
+}).extend({
+  ticketId: z.number().nullable(), // Explicitly make ticketId nullable for free tickets
 });
 
 export type TicketPurchase = typeof ticketPurchases.$inferSelect;
