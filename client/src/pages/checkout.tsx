@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from 'wouter';
 import PayPalButton from '@/components/PayPalButton';
@@ -16,7 +18,7 @@ import SimpleStripeCheckout from '@/components/SimpleStripeCheckout';
 import { apiRequest } from "@/lib/queryClient";
 import BrandLoader from '@/components/ui/BrandLoader';
 import { User } from '@/lib/types';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Mail } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getAuthHeaders, getCurrentUser as getAuthUserData } from '@/lib/auth-utils';
 
@@ -36,8 +38,17 @@ export default function Checkout() {
   const [user, setUser] = useState<User | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState('card'); // Default to credit card
+  const [guestEmail, setGuestEmail] = useState('');
+  const [showGuestEmailForm, setShowGuestEmailForm] = useState(false);
+  const [emailError, setEmailError] = useState('');
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  
+  // Helper function to validate email
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
   
   // Fetch current user
   useEffect(() => {
@@ -397,6 +408,12 @@ export default function Checkout() {
                       return;
                     }
                     
+                    // Check if user is a guest and needs email collection
+                    if (user.isGuest && !user.email && !guestEmail) {
+                      setShowGuestEmailForm(true);
+                      return;
+                    }
+                    
                     if (!eventId || !ticketId) {
                       toast({
                         title: "Invalid Ticket",
@@ -408,12 +425,14 @@ export default function Checkout() {
                     
                     setProcessingFreeTicket(true);
                     try {
-                      // Prepare payload once
+                      // Prepare payload once - include guest email if available
                       const freeTicketPayload = {
                         eventId: eventId,
                         eventTitle: eventTitle,
                         ticketId: ticketId,
-                        ticketName: ticketName
+                        ticketName: ticketName,
+                        // Include guest email for ticket delivery
+                        guestEmail: user.isGuest ? (guestEmail || user.email) : undefined
                       };
                       
                       // Get standardized authentication headers from our utility
