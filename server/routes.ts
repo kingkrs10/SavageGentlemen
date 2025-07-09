@@ -1,6 +1,7 @@
 import express, { type Express, Request, Response, NextFunction } from "express";
 import { User } from "@shared/schema";
 import { errorHandler, successResponse, asyncHandler, AppError, ValidationError, AuthenticationError } from "./middleware/error-handler";
+import { performanceMiddleware, getHealthStatus } from "./middleware/performance";
 
 // Extend the Express Request interface to include user property
 declare global {
@@ -93,9 +94,17 @@ const upload = multer({
 // Import the configured admin instance from there
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add performance monitoring middleware
+  app.use(performanceMiddleware);
+  
   // API prefix for all routes
   const router = express.Router();
   app.use("/api", router);
+  
+  // Health check endpoint
+  router.get('/health', (req: Request, res: Response) => {
+    res.json(getHealthStatus());
+  });
   
   // Register analytics router
   router.use("/analytics", analyticsRouter);
