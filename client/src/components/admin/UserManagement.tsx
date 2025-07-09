@@ -19,7 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { apiRequest } from '@/lib/queryClient';
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface User {
@@ -71,9 +71,40 @@ const UserManagement = () => {
       setUpdating(null);
     }
   });
+
+  // Mutation for deleting user
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const response = await apiRequest('DELETE', `/api/admin/users/${userId}`);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Success",
+        description: data.message || "User deleted successfully",
+      });
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+    },
+    onError: (error: any) => {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete user",
+        variant: "destructive"
+      });
+    }
+  });
   
   const handleRoleChange = (userId: number, newRole: string) => {
     updateUserRoleMutation.mutate({ userId, role: newRole });
+  };
+
+  const handleDeleteUser = (userId: number, username: string) => {
+    if (window.confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone and will remove all associated data including tickets, orders, and posts.`)) {
+      deleteUserMutation.mutate(userId);
+    }
   };
   
   const formatDate = (dateString: string) => {
@@ -155,27 +186,45 @@ const UserManagement = () => {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {updating === user.id ? (
-                    <Button size="sm" variant="outline" disabled>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Updating
-                    </Button>
-                  ) : (
-                    <Select 
-                      value={user.role} 
-                      onValueChange={(value) => handleRoleChange(user.id, value)}
-                      disabled={user.id === 1} // Protect the main admin user
-                    >
-                      <SelectTrigger className="w-[150px]">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">User</SelectItem>
-                        <SelectItem value="moderator">Moderator</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
+                  <div className="flex items-center space-x-2">
+                    {updating === user.id ? (
+                      <Button size="sm" variant="outline" disabled>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Updating
+                      </Button>
+                    ) : (
+                      <Select 
+                        value={user.role} 
+                        onValueChange={(value) => handleRoleChange(user.id, value)}
+                        disabled={user.id === 1} // Protect the main admin user
+                      >
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">User</SelectItem>
+                          <SelectItem value="moderator">Moderator</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                    
+                    {/* Delete button - protected for main admin */}
+                    {user.id !== 1 && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDeleteUser(user.id, user.username)}
+                        disabled={deleteUserMutation.isPending}
+                      >
+                        {deleteUserMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

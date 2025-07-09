@@ -131,20 +131,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
   
-  // Serve uploaded files
-  // Serve static files (uploads) with proper headers
+  // Serve uploaded files with comprehensive MIME type handling
   app.use('/uploads', express.static(uploadsDir, {
+    maxAge: '1y',
+    etag: true,
+    lastModified: true,
+    dotfiles: 'deny',
+    index: false,
     setHeaders: (res, filePath) => {
-      // Set proper MIME types for images
+      // Enhanced MIME type detection for all image and video formats
       const ext = path.extname(filePath).toLowerCase();
-      if (ext === '.png') res.setHeader('Content-Type', 'image/png');
-      else if (ext === '.jpg' || ext === '.jpeg') res.setHeader('Content-Type', 'image/jpeg');
-      else if (ext === '.gif') res.setHeader('Content-Type', 'image/gif');
-      else if (ext === '.webp') res.setHeader('Content-Type', 'image/webp');
+      switch (ext) {
+        case '.mp4':
+          res.setHeader('Content-Type', 'video/mp4');
+          break;
+        case '.webm':
+          res.setHeader('Content-Type', 'video/webm');
+          break;
+        case '.jpeg':
+        case '.jpg':
+          res.setHeader('Content-Type', 'image/jpeg');
+          break;
+        case '.png':
+          res.setHeader('Content-Type', 'image/png');
+          break;
+        case '.gif':
+          res.setHeader('Content-Type', 'image/gif');
+          break;
+        case '.webp':
+          res.setHeader('Content-Type', 'image/webp');
+          break;
+        case '.svg':
+          res.setHeader('Content-Type', 'image/svg+xml');
+          break;
+        case '.bmp':
+          res.setHeader('Content-Type', 'image/bmp');
+          break;
+        case '.ico':
+          res.setHeader('Content-Type', 'image/x-icon');
+          break;
+        default:
+          // Let Express handle other MIME types
+          break;
+      }
       
-      // Set cache headers for better performance
-      res.setHeader('Cache-Control', 'public, max-age=86400'); // 24 hours
+      // Add CORS headers for cross-origin image requests
       res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      
+      // Optimize caching for different file types
+      if (ext.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)$/)) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); // 1 year for images
+      } else if (ext.match(/\.(mp4|webm)$/)) {
+        res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 day for videos
+      }
+    }
+  }));
+
+  // Alternative uploads route with different path structure for compatibility  
+  app.use('/api/uploads', express.static(uploadsDir, {
+    maxAge: '1y',
+    etag: true,
+    lastModified: true,
+    setHeaders: (res, filePath) => {
+      const ext = path.extname(filePath).toLowerCase();
+      if (ext.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)$/)) {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
     }
   }));
   

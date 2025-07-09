@@ -14,20 +14,19 @@ export function getNormalizedImageUrl(url: string | null): string {
 
   // Handle local upload URLs (containing uploads/)
   if (url.includes('uploads/')) {
-    // Always try the format without leading slash first as it works best
+    // Always ensure proper leading slash for static file serving
     if (url.startsWith('/uploads/')) {
-      // Remove leading slash for better compatibility
-      return url.substring(1);
+      return url; // Already has proper format
     }
     
-    // If it already starts with uploads/, return as is
+    // If it starts with uploads/, add leading slash
     if (url.startsWith('uploads/')) {
-      return url;
+      return `/${url}`;
     }
     
-    // Any other format, normalize by adding uploads/ prefix
+    // Any other format, normalize by adding /uploads/ prefix
     if (!url.startsWith('uploads/')) {
-      return 'uploads/' + url.replace(/^\/+/, ''); // Remove any leading slashes
+      return `/uploads/${url.replace(/^\/+/, '')}`;
     }
     
     return url;
