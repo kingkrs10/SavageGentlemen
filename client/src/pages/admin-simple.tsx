@@ -890,7 +890,10 @@ export default function AdminSimplePage() {
             <TabsContent value="essential" className="space-y-4">
               <div className="grid gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="ticketName">Name</Label>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">ESSENTIAL</Badge>
+                    <Label htmlFor="ticketName">Name</Label>
+                  </div>
                   <Input
                     id="ticketName"
                     value={ticketFormData.name}
@@ -900,7 +903,10 @@ export default function AdminSimplePage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="ticketDescription">Description</Label>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">ESSENTIAL</Badge>
+                    <Label htmlFor="ticketDescription">Description</Label>
+                  </div>
                   <Textarea
                     id="ticketDescription"
                     value={ticketFormData.description}
@@ -912,7 +918,10 @@ export default function AdminSimplePage() {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="ticketPrice">Price</Label>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">ESSENTIAL</Badge>
+                      <Label htmlFor="ticketPrice">Price</Label>
+                    </div>
                     <div className="flex items-center">
                       <span className="mr-2">$</span>
                       <Input
@@ -928,7 +937,10 @@ export default function AdminSimplePage() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="ticketQuantity">Quantity</Label>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">ESSENTIAL</Badge>
+                      <Label htmlFor="ticketQuantity">Quantity</Label>
+                    </div>
                     <Input
                       id="ticketQuantity"
                       type="number"
@@ -941,7 +953,10 @@ export default function AdminSimplePage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="ticketStatus">Status</Label>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">ESSENTIAL</Badge>
+                    <Label htmlFor="ticketStatus">Status</Label>
+                  </div>
                   <Select 
                     value={ticketFormData.status}
                     onValueChange={(value) => setTicketFormData({...ticketFormData, status: value})}

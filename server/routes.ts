@@ -1,5 +1,6 @@
 import express, { type Express, Request, Response, NextFunction } from "express";
 import { User } from "@shared/schema";
+import { errorHandler, successResponse, asyncHandler, AppError, ValidationError, AuthenticationError } from "./middleware/error-handler";
 
 // Extend the Express Request interface to include user property
 declare global {
@@ -4381,6 +4382,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.setHeader('Content-Type', 'application/javascript');
     res.sendFile(path.join(process.cwd(), 'public/sw.js'));
   });
+
+  // Add error handling middleware as the last middleware
+  app.use(errorHandler);
 
   return httpServer;
 }
