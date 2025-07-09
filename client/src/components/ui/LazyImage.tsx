@@ -48,9 +48,7 @@ export function LazyImage({
   const normalizedSrc = currentSrc || getNormalizedImageUrl(optimizedSrc);
   
   // For uploads, ensure we use the correct path format that works with static serving
-  const finalSrc = normalizedSrc.includes('uploads/') && !normalizedSrc.startsWith('/') 
-    ? `/${normalizedSrc}` 
-    : normalizedSrc;
+  const finalSrc = normalizedSrc;
   
   // Use Intersection Observer to detect when image is in viewport
   useEffect(() => {
