@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator for R Y T H Y M > IN< R I D D I M Tickets</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #c01c28;
+        }
+        .ticket-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .ticket-card {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            background: #fafafa;
+        }
+        .ticket-info {
+            margin-bottom: 15px;
+        }
+        .email {
+            font-weight: bold;
+            color: #c01c28;
+            margin-bottom: 5px;
+        }
+        .name {
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .qr-code {
+            margin: 15px 0;
+        }
+        .qr-data {
+            font-size: 12px;
+            color: #666;
+            word-break: break-all;
+            margin-top: 10px;
+        }
+        .generate-btn {
+            background: #c01c28;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .generate-btn:hover {
+            background: #a01520;
+        }
+        .download-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .download-btn:hover {
+            background: #218838;
+        }
+        .instructions {
+            background: #e9ecef;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .generate-all {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .generate-all button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .generate-all button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>QR Code Generator</h1>
+            <h2>R Y T H Y M > IN< R I D D I M Free Tickets</h2>
+        </div>
+        
+        <div class="instructions">
+            <h3>Instructions:</h3>
+            <ol>
+                <li>Click "Generate All QR Codes" to create all QR codes at once</li>
+                <li>Each QR code will appear in its respective ticket card</li>
+                <li>Right-click on any QR code and select "Save image as..." to download</li>
+                <li>Use these QR codes to manually send ticket emails to attendees</li>
+            </ol>
+        </div>
+        
+        <div class="generate-all">
+            <button onclick="generateAllQRCodes()">Generate All QR Codes</button>
+        </div>
+        
+        <div class="ticket-grid">
+            <div class="ticket-card">
+                <div class="ticket-info">
+                    <div class="email">guest@example.com</div>
+                    <div class="name">Guest-474</div>
+                </div>
+                <div class="qr-code" id="qr-1"></div>
+                <div class="qr-data">EVENT-7-ORDER-111-1751150339405</div>
+                <button class="download-btn" onclick="downloadQR('qr-1', 'ticket-1')">Download</button>
+            </div>
+            
+            <div class="ticket-card">
+                <div class="ticket-info">
+                    <div class="email">test@example.com</div>
+                    <div class="name">Guest-474</div>
+                </div>
+                <div class="qr-code" id="qr-2"></div>
+                <div class="qr-data">EVENT-7-ORDER-116-1751151912101</div>
+                <button class="download-btn" onclick="downloadQR('qr-2', 'ticket-2')">Download</button>
+            </div>
+            
+            <div class="ticket-card">
+                <div class="ticket-info">
+                    <div class="email">mobiletest@example.com</div>
+                    <div class="name">Guest-946</div>
+                </div>
+                <div class="qr-code" id="qr-3"></div>
+                <div class="qr-data">EVENT-7-ORDER-117-1751151956583</div>
+                <button class="download-btn" onclick="downloadQR('qr-3', 'ticket-3')">Download</button>
+            </div>
+            
+            <div class="ticket-card">
+                <div class="ticket-info">
+                    <div class="email">Ejarvis473@gmail.com</div>
+                    <div class="name">Washington</div>
+                </div>
+                <div class="qr-code" id="qr-4"></div>
+                <div class="qr-data">EVENT-4-ORDER-9-1747977982337</div>
+                <button class="download-btn" onclick="downloadQR('qr-4', 'ticket-4')">Download</button>
+            </div>
+            
+            <div class="ticket-card">
+                <div class="ticket-info">
+                    <div class="email">info@savgent.com</div>
+                    <div class="name">Krs</div>
+                </div>
+                <div class="qr-code" id="qr-5"></div>
+                <div class="qr-data">EVENT-7-ORDER-120-1751152616447</div>
+                <button class="download-btn" onclick="downloadQR('qr-5', 'ticket-5')">Download</button>
+            </div>
+            
+            <div class="ticket-card">
+                <div class="ticket-info">
+                    <div class="email">zaratuu@gmail.com</div>
+                    <div class="name">Zara😍🥰</div>
+                </div>
+                <div class="qr-code" id="qr-6"></div>
+                <div class="qr-data">EVENT-7-ORDER-124-1751154683602</div>
+                <button class="download-btn" onclick="downloadQR('qr-6', 'ticket-6')">Download</button>
+            </div>
+            
+            <div class="ticket-card">
+                <div class="ticket-info">
+                    <div class="email">275mlkdrive@gmail.com</div>
+                    <div class="name">Lovely</div>
+                </div>
+                <div class="qr-code" id="qr-7"></div>
+                <div class="qr-data">EVENT-7-ORDER-134-1752028058012</div>
+                <button class="download-btn" onclick="downloadQR('qr-7', 'ticket-7')">Download</button>
+            </div>
+            
+            <div class="ticket-card">
+                <div class="ticket-info">
+                    <div class="email">ayshz.coleman@icloud.com</div>
+                    <div class="name">Ayshz</div>
+                </div>
+                <div class="qr-code" id="qr-8"></div>
+                <div class="qr-data">EVENT-7-ORDER-133-1752021442314</div>
+                <button class="download-btn" onclick="downloadQR('qr-8', 'ticket-8')">Download</button>
+            </div>
+            
+            <div class="ticket-card">
+                <div class="ticket-info">
+                    <div class="email">jueustache@yahoo.com</div>
+                    <div class="name">Miss Kati</div>
+                </div>
+                <div class="qr-code" id="qr-9"></div>
+                <div class="qr-data">EVENT-7-ORDER-126-1752003575141</div>
+                <button class="download-btn" onclick="downloadQR('qr-9', 'ticket-9')">Download</button>
+            </div>
+            
+            <div class="ticket-card">
+                <div class="ticket-info">
+                    <div class="email">carlottallbrowne@gmail.com</div>
+                    <div class="name">Cking</div>
+                </div>
+                <div class="qr-code" id="qr-10"></div>
+                <div class="qr-data">EVENT-7-ORDER-125-1751987960123</div>
+                <button class="download-btn" onclick="downloadQR('qr-10', 'ticket-10')">Download</button>
+            </div>
+            
+            <div class="ticket-card">
+                <div class="ticket-info">
+                    <div class="email">alexiasimongy@gmail.com</div>
+                    <div class="name">Lexi0125</div>
+                </div>
+                <div class="qr-code" id="qr-11"></div>
+                <div class="qr-data">EVENT-7-ORDER-127-1752008373343</div>
+                <button class="download-btn" onclick="downloadQR('qr-11', 'ticket-11')">Download</button>
+            </div>
+            
+            <div class="ticket-card">
+                <div class="ticket-info">
+                    <div class="email">spyctrini@yahoo.com</div>
+                    <div class="name">Vicky (Ticket 1)</div>
+                </div>
+                <div class="qr-code" id="qr-12"></div>
+                <div class="qr-data">EVENT-7-ORDER-128-1752012242457</div>
+                <button class="download-btn" onclick="downloadQR('qr-12', 'ticket-12')">Download</button>
+            </div>
+            
+            <div class="ticket-card">
+                <div class="ticket-info">
+                    <div class="email">spyctrini@yahoo.com</div>
+                    <div class="name">Vicky (Ticket 2)</div>
+                </div>
+                <div class="qr-code" id="qr-13"></div>
+                <div class="qr-data">EVENT-7-ORDER-129-1752012273581</div>
+                <button class="download-btn" onclick="downloadQR('qr-13', 'ticket-13')">Download</button>
+            </div>
+            
+            <div class="ticket-card">
+                <div class="ticket-info">
+                    <div class="email">spyctrini@yahoo.com</div>
+                    <div class="name">Vicky (Ticket 3)</div>
+                </div>
+                <div class="qr-code" id="qr-14"></div>
+                <div class="qr-data">EVENT-7-ORDER-130-1752012275513</div>
+                <button class="download-btn" onclick="downloadQR('qr-14', 'ticket-14')">Download</button>
+            </div>
+            
+            <div class="ticket-card">
+                <div class="ticket-info">
+                    <div class="email">spyctrini@yahoo.com</div>
+                    <div class="name">Vicky (Ticket 4)</div>
+                </div>
+                <div class="qr-code" id="qr-15"></div>
+                <div class="qr-data">EVENT-7-ORDER-131-1752012281843</div>
+                <button class="download-btn" onclick="downloadQR('qr-15', 'ticket-15')">Download</button>
+            </div>
+            
+            <div class="ticket-card">
+                <div class="ticket-info">
+                    <div class="email">spyctrini@yahoo.com</div>
+                    <div class="name">Vicky (Ticket 5)</div>
+                </div>
+                <div class="qr-code" id="qr-16"></div>
+                <div class="qr-data">EVENT-7-ORDER-132-1752012410977</div>
+                <button class="download-btn" onclick="downloadQR('qr-16', 'ticket-16')">Download</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ticketData = [
+            'EVENT-7-ORDER-111-1751150339405',
+            'EVENT-7-ORDER-116-1751151912101',
+            'EVENT-7-ORDER-117-1751151956583',
+            'EVENT-4-ORDER-9-1747977982337',
+            'EVENT-7-ORDER-120-1751152616447',
+            'EVENT-7-ORDER-124-1751154683602',
+            'EVENT-7-ORDER-134-1752028058012',
+            'EVENT-7-ORDER-133-1752021442314',
+            'EVENT-7-ORDER-126-1752003575141',
+            'EVENT-7-ORDER-125-1751987960123',
+            'EVENT-7-ORDER-127-1752008373343',
+            'EVENT-7-ORDER-128-1752012242457',
+            'EVENT-7-ORDER-129-1752012273581',
+            'EVENT-7-ORDER-130-1752012275513',
+            'EVENT-7-ORDER-131-1752012281843',
+            'EVENT-7-ORDER-132-1752012410977'
+        ];
+
+        function generateAllQRCodes() {
+            ticketData.forEach((data, index) => {
+                const qrId = `qr-${index + 1}`;
+                const element = document.getElementById(qrId);
+                element.innerHTML = ''; // Clear existing content
+                
+                QRCode.toCanvas(element, data, {
+                    width: 200,
+                    height: 200,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    }
+                }, function(error) {
+                    if (error) {
+                        console.error('QR Code generation failed:', error);
+                        element.innerHTML = '<p>Error generating QR code</p>';
+                    }
+                });
+            });
+        }
+
+        function downloadQR(qrId, filename) {
+            const canvas = document.querySelector(`#${qrId} canvas`);
+            if (canvas) {
+                const link = document.createElement('a');
+                link.download = `${filename}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            } else {
+                alert('Please generate QR codes first');
+            }
+        }
+    </script>
+</body>
+</html>
