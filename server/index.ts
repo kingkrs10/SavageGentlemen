@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cors from 'cors';
+import path from 'path';
 import { securityHeaders, auditLogger, sanitizeInput } from './security/middleware';
 
 const app = express();
@@ -40,6 +41,76 @@ app.use(auditLogger);
 // Parse JSON and URL-encoded bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Static file serving for uploads directory with proper MIME types and caching
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
+  maxAge: '1y',
+  etag: true,
+  lastModified: true,
+  dotfiles: 'deny',
+  index: false,
+  setHeaders: (res, path) => {
+    // Set proper MIME types for different file types
+    if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    } else if (path.endsWith('.png')) {
+      res.setHeader('Content-Type', 'image/png');
+    } else if (path.endsWith('.gif')) {
+      res.setHeader('Content-Type', 'image/gif');
+    } else if (path.endsWith('.webp')) {
+      res.setHeader('Content-Type', 'image/webp');
+    } else if (path.endsWith('.svg')) {
+      res.setHeader('Content-Type', 'image/svg+xml');
+    } else if (path.endsWith('.mp4')) {
+      res.setHeader('Content-Type', 'video/mp4');
+    } else if (path.endsWith('.webm')) {
+      res.setHeader('Content-Type', 'video/webm');
+    }
+    
+    // Set CORS headers for cross-origin requests
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    // Set cache headers for optimal performance
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  }
+}));
+
+// Alternative uploads route for API compatibility
+app.use('/api/uploads', express.static(path.join(process.cwd(), 'uploads'), {
+  maxAge: '1y',
+  etag: true,
+  lastModified: true,
+  dotfiles: 'deny',
+  index: false,
+  setHeaders: (res, path) => {
+    // Set proper MIME types for different file types
+    if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    } else if (path.endsWith('.png')) {
+      res.setHeader('Content-Type', 'image/png');
+    } else if (path.endsWith('.gif')) {
+      res.setHeader('Content-Type', 'image/gif');
+    } else if (path.endsWith('.webp')) {
+      res.setHeader('Content-Type', 'image/webp');
+    } else if (path.endsWith('.svg')) {
+      res.setHeader('Content-Type', 'image/svg+xml');
+    } else if (path.endsWith('.mp4')) {
+      res.setHeader('Content-Type', 'video/mp4');
+    } else if (path.endsWith('.webm')) {
+      res.setHeader('Content-Type', 'video/webm');
+    }
+    
+    // Set CORS headers for cross-origin requests
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    // Set cache headers for optimal performance
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  }
+}));
 
 app.use((req, res, next) => {
   const start = Date.now();
