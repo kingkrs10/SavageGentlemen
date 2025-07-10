@@ -1,8 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getNormalizedImageUrl } from "@/lib/utils/image-utils";
-import { getOptimizedImageUrl, getDeviceInfo } from "@/lib/utils/image-compression";
-import { measureImageLoad } from "@/lib/utils/performance-monitor";
 
 interface LazyImageProps {
   src: string;
@@ -42,15 +39,10 @@ export function LazyImage({
   const [attemptedFallback, setAttemptedFallback] = useState(false);
   const [currentSrc, setCurrentSrc] = useState<string | null>(null);
   
-  // Apply adaptive compression and normalize the image URL
-  const deviceInfo = adaptive ? getDeviceInfo() : null;
-  const optimizedSrc = adaptive && deviceInfo ? getOptimizedImageUrl(src, context, deviceInfo) : src;
+  // Determine the final source URL to use
+  let finalSrc = currentSrc || src;
   
-  // Simplified approach: use currentSrc if set, otherwise use original src
-  // This bypasses complex normalization that might be causing issues
-  let finalSrc = currentSrc || optimizedSrc;
-  
-  // Simple fix: ensure uploads have proper leading slash
+  // Fix uploads URLs to ensure proper leading slash
   if (finalSrc.includes('uploads/') && !finalSrc.startsWith('/')) {
     finalSrc = `/${finalSrc}`;
   }
@@ -93,14 +85,7 @@ export function LazyImage({
   const onLoad = () => {
     // Only show logs in development to avoid console spam in production
     if (process.env.NODE_ENV !== 'production') {
-      console.log("Image loaded successfully:", normalizedSrc);
-    }
-    
-    // Track performance metrics for adaptive compression
-    if (adaptive && deviceInfo) {
-      measureImageLoad(normalizedSrc, context, true).catch(() => {
-        // Silently handle measurement errors
-      });
+      console.log("Image loaded successfully:", finalSrc);
     }
     
     setIsLoaded(true);
@@ -148,7 +133,6 @@ export function LazyImage({
   // Log image source for debugging
   if (process.env.NODE_ENV === 'development') {
     console.log('LazyImage original src:', src);
-    console.log('LazyImage optimized src:', optimizedSrc);
     console.log('LazyImage final src:', finalSrc);
   }
 
