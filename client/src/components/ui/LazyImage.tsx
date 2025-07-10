@@ -48,7 +48,15 @@ export function LazyImage({
   const normalizedSrc = currentSrc || getNormalizedImageUrl(optimizedSrc);
   
   // For uploads, ensure we use the correct path format that works with static serving
-  const finalSrc = normalizedSrc;
+  // Force the leading slash for all uploads to ensure proper static file serving
+  let finalSrc = normalizedSrc;
+  if (finalSrc.includes('uploads/') && !finalSrc.startsWith('/uploads/')) {
+    if (finalSrc.startsWith('uploads/')) {
+      finalSrc = `/${finalSrc}`;
+    } else {
+      finalSrc = `/uploads/${finalSrc.replace(/^\/+/, '').replace(/^uploads\//, '')}`;
+    }
+  }
   
   // Use Intersection Observer to detect when image is in viewport
   useEffect(() => {
@@ -105,7 +113,7 @@ export function LazyImage({
   const onError = () => {
     // Only show error in development to avoid console spam in production
     if (process.env.NODE_ENV !== 'production') {
-      console.error("Error loading image:", normalizedSrc);
+      console.error("Error loading image:", finalSrc);
     }
     
     // Try alternative URL formats if this is a local upload and we haven't tried fallbacks yet
@@ -144,6 +152,7 @@ export function LazyImage({
   if (process.env.NODE_ENV === 'development') {
     console.log('LazyImage original src:', src);
     console.log('LazyImage normalized src:', normalizedSrc);
+    console.log('LazyImage final src:', finalSrc);
   }
 
   return (

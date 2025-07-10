@@ -25,11 +25,7 @@ export function getNormalizedImageUrl(url: string | null): string {
     }
     
     // Any other format, normalize by adding /uploads/ prefix
-    if (!url.startsWith('uploads/')) {
-      return `/uploads/${url.replace(/^\/+/, '')}`;
-    }
-    
-    return url;
+    return `/uploads/${url.replace(/^\/+/, '')}`;
   }
 
   // Handle Google Drive file URLs
