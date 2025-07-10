@@ -30,7 +30,10 @@ import {
   insertOrderSchema,
   insertOrderItemSchema,
   insertSponsoredContentSchema,
-  loginSchema
+  loginSchema,
+  insertAiAssistantConfigSchema,
+  insertAiChatSessionSchema,
+  insertAiChatMessageSchema
 } from "@shared/schema";
 import { validateRequest, authRateLimiter } from "./security/middleware";
 import { ZodError } from "zod";
@@ -4446,6 +4449,204 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.setHeader('Content-Type', 'application/javascript');
     res.sendFile(path.join(process.cwd(), 'public/sw.js'));
   });
+
+  // AI Assistant routes
+  app.post('/api/ai/configs', authenticateUser, asyncHandler(async (req, res) => {
+    const validatedData = insertAiAssistantConfigSchema.parse(req.body);
+    
+    // Encrypt API key before storing
+    if (validatedData.apiKey) {
+      validatedData.apiKey = Buffer.from(validatedData.apiKey).toString('base64');
+    }
+    
+    const config = await storage.createAiAssistantConfig({
+      ...validatedData,
+      userId: req.user!.id,
+    });
+    
+    // Don't return the API key in the response
+    const { apiKey, ...configWithoutKey } = config;
+    res.json(successResponse(configWithoutKey));
+  }));
+
+  app.get('/api/ai/configs', authenticateUser, asyncHandler(async (req, res) => {
+    const configs = await storage.getAiAssistantConfigsByUserId(req.user!.id);
+    
+    // Remove API keys from response
+    const configsWithoutKeys = configs.map(({ apiKey, ...config }) => config);
+    res.json(successResponse(configsWithoutKeys));
+  }));
+
+  app.put('/api/ai/configs/:id', authenticateUser, asyncHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    const validatedData = insertAiAssistantConfigSchema.partial().parse(req.body);
+    
+    // Encrypt API key if provided
+    if (validatedData.apiKey) {
+      validatedData.apiKey = Buffer.from(validatedData.apiKey).toString('base64');
+    }
+    
+    const config = await storage.updateAiAssistantConfig(id, validatedData);
+    
+    if (!config) {
+      throw new AppError('AI Assistant configuration not found', 404);
+    }
+    
+    // Don't return the API key in the response
+    const { apiKey, ...configWithoutKey } = config;
+    res.json(successResponse(configWithoutKey));
+  }));
+
+  app.delete('/api/ai/configs/:id', authenticateUser, asyncHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    const deleted = await storage.deleteAiAssistantConfig(id);
+    
+    if (!deleted) {
+      throw new AppError('AI Assistant configuration not found', 404);
+    }
+    
+    res.json(successResponse({ message: 'Configuration deleted successfully' }));
+  }));
+
+  // Chat session routes
+  app.post('/api/ai/sessions', authenticateUser, asyncHandler(async (req, res) => {
+    const validatedData = insertAiChatSessionSchema.parse(req.body);
+    
+    const session = await storage.createAiChatSession({
+      ...validatedData,
+      userId: req.user!.id,
+    });
+    
+    res.json(successResponse(session));
+  }));
+
+  app.get('/api/ai/sessions', authenticateUser, asyncHandler(async (req, res) => {
+    const sessions = await storage.getAiChatSessionsByUserId(req.user!.id);
+    res.json(successResponse(sessions));
+  }));
+
+  app.get('/api/ai/sessions/:id', authenticateUser, asyncHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    const session = await storage.getAiChatSession(id);
+    
+    if (!session) {
+      throw new AppError('Chat session not found', 404);
+    }
+    
+    res.json(successResponse(session));
+  }));
+
+  app.put('/api/ai/sessions/:id', authenticateUser, asyncHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    const validatedData = insertAiChatSessionSchema.partial().parse(req.body);
+    
+    const session = await storage.updateAiChatSession(id, validatedData);
+    
+    if (!session) {
+      throw new AppError('Chat session not found', 404);
+    }
+    
+    res.json(successResponse(session));
+  }));
+
+  app.delete('/api/ai/sessions/:id', authenticateUser, asyncHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    const deleted = await storage.deleteAiChatSession(id);
+    
+    if (!deleted) {
+      throw new AppError('Chat session not found', 404);
+    }
+    
+    res.json(successResponse({ message: 'Session deleted successfully' }));
+  }));
+
+  // Chat message routes
+  app.get('/api/ai/sessions/:sessionId/messages', authenticateUser, asyncHandler(async (req, res) => {
+    const sessionId = parseInt(req.params.sessionId);
+    const messages = await storage.getAiChatMessagesBySessionId(sessionId);
+    res.json(successResponse(messages));
+  }));
+
+  app.post('/api/ai/sessions/:sessionId/messages', authenticateUser, asyncHandler(async (req, res) => {
+    const sessionId = parseInt(req.params.sessionId);
+    const { content } = req.body;
+    
+    if (!content) {
+      throw new ValidationError('Message content is required');
+    }
+    
+    // Get the session and config
+    const session = await storage.getAiChatSession(sessionId);
+    if (!session) {
+      throw new AppError('Chat session not found', 404);
+    }
+    
+    const config = await storage.getAiAssistantConfig(session.configId);
+    if (!config) {
+      throw new AppError('AI Assistant configuration not found', 404);
+    }
+    
+    // Store user message
+    const userMessage = await storage.createAiChatMessage({
+      sessionId,
+      role: 'user',
+      content,
+    });
+    
+    try {
+      // Get conversation history
+      const conversationHistory = await storage.getAiChatMessagesBySessionId(sessionId);
+      
+      // Decrypt API key
+      const decryptedConfig = {
+        ...config,
+        apiKey: config.apiKey ? Buffer.from(config.apiKey, 'base64').toString() : undefined,
+      };
+      
+      // Send to AI service
+      const { aiService } = await import('./ai-service');
+      const aiResponse = await aiService.sendMessage(
+        conversationHistory.map(msg => ({
+          role: msg.role as 'user' | 'assistant' | 'system',
+          content: msg.content,
+        })),
+        decryptedConfig
+      );
+      
+      // Store AI response
+      const assistantMessage = await storage.createAiChatMessage({
+        sessionId,
+        role: 'assistant',
+        content: aiResponse.message,
+        tokenCount: aiResponse.tokenCount,
+        cost: aiResponse.cost,
+        processingTime: aiResponse.processingTime,
+      });
+      
+      res.json(successResponse({
+        userMessage,
+        assistantMessage,
+        processingTime: aiResponse.processingTime,
+      }));
+      
+    } catch (error) {
+      console.error('AI Assistant Error:', error);
+      throw new AppError('Failed to get AI response', 500);
+    }
+  }));
+
+  // Get available providers and models
+  app.get('/api/ai/providers', authenticateUser, asyncHandler(async (req, res) => {
+    const { aiService } = await import('./ai-service');
+    const providers = aiService.getAvailableProviders();
+    
+    const providerData = providers.map(provider => ({
+      name: provider,
+      models: aiService.getProviderModels(provider),
+    }));
+    
+    res.json(successResponse(providerData));
+  }));
 
   // Add error handling middleware as the last middleware
   app.use(errorHandler);

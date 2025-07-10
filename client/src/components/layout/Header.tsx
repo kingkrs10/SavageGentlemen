@@ -1,4 +1,4 @@
-import { Search, User, LogOut, LayoutDashboard, Ticket, Settings, MoreVertical } from "lucide-react";
+import { Search, User, LogOut, LayoutDashboard, Ticket, Settings, MoreVertical, Bot } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { User as UserType } from "@/lib/types";
 import {
@@ -115,6 +115,15 @@ const Header = ({ user: propUser, onProfileClick, onLogout }: HeaderProps) => {
                       <a href="/profile">
                         <User className="mr-2 h-4 w-4" />
                         <span className="uppercase text-xs tracking-widest">My Profile</span>
+                      </a>
+                    </DropdownMenuItem>
+                  <DropdownMenuItem 
+                      className="dark:hover:bg-white/5 dark:focus:bg-white/5 light:hover:bg-black/5 light:focus:bg-black/5"
+                      asChild
+                    >
+                      <a href="/ai-assistant">
+                        <Bot className="mr-2 h-4 w-4" />
+                        <span className="uppercase text-xs tracking-widest">AI Assistant</span>
                       </a>
                     </DropdownMenuItem>
                   <DropdownMenuSeparator className="dark:bg-white/10 light:bg-black/10" />

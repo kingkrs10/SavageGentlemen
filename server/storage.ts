@@ -48,6 +48,13 @@ import {
   // Sponsored Content schemas
   SponsoredContent,
   InsertSponsoredContent,
+  // AI Assistant schemas
+  AiAssistantConfig,
+  InsertAiAssistantConfig,
+  AiChatSession,
+  InsertAiChatSession,
+  AiChatMessage,
+  InsertAiChatMessage,
   users,
   events,
   products,
@@ -72,7 +79,11 @@ import {
   userEvents,
   dailyStats,
   // Sponsored content table
-  sponsoredContent
+  sponsoredContent,
+  // AI Assistant tables
+  aiAssistantConfigs,
+  aiChatSessions,
+  aiChatMessages
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, sql, lte, lt, isNotNull } from "drizzle-orm";
@@ -261,6 +272,26 @@ export interface IStorage {
   checkProductAvailability(productId: number, quantity: number): Promise<boolean>;
   checkVariantAvailability(variantId: number, quantity: number): Promise<boolean>;
   getLowStockProducts(threshold?: number): Promise<Product[]>;
+  
+  // AI Assistant operations
+  createAiAssistantConfig(config: InsertAiAssistantConfig): Promise<AiAssistantConfig>;
+  getAiAssistantConfigsByUserId(userId: number): Promise<AiAssistantConfig[]>;
+  getAiAssistantConfig(id: number): Promise<AiAssistantConfig | undefined>;
+  updateAiAssistantConfig(id: number, configData: Partial<InsertAiAssistantConfig>): Promise<AiAssistantConfig | undefined>;
+  deleteAiAssistantConfig(id: number): Promise<boolean>;
+  
+  // AI Chat Session operations
+  createAiChatSession(session: InsertAiChatSession): Promise<AiChatSession>;
+  getAiChatSessionsByUserId(userId: number): Promise<AiChatSession[]>;
+  getAiChatSession(id: number): Promise<AiChatSession | undefined>;
+  updateAiChatSession(id: number, sessionData: Partial<InsertAiChatSession>): Promise<AiChatSession | undefined>;
+  deleteAiChatSession(id: number): Promise<boolean>;
+  
+  // AI Chat Message operations
+  createAiChatMessage(message: InsertAiChatMessage): Promise<AiChatMessage>;
+  getAiChatMessagesBySessionId(sessionId: number): Promise<AiChatMessage[]>;
+  getAiChatMessage(id: number): Promise<AiChatMessage | undefined>;
+  deleteAiChatMessage(id: number): Promise<boolean>;
 }
 
 // In-memory storage implementation
@@ -3435,6 +3466,114 @@ export class DatabaseStorage implements IStorage {
       console.error('Error fetching recent ticket purchases:', error);
       return [];
     }
+  }
+
+  // AI Assistant Config operations
+  async createAiAssistantConfig(config: InsertAiAssistantConfig): Promise<AiAssistantConfig> {
+    const result = await db.insert(aiAssistantConfigs).values(config).returning();
+    return result[0];
+  }
+
+  async getAiAssistantConfigsByUserId(userId: number): Promise<AiAssistantConfig[]> {
+    return await db
+      .select()
+      .from(aiAssistantConfigs)
+      .where(eq(aiAssistantConfigs.userId, userId))
+      .orderBy(desc(aiAssistantConfigs.createdAt));
+  }
+
+  async getAiAssistantConfig(id: number): Promise<AiAssistantConfig | undefined> {
+    const result = await db
+      .select()
+      .from(aiAssistantConfigs)
+      .where(eq(aiAssistantConfigs.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async updateAiAssistantConfig(id: number, configData: Partial<InsertAiAssistantConfig>): Promise<AiAssistantConfig | undefined> {
+    const result = await db
+      .update(aiAssistantConfigs)
+      .set({ ...configData, updatedAt: new Date() })
+      .where(eq(aiAssistantConfigs.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteAiAssistantConfig(id: number): Promise<boolean> {
+    const result = await db
+      .delete(aiAssistantConfigs)
+      .where(eq(aiAssistantConfigs.id, id));
+    return result.rowCount > 0;
+  }
+
+  // AI Chat Session operations
+  async createAiChatSession(session: InsertAiChatSession): Promise<AiChatSession> {
+    const result = await db.insert(aiChatSessions).values(session).returning();
+    return result[0];
+  }
+
+  async getAiChatSessionsByUserId(userId: number): Promise<AiChatSession[]> {
+    return await db
+      .select()
+      .from(aiChatSessions)
+      .where(eq(aiChatSessions.userId, userId))
+      .orderBy(desc(aiChatSessions.updatedAt));
+  }
+
+  async getAiChatSession(id: number): Promise<AiChatSession | undefined> {
+    const result = await db
+      .select()
+      .from(aiChatSessions)
+      .where(eq(aiChatSessions.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async updateAiChatSession(id: number, sessionData: Partial<InsertAiChatSession>): Promise<AiChatSession | undefined> {
+    const result = await db
+      .update(aiChatSessions)
+      .set({ ...sessionData, updatedAt: new Date() })
+      .where(eq(aiChatSessions.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteAiChatSession(id: number): Promise<boolean> {
+    const result = await db
+      .delete(aiChatSessions)
+      .where(eq(aiChatSessions.id, id));
+    return result.rowCount > 0;
+  }
+
+  // AI Chat Message operations
+  async createAiChatMessage(message: InsertAiChatMessage): Promise<AiChatMessage> {
+    const result = await db.insert(aiChatMessages).values(message).returning();
+    return result[0];
+  }
+
+  async getAiChatMessagesBySessionId(sessionId: number): Promise<AiChatMessage[]> {
+    return await db
+      .select()
+      .from(aiChatMessages)
+      .where(eq(aiChatMessages.sessionId, sessionId))
+      .orderBy(aiChatMessages.createdAt);
+  }
+
+  async getAiChatMessage(id: number): Promise<AiChatMessage | undefined> {
+    const result = await db
+      .select()
+      .from(aiChatMessages)
+      .where(eq(aiChatMessages.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async deleteAiChatMessage(id: number): Promise<boolean> {
+    const result = await db
+      .delete(aiChatMessages)
+      .where(eq(aiChatMessages.id, id));
+    return result.rowCount > 0;
   }
 }
 

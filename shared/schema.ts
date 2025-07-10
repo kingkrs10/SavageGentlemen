@@ -273,6 +273,73 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({
   content: true,
 });
 
+// AI Assistant schema
+export const aiAssistantConfigs = pgTable("ai_assistant_configs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  provider: text("provider").notNull(), // 'openai', 'anthropic', 'google', 'custom'
+  model: text("model").notNull(), // 'gpt-4', 'claude-3-opus', 'gemini-pro', etc.
+  apiKey: text("api_key"), // Encrypted API key
+  customEndpoint: text("custom_endpoint"), // For custom AI services
+  systemPrompt: text("system_prompt"), // Custom system prompt
+  temperature: numeric("temperature").default('0.7'), // Response randomness
+  maxTokens: integer("max_tokens").default(1000), // Max response length
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertAiAssistantConfigSchema = createInsertSchema(aiAssistantConfigs).pick({
+  userId: true,
+  provider: true,
+  model: true,
+  apiKey: true,
+  customEndpoint: true,
+  systemPrompt: true,
+  temperature: true,
+  maxTokens: true,
+  isActive: true,
+});
+
+// AI Chat Sessions schema
+export const aiChatSessions = pgTable("ai_chat_sessions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  configId: integer("config_id").notNull(),
+  title: text("title").notNull(),
+  context: text("context"), // Additional context for the session
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertAiChatSessionSchema = createInsertSchema(aiChatSessions).pick({
+  userId: true,
+  configId: true,
+  title: true,
+  context: true,
+});
+
+// AI Chat Messages schema
+export const aiChatMessages = pgTable("ai_chat_messages", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull(),
+  role: text("role").notNull(), // 'user', 'assistant', 'system'
+  content: text("content").notNull(),
+  tokenCount: integer("token_count"),
+  cost: numeric("cost"), // Cost in cents
+  processingTime: integer("processing_time"), // Time in milliseconds
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertAiChatMessageSchema = createInsertSchema(aiChatMessages).pick({
+  sessionId: true,
+  role: true,
+  content: true,
+  tokenCount: true,
+  cost: true,
+  processingTime: true,
+});
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -294,6 +361,15 @@ export type InsertComment = z.infer<typeof insertCommentSchema>;
 
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+
+export type AiAssistantConfig = typeof aiAssistantConfigs.$inferSelect;
+export type InsertAiAssistantConfig = z.infer<typeof insertAiAssistantConfigSchema>;
+
+export type AiChatSession = typeof aiChatSessions.$inferSelect;
+export type InsertAiChatSession = z.infer<typeof insertAiChatSessionSchema>;
+
+export type AiChatMessage = typeof aiChatMessages.$inferSelect;
+export type InsertAiChatMessage = z.infer<typeof insertAiChatMessageSchema>;
 
 // Tickets schema
 export const tickets = pgTable("tickets", {
