@@ -1,5 +1,5 @@
 import { db } from './server/db.ts';
-import { sendTicketEmail } from './server/email.ts';
+import { sendTicketEmail } from './server/email-mailersend.ts';
 import { ticketPurchases, events, users } from './shared/schema.ts';
 import { eq, and } from 'drizzle-orm';
 
