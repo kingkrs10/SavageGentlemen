@@ -229,7 +229,7 @@ export default function AiAssistant() {
                             <SelectValue placeholder="Select configuration" />
                           </SelectTrigger>
                           <SelectContent>
-                            {configs?.map((config) => (
+                            {Array.isArray(configs) && configs.map((config) => (
                               <SelectItem key={config.id} value={config.id.toString()}>
                                 {config.provider} - {config.model}
                               </SelectItem>
@@ -254,7 +254,7 @@ export default function AiAssistant() {
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-96">
-                  {sessions?.map((session) => (
+                  {Array.isArray(sessions) && sessions.map((session) => (
                     <div
                       key={session.id}
                       className={`p-3 rounded-lg cursor-pointer mb-2 flex items-center justify-between ${
@@ -289,7 +289,7 @@ export default function AiAssistant() {
               <CardHeader>
                 <CardTitle>
                   {selectedSession ? 
-                    sessions?.find(s => s.id === selectedSession)?.title : 
+                    (Array.isArray(sessions) && sessions.find(s => s.id === selectedSession)?.title) || 'Chat Session' : 
                     'Select a chat session'
                   }
                 </CardTitle>
@@ -298,7 +298,7 @@ export default function AiAssistant() {
                 {selectedSession ? (
                   <div className="space-y-4">
                     <ScrollArea className="h-96 border rounded-lg p-4">
-                      {messages?.map((message) => (
+                      {Array.isArray(messages) && messages.map((message) => (
                         <div
                           key={message.id}
                           className={`mb-4 ${
