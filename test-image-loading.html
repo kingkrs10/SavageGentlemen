@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Image Loading</title>
+</head>
+<body>
+    <h1>Test Image Loading</h1>
+    <p>Testing if rhythm-riddim-logo.png loads correctly:</p>
+    
+    <h2>Direct URLs:</h2>
+    <img src="/uploads/rhythm-riddim-logo.png" alt="Test Image 1" width="200" style="border: 1px solid red;">
+    <br><br>
+    <img src="uploads/rhythm-riddim-logo.png" alt="Test Image 2" width="200" style="border: 1px solid blue;">
+    
+    <h2>Alternative Image:</h2>
+    <img src="/uploads/image-1748034485381-893555625.jpeg" alt="Test Image 3" width="200" style="border: 1px solid green;">
+    
+    <script>
+        console.log('Testing image loading...');
+        document.querySelectorAll('img').forEach((img, index) => {
+            img.onload = function() {
+                console.log(`Image ${index + 1} loaded successfully:`, img.src);
+            };
+            img.onerror = function() {
+                console.error(`Image ${index + 1} failed to load:`, img.src);
+            };
+        });
+    </script>
+</body>
+</html>

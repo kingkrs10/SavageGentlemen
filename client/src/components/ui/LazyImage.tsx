@@ -45,17 +45,14 @@ export function LazyImage({
   // Apply adaptive compression and normalize the image URL
   const deviceInfo = adaptive ? getDeviceInfo() : null;
   const optimizedSrc = adaptive && deviceInfo ? getOptimizedImageUrl(src, context, deviceInfo) : src;
-  const normalizedSrc = currentSrc || getNormalizedImageUrl(optimizedSrc);
   
-  // For uploads, ensure we use the correct path format that works with static serving
-  // Force the leading slash for all uploads to ensure proper static file serving
-  let finalSrc = normalizedSrc;
-  if (finalSrc.includes('uploads/') && !finalSrc.startsWith('/uploads/')) {
-    if (finalSrc.startsWith('uploads/')) {
-      finalSrc = `/${finalSrc}`;
-    } else {
-      finalSrc = `/uploads/${finalSrc.replace(/^\/+/, '').replace(/^uploads\//, '')}`;
-    }
+  // Simplified approach: use currentSrc if set, otherwise use original src
+  // This bypasses complex normalization that might be causing issues
+  let finalSrc = currentSrc || optimizedSrc;
+  
+  // Simple fix: ensure uploads have proper leading slash
+  if (finalSrc.includes('uploads/') && !finalSrc.startsWith('/')) {
+    finalSrc = `/${finalSrc}`;
   }
   
   // Use Intersection Observer to detect when image is in viewport
@@ -151,7 +148,7 @@ export function LazyImage({
   // Log image source for debugging
   if (process.env.NODE_ENV === 'development') {
     console.log('LazyImage original src:', src);
-    console.log('LazyImage normalized src:', normalizedSrc);
+    console.log('LazyImage optimized src:', optimizedSrc);
     console.log('LazyImage final src:', finalSrc);
   }
 
