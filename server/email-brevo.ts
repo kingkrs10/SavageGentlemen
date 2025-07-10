@@ -7,8 +7,8 @@ const BREVO_CONFIG = {
   port: 587,
   secure: false,
   auth: {
-    user: process.env.BREVO_SMTP_LOGIN,
-    pass: process.env.BREVO_SMTP_KEY,
+    user: process.env.BREVO_SMTP_LOGIN || 'info@savgent.com',
+    pass: process.env.BREVO_SMTP_KEY || 'ZmKA8246OLSjhGOO',
   },
 };
 
@@ -16,7 +16,7 @@ const BREVO_CONFIG = {
 const transporter = nodemailer.createTransport(BREVO_CONFIG);
 
 // Default sender configuration
-const DEFAULT_FROM_EMAIL = process.env.BREVO_FROM_EMAIL || 'tickets@savgent.com';
+const DEFAULT_FROM_EMAIL = process.env.BREVO_FROM_EMAIL || 'info@savgent.com';
 const DEFAULT_FROM_NAME = 'Savage Gentlemen';
 
 interface EmailOptions {
