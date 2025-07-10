@@ -392,7 +392,7 @@ export default function AiAssistant() {
                             <SelectValue placeholder="Select provider" />
                           </SelectTrigger>
                           <SelectContent>
-                            {providers?.map((provider) => (
+                            {Array.isArray(providers) && providers.map((provider) => (
                               <SelectItem key={provider.name} value={provider.name}>
                                 {provider.name}
                               </SelectItem>
@@ -449,7 +449,7 @@ export default function AiAssistant() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {configs?.map((config) => (
+              {Array.isArray(configs) && configs.map((config) => (
                 <Card key={config.id}>
                   <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle className="text-lg">{config.provider}</CardTitle>
