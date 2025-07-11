@@ -347,12 +347,21 @@ const EventDetail = () => {
             <Card>
               <CardContent className="p-6">
                 {(() => {
+                  // Check if event is in the past
+                  const eventDate = new Date(event.date);
+                  const eventEndTime = event.endTime ? 
+                    new Date(`${event.date.split('T')[0]}T${event.endTime}:00`) : 
+                    new Date(eventDate.getTime() + 24 * 60 * 60 * 1000); // Default to 24 hours after event start
+                  const now = new Date();
+                  const isEventPast = now > eventEndTime;
+                  
                   const availableTickets = event.tickets?.filter(ticket => 
                     ticket.isActive && 
                     ticket.status !== 'sold_out' && 
                     ticket.status !== 'soldout' && 
                     ticket.status !== 'off_sale' && 
-                    ticket.status !== 'staff_only'
+                    ticket.status !== 'staff_only' &&
+                    ticket.status !== 'hidden'
                   ) || [];
                   
                   if (availableTickets.length > 0) {
@@ -379,7 +388,18 @@ const EventDetail = () => {
                             )}
                             <Button 
                               className="w-full mt-2"
+                              disabled={isEventPast}
                               onClick={() => {
+                                // Check if event is past
+                                if (isEventPast) {
+                                  toast({
+                                    title: "Event has ended",
+                                    description: "Tickets are no longer available for this event.",
+                                    variant: "destructive",
+                                  });
+                                  return;
+                                }
+                                
                                 // Check if user is authenticated before proceeding
                                 if (!isAuthenticated) {
                                   toast({
@@ -409,7 +429,7 @@ const EventDetail = () => {
                                 window.location.href = `/checkout?eventId=${event.id}&ticketId=${ticket.id}&amount=${ticket.price / 100}&currency=${currency}&title=${encodeURIComponent(event.title)}`;
                               }}
                             >
-                              {ticket.price === 0 ? 'Claim Free Ticket' : 'Purchase Ticket'}
+                              {isEventPast ? 'Event Ended' : (ticket.price === 0 ? 'Claim Free Ticket' : 'Purchase Ticket')}
                             </Button>
                           </div>
                         ))}

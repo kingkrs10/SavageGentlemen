@@ -86,7 +86,7 @@ import {
   aiChatMessages
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gt, sql, lte, lt, isNotNull } from "drizzle-orm";
+import { eq, desc, and, gt, sql, lte, lt, isNotNull, not } from "drizzle-orm";
 
 // Interface for storage operations
 // Store for recently deleted events (for undo functionality)
@@ -192,6 +192,7 @@ export interface IStorage {
   createTicket(ticket: InsertTicket): Promise<Ticket>;
   getAllTickets(): Promise<Ticket[]>;
   getTicketsByEventId(eventId: number): Promise<Ticket[]>;
+  getPublicTicketsByEventId(eventId: number): Promise<Ticket[]>;
   updateTicket(id: number, ticketData: Partial<InsertTicket>): Promise<Ticket | undefined>;
   
   // Ticket purchase operations
@@ -2458,6 +2459,19 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(tickets)
       .where(eq(tickets.eventId, eventId));
+  }
+
+  async getPublicTicketsByEventId(eventId: number): Promise<Ticket[]> {
+    return await db
+      .select()
+      .from(tickets)
+      .where(
+        and(
+          eq(tickets.eventId, eventId),
+          eq(tickets.isActive, true),
+          not(eq(tickets.status, 'hidden'))
+        )
+      );
   }
   
   // Ticket purchase operations

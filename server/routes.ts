@@ -834,8 +834,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Event not found" });
       }
       
-      // Get tickets for this event
-      const tickets = await storage.getTicketsByEventId(id);
+      // Check if user is admin to decide which tickets to return
+      const isAdmin = req.user?.role === 'admin';
+      
+      // Get tickets for this event (all for admin, public only for regular users)
+      const tickets = isAdmin ? 
+        await storage.getTicketsByEventId(id) : 
+        await storage.getPublicTicketsByEventId(id);
       
       // Return event with its tickets
       return res.status(200).json({
@@ -3488,6 +3493,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the event to verify it exists and is free
       const event = await storage.getEvent(Number(eventId));
       
+      // Check if event is in the past
+      const eventDate = new Date(event.date);
+      const eventEndTime = event.endTime ? 
+        new Date(`${event.date.split('T')[0]}T${event.endTime}:00`) : 
+        new Date(eventDate.getTime() + 24 * 60 * 60 * 1000); // Default to 24 hours after event start
+      const now = new Date();
+      
+      if (now > eventEndTime) {
+        return res.status(400).json({ 
+          message: "This event has already ended and tickets are no longer available." 
+        });
+      }
+
       if (!event) {
         return res.status(404).json({ message: "Event not found" });
       }
@@ -3545,6 +3563,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (selectedTicket.status === 'staff_only') {
               return res.status(400).json({ 
                 message: "This ticket type is restricted and not available for public purchase." 
+              });
+            }
+            
+if (selectedTicket.status === 'hidden') {
+              return res.status(400).json({ 
+                message: "This ticket type is not available for purchase." 
               });
             }
             
@@ -3736,6 +3760,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the event to verify it exists and is free
       const event = await storage.getEvent(Number(eventId));
       
+      // Check if event is in the past
+      const eventDate = new Date(event.date);
+      const eventEndTime = event.endTime ? 
+        new Date(`${event.date.split('T')[0]}T${event.endTime}:00`) : 
+        new Date(eventDate.getTime() + 24 * 60 * 60 * 1000); // Default to 24 hours after event start
+      const now = new Date();
+      
+      if (now > eventEndTime) {
+        return res.status(400).json({ 
+          message: "This event has already ended and tickets are no longer available." 
+        });
+      }
+
       if (!event) {
         return res.status(404).json({ message: "Event not found" });
       }
@@ -3794,6 +3831,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               return res.status(400).json({ 
                 message: "This ticket type is restricted and not available for public purchase." 
               });
+            
+if (selectedTicket.status === 'hidden') {
+              return res.status(400).json({ 
+                message: "This ticket type is not available for purchase." 
+              });
+            }
             }
             
             // Check remaining quantity if available

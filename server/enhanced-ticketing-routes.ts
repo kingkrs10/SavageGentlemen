@@ -533,6 +533,19 @@ export function registerEnhancedTicketingRoutes(app: Express) {
         return res.status(404).json({ message: "Event not found" });
       }
 
+      // Check if event is in the past
+      const eventDate = new Date(event[0].date);
+      const eventEndTime = event[0].endTime ? 
+        new Date(`${event[0].date.split('T')[0]}T${event[0].endTime}:00`) : 
+        new Date(eventDate.getTime() + 24 * 60 * 60 * 1000); // Default to 24 hours after event start
+      const now = new Date();
+      
+      if (now > eventEndTime) {
+        return res.status(400).json({ 
+          message: "This event has already ended and tickets are no longer available." 
+        });
+      }
+
       // Get ticket details if specified
       let selectedTicket = null;
       if (ticketId) {
@@ -563,6 +576,12 @@ export function registerEnhancedTicketingRoutes(app: Express) {
           if (selectedTicket.status === 'staff_only') {
             return res.status(400).json({ 
               message: "This ticket type is restricted and not available for public purchase." 
+            });
+          }
+          
+          if (selectedTicket.status === 'hidden') {
+            return res.status(400).json({ 
+              message: "This ticket type is not available for purchase." 
             });
           }
           
