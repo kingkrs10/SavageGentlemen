@@ -12,6 +12,8 @@ A comprehensive mobile-first web application for Savage Gentlemen, empowering Ca
 - **Analytics**: Comprehensive tracking with Google Analytics
 
 ## Recent Changes
+- **July 11, 2025**: ✓ PERMANENT HIDDEN TICKETS FIX - Fixed database sync logic to preserve "hidden" status permanently
+- **July 11, 2025**: ✓ Modified syncTicketDatabases function to prevent automatic status override from "hidden" to "on_sale"
 - **July 11, 2025**: ✓ REVIEWS SYSTEM FULLY OPERATIONAL - Enhanced EventReviews component with proper empty states and user interaction
 - **July 11, 2025**: ✓ Fixed hidden tickets functionality - Tickets with "hidden" status now properly filtered from public view
 - **July 11, 2025**: ✓ Added comprehensive past event validation - Prevents ticket purchases after event end times

@@ -3636,12 +3636,12 @@ export class TicketDatabaseSync {
         WHERE qr_code_data IS NULL OR qr_code_data = ''
       `);
       
-      // 4. Update ticket status based on inventory
+      // 4. Update ticket status based on inventory (preserve hidden status)
       await db.execute(sql`
         UPDATE tickets 
         SET status = CASE 
           WHEN remaining_quantity <= 0 THEN 'sold_out'
-          WHEN remaining_quantity > 0 THEN 'on_sale'
+          WHEN remaining_quantity > 0 AND status = 'sold_out' THEN 'on_sale'
           ELSE status
         END
         WHERE remaining_quantity IS NOT NULL
