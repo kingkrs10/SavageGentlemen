@@ -834,13 +834,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Event not found" });
       }
       
-      // Check if user is admin to decide which tickets to return
-      const isAdmin = req.user?.role === 'admin';
-      
-      // Get tickets for this event (all for admin, public only for regular users)
-      const tickets = isAdmin ? 
-        await storage.getTicketsByEventId(id) : 
-        await storage.getPublicTicketsByEventId(id);
+      // Always return public tickets for event detail page
+      // Admin users can see all tickets in the admin dashboard
+      const tickets = await storage.getPublicTicketsByEventId(id);
       
       // Return event with its tickets
       return res.status(200).json({
