@@ -59,6 +59,7 @@ const EventReviews = ({ eventId, eventTitle }: EventReviewsProps) => {
     review: ""
   });
   const [hoveredRating, setHoveredRating] = useState(0);
+  const [editingReview, setEditingReview] = useState<Review | null>(null);
 
   // Fetch reviews
   const { data: reviewsData, isLoading } = useQuery({
@@ -67,6 +68,9 @@ const EventReviews = ({ eventId, eventTitle }: EventReviewsProps) => {
 
   const reviews = reviewsData?.reviews || [];
   const stats = reviewsData?.stats || { averageRating: 0, totalReviews: 0 };
+  
+  // Check if current user has already reviewed this event
+  const userExistingReview = reviews.find(review => review.user.id === currentUser?.id);
 
   // Submit review mutation
   const submitReviewMutation = useMutation({
@@ -102,6 +106,22 @@ const EventReviews = ({ eventId, eventTitle }: EventReviewsProps) => {
     }
 
     submitReviewMutation.mutate(newReview);
+  };
+
+  const handleEditReview = (review: Review) => {
+    setEditingReview(review);
+    setNewReview({
+      rating: review.rating,
+      title: review.title || "",
+      review: review.review || ""
+    });
+    setShowReviewForm(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingReview(null);
+    setNewReview({ rating: 0, title: "", review: "" });
+    setShowReviewForm(false);
   };
 
   const renderStars = (rating: number, interactive = false, size = "w-5 h-5") => {
@@ -146,10 +166,16 @@ const EventReviews = ({ eventId, eventTitle }: EventReviewsProps) => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowReviewForm(!showReviewForm)}
+              onClick={() => {
+                if (userExistingReview) {
+                  handleEditReview(userExistingReview);
+                } else {
+                  setShowReviewForm(!showReviewForm);
+                }
+              }}
             >
               <MessageSquare className="h-4 w-4 mr-2" />
-              Write Review
+              {userExistingReview ? "Edit Your Review" : "Write Review"}
             </Button>
           )}
         </CardTitle>
@@ -182,7 +208,9 @@ const EventReviews = ({ eventId, eventTitle }: EventReviewsProps) => {
         {showReviewForm && currentUser && (
           <Card className="mb-6">
             <CardContent className="pt-6">
-              <h3 className="font-semibold mb-4">Write a Review for {eventTitle}</h3>
+              <h3 className="font-semibold mb-4">
+                {editingReview ? `Edit Your Review for ${eventTitle}` : `Write a Review for ${eventTitle}`}
+              </h3>
               
               <div className="space-y-4">
                 <div>
@@ -218,11 +246,11 @@ const EventReviews = ({ eventId, eventTitle }: EventReviewsProps) => {
                     onClick={handleSubmitReview}
                     disabled={submitReviewMutation.isPending || newReview.rating === 0}
                   >
-                    {submitReviewMutation.isPending ? "Submitting..." : "Submit Review"}
+                    {submitReviewMutation.isPending ? "Updating..." : (editingReview ? "Update Review" : "Submit Review")}
                   </Button>
                   <Button 
                     variant="outline" 
-                    onClick={() => setShowReviewForm(false)}
+                    onClick={editingReview ? handleCancelEdit : () => setShowReviewForm(false)}
                   >
                     Cancel
                   </Button>
@@ -260,7 +288,9 @@ const EventReviews = ({ eventId, eventTitle }: EventReviewsProps) => {
         {reviews.length > 0 ? (
           <div className="space-y-4">
             {displayedReviews.map((review: Review) => (
-              <div key={review.id} className="border rounded-lg p-4">
+              <div key={review.id} className={`border rounded-lg p-4 ${
+                currentUser && review.user.id === currentUser.id ? 'bg-blue-50 border-blue-200' : ''
+              }`}>
                 <div className="flex items-start gap-3">
                   <Avatar className="h-10 w-10">
                     <AvatarImage src={review.user.avatar} />
@@ -302,6 +332,18 @@ const EventReviews = ({ eventId, eventTitle }: EventReviewsProps) => {
                         <ThumbsUp className="h-4 w-4 mr-1" />
                         Helpful ({review.helpful})
                       </Button>
+                      
+                      {/* Edit button for current user's review */}
+                      {currentUser && review.user.id === currentUser.id && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleEditReview(review)}
+                          className="text-muted-foreground"
+                        >
+                          Edit
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
