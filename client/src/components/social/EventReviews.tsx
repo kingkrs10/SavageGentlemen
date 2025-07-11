@@ -232,6 +232,30 @@ const EventReviews = ({ eventId, eventTitle }: EventReviewsProps) => {
           </Card>
         )}
 
+        {/* Empty State */}
+        {reviews.length === 0 && !showReviewForm && (
+          <div className="text-center py-8">
+            <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Reviews Yet</h3>
+            <p className="text-muted-foreground mb-4">
+              Be the first to share your experience at this event!
+            </p>
+            {currentUser ? (
+              <Button
+                onClick={() => setShowReviewForm(true)}
+                className="mx-auto"
+              >
+                <Star className="h-4 w-4 mr-2" />
+                Write the First Review
+              </Button>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Sign in to write a review and share your experience
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Reviews List */}
         {reviews.length > 0 ? (
           <div className="space-y-4">
@@ -304,23 +328,7 @@ const EventReviews = ({ eventId, eventTitle }: EventReviewsProps) => {
               </Button>
             )}
           </div>
-        ) : (
-          <div className="text-center py-8">
-            <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No reviews yet</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Be the first to share your experience at this event
-            </p>
-            {currentUser && (
-              <Button 
-                className="mt-4" 
-                onClick={() => setShowReviewForm(true)}
-              >
-                Write First Review
-              </Button>
-            )}
-          </div>
-        )}
+        ) : null}
 
         {/* Login prompt for non-authenticated users */}
         {!currentUser && (
