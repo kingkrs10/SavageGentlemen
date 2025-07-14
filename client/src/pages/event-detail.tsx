@@ -368,28 +368,118 @@ const EventDetail = () => {
                     return (
                       <>
                         <h3 className="text-xl font-bold mb-3">Available Tickets</h3>
-                        {availableTickets.map((ticket) => (
-                          <div key={ticket.id} className="border rounded-md p-3 mb-3">
-                            <div className="flex justify-between items-center mb-1">
-                              <h4 className="font-medium">{ticket.name}</h4>
-                              {ticket.price > 0 && (
-                                <p className="font-bold text-primary">
-                                  {formatPriceFromCents(ticket.price, getCurrencyFromLocation(event.location))}
-                                </p>
+                        {availableTickets.map((ticket) => {
+                          const tierColors = {
+                            'standard': 'bg-gray-100 text-gray-800',
+                            'premium': 'bg-yellow-100 text-yellow-800',
+                            'vip': 'bg-purple-100 text-purple-800',
+                            'ultra_vip': 'bg-pink-100 text-pink-800'
+                          };
+                          
+                          const tierIcons = {
+                            'standard': '🎫',
+                            'premium': '⭐',
+                            'vip': '👑',
+                            'ultra_vip': '💎'
+                          };
+                          
+                          return (
+                            <div key={ticket.id} className={`border rounded-lg p-4 mb-4 ${ticket.tierLevel !== 'standard' ? 'border-2 border-dashed' : ''}`}>
+                              <div className="flex justify-between items-start mb-2">
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-semibold text-lg">{ticket.name}</h4>
+                                  {ticket.tierLevel && ticket.tierLevel !== 'standard' && (
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${tierColors[ticket.tierLevel]}`}>
+                                      {tierIcons[ticket.tierLevel]} {ticket.tierLevel.toUpperCase()}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-right">
+                                  {ticket.price > 0 && (
+                                    <p className="font-bold text-primary text-lg">
+                                      {formatPriceFromCents(ticket.price, getCurrencyFromLocation(event.location))}
+                                    </p>
+                                  )}
+                                  {ticket.price === 0 && (
+                                    <span className="px-3 py-1 bg-green-500 text-white rounded-full text-sm font-medium">
+                                      FREE
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {ticket.description && (
+                                <p className="text-sm text-muted-foreground mb-3">{ticket.description}</p>
                               )}
-                              {ticket.price === 0 && (
-                                <span className="px-2 py-1 bg-primary text-white rounded-full text-xs font-medium">
-                                  FREE
+                              
+                              {/* Advanced Features Display */}
+                              {(ticket.benefits?.length > 0 || ticket.includedItems?.length > 0 || ticket.earlyAccess || ticket.meetGreet || ticket.backstageAccess) && (
+                                <div className="mb-3 p-3 bg-gray-50 rounded-md">
+                                  <h5 className="font-medium text-sm mb-2">What's Included:</h5>
+                                  <div className="grid grid-cols-1 gap-1 text-sm">
+                                    {ticket.benefits?.map((benefit, index) => (
+                                      <div key={index} className="flex items-center gap-1">
+                                        <span className="text-green-600">✓</span>
+                                        <span>{benefit}</span>
+                                      </div>
+                                    ))}
+                                    {ticket.includedItems?.map((item, index) => (
+                                      <div key={index} className="flex items-center gap-1">
+                                        <span className="text-blue-600">•</span>
+                                        <span>{item}</span>
+                                      </div>
+                                    ))}
+                                    {ticket.earlyAccess && (
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-purple-600">⚡</span>
+                                        <span>Early Access Entry</span>
+                                      </div>
+                                    )}
+                                    {ticket.meetGreet && (
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-pink-600">🤝</span>
+                                        <span>Meet & Greet Access</span>
+                                      </div>
+                                    )}
+                                    {ticket.backstageAccess && (
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-orange-600">🎭</span>
+                                        <span>Backstage Access</span>
+                                      </div>
+                                    )}
+                                    {ticket.prioritySupport && (
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-red-600">🚨</span>
+                                        <span>Priority Support</span>
+                                      </div>
+                                    )}
+                                    {ticket.exclusiveContent && (
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-indigo-600">📱</span>
+                                        <span>Exclusive Content Access</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Transfer and Refund Policy */}
+                              <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
+                                <span className={`flex items-center gap-1 ${ticket.transferable ? 'text-green-600' : 'text-red-600'}`}>
+                                  {ticket.transferable ? '✓' : '✗'} {ticket.transferable ? 'Transferable' : 'Non-transferable'}
                                 </span>
-                              )}
-                            </div>
-                            {ticket.description && (
-                              <p className="text-sm text-muted-foreground mb-2">{ticket.description}</p>
-                            )}
-                            <Button 
-                              className="w-full mt-2"
-                              disabled={isEventPast}
-                              onClick={() => {
+                                <span className={`flex items-center gap-1 ${ticket.refundable ? 'text-green-600' : 'text-red-600'}`}>
+                                  {ticket.refundable ? '✓' : '✗'} {ticket.refundable ? 'Refundable' : 'Non-refundable'}
+                                </span>
+                                {ticket.seatingPriority && ticket.seatingPriority !== 'general' && (
+                                  <span className="text-blue-600">🪑 {ticket.seatingPriority} seating</span>
+                                )}
+                              </div>
+                              
+                              <Button 
+                                className="w-full mt-2"
+                                disabled={isEventPast}
+                                onClick={() => {
                                 // Check if event is past
                                 if (isEventPast) {
                                   toast({
@@ -432,7 +522,7 @@ const EventDetail = () => {
                               {isEventPast ? 'Event Ended' : (ticket.price === 0 ? 'Claim Free Ticket' : 'Purchase Ticket')}
                             </Button>
                           </div>
-                        ))}
+                        )})}
                       </>
                     );
                   } else {

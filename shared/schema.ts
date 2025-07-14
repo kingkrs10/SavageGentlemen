@@ -398,6 +398,20 @@ export const tickets = pgTable("tickets", {
   // Lock condition: Requires another ticket to be in cart before this can be purchased
   lockMinQuantity: integer("lock_min_quantity"),
   lockTicketTypeId: integer("lock_ticket_type_id"),
+  // Advanced ticket features
+  tierLevel: text("tier_level").default("standard"), // standard, premium, vip, ultra_vip
+  benefits: text("benefits").array(), // Array of benefits/features
+  badgeColor: text("badge_color").default("#3b82f6"), // Color for tier badge
+  badgeIcon: text("badge_icon").default("ticket"), // Icon for tier badge
+  includedItems: text("included_items").array(), // What's included with this ticket
+  transferable: boolean("transferable").default(true), // Can ticket be transferred
+  refundable: boolean("refundable").default(false), // Can ticket be refunded
+  earlyAccess: boolean("early_access").default(false), // Early entry privilege
+  prioritySupport: boolean("priority_support").default(false), // Priority customer support
+  exclusiveContent: boolean("exclusive_content").default(false), // Access to exclusive content
+  meetGreet: boolean("meet_greet").default(false), // Meet & greet access
+  backstageAccess: boolean("backstage_access").default(false), // Backstage access
+  seatingPriority: text("seating_priority").default("general"), // general, reserved, premium, vip
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -425,11 +439,29 @@ export const insertTicketSchema = createInsertSchema(tickets)
     hideAfterSalesEnd: true,
     lockMinQuantity: true,
     lockTicketTypeId: true,
+    tierLevel: true,
+    benefits: true,
+    badgeColor: true,
+    badgeIcon: true,
+    includedItems: true,
+    transferable: true,
+    refundable: true,
+    earlyAccess: true,
+    prioritySupport: true,
+    exclusiveContent: true,
+    meetGreet: true,
+    backstageAccess: true,
+    seatingPriority: true,
   })
   .extend({
     // Handle dates as strings and convert them in the transform
     salesStartDate: z.string().nullable().optional(),
     salesEndDate: z.string().nullable().optional(),
+    // Ensure arrays are properly handled
+    benefits: z.array(z.string()).optional(),
+    includedItems: z.array(z.string()).optional(),
+    tierLevel: z.enum(['standard', 'premium', 'vip', 'ultra_vip']).default('standard'),
+    seatingPriority: z.enum(['general', 'reserved', 'premium', 'vip']).default('general'),
   })
   .transform((data) => {
     // Convert string dates to Date objects if present
