@@ -248,7 +248,20 @@ const TicketManager: React.FC = () => {
       salesStartDate: '',
       salesEndDate: '',
       salesStartTime: '',
-      salesEndTime: ''
+      salesEndTime: '',
+      tierLevel: 'standard',
+      benefits: [],
+      badgeColor: '#3b82f6',
+      badgeIcon: 'ticket',
+      includedItems: [],
+      transferable: true,
+      refundable: false,
+      earlyAccess: false,
+      prioritySupport: false,
+      exclusiveContent: false,
+      meetGreet: false,
+      backstageAccess: false,
+      seatingPriority: 'general'
     });
     setEditingTicketId(null);
   };
@@ -261,6 +274,20 @@ const TicketManager: React.FC = () => {
       ...ticketFormData,
       price: price.toString(),
       quantity,
+      // Premium features
+      tierLevel: ticketFormData.tierLevel || 'standard',
+      benefits: ticketFormData.benefits || [],
+      badgeColor: ticketFormData.badgeColor || '#3b82f6',
+      badgeIcon: ticketFormData.badgeIcon || 'ticket',
+      includedItems: ticketFormData.includedItems || [],
+      transferable: ticketFormData.transferable,
+      refundable: ticketFormData.refundable,
+      earlyAccess: ticketFormData.earlyAccess,
+      prioritySupport: ticketFormData.prioritySupport,
+      exclusiveContent: ticketFormData.exclusiveContent,
+      meetGreet: ticketFormData.meetGreet,
+      backstageAccess: ticketFormData.backstageAccess,
+      seatingPriority: ticketFormData.seatingPriority || 'general',
     });
   };
   
@@ -276,6 +303,20 @@ const TicketManager: React.FC = () => {
         ...ticketFormData,
         price: price.toString(),
         quantity,
+        // Premium features
+        tierLevel: ticketFormData.tierLevel || 'standard',
+        benefits: ticketFormData.benefits || [],
+        badgeColor: ticketFormData.badgeColor || '#3b82f6',
+        badgeIcon: ticketFormData.badgeIcon || 'ticket',
+        includedItems: ticketFormData.includedItems || [],
+        transferable: ticketFormData.transferable,
+        refundable: ticketFormData.refundable,
+        earlyAccess: ticketFormData.earlyAccess,
+        prioritySupport: ticketFormData.prioritySupport,
+        exclusiveContent: ticketFormData.exclusiveContent,
+        meetGreet: ticketFormData.meetGreet,
+        backstageAccess: ticketFormData.backstageAccess,
+        seatingPriority: ticketFormData.seatingPriority || 'general',
       }
     });
   };
@@ -299,7 +340,20 @@ const TicketManager: React.FC = () => {
       salesStartDate: ticket.salesStartDate || '',
       salesEndDate: ticket.salesEndDate || '',
       salesStartTime: ticket.salesStartTime || '',
-      salesEndTime: ticket.salesEndTime || ''
+      salesEndTime: ticket.salesEndTime || '',
+      tierLevel: (ticket as any).tierLevel || 'standard',
+      benefits: (ticket as any).benefits || [],
+      badgeColor: (ticket as any).badgeColor || '#3b82f6',
+      badgeIcon: (ticket as any).badgeIcon || 'ticket',
+      includedItems: (ticket as any).includedItems || [],
+      transferable: (ticket as any).transferable !== undefined ? (ticket as any).transferable : true,
+      refundable: (ticket as any).refundable !== undefined ? (ticket as any).refundable : false,
+      earlyAccess: (ticket as any).earlyAccess !== undefined ? (ticket as any).earlyAccess : false,
+      prioritySupport: (ticket as any).prioritySupport !== undefined ? (ticket as any).prioritySupport : false,
+      exclusiveContent: (ticket as any).exclusiveContent !== undefined ? (ticket as any).exclusiveContent : false,
+      meetGreet: (ticket as any).meetGreet !== undefined ? (ticket as any).meetGreet : false,
+      backstageAccess: (ticket as any).backstageAccess !== undefined ? (ticket as any).backstageAccess : false,
+      seatingPriority: (ticket as any).seatingPriority || 'general'
     });
     
     setEditingTicketId(ticket.id);
@@ -858,12 +912,139 @@ const TicketManager: React.FC = () => {
             </div>
             
             <Tabs defaultValue="basics" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="basics">Basics</TabsTrigger>
-                <TabsTrigger value="advanced">Advanced</TabsTrigger>
+                <TabsTrigger value="premium">Premium</TabsTrigger>
+                <TabsTrigger value="scheduling">Scheduling</TabsTrigger>
               </TabsList>
               
               <TabsContent value="basics">
+                <div className="space-y-3 py-2">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="edit-tier-level" className="text-right col-span-1">
+                      Tier Level
+                    </Label>
+                    <Select
+                      value={ticketFormData.tierLevel}
+                      onValueChange={(value) => setTicketFormData({ ...ticketFormData, tierLevel: value })}
+                    >
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select tier" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="standard">🎫 Standard</SelectItem>
+                        <SelectItem value="premium">⭐ Premium</SelectItem>
+                        <SelectItem value="vip">👑 VIP</SelectItem>
+                        <SelectItem value="ultra_vip">💎 Ultra VIP</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="edit-seating-priority" className="text-right col-span-1">
+                      Seating
+                    </Label>
+                    <Select
+                      value={ticketFormData.seatingPriority}
+                      onValueChange={(value) => setTicketFormData({ ...ticketFormData, seatingPriority: value })}
+                    >
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select seating priority" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="general">General</SelectItem>
+                        <SelectItem value="reserved">Reserved</SelectItem>
+                        <SelectItem value="premium">Premium</SelectItem>
+                        <SelectItem value="vip">VIP</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="edit-badge-color" className="text-right col-span-1">
+                      Badge Color
+                    </Label>
+                    <Input
+                      id="edit-badge-color"
+                      type="color"
+                      className="col-span-3"
+                      value={ticketFormData.badgeColor}
+                      onChange={(e) => setTicketFormData({ ...ticketFormData, badgeColor: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="premium">
+                <div className="space-y-4 py-2">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-early-access"
+                        checked={ticketFormData.earlyAccess}
+                        onCheckedChange={(checked) => setTicketFormData({ ...ticketFormData, earlyAccess: checked })}
+                      />
+                      <Label htmlFor="edit-early-access" className="text-sm">⚡ Early Access</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-priority-support"
+                        checked={ticketFormData.prioritySupport}
+                        onCheckedChange={(checked) => setTicketFormData({ ...ticketFormData, prioritySupport: checked })}
+                      />
+                      <Label htmlFor="edit-priority-support" className="text-sm">🚨 Priority Support</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-exclusive-content"
+                        checked={ticketFormData.exclusiveContent}
+                        onCheckedChange={(checked) => setTicketFormData({ ...ticketFormData, exclusiveContent: checked })}
+                      />
+                      <Label htmlFor="edit-exclusive-content" className="text-sm">📱 Exclusive Content</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-meet-greet"
+                        checked={ticketFormData.meetGreet}
+                        onCheckedChange={(checked) => setTicketFormData({ ...ticketFormData, meetGreet: checked })}
+                      />
+                      <Label htmlFor="edit-meet-greet" className="text-sm">🤝 Meet & Greet</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-backstage-access"
+                        checked={ticketFormData.backstageAccess}
+                        onCheckedChange={(checked) => setTicketFormData({ ...ticketFormData, backstageAccess: checked })}
+                      />
+                      <Label htmlFor="edit-backstage-access" className="text-sm">🎭 Backstage Access</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-transferable"
+                        checked={ticketFormData.transferable}
+                        onCheckedChange={(checked) => setTicketFormData({ ...ticketFormData, transferable: checked })}
+                      />
+                      <Label htmlFor="edit-transferable" className="text-sm">🔄 Transferable</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-refundable"
+                        checked={ticketFormData.refundable}
+                        onCheckedChange={(checked) => setTicketFormData({ ...ticketFormData, refundable: checked })}
+                      />
+                      <Label htmlFor="edit-refundable" className="text-sm">💰 Refundable</Label>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="scheduling">
                 <div className="space-y-3 py-2">
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="edit-sales-start-date" className="text-right col-span-1">
@@ -890,11 +1071,7 @@ const TicketManager: React.FC = () => {
                       onChange={(e) => setTicketFormData({ ...ticketFormData, salesStartTime: e.target.value })}
                     />
                   </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="advanced">
-                <div className="space-y-3 py-2">
+                  
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="edit-sales-end-date" className="text-right col-span-1">
                       End Date
