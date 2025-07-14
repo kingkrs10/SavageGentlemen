@@ -62,19 +62,29 @@ export default function UserManagementPage() {
       />
       <div className="container mx-auto px-4 py-6">
         <div className="mb-6">
-          <Button
-            variant="outline"
-            size="sm"
-            className="mb-4"
-            onClick={() => navigate('/admin')}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Admin
-          </Button>
-          <h1 className="text-2xl font-bold">User Management</h1>
-          <p className="text-muted-foreground">
-            View and manage user accounts and permissions
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/admin')}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Admin
+            </Button>
+            
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>Admin Dashboard</span>
+              <span>•</span>
+              <span className="font-medium">User Management</span>
+            </div>
+          </div>
+          
+          <div className="mb-4">
+            <h1 className="text-2xl font-bold mb-2">User Management</h1>
+            <p className="text-muted-foreground">
+              Manage user accounts, roles, and permissions. Search and filter users to find specific accounts quickly.
+            </p>
+          </div>
         </div>
         
         <div className="pb-10">
