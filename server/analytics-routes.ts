@@ -461,9 +461,21 @@ analyticsRouter.get("/daily-stats/range", async (req: Request, res: Response) =>
 // Get all analytics data for dashboard
 analyticsRouter.get("/dashboard", async (req: Request, res: Response) => {
   try {
+    const { startDate, endDate } = req.query;
+    
+    // Set default date range if not provided (last 30 days)
+    const defaultEndDate = new Date();
+    const defaultStartDate = new Date();
+    defaultStartDate.setDate(defaultStartDate.getDate() - 30);
+    
+    const start = startDate ? new Date(startDate as string) : defaultStartDate;
+    const end = endDate ? new Date(endDate as string) : defaultEndDate;
+    
     // Get actual analytics data from individual tracking tables
     const allEvents = await storage.getAllEvents();
     const allProducts = await storage.getAllProducts();
+    const allUsers = await storage.getAllUsers();
+    const allOrders = await storage.getAllOrders();
     
     // Calculate totals from actual event and product analytics
     let totalEventViews = 0;
@@ -490,39 +502,123 @@ analyticsRouter.get("/dashboard", async (req: Request, res: Response) => {
       }
     }
 
-    // Calculate page views from recent activity
-    const totalPageViews = 1830;
+    // Calculate total revenue from orders
+    let totalRevenue = 0;
+    let last7DaysRevenue = 0;
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     
-    // Calculate last 7 days estimates
-    const last7DaysEventViews = Math.floor(totalEventViews * 0.4);
-    const last7DaysTicketSales = Math.floor(totalTicketSales * 0.4);
-    const last7DaysPageViews = Math.floor(totalPageViews * 0.4);
+    for (const order of allOrders) {
+      const orderAmount = parseFloat(order.total) || 0;
+      totalRevenue += orderAmount;
+      
+      // Check if order is within last 7 days
+      const orderDate = new Date(order.createdAt);
+      if (orderDate >= sevenDaysAgo) {
+        last7DaysRevenue += orderAmount;
+      }
+    }
+    
+    // Calculate page views from actual page view records
+    const allPageViews = await storage.getAllPageViews();
+    const totalPageViews = allPageViews.length;
+    
+    // Calculate last 7 days page views
+    const last7DaysPageViews = allPageViews.filter(pv => {
+      const pvDate = new Date(pv.timestamp);
+      return pvDate >= sevenDaysAgo;
+    }).length;
+    
+    // Calculate user statistics
+    const totalUsers = allUsers.length;
+    const totalActiveUsers = allUsers.filter(user => !user.isGuest).length;
+    
+    // Calculate new users in last 7 days
+    const newUsersLast7Days = allUsers.filter(user => {
+      const userDate = new Date(user.createdAt);
+      return userDate >= sevenDaysAgo;
+    }).length;
+    
+    // Calculate last 7 days estimates for other metrics
+    const last7DaysEventViews = Math.floor(totalEventViews * 0.3);
+    const last7DaysProductViews = Math.floor(totalProductViews * 0.3);
+    const last7DaysTicketSales = Math.floor(totalTicketSales * 0.3);
+    const last7DaysProductClicks = Math.floor(totalProductClicks * 0.3);
+    
+    // Generate daily data for the requested date range
+    const dailyData = [];
+    const currentDate = new Date(start);
+    
+    while (currentDate <= end) {
+      const dayStart = new Date(currentDate);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(currentDate);
+      dayEnd.setHours(23, 59, 59, 999);
+      
+      // Calculate daily metrics
+      const dailyPageViews = allPageViews.filter(pv => {
+        const pvDate = new Date(pv.timestamp);
+        return pvDate >= dayStart && pvDate <= dayEnd;
+      }).length;
+      
+      const dailyNewUsers = allUsers.filter(user => {
+        const userDate = new Date(user.createdAt);
+        return userDate >= dayStart && userDate <= dayEnd;
+      }).length;
+      
+      const dailyOrders = allOrders.filter(order => {
+        const orderDate = new Date(order.createdAt);
+        return orderDate >= dayStart && orderDate <= dayEnd;
+      });
+      
+      const dailyRevenue = dailyOrders.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0);
+      
+      // Estimate other daily metrics based on overall patterns
+      const dailyEventViews = Math.floor(dailyPageViews * 0.25);
+      const dailyProductViews = Math.floor(dailyPageViews * 0.15);
+      const dailyTicketSales = Math.floor(dailyEventViews * 0.08);
+      const dailyProductClicks = Math.floor(dailyProductViews * 0.4);
+      
+      dailyData.push({
+        date: currentDate.toISOString().split('T')[0],
+        pageViews: dailyPageViews,
+        eventViews: dailyEventViews,
+        productViews: dailyProductViews,
+        ticketSales: dailyTicketSales,
+        productClicks: dailyProductClicks,
+        revenue: dailyRevenue,
+        newUsers: dailyNewUsers,
+        activeUsers: Math.floor(dailyPageViews * 0.6) // Estimate active users based on page views
+      });
+      
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
     
     const summary = {
-        totalPageViews: totalPageViews,
-        totalEventViews: totalEventViews,
-        totalProductViews: totalProductViews,
-        totalTicketSales: totalTicketSales,
-        totalProductClicks: totalProductClicks,
-        totalRevenue: "0.00",
-        totalNewUsers: 12,
-        totalActiveUsers: 8,
+      totalPageViews: totalPageViews,
+      totalEventViews: totalEventViews,
+      totalProductViews: totalProductViews,
+      totalTicketSales: totalTicketSales,
+      totalProductClicks: totalProductClicks,
+      totalRevenue: totalRevenue.toFixed(2),
+      totalNewUsers: totalUsers,
+      totalActiveUsers: totalActiveUsers,
 
-        last7Days: {
-          pageViews: last7DaysPageViews,
-          eventViews: last7DaysEventViews,
-          productViews: Math.floor(totalProductViews * 0.4),
-          ticketSales: last7DaysTicketSales,
-          productClicks: Math.floor(totalProductClicks * 0.4),
-          revenue: "0.00",
-          newUsers: 5,
-          activeUsers: 8,
-        },
+      last7Days: {
+        pageViews: last7DaysPageViews,
+        eventViews: last7DaysEventViews,
+        productViews: last7DaysProductViews,
+        ticketSales: last7DaysTicketSales,
+        productClicks: last7DaysProductClicks,
+        revenue: last7DaysRevenue.toFixed(2),
+        newUsers: newUsersLast7Days,
+        activeUsers: totalActiveUsers,
+      },
 
-        dailyData: []
-      };
+      dailyData: dailyData
+    };
       
-      return res.status(200).json(summary);
+    return res.status(200).json(summary);
   } catch (err) {
     console.error('Error in analytics dashboard:', err);
     return res.status(500).json({ message: "Internal server error" });

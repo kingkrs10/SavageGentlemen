@@ -168,6 +168,12 @@ const AnalyticsDashboard: React.FC = () => {
                 <p className="text-xs text-muted-foreground mt-1">
                   Last 7 days: {data.last7Days.pageViews.toLocaleString()}
                 </p>
+                <div className="flex items-center mt-2">
+                  <TrendingUpIcon className="h-4 w-4 text-green-500 mr-1" />
+                  <span className="text-xs text-green-500">
+                    {data.last7Days.pageViews > 0 ? `+${((data.last7Days.pageViews / data.totalPageViews) * 100).toFixed(1)}%` : '0%'}
+                  </span>
+                </div>
               </CardContent>
             </Card>
             
@@ -180,6 +186,12 @@ const AnalyticsDashboard: React.FC = () => {
                 <p className="text-xs text-muted-foreground mt-1">
                   Last 7 days: ${parseFloat(data.last7Days.revenue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
+                <div className="flex items-center mt-2">
+                  <TrendingUpIcon className="h-4 w-4 text-green-500 mr-1" />
+                  <span className="text-xs text-green-500">
+                    {parseFloat(data.totalRevenue) > 0 ? `+${((parseFloat(data.last7Days.revenue) / parseFloat(data.totalRevenue)) * 100).toFixed(1)}%` : '0%'}
+                  </span>
+                </div>
               </CardContent>
             </Card>
             
@@ -192,18 +204,30 @@ const AnalyticsDashboard: React.FC = () => {
                 <p className="text-xs text-muted-foreground mt-1">
                   Last 7 days: {data.last7Days.ticketSales.toLocaleString()}
                 </p>
+                <div className="flex items-center mt-2">
+                  <TrendingUpIcon className="h-4 w-4 text-green-500 mr-1" />
+                  <span className="text-xs text-green-500">
+                    {data.totalTicketSales > 0 ? `+${((data.last7Days.ticketSales / data.totalTicketSales) * 100).toFixed(1)}%` : '0%'}
+                  </span>
+                </div>
               </CardContent>
             </Card>
             
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">New Users</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Active Users</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{data.totalNewUsers.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{data.totalActiveUsers.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Last 7 days: {data.last7Days.newUsers.toLocaleString()}
+                  New users (7d): {data.last7Days.newUsers.toLocaleString()}
                 </p>
+                <div className="flex items-center mt-2">
+                  <TrendingUpIcon className="h-4 w-4 text-green-500 mr-1" />
+                  <span className="text-xs text-green-500">
+                    {data.totalActiveUsers > 0 ? `+${((data.last7Days.newUsers / data.totalActiveUsers) * 100).toFixed(1)}%` : '0%'}
+                  </span>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -408,8 +432,9 @@ const AnalyticsDashboard: React.FC = () => {
                       <Tooltip />
                       <Bar 
                         dataKey="ticketSales" 
-                        name="Ticket Sales"
+                        name="Ticket Sales" 
                         fill="#00C49F" 
+                        radius={[4, 4, 0, 0]}
                       />
                     </BarChart>
                   </ResponsiveContainer>
@@ -423,7 +448,7 @@ const AnalyticsDashboard: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Product Views</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Product Views</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{data.totalProductViews.toLocaleString()}</div>
@@ -456,60 +481,81 @@ const AnalyticsDashboard: React.FC = () => {
                     : "0%"}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Views to clicks ratio
+                  Product views to clicks
                 </p>
               </CardContent>
             </Card>
           </div>
 
           {/* Product Metrics Charts */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Product Performance</CardTitle>
-              <CardDescription>Views and clicks over time</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={formattedDailyData}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="productViews" 
-                      name="Product Views"
-                      stroke="#8884d8" 
-                      strokeWidth={2} 
-                      dot={{ r: 3 }} 
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="productClicks" 
-                      name="Product Clicks"
-                      stroke="#00C49F" 
-                      strokeWidth={2} 
-                      dot={{ r: 3 }} 
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Product Views Trend</CardTitle>
+                <CardDescription>Daily product views over time</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={formattedDailyData}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Area 
+                        type="monotone" 
+                        dataKey="productViews" 
+                        name="Product Views"
+                        stroke="#FFBB28" 
+                        fill="#FFBB28" 
+                        fillOpacity={0.3} 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Product Clicks Trend</CardTitle>
+                <CardDescription>Daily product clicks over time</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={formattedDailyData}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line 
+                        type="monotone" 
+                        dataKey="productClicks" 
+                        name="Product Clicks"
+                        stroke="#FF8042" 
+                        strokeWidth={2} 
+                        dot={{ r: 3 }} 
+                        activeDot={{ r: 5 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="users" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">New Users</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{data.totalNewUsers.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Last 7 days: {data.last7Days.newUsers.toLocaleString()}
+                  All registered users
                 </p>
               </CardContent>
             </Card>
@@ -521,66 +567,93 @@ const AnalyticsDashboard: React.FC = () => {
               <CardContent>
                 <div className="text-2xl font-bold">{data.totalActiveUsers.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Last 7 days: {data.last7Days.activeUsers.toLocaleString()}
+                  Non-guest users
                 </p>
               </CardContent>
             </Card>
             
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Revenue per User</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">User Engagement</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  ${data.totalActiveUsers > 0
-                    ? (parseFloat(data.totalRevenue) / data.totalActiveUsers).toFixed(2)
-                    : "0.00"}
+                  {data.totalNewUsers > 0
+                    ? ((data.totalActiveUsers / data.totalNewUsers) * 100).toFixed(1) + "%"
+                    : "0%"}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Average revenue per active user
+                  Active user percentage
                 </p>
               </CardContent>
             </Card>
           </div>
 
-          {/* User Activity Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle>User Activity Trend</CardTitle>
-              <CardDescription>New and active users over time</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={formattedDailyData}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Area 
-                      type="monotone" 
-                      dataKey="newUsers" 
-                      name="New Users"
-                      stroke="#8884d8" 
-                      fill="#8884d8" 
-                      fillOpacity={0.3} 
-                      stackId="1"
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="activeUsers" 
-                      name="Active Users"
-                      stroke="#00C49F" 
-                      fill="#00C49F" 
-                      fillOpacity={0.3} 
-                      stackId="2"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+          {/* User Metrics Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>New Users Trend</CardTitle>
+                <CardDescription>Daily new user registrations</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={formattedDailyData}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar 
+                        dataKey="newUsers" 
+                        name="New Users" 
+                        fill="#8884D8" 
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>User Activity Overview</CardTitle>
+                <CardDescription>Active vs new users comparison</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={formattedDailyData}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Area 
+                        type="monotone" 
+                        dataKey="newUsers" 
+                        name="New Users"
+                        stackId="1"
+                        stroke="#8884D8" 
+                        fill="#8884D8" 
+                        fillOpacity={0.6} 
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="activeUsers" 
+                        name="Active Users"
+                        stackId="1"
+                        stroke="#82CA9D" 
+                        fill="#82CA9D" 
+                        fillOpacity={0.6} 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

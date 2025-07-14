@@ -2870,6 +2870,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(pageViews.userId, userId))
       .orderBy(desc(pageViews.timestamp));
   }
+
+  async getAllPageViews(): Promise<PageView[]> {
+    return await db
+      .select()
+      .from(pageViews)
+      .orderBy(desc(pageViews.timestamp));
+  }
   
   // Event Analytics
   async createEventAnalytic(eventAnalyticData: InsertEventAnalytic): Promise<EventAnalytic> {
