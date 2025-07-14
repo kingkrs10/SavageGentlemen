@@ -23,6 +23,7 @@ import {
   BarChart3
 } from "lucide-react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -122,6 +123,27 @@ export default function AdminTemp() {
   const [isCreateAdModalOpen, setIsCreateAdModalOpen] = useState(false);
   const [selectedAdType, setSelectedAdType] = useState<string>('standard');
   const [editingAd, setEditingAd] = useState<any>(null);
+  const [adFormData, setAdFormData] = useState({
+    title: '',
+    description: '',
+    type: 'standard',
+    imageUrl: '',
+    logoUrl: '',
+    linkUrl: '',
+    backgroundColor: 'bg-gray-800',
+    textColor: 'text-white',
+    ctaText: 'Learn More',
+    price: '',
+    eventDate: '',
+    location: '',
+    videoUrl: '',
+    isActive: true,
+    priority: 0,
+    startDate: '',
+    endDate: ''
+  });
+  const [adImagePreview, setAdImagePreview] = useState<string | null>(null);
+  const [adUploadedImage, setAdUploadedImage] = useState<File | null>(null);
   const [eventFormData, setEventFormData] = useState({
     id: 0,
     title: "",
@@ -161,12 +183,41 @@ export default function AdminTemp() {
 
   // Mutations for sponsored content
   const createAdMutation = useMutation({
-    mutationFn: (adData: any) => apiRequest('POST', '/api/admin/sponsored-content', adData),
+    mutationFn: async (adData: any) => {
+      const formData = new FormData();
+      Object.keys(adData).forEach(key => {
+        if (adData[key] !== null && adData[key] !== undefined) {
+          formData.append(key, adData[key]);
+        }
+      });
+      
+      // Add image if uploaded
+      if (adUploadedImage) {
+        formData.append('image', adUploadedImage);
+      }
+      
+      const response = await fetch('/api/admin/sponsored-content', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${user?.token}`,
+          'user-id': user?.id?.toString() || ''
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to create advertisement');
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/sponsored-content'] });
       refetchAds();
       setIsCreateAdModalOpen(false);
       setEditingAd(null);
+      resetAdForm();
       toast({
         title: "Success",
         description: "Advertisement created successfully"
@@ -176,6 +227,56 @@ export default function AdminTemp() {
       toast({
         title: "Error",
         description: error.message || "Failed to create advertisement",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const updateAdMutation = useMutation({
+    mutationFn: async ({ id, adData }: { id: number; adData: any }) => {
+      const formData = new FormData();
+      Object.keys(adData).forEach(key => {
+        if (adData[key] !== null && adData[key] !== undefined) {
+          formData.append(key, adData[key]);
+        }
+      });
+      
+      // Add image if uploaded
+      if (adUploadedImage) {
+        formData.append('image', adUploadedImage);
+      }
+      
+      const response = await fetch(`/api/admin/sponsored-content/${id}`, {
+        method: 'PUT',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${user?.token}`,
+          'user-id': user?.id?.toString() || ''
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to update advertisement');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/sponsored-content'] });
+      refetchAds();
+      setIsCreateAdModalOpen(false);
+      setEditingAd(null);
+      resetAdForm();
+      toast({
+        title: "Success",
+        description: "Advertisement updated successfully"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update advertisement",
         variant: "destructive"
       });
     }
@@ -559,6 +660,97 @@ export default function AdminTemp() {
     
     setImagePreviewUrls([]);
     setUploadedImages([]);
+  };
+
+  // Ad form management functions
+  const resetAdForm = () => {
+    setAdFormData({
+      title: '',
+      description: '',
+      type: 'standard',
+      imageUrl: '',
+      logoUrl: '',
+      linkUrl: '',
+      backgroundColor: 'bg-gray-800',
+      textColor: 'text-white',
+      ctaText: 'Learn More',
+      price: '',
+      eventDate: '',
+      location: '',
+      videoUrl: '',
+      isActive: true,
+      priority: 0,
+      startDate: '',
+      endDate: ''
+    });
+    setAdImagePreview(null);
+    setAdUploadedImage(null);
+  };
+
+  const handleAdImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setAdUploadedImage(file);
+      
+      const reader = new FileReader();
+      reader.onload = () => {
+        setAdImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAdFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      if (editingAd) {
+        // Update existing ad
+        updateAdMutation.mutate({ id: editingAd.id, adData: adFormData });
+      } else {
+        // Create new ad
+        createAdMutation.mutate(adFormData);
+      }
+    } catch (error) {
+      console.error("Error submitting ad form:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit advertisement data",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleEditAd = (ad: any) => {
+    setEditingAd(ad);
+    setAdFormData({
+      title: ad.title || '',
+      description: ad.description || '',
+      type: ad.type || 'standard',
+      imageUrl: ad.imageUrl || '',
+      logoUrl: ad.logoUrl || '',
+      linkUrl: ad.linkUrl || '',
+      backgroundColor: ad.backgroundColor || 'bg-gray-800',
+      textColor: ad.textColor || 'text-white',
+      ctaText: ad.ctaText || 'Learn More',
+      price: ad.price || '',
+      eventDate: ad.eventDate || '',
+      location: ad.location || '',
+      videoUrl: ad.videoUrl || '',
+      isActive: ad.isActive !== undefined ? ad.isActive : true,
+      priority: ad.priority || 0,
+      startDate: ad.startDate ? new Date(ad.startDate).toISOString().split('T')[0] : '',
+      endDate: ad.endDate ? new Date(ad.endDate).toISOString().split('T')[0] : ''
+    });
+    setAdImagePreview(ad.imageUrl || null);
+    setAdUploadedImage(null);
+    setIsCreateAdModalOpen(true);
+  };
+
+  const handleDeleteAd = (id: number, title: string) => {
+    if (window.confirm(`Are you sure you want to delete the advertisement "${title}"? This action cannot be undone.`)) {
+      deleteAdMutation.mutate(id);
+    }
   };
   
   useEffect(() => {
@@ -1062,7 +1254,7 @@ export default function AdminTemp() {
                                   {ad.isActive ? 'Active' : 'Inactive'}
                                 </span>
                                 <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full capitalize">
-                                  {ad.adType}
+                                  {ad.type}
                                 </span>
                               </div>
                               <p className="text-xs text-muted-foreground">{ad.description}</p>
@@ -1083,10 +1275,7 @@ export default function AdminTemp() {
                                 variant="outline"
                                 size="sm"
                                 className="h-7 w-7 p-0"
-                                onClick={() => {
-                                  setEditingAd(ad);
-                                  setIsCreateAdModalOpen(true);
-                                }}
+                                onClick={() => handleEditAd(ad)}
                               >
                                 <Edit className="h-3 w-3" />
                               </Button>
@@ -1094,11 +1283,7 @@ export default function AdminTemp() {
                                 variant="outline"
                                 size="sm"
                                 className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
-                                onClick={() => {
-                                  if (confirm(`Delete "${ad.title}"?`)) {
-                                    deleteAdMutation.mutate(ad.id);
-                                  }
-                                }}
+                                onClick={() => handleDeleteAd(ad.id, ad.title)}
                                 disabled={deleteAdMutation.isPending}
                               >
                                 <Trash className="h-3 w-3" />
@@ -1436,175 +1621,266 @@ export default function AdminTemp() {
 
       {/* Ad Creation/Edit Modal */}
       <Dialog open={isCreateAdModalOpen} onOpenChange={setIsCreateAdModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingAd ? 'Edit Advertisement' : 'Create New Advertisement'}
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget);
-            const adData = {
-              title: formData.get('title') as string,
-              description: formData.get('description') as string,
-              type: selectedAdType,
-              linkUrl: formData.get('targetUrl') as string || null,
-              imageUrl: formData.get('imageUrl') as string || null,
-              isActive: formData.get('isActive') === 'on',
-              priority: parseInt(formData.get('priority') as string) || 0,
-              backgroundColor: formData.get('backgroundColor') as string || '#ffffff',
-              textColor: formData.get('textColor') as string || '#000000',
-              ctaText: formData.get('buttonText') as string || 'Learn More'
-            };
-            createAdMutation.mutate(adData);
-          }}>
-            <div className="space-y-4">
+          
+          <form onSubmit={handleAdFormSubmit} className="space-y-4">
+            {/* Basic Information */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="adType">Ad Type</Label>
-                <select 
-                  id="adType"
-                  value={selectedAdType}
-                  onChange={(e) => setSelectedAdType(e.target.value)}
-                  className="w-full p-2 border rounded-md"
-                >
-                  <option value="standard">Standard Ad</option>
-                  <option value="banner">Banner Ad</option>
-                  <option value="product_showcase">Product Showcase</option>
-                  <option value="event_promotion">Event Promotion</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
+                <Label htmlFor="ad-title">Title *</Label>
                 <Input
-                  id="title"
-                  name="title"
-                  defaultValue={editingAd?.title || ''}
-                  placeholder="Enter ad title"
+                  id="ad-title"
+                  value={adFormData.title}
+                  onChange={(e) => setAdFormData({...adFormData, title: e.target.value})}
                   required
+                  placeholder="Enter ad title"
                 />
               </div>
-
+              
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  defaultValue={editingAd?.description || ''}
-                  placeholder="Enter ad description"
-                  rows={3}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="targetUrl">Target URL</Label>
-                <Input
-                  id="targetUrl"
-                  name="targetUrl"
-                  type="url"
-                  defaultValue={editingAd?.targetUrl || ''}
-                  placeholder="https://example.com"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="imageUrl">Image URL</Label>
-                <Input
-                  id="imageUrl"
-                  name="imageUrl"
-                  type="url"
-                  defaultValue={editingAd?.imageUrl || ''}
-                  placeholder="https://example.com/image.jpg"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="priority">Priority</Label>
-                  <Input
-                    id="priority"
-                    name="priority"
-                    type="number"
-                    defaultValue={editingAd?.priority || 0}
-                    placeholder="0"
-                    min="0"
-                  />
-                </div>
-                <div className="space-y-2 flex items-end">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      name="isActive"
-                      defaultChecked={editingAd?.isActive !== false}
-                      className="rounded"
-                    />
-                    <span className="text-sm">Active</span>
-                  </label>
-                </div>
-              </div>
-
-              {selectedAdType === 'banner' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="backgroundColor">Background Color</Label>
-                    <Input
-                      id="backgroundColor"
-                      name="backgroundColor"
-                      type="color"
-                      defaultValue={editingAd?.backgroundColor || '#ffffff'}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="textColor">Text Color</Label>
-                    <Input
-                      id="textColor"
-                      name="textColor"
-                      type="color"
-                      defaultValue={editingAd?.textColor || '#000000'}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="buttonText">Button Text</Label>
-                  <Input
-                    id="buttonText"
-                    name="buttonText"
-                    defaultValue={editingAd?.buttonText || 'Learn More'}
-                    placeholder="Learn More"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="buttonColor">Button Color</Label>
-                  <Input
-                    id="buttonColor"
-                    name="buttonColor"
-                    type="color"
-                    defaultValue={editingAd?.buttonColor || '#3b82f6'}
-                  />
-                </div>
+                <Label htmlFor="ad-type">Advertisement Type *</Label>
+                <Select 
+                  value={adFormData.type} 
+                  onValueChange={(value) => setAdFormData({...adFormData, type: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select ad type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Standard</SelectItem>
+                    <SelectItem value="banner">Banner</SelectItem>
+                    <SelectItem value="product">Product</SelectItem>
+                    <SelectItem value="event">Event</SelectItem>
+                    <SelectItem value="video">Video</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-
-            <DialogFooter className="mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsCreateAdModalOpen(false)}
+            
+            <div className="space-y-2">
+              <Label htmlFor="ad-description">Description *</Label>
+              <Textarea
+                id="ad-description"
+                value={adFormData.description}
+                onChange={(e) => setAdFormData({...adFormData, description: e.target.value})}
+                required
+                placeholder="Enter ad description"
+                rows={3}
+              />
+            </div>
+            
+            {/* URLs and Links */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="ad-link">Link URL</Label>
+                <Input
+                  id="ad-link"
+                  value={adFormData.linkUrl}
+                  onChange={(e) => setAdFormData({...adFormData, linkUrl: e.target.value})}
+                  placeholder="https://example.com"
+                  type="url"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="ad-cta">Call-to-Action Text</Label>
+                <Input
+                  id="ad-cta"
+                  value={adFormData.ctaText}
+                  onChange={(e) => setAdFormData({...adFormData, ctaText: e.target.value})}
+                  placeholder="Learn More"
+                />
+              </div>
+            </div>
+            
+            {/* Visual Customization */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="ad-bg-color">Background Color</Label>
+                <Input
+                  id="ad-bg-color"
+                  value={adFormData.backgroundColor}
+                  onChange={(e) => setAdFormData({...adFormData, backgroundColor: e.target.value})}
+                  placeholder="bg-gray-800"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="ad-text-color">Text Color</Label>
+                <Input
+                  id="ad-text-color"
+                  value={adFormData.textColor}
+                  onChange={(e) => setAdFormData({...adFormData, textColor: e.target.value})}
+                  placeholder="text-white"
+                />
+              </div>
+            </div>
+            
+            {/* Conditional Fields Based on Type */}
+            {(adFormData.type === 'product' || adFormData.type === 'event') && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {adFormData.type === 'product' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="ad-price">Price</Label>
+                    <Input
+                      id="ad-price"
+                      value={adFormData.price}
+                      onChange={(e) => setAdFormData({...adFormData, price: e.target.value})}
+                      placeholder="$99.99"
+                    />
+                  </div>
+                )}
+                
+                {adFormData.type === 'event' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="ad-event-date">Event Date</Label>
+                      <Input
+                        id="ad-event-date"
+                        value={adFormData.eventDate}
+                        onChange={(e) => setAdFormData({...adFormData, eventDate: e.target.value})}
+                        placeholder="March 15, 2024"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="ad-location">Location</Label>
+                      <Input
+                        id="ad-location"
+                        value={adFormData.location}
+                        onChange={(e) => setAdFormData({...adFormData, location: e.target.value})}
+                        placeholder="New York, NY"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+            
+            {/* Video URL for Video Ads */}
+            {adFormData.type === 'video' && (
+              <div className="space-y-2">
+                <Label htmlFor="ad-video">Video URL</Label>
+                <Input
+                  id="ad-video"
+                  value={adFormData.videoUrl}
+                  onChange={(e) => setAdFormData({...adFormData, videoUrl: e.target.value})}
+                  placeholder="https://youtube.com/watch?v=..."
+                  type="url"
+                />
+              </div>
+            )}
+            
+            {/* Image Upload */}
+            <div className="space-y-2">
+              <Label>Advertisement Image</Label>
+              <div className="flex items-center space-x-3">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAdImageUpload}
+                  className="flex-1"
+                />
+                {adImagePreview && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setAdImagePreview(null);
+                      setAdUploadedImage(null);
+                    }}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+              
+              {adImagePreview && (
+                <div className="mt-2 relative w-full max-w-xs mx-auto">
+                  <img 
+                    src={adImagePreview} 
+                    alt="Ad Preview" 
+                    className="rounded border object-cover h-32 w-full"
+                  />
+                </div>
+              )}
+            </div>
+            
+            {/* Scheduling and Priority */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="ad-priority">Priority</Label>
+                <Input
+                  id="ad-priority"
+                  type="number"
+                  value={adFormData.priority}
+                  onChange={(e) => setAdFormData({...adFormData, priority: parseInt(e.target.value) || 0})}
+                  placeholder="0"
+                  min="0"
+                  max="100"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="ad-start-date">Start Date</Label>
+                <Input
+                  id="ad-start-date"
+                  type="date"
+                  value={adFormData.startDate}
+                  onChange={(e) => setAdFormData({...adFormData, startDate: e.target.value})}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="ad-end-date">End Date</Label>
+                <Input
+                  id="ad-end-date"
+                  type="date"
+                  value={adFormData.endDate}
+                  onChange={(e) => setAdFormData({...adFormData, endDate: e.target.value})}
+                />
+              </div>
+            </div>
+            
+            {/* Active Status */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="ad-active"
+                checked={adFormData.isActive}
+                onChange={(e) => setAdFormData({...adFormData, isActive: e.target.checked})}
+                className="rounded border-gray-300"
+              />
+              <Label htmlFor="ad-active">Active (will be displayed on site)</Label>
+            </div>
+            
+            <DialogFooter className="flex space-x-2 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setIsCreateAdModalOpen(false);
+                  setEditingAd(null);
+                  resetAdForm();
+                }}
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={createAdMutation.isPending}
+              <Button 
+                type="submit" 
+                disabled={createAdMutation.isPending || updateAdMutation.isPending}
+                className="flex items-center"
               >
-                {createAdMutation.isPending ? (
+                {(createAdMutation.isPending || updateAdMutation.isPending) ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creating...
+                    {editingAd ? 'Updating...' : 'Creating...'}
                   </>
                 ) : (
                   editingAd ? 'Update Ad' : 'Create Ad'

@@ -893,26 +893,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin-only sponsored content routes
-  router.post("/admin/sponsored-content", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+  router.post("/admin/sponsored-content", authenticateUser, authorizeAdmin, upload.single('image'), async (req: Request, res: Response) => {
     try {
       const sponsoredContentData = insertSponsoredContentSchema.parse({
         ...req.body,
-        createdBy: req.user!.id
+        createdBy: req.user!.id,
+        imageUrl: req.file ? `/uploads/${req.file.filename}` : req.body.imageUrl || null,
+        // Handle date parsing
+        startDate: req.body.startDate ? new Date(req.body.startDate) : null,
+        endDate: req.body.endDate ? new Date(req.body.endDate) : null,
+        priority: req.body.priority ? parseInt(req.body.priority) : 0,
+        isActive: req.body.isActive === 'true' || req.body.isActive === true
       });
+      
       const sponsoredContent = await storage.createSponsoredContent(sponsoredContentData);
       return res.status(201).json(sponsoredContent);
     } catch (err) {
+      console.error("Error creating sponsored content:", err);
       return handleZodError(err, res);
     }
   });
 
-  router.put("/admin/sponsored-content/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+  router.put("/admin/sponsored-content/:id", authenticateUser, authorizeAdmin, upload.single('image'), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const sponsoredContentData = insertSponsoredContentSchema.partial().parse(req.body);
+      const updateData = {
+        ...req.body,
+        // Handle date parsing
+        startDate: req.body.startDate ? new Date(req.body.startDate) : undefined,
+        endDate: req.body.endDate ? new Date(req.body.endDate) : undefined,
+        priority: req.body.priority ? parseInt(req.body.priority) : undefined,
+        isActive: req.body.isActive === 'true' || req.body.isActive === true
+      };
+      
+      // Add image URL if new image uploaded
+      if (req.file) {
+        updateData.imageUrl = `/uploads/${req.file.filename}`;
+      }
+      
+      const sponsoredContentData = insertSponsoredContentSchema.partial().parse(updateData);
       const sponsoredContent = await storage.updateSponsoredContent(id, sponsoredContentData);
       return res.status(200).json(sponsoredContent);
     } catch (err) {
+      console.error("Error updating sponsored content:", err);
       return handleZodError(err, res);
     }
   });
