@@ -469,7 +469,7 @@ export default function AdminPage() {
                             </div>
                             <div className="flex items-center text-sm font-semibold">
                               <DollarSignIcon className="h-4 w-4 mr-1" />
-                              ${parseFloat(event.price).toFixed(2)}
+                              ${(parseFloat(event.price) / 100).toFixed(2)}
                             </div>
                             <div className="flex items-center text-sm">
                               <TagIcon className="h-4 w-4 mr-1" />

@@ -1832,7 +1832,7 @@ export default function AdminPage() {
                               </div>
                               <div className="flex items-center text-sm font-semibold">
                                 <DollarSignIcon className="h-4 w-4 mr-1" />
-                                ${parseFloat(event.price).toFixed(2)}
+                                ${(parseFloat(event.price) / 100).toFixed(2)}
                               </div>
                             </div>
                             <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
@@ -1946,7 +1946,7 @@ export default function AdminPage() {
                                     <span className="text-muted-foreground">Unknown Event</span>
                                   )}
                                 </td>
-                                <td className="p-3 font-medium">${parseFloat(ticket.price).toFixed(2)}</td>
+                                <td className="p-3 font-medium">${(parseFloat(ticket.price) / 100).toFixed(2)}</td>
                                 <td className="p-3">
                                   {ticket.quantity === -1 ? 'Unlimited' : ticket.quantity}
                                 </td>
