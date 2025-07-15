@@ -413,7 +413,7 @@ export default function AdminPage() {
     setTicketForm({
       name: ticket.name,
       description: ticket.description || '',
-      price: String(ticket.price),
+      price: (ticket.price / 100).toFixed(2), // Convert from cents to dollars
       quantity: ticket.quantity === -1 ? 'unlimited' : String(ticket.quantity),
       status: ticket.status || 'active',
       eventId: String(ticket.eventId),
@@ -1048,7 +1048,7 @@ export default function AdminPage() {
       
       const payload = {
         ...ticketForm,
-        price: parseFloat(ticketForm.price),
+        price: parseFloat(ticketForm.price) * 100, // Convert to cents
         quantity: ticketForm.quantity === 'unlimited' ? -1 : parseInt(ticketForm.quantity)
       };
       
@@ -1096,7 +1096,7 @@ export default function AdminPage() {
       
       const payload = {
         ...ticketForm,
-        price: parseFloat(ticketForm.price),
+        price: parseFloat(ticketForm.price) * 100, // Convert to cents
         quantity: ticketForm.quantity === 'unlimited' ? -1 : parseInt(ticketForm.quantity)
       };
       
@@ -1293,7 +1293,7 @@ export default function AdminPage() {
     setTicketForm({
       name: ticket.name,
       description: ticket.description || '',
-      price: ticket.price.toString(),
+      price: (ticket.price / 100).toFixed(2), // Convert from cents to dollars
       quantity: ticket.quantity === -1 ? 'unlimited' : ticket.quantity.toString(),
       status: ticket.status || 'active',
       eventId: ticket.eventId.toString(),

@@ -12,6 +12,11 @@ A comprehensive mobile-first web application for Savage Gentlemen, empowering Ca
 - **Analytics**: Comprehensive tracking with Google Analytics
 
 ## Recent Changes
+- **July 14, 2025**: ✓ CRITICAL PRICING SYSTEM FIX - Fixed site-wide pricing conversion where users had to enter 0.20 for $20.00 USD
+- **July 14, 2025**: ✓ Corrected frontend price conversion logic in admin-new-simple.tsx, admin-new.tsx, and TicketManager.tsx
+- **July 14, 2025**: ✓ Fixed price display conversion: prices now properly convert from cents to dollars when editing tickets/events
+- **July 14, 2025**: ✓ Fixed price input conversion: users can now enter "20" for $20.00 USD instead of "0.20"
+- **July 14, 2025**: ✓ Permanent pricing system correction across all admin forms - ticket creation, event creation, and editing
 - **July 14, 2025**: ✓ ENHANCED USER MANAGEMENT PAGE - Added comprehensive search, filtering, and statistics for easier navigation
 - **July 14, 2025**: ✓ Improved user deletion functionality with detailed confirmation dialogs and protected main admin account
 - **July 14, 2025**: ✓ Added user statistics cards showing total users, admins, moderators, registered, and guest counts

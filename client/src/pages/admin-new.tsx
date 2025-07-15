@@ -304,7 +304,7 @@ export default function AdminPage() {
   const handleCreateEvent = () => {
     createEventMutation.mutate({
       ...eventForm,
-      price: parseFloat(eventForm.price)
+      price: parseFloat(eventForm.price) * 100 // Convert to cents
     });
     setShowEventForm(false);
     setEventForm({
@@ -323,7 +323,7 @@ export default function AdminPage() {
   const handleCreateTicket = () => {
     createTicketMutation.mutate({
       ...ticketForm,
-      price: parseFloat(ticketForm.price),
+      price: parseFloat(ticketForm.price) * 100, // Convert to cents
       quantity: parseInt(ticketForm.quantity)
     });
     setShowTicketForm(false);
@@ -485,7 +485,7 @@ export default function AdminPage() {
                                 time: event.time || '',
                                 location: event.location,
                                 description: event.description || '',
-                                price: event.price.toString(),
+                                price: (event.price / 100).toFixed(2), // Convert from cents to dollars
                                 imageUrl: event.imageUrl || '',
                                 category: event.category || '',
                                 featured: event.featured || false
@@ -710,7 +710,7 @@ export default function AdminPage() {
                               setTicketForm({
                                 name: ticket.name,
                                 eventId: ticket.eventId.toString(),
-                                price: ticket.price.toString(),
+                                price: (ticket.price / 100).toFixed(2), // Convert from cents to dollars
                                 quantity: ticket.quantity.toString(),
                                 description: ticket.description || '',
                                 status: ticket.status || 'active'
