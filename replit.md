@@ -12,6 +12,12 @@ A comprehensive mobile-first web application for Savage Gentlemen, empowering Ca
 - **Analytics**: Comprehensive tracking with Google Analytics
 
 ## Recent Changes
+- **July 16, 2025**: ✓ PERMANENT SHOP PAGE AND IMAGE PROCESSING FIX COMPLETE - Fixed database image processing and Etsy product display permanently
+- **July 16, 2025**: ✓ Enhanced image proxy endpoint with proper headers for Etsy image fetching and enhanced domain validation
+- **July 16, 2025**: ✓ Updated Shop page with improved product cards, loading states, and direct Etsy links for all products
+- **July 16, 2025**: ✓ Fixed product image loading with permanent solution - all Etsy product images now display correctly
+- **July 16, 2025**: ✓ Updated all Shop page links to point to official Etsy store (sgxmerch.etsy.com) instead of Printify
+- **July 16, 2025**: ✓ Enhanced product cards with loading skeletons, proper error handling, and better image transitions
 - **July 16, 2025**: ✓ ENHANCED PROFILE MANAGEMENT SYSTEM COMPLETE - Added comprehensive profile picture upload and payment information management
 - **July 16, 2025**: ✓ Created dedicated user avatar upload endpoint with file validation and automatic database updates
 - **July 16, 2025**: ✓ Added profile picture section with drag-and-drop functionality, upload progress indicators, and remove option

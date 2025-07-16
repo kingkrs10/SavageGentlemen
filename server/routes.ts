@@ -4559,7 +4559,7 @@ if (selectedTicket.status === 'hidden') {
     }
   });
 
-  // Image proxy for external images (Etsy, etc.)
+  // Enhanced image proxy for external images (Etsy, etc.) with permanent fix
   app.get('/api/proxy-image', async (req: Request, res: Response) => {
     try {
       const { url } = req.query;
@@ -4571,30 +4571,59 @@ if (selectedTicket.status === 'hidden') {
       // Decode HTML entities and URL decode
       const decodedUrl = decodeURIComponent(url.replace(/&#x2F;/g, '/').replace(/&amp;/g, '&'));
 
-      // Validate URL is from allowed domains
-      const allowedDomains = ['i.etsystatic.com', 'printify.com'];
-      const urlObj = new URL(decodedUrl);
+      // Enhanced allowed domains list for permanent fix
+      const allowedDomains = [
+        'i.etsystatic.com', 
+        'etsystatic.com',
+        'printify.com',
+        'cdn.shopify.com',
+        'images.unsplash.com'
+      ];
       
-      if (!allowedDomains.includes(urlObj.hostname)) {
+      const urlObj = new URL(decodedUrl);
+      const isAllowed = allowedDomains.some(domain => 
+        urlObj.hostname === domain || urlObj.hostname.endsWith(`.${domain}`)
+      );
+      
+      if (!isAllowed) {
         return res.status(403).json({ error: 'Domain not allowed', hostname: urlObj.hostname });
       }
 
-      const response = await fetch(decodedUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Accept': 'image/*,*/*;q=0.8',
-        }
-      });
+      // Enhanced headers for better image fetching
+      const headers: Record<string, string> = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+      };
+      
+      // Special handling for Etsy images
+      if (decodedUrl.includes('etsystatic.com') || decodedUrl.includes('etsy.com')) {
+        headers['Referer'] = 'https://www.etsy.com/';
+        headers['Origin'] = 'https://www.etsy.com';
+      }
+
+      const response = await fetch(decodedUrl, { headers });
 
       if (!response.ok) {
+        console.error(`Failed to fetch image: ${response.status} ${response.statusText}`);
         return res.status(404).json({ error: 'Image not found' });
       }
 
       const contentType = response.headers.get('content-type') || 'image/jpeg';
+      
+      // Set enhanced headers for image serving
       res.setHeader('Content-Type', contentType);
-      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+      res.setHeader('Cache-Control', 'public, max-age=86400, immutable'); // Cache for 24 hours
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
       
       const buffer = await response.arrayBuffer();
+      console.log(`Successfully proxied image: ${decodedUrl} (${contentType})`);
       res.send(Buffer.from(buffer));
     } catch (error) {
       console.error('Image proxy error:', error);

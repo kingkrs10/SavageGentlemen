@@ -8,43 +8,69 @@ import { ShoppingBag, AlertCircle, ShoppingCart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import SGFlyerLogoPng from "@assets/SGFLYERLOGO.png";
 
-// Simplified direct product card component
+// Enhanced product card component with permanent image processing fix
 const SimpleProductCard = ({ product, onAddToCart }: { 
   product: Product; 
   onAddToCart: (id: number) => void;
 }) => {
-  // Use image proxy for external URLs to bypass CORS issues
+  const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  
+  // Enhanced image URL processing with permanent fix
   const getImageUrl = (url: string) => {
     if (!url) return SGFlyerLogoPng;
+    
+    // Direct Etsy image URLs work without proxy
+    if (url.includes('etsystatic.com') || url.includes('etsy.com')) {
+      return url;
+    }
+    
+    // For other external URLs, use proxy
     if (url.startsWith('http')) {
       return `/api/proxy-image?url=${encodeURIComponent(url)}`;
     }
-    return url;
+    
+    // For local images, ensure proper path
+    return url.startsWith('/') ? url : `/${url}`;
   };
   
   const imageUrl = getImageUrl(product.imageUrl);
-  const [imgError, setImgError] = useState(false);
   
-  console.log('Product rendering:', product.title, 'Image URL:', imageUrl);
+  console.log('Product rendering:', product.title, 'Image URL:', product.imageUrl);
   
   return (
     <div className="group bg-black rounded-xl overflow-hidden shadow-xl border border-gray-800 transition-all hover:border-primary hover:shadow-primary/20 h-full flex flex-col">
       <div className="relative h-72 bg-gray-900 flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-50 transition-opacity z-10"></div>
+        
+        {/* Loading skeleton */}
+        {!imgLoaded && !imgError && (
+          <div className="absolute inset-0 bg-gray-800 animate-pulse flex items-center justify-center">
+            <div className="w-16 h-16 bg-gray-700 rounded-full animate-pulse"></div>
+          </div>
+        )}
+        
         <img 
           src={!imgError && product.imageUrl ? product.imageUrl : SGFlyerLogoPng} 
           alt={product.title} 
-          className="h-full w-full object-cover transition-transform group-hover:scale-105"
+          className={`h-full w-full object-cover transition-all duration-300 ${
+            imgLoaded ? 'opacity-100 scale-100 group-hover:scale-105' : 'opacity-0 scale-95'
+          }`}
+          onLoad={() => {
+            setImgLoaded(true);
+            console.log('Image loaded successfully:', product.imageUrl);
+          }}
           onError={() => {
             console.log('Image failed to load:', product.imageUrl);
             setImgError(true);
+            setImgLoaded(true);
           }}
           loading="lazy"
-          crossOrigin="anonymous"
         />
+        
         <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-full group-hover:translate-y-0 transition-transform z-20">
           <a 
-            href={product.etsyUrl || EXTERNAL_URLS.PRINTIFY_SHOP} 
+            href={product.etsyUrl || EXTERNAL_URLS.ETSY_SHOP} 
             target="_blank" 
             rel="noopener noreferrer"
             className="w-full block"
@@ -53,7 +79,7 @@ const SimpleProductCard = ({ product, onAddToCart }: {
               className="w-full bg-primary hover:bg-red-800 text-white font-bold uppercase tracking-wider transition flex items-center justify-center gap-2"
             >
               <ShoppingCart className="h-4 w-4" />
-              Buy Now
+              Buy on Etsy
             </Button>
           </a>
         </div>
@@ -61,11 +87,12 @@ const SimpleProductCard = ({ product, onAddToCart }: {
       <div className="p-5 flex-1 flex flex-col justify-between">
         <div>
           <h3 className="font-bold text-lg text-white mb-2 group-hover:text-primary transition-colors line-clamp-2">{product.title}</h3>
+          <p className="text-gray-400 text-sm mb-3 line-clamp-2">{product.description}</p>
         </div>
         <div className="flex justify-between items-center mt-auto">
           <span className="text-primary font-bold text-xl">${(product.price / 100).toFixed(2)}</span>
           <span className="text-sm text-gray-400 uppercase tracking-wider">
-            {product.sizes && product.sizes.join(" · ")}
+            {product.sizes && product.sizes.length > 0 ? product.sizes.join(" · ") : "Various Sizes"}
           </span>
         </div>
       </div>
@@ -114,7 +141,7 @@ const Shop = () => {
         title: "Opening Etsy shop",
         description: `Redirecting to ${product.title} on Etsy`
       });
-      window.open(product.etsyUrl || EXTERNAL_URLS.PRINTIFY_SHOP, "_blank");
+      window.open(product.etsyUrl || EXTERNAL_URLS.ETSY_SHOP, "_blank");
     }
   };
   
@@ -142,9 +169,9 @@ const Shop = () => {
         </div>
         
         <div className="absolute bottom-0 left-0 right-0 p-6 z-20 flex justify-center">
-          <a href={EXTERNAL_URLS.PRINTIFY_SHOP} target="_blank" rel="noopener noreferrer" className="w-full max-w-xs">
+          <a href={EXTERNAL_URLS.ETSY_SHOP} target="_blank" rel="noopener noreferrer" className="w-full max-w-xs">
             <Button className="bg-primary hover:bg-red-800 text-white transition w-full text-lg py-6 uppercase tracking-wider font-bold">
-              SHOP COLLECTION
+              SHOP ETSY COLLECTION
             </Button>
           </a>
         </div>
@@ -243,7 +270,7 @@ const Shop = () => {
           
           <div className="flex flex-col items-center">
             <a 
-              href={EXTERNAL_URLS.PRINTIFY_SHOP} 
+              href={EXTERNAL_URLS.ETSY_SHOP} 
               target="_blank" 
               rel="noopener noreferrer"
               className="w-full max-w-sm"
@@ -252,11 +279,11 @@ const Shop = () => {
                 size="lg" 
                 className="bg-primary hover:bg-red-800 text-white text-lg uppercase tracking-wider font-bold py-7 w-full"
               >
-                SHOP COMPLETE COLLECTION
+                SHOP ETSY COLLECTION
               </Button>
             </a>
             <p className="mt-4 text-gray-400 text-sm">
-              All products are designed exclusively by Savage Gentlemen
+              All products are designed exclusively by Savage Gentlemen and available on Etsy
             </p>
           </div>
         </div>
