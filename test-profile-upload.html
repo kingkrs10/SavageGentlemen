@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Profile Picture Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .upload-section {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .preview {
+            max-width: 200px;
+            max-height: 200px;
+            margin: 10px auto;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+    <h1>Profile Picture Upload Test</h1>
+    
+    <div class="upload-section">
+        <h3>Test Profile Picture Upload</h3>
+        <p>Select an image file to test the upload functionality</p>
+        <input type="file" id="fileInput" accept="image/*" />
+        <button onclick="uploadFile()">Upload Profile Picture</button>
+        
+        <div id="preview"></div>
+    </div>
+    
+    <div id="result" class="result" style="display: none;"></div>
+    
+    <script>
+        // Mock user data for testing
+        const mockUser = {
+            id: 8,
+            token: "ODpLcnM6MTc1MjIwMDcyMzIzNQ=="
+        };
+        
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('preview').innerHTML = 
+                        `<img src="${e.target.result}" alt="Preview" class="preview">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            const resultDiv = document.getElementById('result');
+            
+            if (!file) {
+                showResult('Please select a file first', 'error');
+                return;
+            }
+            
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                showResult('Please select a valid image file', 'error');
+                return;
+            }
+            
+            // Validate file size (5MB limit)
+            if (file.size > 5 * 1024 * 1024) {
+                showResult('File size must be less than 5MB', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                showResult('Uploading...', 'info');
+                
+                const response = await fetch('/api/users/upload-avatar', {
+                    method: 'POST',
+                    headers: {
+                        'user-id': mockUser.id.toString(),
+                        'Authorization': `Bearer ${mockUser.token}`,
+                    },
+                    body: formData,
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResult(`
+                        <strong>Success!</strong><br>
+                        Message: ${result.message}<br>
+                        Avatar URL: ${result.avatar}<br>
+                        User ID: ${result.user.id}<br>
+                        User Avatar: ${result.user.avatar}
+                    `, 'success');
+                } else {
+                    showResult(`
+                        <strong>Error:</strong> ${result.message || 'Upload failed'}
+                    `, 'error');
+                }
+            } catch (error) {
+                showResult(`
+                    <strong>Network Error:</strong> ${error.message}
+                `, 'error');
+            }
+        }
+        
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

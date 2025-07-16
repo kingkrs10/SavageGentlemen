@@ -1599,6 +1599,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // User profile picture upload (for regular users)
+  router.post("/users/upload-avatar", upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      // Check authentication manually since multer needs to run before we access the file
+      const userId = req.headers['user-id'];
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required - No user ID" });
+      }
+      
+      try {
+        const id = parseInt(userId as string);
+        const user = await storage.getUser(id);
+        
+        if (!user) {
+          return res.status(401).json({ message: `User not found - ID: ${id}` });
+        }
+        
+        const file = req.file;
+        
+        if (!file) {
+          return res.status(400).json({ message: "No file uploaded" });
+        }
+        
+        // Validate file type
+        if (!file.mimetype.startsWith('image/')) {
+          return res.status(400).json({ message: "Only image files are allowed" });
+        }
+        
+        // Validate file size (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+          return res.status(400).json({ message: "File size must be less than 5MB" });
+        }
+        
+        console.log('Profile picture uploaded:', file.originalname, 'by user ID:', id);
+        
+        // Create a relative URL to the file
+        const fileUrl = `/uploads/${file.filename}`;
+        
+        // Update user's avatar in the database
+        const updatedUser = await storage.updateUser(id, { avatar: fileUrl });
+        
+        // Create a record in the media uploads table
+        await storage.createMediaUpload({
+          userId: id,
+          url: fileUrl,
+          fileName: file.originalname,
+          fileType: file.mimetype,
+          fileSize: file.size,
+          relatedEntityType: 'user-avatar',
+          relatedEntityId: id
+        });
+        
+        return res.status(200).json({
+          message: "Profile picture uploaded successfully",
+          avatar: fileUrl,
+          user: updatedUser
+        });
+      } catch (error) {
+        console.error("Authentication error:", error);
+        return res.status(500).json({ message: "Authentication error" });
+      }
+    } catch (err) {
+      console.error("Error uploading profile picture:", err);
+      return res.status(500).json({ message: "Failed to upload profile picture" });
+    }
+  });
+
   // Media uploads - make sure we use router not app
   router.post("/admin/uploads", upload.single('file'), async (req: Request, res: Response) => {
     try {
@@ -2416,6 +2484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bio: req.body.bio,
         location: req.body.location,
         website: req.body.website,
+        avatar: req.body.avatar,
       };
 
       // Remove undefined values
@@ -2428,6 +2497,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err) {
       console.error("Error updating user profile:", err);
       return res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  // Update user payment information
+  router.put("/users/:id/payment", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      // Ensure user can only update their own payment info or admin can update any
+      if (req.user?.id !== userId && req.user?.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized to update this payment information" });
+      }
+
+      const updateData = {
+        stripeCustomerId: req.body.stripeCustomerId,
+        paypalCustomerId: req.body.paypalCustomerId,
+      };
+
+      // Remove undefined values
+      const cleanedData = Object.fromEntries(
+        Object.entries(updateData).filter(([_, value]) => value !== undefined && value !== null && value !== '')
+      );
+
+      const updatedUser = await storage.updateUser(userId, cleanedData);
+      return res.status(200).json(updatedUser);
+    } catch (err) {
+      console.error("Error updating user payment info:", err);
+      return res.status(500).json({ message: "Failed to update payment information" });
     }
   });
 
