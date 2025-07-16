@@ -43,7 +43,7 @@ async function sendThankYouEmail(user, index) {
     orderId: `COMP-${timestamp}`,
     email: user.email,
     eventName: "R Y T H Y M > IN< R I D D I M",
-    eventDate: "2025-07-26T00:00:00.000Z",
+    eventDate: "2025-07-25T00:00:00.000Z",
     eventLocation: "The Ainsworth Hoboken NJ",
     ticketName: "Complimentary Ticket - Thank You for Supporting Savage Gentlemen",
     ticketType: "complimentary",
