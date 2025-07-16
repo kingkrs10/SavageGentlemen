@@ -11,7 +11,7 @@ import * as gmail from './email-gmail.js';
 type EmailProvider = 'sendgrid' | 'mailersend' | 'brevo' | 'gmail';
 
 // Get the current email provider from environment variable
-const EMAIL_PROVIDER: EmailProvider = (process.env.EMAIL_PROVIDER as EmailProvider) || 'sendgrid';
+const EMAIL_PROVIDER: EmailProvider = 'brevo';
 
 // Provider configuration
 const providers = {
@@ -30,6 +30,12 @@ console.log(`[EMAIL_PROVIDER] Using email provider: ${EMAIL_PROVIDER}`);
 export const sendEmail = currentProvider.sendEmail;
 export const sendTicketEmail = currentProvider.sendTicketEmail;
 export const testEmailConnection = currentProvider.testEmailConnection || (() => Promise.resolve(true));
+
+// For missing functions, fall back to sendgrid
+export const sendOrderConfirmation = sendgrid.sendOrderConfirmation;
+export const sendAdminNotification = sendgrid.sendAdminNotification;
+export const sendWelcomeEmail = sendgrid.sendWelcomeEmail;
+export const sendPasswordResetEmail = sendgrid.sendPasswordResetEmail;
 
 // Test all providers and return the first working one
 export const findWorkingEmailProvider = async (): Promise<EmailProvider | null> => {

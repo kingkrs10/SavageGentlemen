@@ -44,7 +44,7 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
-import { sendEmail, sendTicketEmail, sendOrderConfirmation, sendAdminNotification, sendWelcomeEmail, sendPasswordResetEmail } from "./email";
+import { sendEmail, sendTicketEmail, sendOrderConfirmation, sendAdminNotification, sendWelcomeEmail, sendPasswordResetEmail } from "./email-provider";
 import { analyticsRouter } from "./analytics-routes";
 import { emailMarketingRouter } from "./email-marketing-routes";
 import { registerSocialRoutes } from "./social-routes";
