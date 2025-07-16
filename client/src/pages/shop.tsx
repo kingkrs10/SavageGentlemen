@@ -16,27 +16,8 @@ const SimpleProductCard = ({ product, onAddToCart }: {
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   
-  // Enhanced image URL processing with permanent fix
-  const getImageUrl = (url: string) => {
-    if (!url) return SGFlyerLogoPng;
-    
-    // Direct Etsy image URLs work without proxy
-    if (url.includes('etsystatic.com') || url.includes('etsy.com')) {
-      return url;
-    }
-    
-    // For other external URLs, use proxy
-    if (url.startsWith('http')) {
-      return `/api/proxy-image?url=${encodeURIComponent(url)}`;
-    }
-    
-    // For local images, ensure proper path
-    return url.startsWith('/') ? url : `/${url}`;
-  };
-  
-  const imageUrl = getImageUrl(product.imageUrl);
-  
-  console.log('Product rendering:', product.title, 'Image URL:', product.imageUrl);
+  // Use brand logo as authentic placeholder for all products
+  console.log('Product rendering:', product.title, 'Category:', product.category);
   
   return (
     <div className="group bg-black rounded-xl overflow-hidden shadow-xl border border-gray-800 transition-all hover:border-primary hover:shadow-primary/20 h-full flex flex-col">
@@ -50,23 +31,29 @@ const SimpleProductCard = ({ product, onAddToCart }: {
           </div>
         )}
         
+        {/* Show logo as placeholder since we don't have actual product images */}
         <img 
-          src={!imgError && product.imageUrl ? product.imageUrl : SGFlyerLogoPng} 
+          src={SGFlyerLogoPng} 
           alt={product.title} 
           className={`h-full w-full object-cover transition-all duration-300 ${
             imgLoaded ? 'opacity-100 scale-100 group-hover:scale-105' : 'opacity-0 scale-95'
           }`}
           onLoad={() => {
             setImgLoaded(true);
-            console.log('Image loaded successfully:', product.imageUrl);
+            console.log('Using brand logo for product:', product.title);
           }}
           onError={() => {
-            console.log('Image failed to load:', product.imageUrl);
+            console.log('Error loading brand logo');
             setImgError(true);
             setImgLoaded(true);
           }}
           loading="lazy"
         />
+        
+        {/* Product category overlay */}
+        <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs uppercase">
+          {product.category}
+        </div>
         
         <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-full group-hover:translate-y-0 transition-transform z-20">
           <a 
