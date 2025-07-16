@@ -224,6 +224,9 @@ export const insertLivestreamSchema = createInsertSchema(livestreams).pick({
   streamUrl: true,
 });
 
+export type Livestream = typeof livestreams.$inferSelect;
+export type InsertLivestream = z.infer<typeof insertLivestreamSchema>;
+
 // Posts schema
 export const posts = pgTable("posts", {
   id: serial("id").primaryKey(),

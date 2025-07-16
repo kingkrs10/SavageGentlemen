@@ -4486,6 +4486,41 @@ if (selectedTicket.status === 'hidden') {
     return res.status(200).json({ received: true });
   });
 
+  // Livestream management routes
+  app.get('/api/livestreams', authenticateUser, asyncHandler(async (req, res) => {
+    const livestreams = await storage.getAllLivestreams();
+    res.json(successResponse(livestreams));
+  }));
+
+  app.post('/api/livestreams', authenticateUser, authorizeAdmin, asyncHandler(async (req, res) => {
+    const validatedData = insertLivestreamSchema.parse(req.body);
+    const livestream = await storage.createLivestream(validatedData);
+    res.json(successResponse(livestream));
+  }));
+
+  app.put('/api/livestreams/:id', authenticateUser, authorizeAdmin, asyncHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    const validatedData = insertLivestreamSchema.partial().parse(req.body);
+    const livestream = await storage.updateLivestream(id, validatedData);
+    
+    if (!livestream) {
+      throw new AppError('Livestream not found', 404);
+    }
+    
+    res.json(successResponse(livestream));
+  }));
+
+  app.delete('/api/livestreams/:id', authenticateUser, authorizeAdmin, asyncHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    const deleted = await storage.deleteLivestream(id);
+    
+    if (!deleted) {
+      throw new AppError('Livestream not found', 404);
+    }
+    
+    res.json(successResponse({ message: 'Livestream deleted successfully' }));
+  }));
+
   // Create HTTP server
   const httpServer = createServer(app);
   

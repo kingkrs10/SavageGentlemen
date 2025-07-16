@@ -2330,6 +2330,59 @@ export class DatabaseStorage implements IStorage {
       }
     };
   }
+
+  // Livestream management operations
+  async getAllLivestreams(): Promise<Livestream[]> {
+    return await db
+      .select()
+      .from(livestreams)
+      .orderBy(desc(livestreams.streamDate));
+  }
+
+  async getLivestream(id: number): Promise<Livestream | undefined> {
+    const [livestream] = await db
+      .select()
+      .from(livestreams)
+      .where(eq(livestreams.id, id));
+    return livestream;
+  }
+
+  async createLivestream(livestreamData: InsertLivestream): Promise<Livestream> {
+    const [livestream] = await db
+      .insert(livestreams)
+      .values({
+        ...livestreamData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return livestream;
+  }
+
+  async updateLivestream(id: number, livestreamData: Partial<InsertLivestream>): Promise<Livestream | undefined> {
+    const [livestream] = await db
+      .update(livestreams)
+      .set({
+        ...livestreamData,
+        updatedAt: new Date()
+      })
+      .where(eq(livestreams.id, id))
+      .returning();
+    return livestream;
+  }
+
+  async deleteLivestream(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(livestreams)
+        .where(eq(livestreams.id, id))
+        .returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting livestream:", error);
+      return false;
+    }
+  }
   
   // Ticket operations
   async getTicket(id: number): Promise<Ticket | undefined> {
