@@ -20,7 +20,8 @@ import {
   Plus,
   Edit,
   Eye,
-  BarChart3
+  BarChart3,
+  Radio
 } from "lucide-react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -31,6 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
+import LivestreamManager from "@/components/admin/LivestreamManager";
 
 // Helper functions for managing deleted events in localStorage
 const storeDeletedEventLocally = (event) => {
@@ -843,7 +845,7 @@ export default function AdminTemp() {
           value={activeTab}
           onValueChange={setActiveTab}
         >
-          <TabsList className="w-full grid grid-cols-5 mb-6">
+          <TabsList className="w-full grid grid-cols-6 mb-6">
             <TabsTrigger value="tools" className="flex items-center gap-1 text-xs sm:text-sm">
               <Ticket className="h-3 w-3 sm:h-4 sm:w-4 mr-0 sm:mr-1" />
               <span className="hidden sm:inline">Tools</span>
@@ -851,6 +853,10 @@ export default function AdminTemp() {
             <TabsTrigger value="content" className="flex items-center gap-1 text-xs sm:text-sm" data-value="content">
               <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-0 sm:mr-1" />
               <span className="hidden sm:inline">Events</span>
+            </TabsTrigger>
+            <TabsTrigger value="live" className="flex items-center gap-1 text-xs sm:text-sm">
+              <Radio className="h-3 w-3 sm:h-4 sm:w-4 mr-0 sm:mr-1" />
+              <span className="hidden sm:inline">Live</span>
             </TabsTrigger>
             <TabsTrigger value="ads" className="flex items-center gap-1 text-xs sm:text-sm">
               <ShoppingBag className="h-3 w-3 sm:h-4 sm:w-4 mr-0 sm:mr-1" />
@@ -1385,6 +1391,23 @@ export default function AdminTemp() {
                   >
                     View Analytics
                   </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="live" className="space-y-4">
+            <div className="grid grid-cols-1 gap-4">
+              {/* Live Controls Card */}
+              <Card className="shadow-md">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base sm:text-lg flex items-center">
+                    <Radio className="h-4 w-4 mr-2" />
+                    Live Stream Management
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <LivestreamManager />
                 </CardContent>
               </Card>
             </div>
