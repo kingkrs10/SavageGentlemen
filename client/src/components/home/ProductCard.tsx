@@ -29,13 +29,22 @@ const ProductCard = ({
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   
-  // Use image proxy for external URLs to bypass CORS issues
+  // Enhanced image URL processing with proper fallback
   const getImageUrl = (url: string) => {
     if (!url) return SGFlyerLogoPng;
+    
+    // Direct Etsy image URLs work without proxy
+    if (url.includes('etsystatic.com') || url.includes('etsy.com')) {
+      return url;
+    }
+    
+    // For other external URLs, use proxy
     if (url.startsWith('http')) {
       return `/api/proxy-image?url=${encodeURIComponent(url)}`;
     }
-    return url;
+    
+    // For local images, ensure proper path
+    return url.startsWith('/') ? url : `/${url}`;
   };
   
   const imgSrc = getImageUrl(imageUrl);

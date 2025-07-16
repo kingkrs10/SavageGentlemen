@@ -16,8 +16,27 @@ const SimpleProductCard = ({ product, onAddToCart }: {
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   
-  // Use brand logo as authentic placeholder for all products
-  console.log('Product rendering:', product.title, 'Category:', product.category);
+  // Enhanced image URL processing with proper fallback
+  const getImageUrl = (url: string) => {
+    if (!url) return SGFlyerLogoPng;
+    
+    // Direct Etsy image URLs work without proxy
+    if (url.includes('etsystatic.com') || url.includes('etsy.com')) {
+      return url;
+    }
+    
+    // For other external URLs, use proxy
+    if (url.startsWith('http')) {
+      return `/api/proxy-image?url=${encodeURIComponent(url)}`;
+    }
+    
+    // For local images, ensure proper path
+    return url.startsWith('/') ? url : `/${url}`;
+  };
+  
+  const imageUrl = getImageUrl(product.imageUrl);
+  
+  console.log('Product rendering:', product.title, 'Image URL:', imageUrl);
   
   return (
     <div className="group bg-black rounded-xl overflow-hidden shadow-xl border border-gray-800 transition-all hover:border-primary hover:shadow-primary/20 h-full flex flex-col">
@@ -31,19 +50,19 @@ const SimpleProductCard = ({ product, onAddToCart }: {
           </div>
         )}
         
-        {/* Show logo as placeholder since we don't have actual product images */}
+        {/* Product image with fallback to brand logo */}
         <img 
-          src={SGFlyerLogoPng} 
+          src={!imgError && product.imageUrl ? imageUrl : SGFlyerLogoPng} 
           alt={product.title} 
           className={`h-full w-full object-cover transition-all duration-300 ${
             imgLoaded ? 'opacity-100 scale-100 group-hover:scale-105' : 'opacity-0 scale-95'
           }`}
           onLoad={() => {
             setImgLoaded(true);
-            console.log('Using brand logo for product:', product.title);
+            console.log('Product image loaded:', product.title, imageUrl);
           }}
           onError={() => {
-            console.log('Error loading brand logo');
+            console.log('Product image failed, using fallback:', product.title);
             setImgError(true);
             setImgLoaded(true);
           }}
