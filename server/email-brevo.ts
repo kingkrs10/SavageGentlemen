@@ -134,7 +134,18 @@ export const sendTicketEmail = async (
         </div>
         
         <div class="content">
-          <p>Thank you for your registration! Your ticket has been confirmed.</p>
+          ${ticketInfo.ticketType === 'complimentary' || ticketInfo.ticketType?.includes('Thank You') ? 
+            `<div style="background: #e8f5e8; border: 2px solid #4caf50; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h3 style="color: #2e7d32; margin-top: 0;">🎉 Thank You for Supporting Savage Gentlemen!</h3>
+              <p style="color: #2e7d32; font-size: 16px; line-height: 1.6;">
+                Thank you for joining us at our previous "Rhythm in Riddim" event! Your presence and energy made it an incredible experience. 
+                As a token of our appreciation, we're excited to offer you this complimentary ticket to our upcoming event.
+              </p>
+              <p style="color: #2e7d32; font-size: 16px; line-height: 1.6;">
+                <strong>We can't wait to see you again and continue building this amazing community together!</strong>
+              </p>
+            </div>` : 
+            `<p>Thank you for your registration! Your ticket has been confirmed.</p>`}
           
           <div class="event-details">
             <h3>Event Details:</h3>
@@ -178,7 +189,15 @@ export const sendTicketEmail = async (
     const textContent = `
 Your Ticket Confirmation - ${ticketInfo.eventName}
 
-Thank you for your registration! Your ticket has been confirmed.
+${ticketInfo.ticketType === 'complimentary' || ticketInfo.ticketType?.includes('Thank You') ? 
+`🎉 THANK YOU FOR SUPPORTING SAVAGE GENTLEMEN!
+
+Thank you for joining us at our previous "Rhythm in Riddim" event! Your presence and energy made it an incredible experience. As a token of our appreciation, we're excited to offer you this complimentary ticket to our upcoming event.
+
+We can't wait to see you again and continue building this amazing community together!
+
+` : 'Thank you for your registration! Your ticket has been confirmed.'}
+
 
 Event Details:
 - Event: ${ticketInfo.eventName}
