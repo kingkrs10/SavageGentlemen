@@ -83,23 +83,13 @@ const ProductCard = ({
           className="block relative group-hover:scale-105 transition-transform duration-300"
         >
           <img 
-            src={imgSrc} 
+            src={SGFlyerLogoPng} 
             alt={title} 
-            className="w-full h-48 object-cover" 
+            className="w-full h-48 object-contain p-6 bg-gray-900" 
             loading="lazy"
             onError={handleImageError}
             onLoad={handleImageLoad}
-            style={{ display: imgError ? 'none' : 'block' }}
           />
-          {imgError && (
-            <div className="w-full h-48 bg-gray-800 flex items-center justify-center">
-              <img 
-                src={SGFlyerLogoPng} 
-                alt={title} 
-                className="h-32 object-contain"
-              />
-            </div>
-          )}
         </a>
       </div>
     );
@@ -115,23 +105,13 @@ const ProductCard = ({
         onClick={() => trackProductDetailClick(id)}
       >
         <img 
-          src={imgSrc} 
+          src={SGFlyerLogoPng} 
           alt={title} 
-          className="w-full h-40 object-cover"
+          className="w-full h-40 object-contain p-4 bg-gray-900"
           loading="lazy"
           onError={handleImageError}
           onLoad={handleImageLoad}
-          style={{ display: imgError ? 'none' : 'block' }}
         />
-        {imgError && (
-          <div className="w-full h-40 bg-gray-800 flex items-center justify-center">
-            <img 
-              src={SGFlyerLogoPng} 
-              alt={title} 
-              className="h-24 object-contain"
-            />
-          </div>
-        )}
       </a>
     </div>
   );

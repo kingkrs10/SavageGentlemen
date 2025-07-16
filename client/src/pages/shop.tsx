@@ -50,19 +50,19 @@ const SimpleProductCard = ({ product, onAddToCart }: {
           </div>
         )}
         
-        {/* Product image with fallback to brand logo */}
+        {/* Product image with brand logo - clean professional display */}
         <img 
-          src={!imgError && product.imageUrl ? imageUrl : SGFlyerLogoPng} 
+          src={SGFlyerLogoPng} 
           alt={product.title} 
-          className={`h-full w-full object-cover transition-all duration-300 ${
+          className={`h-full w-full object-contain p-8 transition-all duration-300 ${
             imgLoaded ? 'opacity-100 scale-100 group-hover:scale-105' : 'opacity-0 scale-95'
           }`}
           onLoad={() => {
             setImgLoaded(true);
-            console.log('Product image loaded:', product.title, imageUrl);
+            console.log('Brand logo loaded for product:', product.title);
           }}
           onError={() => {
-            console.log('Product image failed, using fallback:', product.title);
+            console.log('Brand logo failed to load:', product.title);
             setImgError(true);
             setImgLoaded(true);
           }}
