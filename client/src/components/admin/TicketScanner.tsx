@@ -447,20 +447,20 @@ const TicketScanner = () => {
     const isScanned = ticketInfo.scannedAt !== undefined;
     
     return (
-      <Card className={`mt-4 shadow-md ${isScanned ? 'border-red-500' : 'border-green-500'}`}>
+      <Card className={`mt-6 card-modern shadow-xl ${isScanned ? 'border-red-500/50' : 'border-green-500/50'}`}>
         <CardHeader className={`pb-3 ${isScanned ? 'bg-red-500/10' : 'bg-green-500/10'}`}>
           <div className="flex flex-col items-center text-center pb-2 sm:pb-3">
-            <div className="rounded-full bg-white p-2 mb-2 shadow-sm">
+            <div className="rounded-full bg-white p-3 mb-3 shadow-lg">
               {isScanned ? (
                 <XCircle className="h-10 w-10 sm:h-12 sm:w-12 text-red-500 shrink-0" />
               ) : (
                 <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 text-green-500 shrink-0" />
               )}
             </div>
-            <CardTitle className="text-lg sm:text-xl">
+            <CardTitle className="text-lg sm:text-xl text-white">
               {isScanned ? 'TICKET ALREADY USED' : 'Ticket Valid'}
             </CardTitle>
-            <CardDescription className="text-xs sm:text-sm mt-1">
+            <CardDescription className="text-xs sm:text-sm mt-1 text-white/70">
               {isScanned && ticketInfo.scannedAt
                 ? `This ticket was previously scanned on ${new Date(ticketInfo.scannedAt as string).toLocaleString()}`
                 : 'This ticket is valid and has been marked as scanned'}
@@ -469,34 +469,34 @@ const TicketScanner = () => {
           
           <div className="w-full h-px bg-border my-2"></div>
           
-          <div className="font-bold text-lg sm:text-xl text-center">
+          <div className="font-bold text-lg sm:text-xl text-center gradient-text">
             {ticketInfo.eventName}
           </div>
         </CardHeader>
         <CardContent className="pt-3 sm:pt-4">
           <div className="space-y-3 text-sm sm:text-base">
-            <div className="grid grid-cols-3 gap-1 border-b pb-2">
-              <span className="font-semibold col-span-1">Ticket:</span> 
-              <span className="col-span-2 font-medium">{ticketInfo.ticketName}</span>
+            <div className="grid grid-cols-3 gap-1 border-b border-white/20 pb-2">
+              <span className="font-semibold col-span-1 text-white/80">Ticket:</span> 
+              <span className="col-span-2 font-medium text-white">{ticketInfo.ticketName}</span>
             </div>
-            <div className="grid grid-cols-3 gap-1 border-b pb-2">
-              <span className="font-semibold col-span-1">Date:</span> 
-              <span className="col-span-2">{new Date(ticketInfo.eventDate).toLocaleDateString()} {new Date(ticketInfo.eventDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+            <div className="grid grid-cols-3 gap-1 border-b border-white/20 pb-2">
+              <span className="font-semibold col-span-1 text-white/80">Date:</span> 
+              <span className="col-span-2 text-white">{new Date(ticketInfo.eventDate).toLocaleDateString()} {new Date(ticketInfo.eventDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
             </div>
-            <div className="grid grid-cols-3 gap-1 border-b pb-2">
-              <span className="font-semibold col-span-1">Location:</span> 
-              <span className="col-span-2">{ticketInfo.eventLocation}</span>
+            <div className="grid grid-cols-3 gap-1 border-b border-white/20 pb-2">
+              <span className="font-semibold col-span-1 text-white/80">Location:</span> 
+              <span className="col-span-2 text-white">{ticketInfo.eventLocation}</span>
             </div>
-            <div className="grid grid-cols-3 gap-1 border-b pb-2">
-              <span className="font-semibold col-span-1">Ticket ID:</span> 
-              <span className="col-span-2">{ticketInfo.ticketId}</span>
+            <div className="grid grid-cols-3 gap-1 border-b border-white/20 pb-2">
+              <span className="font-semibold col-span-1 text-white/80">Ticket ID:</span> 
+              <span className="col-span-2 text-white">{ticketInfo.ticketId}</span>
             </div>
-            <div className="grid grid-cols-3 gap-1 border-b pb-2">
-              <span className="font-semibold col-span-1">Order ID:</span> 
-              <span className="col-span-2">{ticketInfo.orderId}</span>
+            <div className="grid grid-cols-3 gap-1 border-b border-white/20 pb-2">
+              <span className="font-semibold col-span-1 text-white/80">Order ID:</span> 
+              <span className="col-span-2 text-white">{ticketInfo.orderId}</span>
             </div>
             {ticketInfo.scannedAt && (
-              <div className="grid grid-cols-3 gap-1 text-amber-700 border-b pb-2">
+              <div className="grid grid-cols-3 gap-1 text-amber-300 border-b border-white/20 pb-2">
                 <span className="font-semibold col-span-1">Scanned:</span> 
                 <span className="col-span-2">{new Date(ticketInfo.scannedAt as string).toLocaleString()}</span>
               </div>
@@ -506,7 +506,7 @@ const TicketScanner = () => {
         <CardFooter className="pt-2">
           <Button 
             onClick={resetScanner} 
-            className="w-full h-12 text-base font-medium"
+            className="btn-modern w-full h-12 text-base font-medium gradient-primary text-white border-0"
             size="lg"
           >
             Scan Another Ticket
@@ -519,16 +519,16 @@ const TicketScanner = () => {
   return (
     <div className="flex flex-col items-center px-2 sm:px-4 py-4">
       <div className="w-full max-w-md">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-4 text-center">Ticket Scanner</h1>
+        <h1 className="heading-modern text-3xl sm:text-4xl gradient-text mb-6 text-center">Ticket Scanner</h1>
         
         {!ticketInfo && (
-          <div className="mb-4 flex justify-center">
-            <div className="bg-muted rounded-lg p-1 inline-flex flex-wrap">
+          <div className="mb-6 flex justify-center">
+            <div className="glass-effect rounded-xl p-2 inline-flex flex-wrap border border-white/20">
               <Button
                 type="button"
                 variant={scanMode === 'manual' ? 'default' : 'outline'}
                 size="sm"
-                className="flex items-center text-xs sm:text-sm mb-1 sm:mb-0"
+                className={`btn-modern flex items-center text-xs sm:text-sm mb-1 sm:mb-0 ${scanMode === 'manual' ? 'gradient-primary text-white border-0' : 'glass-effect border-white/20 text-white hover:bg-white/10'}`}
                 onClick={() => setScanMode('manual')}
               >
                 <KeyboardIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -538,7 +538,7 @@ const TicketScanner = () => {
                 type="button"
                 variant={scanMode === 'camera' ? 'default' : 'outline'}
                 size="sm"
-                className="flex items-center text-xs sm:text-sm mb-1 sm:mb-0"
+                className={`btn-modern flex items-center text-xs sm:text-sm mb-1 sm:mb-0 ${scanMode === 'camera' ? 'gradient-primary text-white border-0' : 'glass-effect border-white/20 text-white hover:bg-white/10'}`}
                 onClick={() => setScanMode('camera')}
               >
                 <Video className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -548,7 +548,7 @@ const TicketScanner = () => {
                 type="button"
                 variant={scanMode === 'upload' ? 'default' : 'outline'}
                 size="sm"
-                className="flex items-center text-xs sm:text-sm"
+                className={`btn-modern flex items-center text-xs sm:text-sm ${scanMode === 'upload' ? 'gradient-primary text-white border-0' : 'glass-effect border-white/20 text-white hover:bg-white/10'}`}
                 onClick={() => setScanMode('upload')}
               >
                 <Camera className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />

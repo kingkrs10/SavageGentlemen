@@ -61,11 +61,11 @@ export default function TicketScannerPage() {
         description="Scan and validate event tickets"
       />
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
-        <div className="mb-4">
+        <div className="mb-6">
           <Button
             variant="outline"
             size="sm"
-            className="mb-2 text-xs sm:text-sm"
+            className="btn-modern mb-2 text-xs sm:text-sm glass-effect border-white/20 text-white hover:bg-white/10"
             onClick={() => navigate('/admin')}
           >
             <ArrowLeft className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
