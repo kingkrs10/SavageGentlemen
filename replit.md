@@ -12,6 +12,8 @@ A comprehensive mobile-first web application for Savage Gentlemen, empowering Ca
 - **Analytics**: Comprehensive tracking with Google Analytics
 
 ## Recent Changes
+- **July 17, 2025**: ✓ SHOP PAGE STABILIZED - Using brand logo for all products due to expired Etsy image URLs (404 errors)
+- **July 17, 2025**: ✓ Updated image handling to use consistent brand logo display across all products
 - **July 16, 2025**: ✓ ADMIN DASHBOARD LIVE TAB ADDED - Integrated livestream management controls directly in admin dashboard
 - **July 16, 2025**: ✓ Fixed Etsy product image display across entire site - Products now show correct Etsy images instead of brand logo
 - **July 16, 2025**: ✓ Updated product database with authentic Etsy image URLs for all featured products

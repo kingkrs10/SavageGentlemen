@@ -31,20 +31,9 @@ const ProductCard = ({
   
   // Enhanced image URL processing with proper fallback
   const getImageUrl = (url: string) => {
-    if (!url) return SGFlyerLogoPng;
-    
-    // Direct Etsy image URLs work without proxy
-    if (url.includes('etsystatic.com') || url.includes('etsy.com')) {
-      return url;
-    }
-    
-    // For other external URLs, use proxy
-    if (url.startsWith('http')) {
-      return `/api/proxy-image?url=${encodeURIComponent(url)}`;
-    }
-    
-    // For local images, ensure proper path
-    return url.startsWith('/') ? url : `/${url}`;
+    // Always use brand logo for consistent display
+    // Since Etsy URLs are returning 404, we'll use brand logo
+    return SGFlyerLogoPng;
   };
   
   const imgSrc = getImageUrl(imageUrl);
