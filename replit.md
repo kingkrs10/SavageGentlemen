@@ -12,6 +12,7 @@ A comprehensive mobile-first web application for Savage Gentlemen, empowering Ca
 - **Analytics**: Comprehensive tracking with Google Analytics
 
 ## Recent Changes
+- **July 17, 2025**: ✓ REMOVED PLACEHOLDER LIVESTREAM - Disabled Rick Astley "Never Gonna Give You Up" placeholder from home page
 - **July 17, 2025**: ✓ SHOP PAGE STABILIZED - Using brand logo for all products due to expired Etsy image URLs (404 errors)
 - **July 17, 2025**: ✓ Updated image handling to use consistent brand logo display across all products
 - **July 16, 2025**: ✓ ADMIN DASHBOARD LIVE TAB ADDED - Integrated livestream management controls directly in admin dashboard
