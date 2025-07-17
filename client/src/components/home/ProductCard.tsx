@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ShoppingCart, Heart, ImageOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { Product } from "@/lib/types";
 import SGFlyerLogoPng from "@assets/SGFLYERLOGO.png";
@@ -85,23 +86,41 @@ const ProductCard = ({
   }
   
   return (
-    <div className="bg-gray-900 rounded-lg overflow-hidden shadow-lg group cursor-pointer">
+    <div className="modern-card glass-card animate-fade-in-up group cursor-pointer">
       <a 
         href={product.etsyUrl} 
         target="_blank" 
         rel="noopener noreferrer"
-        className="block relative group-hover:scale-105 transition-transform duration-300"
+        className="block relative overflow-hidden rounded-2xl"
         onClick={() => trackProductDetailClick(id)}
       >
-        <img 
-          src={imgError ? SGFlyerLogoPng : imgSrc} 
-          alt={title} 
-          className="w-full h-40 object-contain p-4 bg-gray-900"
-          loading="lazy"
-          onError={handleImageError}
-          onLoad={handleImageLoad}
-        />
+        <div className="w-full h-40 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+          <img 
+            src={imgError ? SGFlyerLogoPng : imgSrc} 
+            alt={title} 
+            className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"
+            onError={handleImageError}
+            onLoad={handleImageLoad}
+          />
+        </div>
+        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+          <div className="text-white/80 text-xs font-semibold bg-black/40 px-3 py-1 rounded-full backdrop-blur-sm">
+            View on Etsy
+          </div>
+        </div>
       </a>
+      <div className="p-4 card-content">
+        <h3 className="heading-modern text-sm text-white/90 group-hover:text-white transition-colors duration-300 truncate">{title}</h3>
+        <div className="flex justify-between items-center mt-2">
+          <Badge variant="outline" className="gradient-primary text-white text-xs border-0 px-2 py-1 rounded-full">
+            {category}
+          </Badge>
+          <span className="text-xs text-white/60 font-medium">
+            ${(price / 100).toFixed(2)}
+          </span>
+        </div>
+      </div>
     </div>
   );
 };

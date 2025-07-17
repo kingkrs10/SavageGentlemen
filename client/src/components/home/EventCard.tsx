@@ -142,43 +142,45 @@ const EventCard = ({
   }
   
   return (
-    <div className="event-card rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 group">
+    <div className="modern-card glass-card animate-fade-in-up group">
       <Link href={`/events/${id}`} className="block relative">
-        <div className="w-full h-48">
+        <div className="w-full h-48 overflow-hidden rounded-t-2xl">
           <LazyImage 
             src={imageUrl}
             alt={title}
-            className="w-full h-full"
+            className="w-full h-full group-hover:scale-105 transition-transform duration-500"
             fallbackSrc={SGFlyerLogoPng}
             placeholderColor="#1f2937"
-            loadingClassName="w-full h-full bg-gray-800 animate-pulse"
+            loadingClassName="shimmer w-full h-full"
             objectFit="contain"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent">
-            {/* Subtle gradient overlay to improve visibility */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
+            {/* Enhanced gradient overlay */}
           </div>
-          <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
-            <ExternalLink className="w-8 h-8 text-white" />
+          <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-300">
+            <div className="transform scale-75 group-hover:scale-100 transition-transform duration-300">
+              <ExternalLink className="w-8 h-8 text-white drop-shadow-lg" />
+            </div>
           </div>
         </div>
       </Link>
-      <div className="p-4">
-        <div className="flex justify-between items-start">
-          <div>
+      <div className="p-6 card-content">
+        <div className="flex justify-between items-start mb-3">
+          <div className="flex-1">
             <Link href={`/events/${id}`} className="hover:underline block">
-              <h3 className="text-xl font-heading">{title}</h3>
+              <h3 className="heading-modern text-xl text-white/90 group-hover:text-white transition-colors">{title}</h3>
             </Link>
-            <p className="text-sm text-gray-300 flex items-center mt-1">
+            <p className="text-sm text-white/60 flex items-center mt-2">
               <Calendar className="w-3 h-3 mr-1" /> {formatDate(date, id, title)}
             </p>
           </div>
-          <Badge variant="outline" className="bg-accent text-black text-xs font-bold px-3 py-1 rounded-full">
+          <Badge variant="outline" className="gradient-primary text-white text-xs font-bold px-3 py-1 rounded-full border-0 shadow-lg">
             {formatEventPrice(event)}
           </Badge>
         </div>
-        <p className="text-sm mt-2">{description}</p>
+        <p className="text-modern text-sm text-white/70 mt-2 line-clamp-2">{description}</p>
         <div className="flex flex-wrap items-center gap-2 mt-4">
-          <span className="text-xs flex items-center">
+          <span className="text-xs flex items-center text-white/60">
             <MapPin className="w-3 h-3 mr-1" /> {location}
           </span>
           <div className="flex ml-auto space-x-2">
@@ -186,13 +188,13 @@ const EventCard = ({
               <Button 
                 variant="outline"
                 size="sm"
-                className="border-primary text-primary hover:bg-primary hover:text-white transition"
+                className="glass-effect border-white/20 text-white hover:bg-white/10 transition-all duration-300"
               >
                 Details
               </Button>
             </Link>
             <Button 
-              className="bg-primary text-white hover:bg-red-800 transition"
+              className="btn-modern gradient-primary text-white border-0 shadow-lg"
               size="sm"
               onClick={handleGetTickets}
             >
@@ -200,12 +202,12 @@ const EventCard = ({
             </Button>
           </div>
         </div>
-        <div className="mt-3 border-t border-gray-800 pt-3">
+        <div className="mt-4 border-t border-white/10 pt-4">
           <AddToCalendarButton 
             event={event} 
             variant="ghost" 
             size="sm"
-            className="text-white/70 hover:text-white w-full flex justify-center items-center"
+            className="text-white/70 hover:text-white w-full flex justify-center items-center transition-colors duration-300"
             iconClassName="mr-2 h-4 w-4"
             showText={true}
           />

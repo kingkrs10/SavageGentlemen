@@ -99,14 +99,14 @@ const Home = () => {
               {/* Action Buttons below Logo */}
               <div className="flex flex-col gap-4 mx-auto max-w-md px-6">
                 <Button 
-                  className="bg-primary hover:bg-primary/90 text-white px-8 py-6 uppercase tracking-widest text-lg font-semibold shadow-xl w-full transition-all duration-300"
+                  className="btn-modern gradient-primary text-white px-8 py-6 uppercase tracking-widest text-lg font-semibold w-full border-0"
                   onClick={() => navigate('/events')}
                 >
                   VIEW EVENTS
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="border-white text-white hover:bg-white/10 px-8 py-6 uppercase tracking-widest text-lg font-semibold backdrop-blur-sm shadow-xl w-full transition-all duration-300"
+                  className="btn-modern glass-effect border-white/20 text-white hover:bg-white/10 px-8 py-6 uppercase tracking-widest text-lg font-semibold backdrop-blur-sm w-full"
                   onClick={() => window.open(EXTERNAL_URLS.ETSY_SHOP, '_blank', 'noopener,noreferrer')}
                 >
                   SHOP COLLECTION
@@ -128,31 +128,32 @@ const Home = () => {
             {/* Featured Events Section */}
             {featuredEvents && featuredEvents.length > 0 && (
               <section>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-heading uppercase tracking-wide">Featured Events</h2>
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="heading-modern text-3xl gradient-text uppercase tracking-wide">Featured Events</h2>
                   <Link href="/events">
-                    <Button variant="outline" className="group">
+                    <Button variant="outline" className="btn-modern glass-effect border-white/20 text-white hover:bg-white/10 group">
                       View All
                       <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </Link>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                   {eventsLoading 
                     ? Array(3).fill(0).map((_, i) => (
-                        <div key={i} className="space-y-3">
-                          <Skeleton className="h-48 w-full" />
-                          <Skeleton className="h-4 w-3/4" />
-                          <Skeleton className="h-4 w-1/2" />
+                        <div key={i} className="space-y-4">
+                          <div className="shimmer h-48 w-full rounded-2xl" />
+                          <div className="shimmer h-4 w-3/4 rounded" />
+                          <div className="shimmer h-4 w-1/2 rounded" />
                         </div>
                       ))
-                    : featuredEvents.map((event) => (
-                        <EventCard
-                          key={event.id}
-                          event={event}
-                          onGetTicket={handleGetTicket}
-                        />
+                    : featuredEvents.map((event, index) => (
+                        <div key={event.id} className={`animate-fade-in-up animate-delay-${(index + 1) * 100}`}>
+                          <EventCard
+                            event={event}
+                            onGetTicket={handleGetTicket}
+                          />
+                        </div>
                       ))
                   }
                 </div>
@@ -162,11 +163,11 @@ const Home = () => {
             {/* Featured Products Section */}
             {featuredProducts && featuredProducts.length > 0 && (
               <section>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-heading uppercase tracking-wide">Featured Products</h2>
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="heading-modern text-3xl gradient-text uppercase tracking-wide">Featured Products</h2>
                   <Button 
                     variant="outline" 
-                    className="group"
+                    className="btn-modern glass-effect border-white/20 text-white hover:bg-white/10 group"
                     onClick={() => window.open(EXTERNAL_URLS.ETSY_SHOP, '_blank', 'noopener,noreferrer')}
                   >
                     Shop All
@@ -174,21 +175,22 @@ const Home = () => {
                   </Button>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                   {productsLoading 
                     ? Array(3).fill(0).map((_, i) => (
-                        <div key={i} className="space-y-3">
-                          <Skeleton className="h-48 w-full" />
-                          <Skeleton className="h-4 w-3/4" />
-                          <Skeleton className="h-4 w-1/2" />
+                        <div key={i} className="space-y-4">
+                          <div className="shimmer h-48 w-full rounded-2xl" />
+                          <div className="shimmer h-4 w-3/4 rounded" />
+                          <div className="shimmer h-4 w-1/2 rounded" />
                         </div>
                       ))
-                    : featuredProducts.map((product) => (
-                        <ProductCard
-                          key={product.id}
-                          product={product}
-                          onAddToCart={handleAddToCart}
-                        />
+                    : featuredProducts.map((product, index) => (
+                        <div key={product.id} className={`animate-fade-in-up animate-delay-${(index + 1) * 100}`}>
+                          <ProductCard
+                            product={product}
+                            onAddToCart={handleAddToCart}
+                          />
+                        </div>
                       ))
                   }
                 </div>
