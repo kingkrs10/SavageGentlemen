@@ -50,19 +50,19 @@ const SimpleProductCard = ({ product, onAddToCart }: {
           </div>
         )}
         
-        {/* Product image with brand logo - clean professional display */}
+        {/* Product image with proper Etsy image display */}
         <img 
-          src={SGFlyerLogoPng} 
+          src={imgError ? SGFlyerLogoPng : imageUrl} 
           alt={product.title} 
           className={`h-full w-full object-contain p-8 transition-all duration-300 ${
             imgLoaded ? 'opacity-100 scale-100 group-hover:scale-105' : 'opacity-0 scale-95'
           }`}
           onLoad={() => {
             setImgLoaded(true);
-            console.log('Brand logo loaded for product:', product.title);
+            console.log('Product image loaded for:', product.title);
           }}
           onError={() => {
-            console.log('Brand logo failed to load:', product.title);
+            console.log('Product image failed to load:', product.title, 'Falling back to brand logo');
             setImgError(true);
             setImgLoaded(true);
           }}

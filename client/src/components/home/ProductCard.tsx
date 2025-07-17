@@ -83,7 +83,7 @@ const ProductCard = ({
           className="block relative group-hover:scale-105 transition-transform duration-300"
         >
           <img 
-            src={SGFlyerLogoPng} 
+            src={imgError ? SGFlyerLogoPng : imgSrc} 
             alt={title} 
             className="w-full h-48 object-contain p-6 bg-gray-900" 
             loading="lazy"
@@ -105,7 +105,7 @@ const ProductCard = ({
         onClick={() => trackProductDetailClick(id)}
       >
         <img 
-          src={SGFlyerLogoPng} 
+          src={imgError ? SGFlyerLogoPng : imgSrc} 
           alt={title} 
           className="w-full h-40 object-contain p-4 bg-gray-900"
           loading="lazy"
