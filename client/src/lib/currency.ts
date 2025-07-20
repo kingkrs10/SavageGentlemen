@@ -67,10 +67,20 @@ export function formatEventPrice(event: {
   location: string;
   lowestActivePrice?: number | null;
 }): string {
-  // If there's a lowest active price, use that instead of the base price
-  const displayPrice = event.lowestActivePrice !== undefined ? event.lowestActivePrice : event.price;
+  // Debug logging
+  console.log('formatEventPrice called with:', { 
+    price: event.price, 
+    lowestActivePrice: event.lowestActivePrice,
+    hasLowestActivePrice: 'lowestActivePrice' in event
+  });
   
-  if (!displayPrice) return 'Free';
+  // If there's a lowest active price, use that instead of the base price
+  const displayPrice = event.lowestActivePrice !== undefined && event.lowestActivePrice !== null 
+    ? event.lowestActivePrice 
+    : event.price;
+  
+  // Check for both null and 0 values
+  if (displayPrice === null || displayPrice === undefined || displayPrice === 0) return 'Free';
   
   // Use event's currency if available, otherwise determine from location
   const currency = (event.currency as CurrencyCode) || getCurrencyFromLocation(event.location);
