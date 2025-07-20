@@ -65,11 +65,15 @@ export function formatEventPrice(event: {
   price?: number | null;
   currency?: string | null;
   location: string;
+  lowestActivePrice?: number | null;
 }): string {
-  if (!event.price) return 'Free';
+  // If there's a lowest active price, use that instead of the base price
+  const displayPrice = event.lowestActivePrice !== undefined ? event.lowestActivePrice : event.price;
+  
+  if (!displayPrice) return 'Free';
   
   // Use event's currency if available, otherwise determine from location
   const currency = (event.currency as CurrencyCode) || getCurrencyFromLocation(event.location);
   
-  return formatPriceFromCents(event.price, currency);
+  return formatPriceFromCents(displayPrice, currency);
 }
