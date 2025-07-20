@@ -34,6 +34,7 @@ export interface Event {
   featured: boolean;
   organizerName?: string;
   organizerEmail?: string;
+  lowestActivePrice?: number;
 }
 
 // Product types

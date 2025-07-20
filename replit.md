@@ -12,6 +12,10 @@ A comprehensive mobile-first web application for Savage Gentlemen, empowering Ca
 - **Analytics**: Comprehensive tracking with Google Analytics
 
 ## Recent Changes
+- **July 20, 2025**: ✓ FIXED EVENT PRICING DISPLAY ACROSS ENTIRE SITE - Events now show lowest active ticket price instead of "Free"
+- **July 20, 2025**: ✓ Backend modified to calculate and return `lowestActivePrice` for all events and featured events
+- **July 20, 2025**: ✓ Fixed column name mapping issues (event_id → eventId, etc.) in ticket queries for Drizzle ORM
+- **July 20, 2025**: ✓ Added `lowestActivePrice` field to frontend Event interface for proper type safety
 - **July 17, 2025**: ✓ TICKET SCANNER ENHANCED WITH MODERN AESTHETICS - Applied glassmorphism effects, gradient text, and improved visual hierarchy
 - **July 17, 2025**: ✓ Enhanced scanner modes with modern button styling and improved card design for scan results
 - **July 17, 2025**: ✓ Verified ticket scanner functionality: 107 total tickets, 25 successfully scanned across 2 events
