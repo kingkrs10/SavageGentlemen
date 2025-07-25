@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from '@/lib/queryClient';
-import QrScanner from 'qr-scanner';
+import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
 
 interface TicketInfo {
   ticketId: number;
@@ -47,8 +47,7 @@ const TicketScanner = () => {
   const [cameraActive, setCameraActive] = useState<boolean>(false);
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const qrScannerRef = useRef<QrScanner | null>(null);
+  const html5QrcodeScannerRef = useRef<Html5QrcodeScanner | null>(null);
   
   useEffect(() => {
     // Focus input on component mount if we're in manual mode
@@ -57,7 +56,7 @@ const TicketScanner = () => {
     }
     
     // Clean up camera when switching modes
-    if (scanMode !== 'camera' && qrScannerRef.current) {
+    if (scanMode !== 'camera') {
       stopCamera();
     }
   }, [scanMode]);
@@ -65,9 +64,7 @@ const TicketScanner = () => {
   // Cleanup camera on unmount
   useEffect(() => {
     return () => {
-      if (qrScannerRef.current) {
-        stopCamera();
-      }
+      stopCamera();
     };
   }, []);
   
@@ -86,7 +83,7 @@ const TicketScanner = () => {
     }
   };
 
-  // Start camera for live QR scanning with alternative initialization
+  // Start camera for live QR scanning using html5-qrcode
   const startCamera = async () => {
     try {
       setError(null);
@@ -99,133 +96,80 @@ const TicketScanner = () => {
         return;
       }
 
-      // First, request camera permission to ensure it's available
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            facingMode: 'environment',
-            width: { ideal: 1280, max: 1920 },
-            height: { ideal: 720, max: 1080 }
-          } 
-        });
-        // Stop the test stream immediately
-        stream.getTracks().forEach(track => track.stop());
-      } catch (permissionError) {
-        setLoading(false);
-        const error = permissionError as any;
-        if (error?.name === 'NotAllowedError') {
-          setError('Camera permission denied. Please allow camera access in your browser settings.');
-        } else if (error?.name === 'NotFoundError') {
-          setError('No camera found on this device.');
-        } else {
-          setError('Camera access failed. Please check your camera permissions.');
-        }
-        return;
-      }
-
-      // Alternative approach: Create video element manually if ref is not ready
-      let video = videoRef.current;
-      if (!video) {
-        // Force component re-render to ensure video element exists
-        setCameraActive(true);
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        video = videoRef.current;
-        if (!video) {
-          setError('Unable to initialize video element. Please try refreshing the page.');
-          setLoading(false);
-          return;
-        }
-      }
-
-      // Set video element properties for mobile compatibility
-      video.setAttribute('playsinline', 'true');
-      video.setAttribute('webkit-playsinline', 'true');
-      video.setAttribute('disablepictureinpicture', 'true');
-      video.muted = true;
-      video.autoplay = true;
-
       setCameraActive(true);
 
-      // Use QrScanner with enhanced automatic recognition
-      try {
-        qrScannerRef.current = new QrScanner(
-          video,
-          (result) => {
-            console.log('QR Code automatically detected:', result.data);
-            
-            // Immediate visual feedback
-            toast({
-              title: "✓ QR Code Detected!", 
-              description: "Automatically processing ticket...",
-              variant: "default"
-            });
-
-            // Add haptic feedback if available
-            if (navigator.vibrate) {
-              navigator.vibrate([100, 50, 100]); // Success vibration pattern
-            }
-
-            // Set the detected code and validate
-            setTicketCode(result.data);
-            validateTicket(result.data);
-            stopCamera();
-          },
-          {
-            highlightScanRegion: true,
-            highlightCodeOutline: true,
-            maxScansPerSecond: 5, // Increased for better responsiveness
-            preferredCamera: 'environment',
-            returnDetailedScanResult: true,
-            calculateScanRegion: (video) => {
-              // Enhanced scan region for better detection
-              const smallerDimension = Math.min(video.videoWidth, video.videoHeight);
-              const scanRegionSize = Math.round(0.7 * smallerDimension);
-              return {
-                x: Math.round((video.videoWidth - scanRegionSize) / 2),
-                y: Math.round((video.videoHeight - scanRegionSize) / 2),
-                width: scanRegionSize,
-                height: scanRegionSize,
-              };
-            }
-          }
-        );
-
-        // Start scanner with delay to ensure video is ready
-        await new Promise(resolve => setTimeout(resolve, 300));
-        await qrScannerRef.current.start();
-        
-        setLoading(false);
-        
-        toast({
-          title: "🎥 Camera Active",
-          description: "Automatic QR detection enabled - just point at any QR code",
-          variant: "default"
-        });
-        
-        console.log('QR Scanner started successfully');
-        
-      } catch (scannerError) {
-        console.error('QR Scanner initialization failed:', scannerError);
-        setCameraActive(false);
-        setLoading(false);
-        
-        const error = scannerError as any;
-        if (error?.message?.includes('video element')) {
-          setError('Camera initialization failed. Please try using the "Photo" mode instead.');
-        } else {
-          setError(`Scanner error: ${error?.message || 'Failed to start QR scanner'}`);
-        }
-        
-        if (qrScannerRef.current) {
-          try {
-            qrScannerRef.current.destroy();
-          } catch (e) {
-            console.warn('Error destroying scanner:', e);
-          }
-          qrScannerRef.current = null;
+      // Clean up any existing scanner
+      if (html5QrcodeScannerRef.current) {
+        try {
+          await html5QrcodeScannerRef.current.clear();
+        } catch (e) {
+          console.log('Previous scanner already cleared');
         }
       }
+
+      // Success callback when QR code is scanned
+      const qrCodeSuccessCallback = (decodedText: string, decodedResult: any) => {
+        console.log('QR Code automatically detected:', decodedText);
+        
+        // Immediate visual feedback
+        toast({
+          title: "✓ QR Code Detected!", 
+          description: "Automatically processing ticket...",
+          variant: "default"
+        });
+
+        // Add haptic feedback if available
+        if (navigator.vibrate) {
+          navigator.vibrate([100, 50, 100]); // Success vibration pattern
+        }
+
+        // Set the detected code and validate
+        setTicketCode(decodedText);
+        validateTicket(decodedText);
+        stopCamera();
+      };
+
+      // Error callback (optional, for debugging)
+      const qrCodeErrorCallback = (errorMessage: string) => {
+        // Ignore routine scanning errors - they're normal
+        // console.log('Scanning...', errorMessage);
+      };
+
+      // Configuration for html5-qrcode scanner
+      const config = {
+        fps: 10, // Scans per second
+        qrbox: { width: 250, height: 250 }, // Scanning box size
+        aspectRatio: 1.0,
+        disableFlip: false,
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true
+        },
+        rememberLastUsedCamera: true,
+        supportedScanTypes: [0, 1, 2] // QR_CODE, DATA_MATRIX, UPC_A etc
+      };
+
+      // Create new Html5QrcodeScanner instance
+      html5QrcodeScannerRef.current = new Html5QrcodeScanner(
+        "qr-scanner-container",
+        config,
+        false // verbose logging
+      );
+
+      // Start the scanner
+      html5QrcodeScannerRef.current.render(
+        qrCodeSuccessCallback,
+        qrCodeErrorCallback
+      );
+      
+      setLoading(false);
+      
+      toast({
+        title: "🎥 Camera Active",
+        description: "AUTO-SCAN ACTIVE - Point camera at QR code",
+        variant: "default"
+      });
+      
+      console.log('Html5QrcodeScanner started successfully');
       
     } catch (error) {
       console.error('Error starting camera:', error);
@@ -257,12 +201,15 @@ const TicketScanner = () => {
     }
   };
 
-  // Stop camera
-  const stopCamera = () => {
-    if (qrScannerRef.current) {
-      qrScannerRef.current.stop();
-      qrScannerRef.current.destroy();
-      qrScannerRef.current = null;
+  // Stop camera using html5-qrcode
+  const stopCamera = async () => {
+    try {
+      if (html5QrcodeScannerRef.current) {
+        await html5QrcodeScannerRef.current.clear();
+        html5QrcodeScannerRef.current = null;
+      }
+    } catch (error) {
+      console.log('Scanner cleanup completed');
     }
     setCameraActive(false);
   };
@@ -278,8 +225,8 @@ const TicketScanner = () => {
       setLoading(true);
       
       try {
-        // Use QrScanner to scan QR code from the uploaded image
-        const result = await QrScanner.scanImage(file);
+        // Use Html5Qrcode to scan QR code from the uploaded image
+        const result = await Html5Qrcode.scanFile(file, /* searchImage= */ true);
         
         if (result) {
           // Successfully scanned QR code
@@ -305,68 +252,23 @@ const TicketScanner = () => {
           variant: "destructive"
         });
         
-        // Switch to manual mode for fallback
+        // Switch to manual input mode if upload fails
         setScanMode('manual');
         setTimeout(() => {
           if (inputRef.current) {
             inputRef.current.focus();
           }
-        }, 500);
-      } finally {
-        setLoading(false);
-        // Clear the file input
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
+        }, 100);
       }
+      
+      setLoading(false);
     }
   };
   
-  // Function to trigger file input click
-  const triggerFileUpload = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-  
-  // Function to cycle between scanning modes
-  const cycleScanMode = () => {
-    if (scanMode === 'manual') {
-      setScanMode('camera');
-    } else if (scanMode === 'camera') {
-      setScanMode('upload');
-    } else {
-      setScanMode('manual');
-    }
-    setError(null);
-  };
-  
-  // Extract the validation logic to a separate function for reuse
+  // Validate ticket by sending to backend
   const validateTicket = async (code: string) => {
     if (!code.trim()) {
       setError('Please enter a ticket code');
-      return;
-    }
-
-    // For this demo, we'll create fake success data in case the API isn't returning the expected response
-    // This allows you to see how the UI will look with a valid ticket
-    if (code === "DEMO-TICKET") {
-      const demoTicket: TicketInfo = {
-        ticketId: 7,
-        orderId: 1,
-        ticketName: "Early Bird Ladies",
-        eventName: "Riddem Riot",
-        eventDate: "2025-05-27T21:00:00",
-        eventLocation: "Club Galaxy",
-        purchaseDate: "2025-05-09T19:15:54.761Z"
-      };
-      
-      setTicketInfo(demoTicket);
-      toast({
-        title: "Demo Mode",
-        description: "Using demo ticket data for preview",
-        variant: "default"
-      });
       return;
     }
     
@@ -374,451 +276,368 @@ const TicketScanner = () => {
     setError(null);
     
     try {
-      console.log('Sending ticket code for validation:', code);
+      // Clean the code - remove any extra whitespace or formatting
+      const cleanCode = code.trim();
       
-      // Validate format before sending to server
-      // Support multiple formats:
-      // 1. New format: EVENT-{eventId}-ORDER-{orderId}-{timestamp}
-      // 2. Manual format: EVENT-{eventId}-ORDER-MANUAL-{timestamp}
-      // 3. Legacy format: SGX-TIX-ticketId-orderId
-      const codeParts = code.split('-');
-      let isValidFormat = false;
+      // Call the scan API endpoint
+      const response = await apiRequest('/api/tickets/scan', {
+        method: 'POST',
+        body: JSON.stringify({ ticketCode: cleanCode })
+      });
       
-      if (codeParts.length >= 4) {
-        // Check for EVENT-X-ORDER format
-        if (codeParts[0] === 'EVENT' && codeParts[2] === 'ORDER') {
-          isValidFormat = true;
-        }
-        // Check for legacy SGX-TIX format
-        else if (codeParts.length === 4 && codeParts[0] === 'SGX' && codeParts[1] === 'TIX') {
-          isValidFormat = true;
-        }
-      }
+      const result = await response.json();
       
-      if (!isValidFormat) {
-        setError('Invalid ticket format. Expected format: EVENT-{eventId}-ORDER-{orderId}-{timestamp} or SGX-TIX-ticketId-orderId');
-        setLoading(false);
-        return;
-      }
-
-      const response = await apiRequest('POST', '/api/tickets/scan', { ticketCode: code });
-      
-      if (!response.ok) {
-        // Get the error details
-        let errorMessage = 'Failed to validate ticket';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorData.message || errorMessage;
-        } catch (e) {
-          console.error('Failed to parse error response:', e);
-        }
-        throw new Error(errorMessage);
-      }
-      
-      // Parse the response data
-      let result;
-      try {
-        result = await response.json();
-      } catch (e) {
-        console.error('Failed to parse success response:', e);
-        throw new Error('Invalid response from server');
-      }
-      
-      if (result.valid) {
-        setTicketInfo(result.ticketInfo);
+      if (response.ok) {
+        // Success - valid ticket
+        setTicketInfo(result.ticket);
         
-        if (result.alreadyScanned) {
-          // Show warning for already scanned tickets with haptic feedback
-          if (navigator.vibrate) {
-            navigator.vibrate([200, 100, 200, 100, 200]); // Error vibration pattern
-          }
-          toast({
-            title: "⚠️ Ticket Already Used",
-            description: `Previously scanned on ${new Date(result.scannedAt).toLocaleString()}`,
-            variant: "destructive"
-          });
-        } else {
-          // Success for newly scanned tickets with enhanced feedback
-          if (navigator.vibrate) {
-            navigator.vibrate([100, 50, 100]); // Success vibration pattern
-          }
-          toast({
-            title: "✅ Entry Approved!",
-            description: "Valid ticket - never used before. Entry granted!",
-            variant: "default"
-          });
-        }
-      } else {
-        setError(result.error || 'Invalid ticket');
-      }
-    } catch (err) {
-      console.error('Error scanning ticket:', err);
-      setError((err as Error).message || 'Failed to scan ticket');
-    } finally {
-      setLoading(false);
-    }
-  };
+        toast({
+          title: result.alreadyScanned ? "Already Scanned" : "✅ ENTRY APPROVED",
+          description: result.alreadyScanned 
+            ? `Previously scanned on ${new Date(result.ticket.scannedAt).toLocaleDateString()}`
+            : "Ticket validated successfully",
+          variant: result.alreadyScanned ? "default" : "default"
+        });
 
-  // Handle form submission for manual entry
+        // Enhanced haptic feedback for success
+        if (navigator.vibrate) {
+          if (result.alreadyScanned) {
+            navigator.vibrate([200, 100, 200]); // Duplicate pattern
+          } else {
+            navigator.vibrate([100, 50, 100, 50, 100]); // Success pattern
+          }
+        }
+        
+      } else {
+        // Error - invalid ticket or server error
+        setError(result.error || 'Failed to validate ticket');
+        
+        toast({
+          title: "❌ ENTRY DENIED",
+          description: result.error || 'Invalid ticket code',
+          variant: "destructive"
+        });
+
+        // Error haptic feedback
+        if (navigator.vibrate) {
+          navigator.vibrate([500]); // Error vibration
+        }
+      }
+    } catch (error) {
+      console.error('Error validating ticket:', error);
+      setError('Failed to validate ticket. Please check your connection.');
+      
+      toast({
+        title: "Connection Error",
+        description: "Please check your internet connection",
+        variant: "destructive"
+      });
+    }
+    
+    setLoading(false);
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await validateTicket(ticketCode);
   };
-  
-  const renderStatusCard = () => {
-    if (!ticketInfo) return null;
-    
-    const isScanned = ticketInfo.scannedAt !== undefined;
-    
-    return (
-      <Card className={`mt-6 card-modern shadow-xl transform transition-all duration-500 ${isScanned ? 'border-red-500/50 bg-red-500/5' : 'border-green-500/50 bg-green-500/5 animate-bounce'}`}>
-        <CardHeader className={`pb-3 ${isScanned ? 'bg-red-500/10' : 'bg-green-500/10'}`}>
-          <div className="flex flex-col items-center text-center pb-2 sm:pb-3">
-            <div className={`rounded-full bg-white p-4 mb-4 shadow-lg transform transition-all duration-300 ${!isScanned ? 'animate-pulse' : ''}`}>
-              {isScanned ? (
-                <XCircle className="h-16 w-16 sm:h-20 sm:w-20 text-red-500 shrink-0" />
-              ) : (
-                <CheckCircle className="h-16 w-16 sm:h-20 sm:w-20 text-green-500 shrink-0" />
-              )}
-            </div>
-            <CardTitle className={`text-xl sm:text-2xl text-white font-bold ${!isScanned ? 'animate-pulse' : ''}`}>
-              {isScanned ? '❌ TICKET ALREADY USED' : '✅ ENTRY APPROVED'}
-            </CardTitle>
-            <CardDescription className="text-sm sm:text-base mt-2 text-white/90 font-medium">
-              {isScanned && ticketInfo.scannedAt
-                ? `Previously scanned: ${new Date(ticketInfo.scannedAt as string).toLocaleString()}`
-                : '🎉 Valid ticket - Never used before!'}
-            </CardDescription>
-          </div>
-          
-          <div className="w-full h-px bg-border my-2"></div>
-          
-          <div className="font-bold text-lg sm:text-xl text-center gradient-text">
-            {ticketInfo.eventName}
-          </div>
+
+  return (
+    <div className="w-full max-w-4xl mx-auto p-2 sm:p-4 space-y-4">
+      {/* Mode Selection */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-2 sm:pb-4">
+          <CardTitle className="text-lg sm:text-xl">Ticket Scanner</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
+            Choose your preferred scanning method
+          </CardDescription>
         </CardHeader>
-        <CardContent className="pt-3 sm:pt-4">
-          <div className="space-y-3 text-sm sm:text-base">
-            <div className="grid grid-cols-3 gap-1 border-b border-white/20 pb-2">
-              <span className="font-semibold col-span-1 text-white/80">Ticket:</span> 
-              <span className="col-span-2 font-medium text-white">{ticketInfo.ticketName}</span>
-            </div>
-            <div className="grid grid-cols-3 gap-1 border-b border-white/20 pb-2">
-              <span className="font-semibold col-span-1 text-white/80">Date:</span> 
-              <span className="col-span-2 text-white">{new Date(ticketInfo.eventDate).toLocaleDateString()} {new Date(ticketInfo.eventDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-            </div>
-            <div className="grid grid-cols-3 gap-1 border-b border-white/20 pb-2">
-              <span className="font-semibold col-span-1 text-white/80">Location:</span> 
-              <span className="col-span-2 text-white">{ticketInfo.eventLocation}</span>
-            </div>
-            <div className="grid grid-cols-3 gap-1 border-b border-white/20 pb-2">
-              <span className="font-semibold col-span-1 text-white/80">Ticket ID:</span> 
-              <span className="col-span-2 text-white">{ticketInfo.ticketId}</span>
-            </div>
-            <div className="grid grid-cols-3 gap-1 border-b border-white/20 pb-2">
-              <span className="font-semibold col-span-1 text-white/80">Order ID:</span> 
-              <span className="col-span-2 text-white">{ticketInfo.orderId}</span>
-            </div>
-            {ticketInfo.scannedAt && (
-              <div className="grid grid-cols-3 gap-1 text-amber-300 border-b border-white/20 pb-2">
-                <span className="font-semibold col-span-1">Scanned:</span> 
-                <span className="col-span-2">{new Date(ticketInfo.scannedAt as string).toLocaleString()}</span>
-              </div>
-            )}
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant={scanMode === 'manual' ? 'default' : 'outline'}
+              onClick={() => setScanMode('manual')}
+              className="flex-1 text-xs sm:text-sm"
+            >
+              <KeyboardIcon className="mr-2 h-4 w-4" />
+              Manual Entry
+            </Button>
+            <Button
+              variant={scanMode === 'camera' ? 'default' : 'outline'}
+              onClick={() => setScanMode('camera')}
+              className="flex-1 text-xs sm:text-sm"
+            >
+              <Video className="mr-2 h-4 w-4" />
+              Live Camera
+            </Button>
+            <Button
+              variant={scanMode === 'upload' ? 'default' : 'outline'}
+              onClick={() => setScanMode('upload')}
+              className="flex-1 text-xs sm:text-sm"
+            >
+              <Camera className="mr-2 h-4 w-4" />
+              Photo Upload
+            </Button>
           </div>
         </CardContent>
-        <CardFooter className="pt-2">
-          <Button 
-            onClick={resetScanner} 
-            className="btn-modern w-full h-12 text-base font-medium gradient-primary text-white border-0"
-            size="lg"
-          >
-            Scan Another Ticket
-          </Button>
-        </CardFooter>
       </Card>
-    );
-  };
-  
-  return (
-    <div className="flex flex-col items-center px-2 sm:px-4 py-4">
-      <div className="w-full max-w-md">
-        <h1 className="heading-modern text-3xl sm:text-4xl gradient-text mb-6 text-center">Ticket Scanner</h1>
-        
-        {!ticketInfo && (
-          <div className="mb-6 flex justify-center">
-            <div className="glass-effect rounded-xl p-2 inline-flex flex-wrap border border-white/20">
-              <Button
-                type="button"
-                variant={scanMode === 'manual' ? 'default' : 'outline'}
-                size="sm"
-                className={`btn-modern flex items-center text-xs sm:text-sm mb-1 sm:mb-0 ${scanMode === 'manual' ? 'gradient-primary text-white border-0' : 'glass-effect border-white/20 text-white hover:bg-white/10'}`}
-                onClick={() => setScanMode('manual')}
-              >
-                <KeyboardIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                Manual
-              </Button>
-              <Button
-                type="button"
-                variant={scanMode === 'camera' ? 'default' : 'outline'}
-                size="sm"
-                className={`btn-modern flex items-center text-xs sm:text-sm mb-1 sm:mb-0 ${scanMode === 'camera' ? 'gradient-primary text-white border-0' : 'glass-effect border-white/20 text-white hover:bg-white/10'}`}
-                onClick={() => setScanMode('camera')}
-              >
-                <Video className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                Live Scan
-              </Button>
-              <Button
-                type="button"
-                variant={scanMode === 'upload' ? 'default' : 'outline'}
-                size="sm"
-                className={`btn-modern flex items-center text-xs sm:text-sm ${scanMode === 'upload' ? 'gradient-primary text-white border-0' : 'glass-effect border-white/20 text-white hover:bg-white/10'}`}
-                onClick={() => setScanMode('upload')}
-              >
-                <Camera className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                Photo
-              </Button>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-              />
-            </div>
-          </div>
-        )}
-        
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <XCircle className="h-4 w-4" />
-            <AlertTitle className="text-base">Error</AlertTitle>
-            <AlertDescription className="text-sm">{error}</AlertDescription>
-          </Alert>
-        )}
-        
-        {!ticketInfo && scanMode === 'manual' && (
-          <Card className="shadow-md">
-            <CardHeader className="pb-2 sm:pb-3">
-              <CardTitle className="text-lg sm:text-xl">Enter Ticket Code</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                Type or paste the ticket code
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Input
-                    ref={inputRef}
-                    type="text"
-                    placeholder="SGX-TIX-123-456"
-                    value={ticketCode}
-                    onChange={(e) => setTicketCode(e.target.value)}
-                    className="w-full text-base sm:text-lg h-12 px-3"
-                    autoFocus
-                    autoComplete="off"
-                    disabled={loading}
-                  />
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-xs text-muted-foreground">
-                      Type or paste the ticket code that appears in the QR code
-                    </p>
-                    <p className="text-xs text-muted-foreground font-medium">
-                      Try "DEMO-TICKET" to see a working example
-                    </p>
-                  </div>
+
+      {/* Error Display */}
+      {error && (
+        <Alert variant="destructive" className="shadow-sm">
+          <XCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Success Display */}
+      {ticketInfo && (
+        <Card className="shadow-md border-green-200 bg-green-50">
+          <CardHeader className="pb-2 sm:pb-3">
+            <CardTitle className="flex items-center text-green-800 text-lg sm:text-xl">
+              <CheckCircle className="mr-2 h-6 w-6 text-green-600" />
+              {ticketInfo.scannedAt ? 'Previously Scanned' : '✅ ENTRY APPROVED'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <div>
+                <p className="font-semibold text-green-800">Event:</p>
+                <p className="text-green-700">{ticketInfo.eventName}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-green-800">Ticket:</p>
+                <p className="text-green-700">{ticketInfo.ticketName}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-green-800">Date:</p>
+                <p className="text-green-700">{ticketInfo.eventDate}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-green-800">Location:</p>
+                <p className="text-green-700">{ticketInfo.eventLocation}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-green-800">Order ID:</p>
+                <p className="text-green-700">#{ticketInfo.orderId}</p>
+              </div>
+              {ticketInfo.scannedAt && (
+                <div>
+                  <p className="font-semibold text-green-800">First Scanned:</p>
+                  <p className="text-green-700">{new Date(ticketInfo.scannedAt).toLocaleString()}</p>
                 </div>
-                <Button 
-                  type="submit" 
-                  className="w-full flex items-center justify-center h-12 text-base" 
-                  disabled={loading || !ticketCode.trim()}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Validating...
-                    </>
-                  ) : (
-                    <>
-                      <TicketIcon className="mr-2 h-5 w-5" />
-                      Validate Ticket
-                    </>
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        )}
-        
-        {!ticketInfo && scanMode === 'camera' && (
-          <Card className="shadow-md">
-            <CardHeader className="pb-2 sm:pb-3">
-              <CardTitle className="text-lg sm:text-xl">Live QR Scanner</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                Use your camera to scan QR codes in real-time
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center space-y-4">
-                {!cameraActive ? (
+              )}
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              onClick={resetScanner}
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+            >
+              Scan Next Ticket
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
+
+      {/* Manual Entry Mode */}
+      {!ticketInfo && scanMode === 'manual' && (
+        <Card className="shadow-md">
+          <CardHeader className="pb-2 sm:pb-3">
+            <CardTitle className="text-lg sm:text-xl">Manual Entry</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
+              Enter the ticket code manually
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Input
+                ref={inputRef}
+                type="text"
+                placeholder="Enter ticket code (e.g., SGX-TIX-123-456 or EVENT-7-ORDER-67-123456)"
+                value={ticketCode}
+                onChange={(e) => setTicketCode(e.target.value)}
+                className="text-center text-lg font-mono"
+                disabled={loading}
+              />
+              <Button 
+                type="submit" 
+                className="w-full h-12 text-lg font-semibold"
+                disabled={loading || !ticketCode.trim()}
+              >
+                {loading ? (
                   <>
-                    <div className="w-full aspect-square max-w-[280px] border-2 border-dashed border-green-300 rounded-lg flex items-center justify-center bg-green-50">
-                      <div className="text-center p-4">
-                        <Video className="h-16 w-16 mx-auto text-green-500 mb-3" />
-                        <p className="text-sm font-medium text-green-700 mb-1">Start Live Scanner</p>
-                        <p className="text-xs text-green-600">Point camera at QR code for instant scanning</p>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <Button 
-                        onClick={startCamera} 
-                        className="w-full flex items-center justify-center h-14 text-lg font-semibold bg-green-600 hover:bg-green-700 text-white"
-                        disabled={loading}
-                      >
-                        {loading ? (
-                          <>
-                            <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                            Starting Camera...
-                          </>
-                        ) : (
-                          <>
-                            <Video className="mr-2 h-6 w-6" />
-                            Start Camera
-                          </>
-                        )}
-                      </Button>
-                      
-                      <div className="text-center">
-                        <p className="text-xs text-muted-foreground mb-2">
-                          Camera not working? Try photo mode instead
-                        </p>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setScanMode('upload')}
-                          className="text-xs"
-                        >
-                          Switch to Photo Mode
-                        </Button>
-                      </div>
-                    </div>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Validating...
                   </>
                 ) : (
                   <>
-                    <div className="w-full aspect-square max-w-[280px] rounded-lg overflow-hidden bg-black relative">
-                      <video 
-                        ref={videoRef}
-                        className="w-full h-full object-cover"
-                        playsInline
-                        muted
-                        autoPlay
-                        controls={false}
-                        onLoadedMetadata={() => console.log('Video metadata loaded')}
-                        onLoadedData={() => console.log('Video data loaded')}
-                        onCanPlay={() => console.log('Video can play')}
-                      />
-                      <div className="absolute inset-0 border-2 border-green-400 rounded-lg animate-pulse"></div>
-                      
-                      {/* Enhanced scanning overlay */}
-                      <div className="absolute inset-4 border-2 border-dashed border-green-300 rounded-lg animate-pulse"></div>
-                      
-                      {/* Scanning indicators */}
-                      <div className="absolute top-2 left-2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">
-                        🎯 AUTO-SCAN ACTIVE
-                      </div>
-                      
-                      <div className="absolute bottom-2 left-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs text-center">
-                        Point camera at QR code for instant recognition
-                      </div>
-                      
-                      {/* Corner scan guides */}
-                      <div className="absolute top-4 left-4 w-6 h-6 border-l-2 border-t-2 border-green-400"></div>
-                      <div className="absolute top-4 right-4 w-6 h-6 border-r-2 border-t-2 border-green-400"></div>
-                      <div className="absolute bottom-4 left-4 w-6 h-6 border-l-2 border-b-2 border-green-400"></div>
-                      <div className="absolute bottom-4 right-4 w-6 h-6 border-r-2 border-b-2 border-green-400"></div>
-                    </div>
-                    
-                    <Button 
-                      onClick={stopCamera} 
-                      variant="outline"
-                      className="w-full flex items-center justify-center h-12 text-base border-red-200 text-red-600 hover:bg-red-50"
-                    >
-                      <StopCircle className="mr-2 h-5 w-5" />
-                      Stop Camera
-                    </Button>
+                    <TicketIcon className="mr-2 h-5 w-5" />
+                    Validate Ticket
                   </>
                 )}
-                
-                <div className="flex flex-col space-y-1 w-full">
-                  <p className="text-xs text-muted-foreground">
-                    🎯 Automatic QR recognition - just point and scan
-                  </p>
-                  <p className="text-xs text-muted-foreground font-medium">
-                    ✅ Instant validation with check mark for valid entries
-                  </p>
-                  <p className="text-xs text-muted-foreground font-medium">
-                    ⚠️ Duplicate prevention - shows if ticket already used
-                  </p>
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Camera Scanning Mode */}
+      {!ticketInfo && scanMode === 'camera' && (
+        <Card className="shadow-md">
+          <CardHeader className="pb-2 sm:pb-3">
+            <CardTitle className="text-lg sm:text-xl">Live QR Scanner</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
+              Use your camera to scan QR codes in real-time
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col items-center space-y-4">
+              {!cameraActive ? (
+                <>
+                  <div className="w-full aspect-square max-w-[280px] border-2 border-dashed border-green-300 rounded-lg flex items-center justify-center bg-green-50">
+                    <div className="text-center p-4">
+                      <Video className="h-16 w-16 mx-auto text-green-500 mb-3" />
+                      <p className="text-sm font-medium text-green-700 mb-1">Start Live Scanner</p>
+                      <p className="text-xs text-green-600">Point camera at QR code for instant scanning</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <Button 
+                      onClick={startCamera} 
+                      className="w-full flex items-center justify-center h-14 text-lg font-semibold bg-green-600 hover:bg-green-700 text-white"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                          Starting Camera...
+                        </>
+                      ) : (
+                        <>
+                          <Video className="mr-2 h-6 w-6" />
+                          Start Camera
+                        </>
+                      )}
+                    </Button>
+                    
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Camera not working? Try photo mode instead
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setScanMode('upload')}
+                        className="text-xs"
+                      >
+                        Switch to Photo Mode
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Html5QrcodeScanner container */}
+                  <div 
+                    id="qr-scanner-container" 
+                    className="w-full max-w-[400px] mx-auto rounded-lg overflow-hidden"
+                    style={{ minHeight: '300px' }}
+                  >
+                    {/* Scanner will be injected here by html5-qrcode */}
+                  </div>
+                  
+                  {/* Enhanced scanning indicators overlay */}
+                  <div className="w-full max-w-[280px] mx-auto mt-2">
+                    <div className="bg-green-500 text-white px-3 py-2 rounded-full text-xs font-bold text-center animate-pulse">
+                      🎯 AUTO-SCAN ACTIVE - Point at QR code
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    onClick={stopCamera} 
+                    variant="outline"
+                    className="w-full flex items-center justify-center h-12 text-base border-red-200 text-red-600 hover:bg-red-50"
+                  >
+                    <StopCircle className="mr-2 h-5 w-5" />
+                    Stop Camera
+                  </Button>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Photo Upload Mode */}
+      {!ticketInfo && scanMode === 'upload' && (
+        <Card className="shadow-md">
+          <CardHeader className="pb-2 sm:pb-3">
+            <CardTitle className="text-lg sm:text-xl">Photo Upload</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
+              Take a photo of the QR code or upload an image
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col items-center space-y-4">
+              <div className="w-full aspect-square max-w-[280px] border-2 border-dashed border-blue-300 rounded-lg flex items-center justify-center bg-blue-50">
+                <div className="text-center p-4">
+                  <Camera className="h-16 w-16 mx-auto text-blue-500 mb-3" />
+                  <p className="text-sm font-medium text-blue-700 mb-1">Upload QR Code Image</p>
+                  <p className="text-xs text-blue-600">Take a photo or select from gallery</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
-        
-        {!ticketInfo && scanMode === 'upload' && (
-          <Card className="shadow-md">
-            <CardHeader className="pb-2 sm:pb-3">
-              <CardTitle className="text-lg sm:text-xl">Take a Photo</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                Take a photo of the ticket QR code
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center space-y-4">
-                <div className="w-full aspect-square max-w-[280px] border-2 border-dashed border-blue-300 rounded-lg flex items-center justify-center bg-blue-50">
-                  <div className="text-center p-4">
-                    <Camera className="h-16 w-16 mx-auto text-blue-500 mb-3" />
-                    <p className="text-sm font-medium text-blue-700 mb-1">Position QR code in frame</p>
-                    <p className="text-xs text-blue-600">Ensure good lighting for best results</p>
-                  </div>
-                </div>
-                
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              
+              <div className="space-y-3 w-full">
                 <Button 
-                  onClick={triggerFileUpload} 
+                  onClick={() => fileInputRef.current?.click()}
                   className="w-full flex items-center justify-center h-14 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white"
                   disabled={loading}
                 >
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                      Scanning QR Code...
+                      Scanning Image...
                     </>
                   ) : (
                     <>
                       <Camera className="mr-2 h-6 w-6" />
-                      Take Photo & Scan
+                      Take Photo / Upload
                     </>
                   )}
                 </Button>
                 
-                <div className="flex flex-col space-y-1 w-full">
-                  <p className="text-xs text-muted-foreground">
-                    Alternative method for checking tickets
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Photo not working? Try live camera instead
                   </p>
-                  <p className="text-xs text-muted-foreground font-medium">
-                    Make sure there's good lighting for best results
-                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setScanMode('camera')}
+                    className="text-xs"
+                  >
+                    Switch to Live Camera
+                  </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
-        
-        {renderStatusCard()}
-      </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
