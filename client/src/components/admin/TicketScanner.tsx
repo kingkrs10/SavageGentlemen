@@ -284,7 +284,7 @@ const TicketScanner = () => {
       
       try {
         // Use Html5Qrcode to scan QR code from the uploaded image
-        const result = await Html5Qrcode.scanFile(file, /* searchImage= */ true);
+        const result = await Html5Qrcode.scanFile(file, true);
         
         if (result) {
           // Successfully scanned QR code
@@ -337,11 +337,8 @@ const TicketScanner = () => {
       // Clean the code - remove any extra whitespace or formatting
       const cleanCode = code.trim();
       
-      // Call the scan API endpoint
-      const response = await apiRequest('/api/tickets/scan', {
-        method: 'POST',
-        body: JSON.stringify({ ticketCode: cleanCode })
-      });
+      // Call the scan API endpoint using proper authentication
+      const response = await apiRequest('POST', '/api/tickets/scan', { ticketCode: cleanCode });
       
       const result = await response.json();
       
