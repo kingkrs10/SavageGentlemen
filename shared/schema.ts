@@ -30,6 +30,9 @@ export const insertUserSchema = createInsertSchema(users)
     password: true,
     displayName: true,
     avatar: true,
+    bio: true,
+    location: true,
+    website: true,
     isGuest: true,
     role: true,
     email: true,
@@ -223,9 +226,6 @@ export const insertLivestreamSchema = createInsertSchema(livestreams).pick({
   embedCode: true,
   streamUrl: true,
 });
-
-export type Livestream = typeof livestreams.$inferSelect;
-export type InsertLivestream = z.infer<typeof insertLivestreamSchema>;
 
 // Posts schema
 export const posts = pgTable("posts", {

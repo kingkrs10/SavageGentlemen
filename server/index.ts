@@ -194,5 +194,7 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    console.log(`✅ Server is running and accessible on all interfaces at port ${port}`);
+    console.log(`🔥 Application ready for deployment at http://0.0.0.0:${port}`);
   });
 })();
