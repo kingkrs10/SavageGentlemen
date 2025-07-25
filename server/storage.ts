@@ -377,6 +377,9 @@ export class MemStorage implements IStorage {
       password: userData.password,
       displayName: userData.displayName || null,
       avatar: userData.avatar || null,
+      bio: userData.bio || null,
+      location: userData.location || null,
+      website: userData.website || null,
       isGuest: userData.isGuest || false,
       role: userData.role || 'user',
       stripeCustomerId: userData.stripeCustomerId || null,
@@ -641,7 +644,6 @@ export class MemStorage implements IStorage {
       
       // Insert the event back into the database with all its original data
       const result = await db.insert(events).values({
-        id: eventToRestore.id,
         title: eventToRestore.title,
         description: eventToRestore.description,
         date: new Date(eventToRestore.date),
@@ -652,7 +654,6 @@ export class MemStorage implements IStorage {
         imageUrl: eventToRestore.imageUrl,
         category: eventToRestore.category,
         price: eventToRestore.price,
-        externalUrl: eventToRestore.externalUrl,
         featured: eventToRestore.featured,
         organizerName: eventToRestore.organizerName,
         organizerEmail: eventToRestore.organizerEmail,
@@ -660,26 +661,6 @@ export class MemStorage implements IStorage {
         // Set updated timestamps
         createdAt: eventToRestore.createdAt,
         updatedAt: new Date()
-      }).onConflictDoUpdate({
-        target: events.id,
-        set: {
-          title: eventToRestore.title,
-          description: eventToRestore.description,
-          date: new Date(eventToRestore.date),
-          time: eventToRestore.time,
-          endTime: eventToRestore.endTime,
-          duration: eventToRestore.duration,
-          location: eventToRestore.location,
-          imageUrl: eventToRestore.imageUrl,
-          category: eventToRestore.category,
-          price: eventToRestore.price,
-          externalUrl: eventToRestore.externalUrl,
-          featured: eventToRestore.featured,
-          organizerName: eventToRestore.organizerName,
-          organizerEmail: eventToRestore.organizerEmail,
-          additionalImages: eventToRestore.additionalImages || [],
-          updatedAt: new Date()
-        }
       }).returning();
       
       // Remove from deleted events store
