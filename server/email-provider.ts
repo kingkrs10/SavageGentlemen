@@ -11,7 +11,7 @@ import * as gmail from './email-gmail.js';
 type EmailProvider = 'sendgrid' | 'mailersend' | 'brevo' | 'gmail';
 
 // Get the current email provider from environment variable
-const EMAIL_PROVIDER: EmailProvider = 'brevo';
+const EMAIL_PROVIDER: EmailProvider = 'sendgrid';
 
 // Provider configuration
 const providers = {

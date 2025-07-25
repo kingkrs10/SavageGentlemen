@@ -1,22 +1,22 @@
 import nodemailer from 'nodemailer';
 import QRCode from 'qrcode';
 
-// MailerSend SMTP Configuration
+// MailerSend SMTP Configuration with verified domain
 const MAILERSEND_CONFIG = {
   host: 'smtp.mailersend.net',
   port: 587,
   secure: false, // true for 465, false for other ports
   auth: {
-    user: process.env.MAILERSEND_SMTP_USERNAME || 'MS_OLSVdf@test-xkjn41m7q264z781.mlsender.net',
-    pass: process.env.MAILERSEND_SMTP_PASSWORD || 'mssp.G3av7zu.3zxk54v51kzljy6v.zPsd32H',
+    user: process.env.MAILERSEND_SMTP_USERNAME || 'MS_bDJ7vc@savgent.com',
+    pass: process.env.MAILERSEND_SMTP_PASSWORD || process.env.MAILERSEND_API_TOKEN,
   },
 };
 
 // Create transporter
 const transporter = nodemailer.createTransport(MAILERSEND_CONFIG);
 
-// Default sender configuration
-const DEFAULT_FROM_EMAIL = process.env.MAILERSEND_FROM_EMAIL || 'MS_OLSVdf@test-xkjn41m7q264z781.mlsender.net';
+// Default sender configuration with verified domain
+const DEFAULT_FROM_EMAIL = process.env.MAILERSEND_FROM_EMAIL || 'info@savgent.com';
 const DEFAULT_FROM_NAME = 'Savage Gentlemen';
 
 interface EmailOptions {
