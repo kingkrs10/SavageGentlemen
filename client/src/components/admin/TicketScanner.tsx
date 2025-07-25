@@ -91,8 +91,41 @@ const TicketScanner = () => {
 
       // Check if camera is supported
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setError('Camera not supported in this browser');
+        setError('Camera not supported in this browser. Please use Photo Upload mode instead.');
         setLoading(false);
+        return;
+      }
+
+      // Test camera access first
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: 'environment' 
+          } 
+        });
+        // Stop the test stream immediately
+        stream.getTracks().forEach(track => track.stop());
+      } catch (permissionError: any) {
+        setLoading(false);
+        setCameraActive(false);
+        
+        let errorMessage = 'Camera access denied. ';
+        if (permissionError.name === 'NotAllowedError') {
+          errorMessage += 'Please allow camera access in your browser settings and try again.';
+        } else if (permissionError.name === 'NotFoundError') {
+          errorMessage += 'No camera found on this device.';
+        } else if (permissionError.name === 'NotReadableError') {
+          errorMessage += 'Camera is being used by another application.';
+        } else {
+          errorMessage += 'Please check your camera permissions.';
+        }
+        
+        setError(errorMessage);
+        toast({
+          title: "Camera Permission Required",
+          description: errorMessage,
+          variant: "destructive"
+        });
         return;
       }
 
@@ -105,7 +138,11 @@ const TicketScanner = () => {
         } catch (e) {
           console.log('Previous scanner already cleared');
         }
+        html5QrcodeScannerRef.current = null;
       }
+
+      // Wait for DOM element to be ready
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Success callback when QR code is scanned
       const qrCodeSuccessCallback = (decodedText: string, decodedResult: any) => {
@@ -129,64 +166,81 @@ const TicketScanner = () => {
         stopCamera();
       };
 
-      // Error callback (optional, for debugging)
+      // Error callback for scanning issues
       const qrCodeErrorCallback = (errorMessage: string) => {
-        // Ignore routine scanning errors - they're normal
-        // console.log('Scanning...', errorMessage);
+        // Only log significant errors, ignore routine scanning messages
+        if (errorMessage.includes('NotAllowedError') || errorMessage.includes('Permission')) {
+          console.error('Camera permission error:', errorMessage);
+          setError('Camera permission denied. Please allow camera access.');
+          setCameraActive(false);
+          setLoading(false);
+        }
+        // Ignore routine "No QR code found" messages - they're normal during scanning
       };
 
-      // Configuration for html5-qrcode scanner
+      // Enhanced configuration for html5-qrcode scanner
       const config = {
-        fps: 10, // Scans per second
-        qrbox: { width: 250, height: 250 }, // Scanning box size
+        fps: 5, // Reduced for better performance
+        qrbox: { width: 250, height: 250 }, 
         aspectRatio: 1.0,
         disableFlip: false,
-        experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true
+        videoConstraints: {
+          facingMode: 'environment' // Use back camera on mobile
         },
-        rememberLastUsedCamera: true,
-        supportedScanTypes: [0, 1, 2] // QR_CODE, DATA_MATRIX, UPC_A etc
+        formatsToSupport: [0], // Only QR codes
+        showTorchButtonIfSupported: true, // Show flashlight if available
+        showZoomSliderIfSupported: false,
+        defaultZoomValueIfSupported: 2
       };
 
       // Create new Html5QrcodeScanner instance
       html5QrcodeScannerRef.current = new Html5QrcodeScanner(
         "qr-scanner-container",
         config,
-        false // verbose logging
+        false // verbose logging disabled
       );
 
-      // Start the scanner
-      html5QrcodeScannerRef.current.render(
-        qrCodeSuccessCallback,
-        qrCodeErrorCallback
-      );
-      
-      setLoading(false);
-      
-      toast({
-        title: "🎥 Camera Active",
-        description: "AUTO-SCAN ACTIVE - Point camera at QR code",
-        variant: "default"
-      });
-      
-      console.log('Html5QrcodeScanner started successfully');
+      // Start the scanner with error handling
+      try {
+        html5QrcodeScannerRef.current.render(
+          qrCodeSuccessCallback,
+          qrCodeErrorCallback
+        );
+        
+        setLoading(false);
+        
+        toast({
+          title: "🎥 Camera Active",
+          description: "AUTO-SCAN ACTIVE - Point camera at QR code",
+          variant: "default"
+        });
+        
+        console.log('Html5QrcodeScanner started successfully');
+        
+      } catch (renderError) {
+        console.error('Scanner render error:', renderError);
+        throw renderError;
+      }
       
     } catch (error) {
       console.error('Error starting camera:', error);
+      
       let errorMessage = 'Failed to start camera. ';
       
       if (error instanceof Error) {
-        if (error.name === 'NotAllowedError') {
-          errorMessage += 'Please allow camera access and try again.';
-        } else if (error.name === 'NotFoundError') {
-          errorMessage += 'No camera found on this device.';
-        } else if (error.name === 'NotReadableError') {
-          errorMessage += 'Camera is being used by another application.';
+        if (error.message.includes('Permission') || error.message.includes('NotAllowed')) {
+          errorMessage = 'Camera permission denied. Please allow camera access in your browser settings and try again.';
+        } else if (error.message.includes('NotFound')) {
+          errorMessage = 'No camera found on this device. Please use Photo Upload mode instead.';
+        } else if (error.message.includes('NotReadable')) {
+          errorMessage = 'Camera is being used by another application. Please close other camera apps and try again.';
+        } else if (error.message.includes('OverConstrained')) {
+          errorMessage = 'Camera settings not supported. Please try a different device or use Photo Upload mode.';
         } else {
-          errorMessage += 'Please check your camera and try again.';
+          errorMessage += 'Please try Photo Upload mode instead, or check your camera permissions.';
         }
       } else {
-        errorMessage += 'Please check your camera and try again.';
+        errorMessage += 'Please try Photo Upload mode instead.';
       }
       
       setError(errorMessage);
@@ -205,13 +259,17 @@ const TicketScanner = () => {
   const stopCamera = async () => {
     try {
       if (html5QrcodeScannerRef.current) {
-        await html5QrcodeScannerRef.current.clear();
+        // Use Html5QrcodeScanner's clear method
+        await html5QrcodeScannerRef.current.clear().catch((err) => {
+          console.log('Scanner already cleared or not running');
+        });
         html5QrcodeScannerRef.current = null;
       }
+      setCameraActive(false);
     } catch (error) {
       console.log('Scanner cleanup completed');
+      setCameraActive(false);
     }
-    setCameraActive(false);
   };
   
   // Reference for the file input element
