@@ -147,19 +147,26 @@ const TicketScanner = () => {
 
       setCameraActive(true);
 
-      // Use QrScanner with a more robust initialization
+      // Use QrScanner with enhanced automatic recognition
       try {
         qrScannerRef.current = new QrScanner(
           video,
           (result) => {
-            console.log('QR Code detected:', result.data);
+            console.log('QR Code automatically detected:', result.data);
             
+            // Immediate visual feedback
             toast({
-              title: "QR Code Detected", 
-              description: "Processing ticket information...",
+              title: "✓ QR Code Detected!", 
+              description: "Automatically processing ticket...",
               variant: "default"
             });
-            
+
+            // Add haptic feedback if available
+            if (navigator.vibrate) {
+              navigator.vibrate([100, 50, 100]); // Success vibration pattern
+            }
+
+            // Set the detected code and validate
             setTicketCode(result.data);
             validateTicket(result.data);
             stopCamera();
@@ -167,9 +174,20 @@ const TicketScanner = () => {
           {
             highlightScanRegion: true,
             highlightCodeOutline: true,
-            maxScansPerSecond: 2,
+            maxScansPerSecond: 5, // Increased for better responsiveness
             preferredCamera: 'environment',
-            returnDetailedScanResult: true
+            returnDetailedScanResult: true,
+            calculateScanRegion: (video) => {
+              // Enhanced scan region for better detection
+              const smallerDimension = Math.min(video.videoWidth, video.videoHeight);
+              const scanRegionSize = Math.round(0.7 * smallerDimension);
+              return {
+                x: Math.round((video.videoWidth - scanRegionSize) / 2),
+                y: Math.round((video.videoHeight - scanRegionSize) / 2),
+                width: scanRegionSize,
+                height: scanRegionSize,
+              };
+            }
           }
         );
 
@@ -180,8 +198,8 @@ const TicketScanner = () => {
         setLoading(false);
         
         toast({
-          title: "Camera Started",
-          description: "Point your camera at a QR code to scan",
+          title: "🎥 Camera Active",
+          description: "Automatic QR detection enabled - just point at any QR code",
           variant: "default"
         });
         
@@ -410,17 +428,23 @@ const TicketScanner = () => {
         setTicketInfo(result.ticketInfo);
         
         if (result.alreadyScanned) {
-          // Show warning for already scanned tickets
+          // Show warning for already scanned tickets with haptic feedback
+          if (navigator.vibrate) {
+            navigator.vibrate([200, 100, 200, 100, 200]); // Error vibration pattern
+          }
           toast({
-            title: "Ticket Already Scanned",
-            description: `This ticket was previously scanned on ${new Date(result.scannedAt).toLocaleString()}`,
+            title: "⚠️ Ticket Already Used",
+            description: `Previously scanned on ${new Date(result.scannedAt).toLocaleString()}`,
             variant: "destructive"
           });
         } else {
-          // Success for newly scanned tickets
+          // Success for newly scanned tickets with enhanced feedback
+          if (navigator.vibrate) {
+            navigator.vibrate([100, 50, 100]); // Success vibration pattern
+          }
           toast({
-            title: "Ticket Valid",
-            description: "Ticket has been successfully scanned and verified",
+            title: "✅ Entry Approved!",
+            description: "Valid ticket - never used before. Entry granted!",
             variant: "default"
           });
         }
@@ -447,23 +471,23 @@ const TicketScanner = () => {
     const isScanned = ticketInfo.scannedAt !== undefined;
     
     return (
-      <Card className={`mt-6 card-modern shadow-xl ${isScanned ? 'border-red-500/50' : 'border-green-500/50'}`}>
+      <Card className={`mt-6 card-modern shadow-xl transform transition-all duration-500 ${isScanned ? 'border-red-500/50 bg-red-500/5' : 'border-green-500/50 bg-green-500/5 animate-bounce'}`}>
         <CardHeader className={`pb-3 ${isScanned ? 'bg-red-500/10' : 'bg-green-500/10'}`}>
           <div className="flex flex-col items-center text-center pb-2 sm:pb-3">
-            <div className="rounded-full bg-white p-3 mb-3 shadow-lg">
+            <div className={`rounded-full bg-white p-4 mb-4 shadow-lg transform transition-all duration-300 ${!isScanned ? 'animate-pulse' : ''}`}>
               {isScanned ? (
-                <XCircle className="h-10 w-10 sm:h-12 sm:w-12 text-red-500 shrink-0" />
+                <XCircle className="h-16 w-16 sm:h-20 sm:w-20 text-red-500 shrink-0" />
               ) : (
-                <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 text-green-500 shrink-0" />
+                <CheckCircle className="h-16 w-16 sm:h-20 sm:w-20 text-green-500 shrink-0" />
               )}
             </div>
-            <CardTitle className="text-lg sm:text-xl text-white">
-              {isScanned ? 'TICKET ALREADY USED' : 'Ticket Valid'}
+            <CardTitle className={`text-xl sm:text-2xl text-white font-bold ${!isScanned ? 'animate-pulse' : ''}`}>
+              {isScanned ? '❌ TICKET ALREADY USED' : '✅ ENTRY APPROVED'}
             </CardTitle>
-            <CardDescription className="text-xs sm:text-sm mt-1 text-white/70">
+            <CardDescription className="text-sm sm:text-base mt-2 text-white/90 font-medium">
               {isScanned && ticketInfo.scannedAt
-                ? `This ticket was previously scanned on ${new Date(ticketInfo.scannedAt as string).toLocaleString()}`
-                : 'This ticket is valid and has been marked as scanned'}
+                ? `Previously scanned: ${new Date(ticketInfo.scannedAt as string).toLocaleString()}`
+                : '🎉 Valid ticket - Never used before!'}
             </CardDescription>
           </div>
           
@@ -696,10 +720,25 @@ const TicketScanner = () => {
                         onLoadedData={() => console.log('Video data loaded')}
                         onCanPlay={() => console.log('Video can play')}
                       />
-                      <div className="absolute inset-0 border-2 border-green-400 rounded-lg"></div>
-                      <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-medium">
-                        Live Scanner Active
+                      <div className="absolute inset-0 border-2 border-green-400 rounded-lg animate-pulse"></div>
+                      
+                      {/* Enhanced scanning overlay */}
+                      <div className="absolute inset-4 border-2 border-dashed border-green-300 rounded-lg animate-pulse"></div>
+                      
+                      {/* Scanning indicators */}
+                      <div className="absolute top-2 left-2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+                        🎯 AUTO-SCAN ACTIVE
                       </div>
+                      
+                      <div className="absolute bottom-2 left-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs text-center">
+                        Point camera at QR code for instant recognition
+                      </div>
+                      
+                      {/* Corner scan guides */}
+                      <div className="absolute top-4 left-4 w-6 h-6 border-l-2 border-t-2 border-green-400"></div>
+                      <div className="absolute top-4 right-4 w-6 h-6 border-r-2 border-t-2 border-green-400"></div>
+                      <div className="absolute bottom-4 left-4 w-6 h-6 border-l-2 border-b-2 border-green-400"></div>
+                      <div className="absolute bottom-4 right-4 w-6 h-6 border-r-2 border-b-2 border-green-400"></div>
                     </div>
                     
                     <Button 
@@ -715,10 +754,13 @@ const TicketScanner = () => {
                 
                 <div className="flex flex-col space-y-1 w-full">
                   <p className="text-xs text-muted-foreground">
-                    Most accurate method for scanning tickets
+                    🎯 Automatic QR recognition - just point and scan
                   </p>
                   <p className="text-xs text-muted-foreground font-medium">
-                    Automatically detects QR codes and validates tickets
+                    ✅ Instant validation with check mark for valid entries
+                  </p>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    ⚠️ Duplicate prevention - shows if ticket already used
                   </p>
                 </div>
               </div>
