@@ -337,26 +337,65 @@ const TicketScanner = () => {
       // Clean the code - remove any extra whitespace or formatting
       const cleanCode = code.trim();
       
-      // Call the scan API endpoint using proper authentication
-      const response = await apiRequest('POST', '/api/tickets/scan', { ticketCode: cleanCode });
+      // Call the scan API endpoint with robust error handling and proper authentication
+      console.log('Scanning ticket with code:', cleanCode);
       
-      const result = await response.json();
+      const response = await apiRequest('POST', '/tickets/scan', { ticketCode: cleanCode }, {
+        skipErrorThrow: true
+      });
       
-      if (response.ok) {
-        // Success - valid ticket
-        setTicketInfo(result.ticket);
+      console.log('Scanner API response status:', response.status);
+      
+      if (!response.ok) {
+        // Handle non-200 responses
+        let errorMessage = 'Failed to validate ticket';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (e) {
+          // Response might not be JSON
+          errorMessage = `Server error: ${response.status} ${response.statusText}`;
+        }
+        
+        console.error('Scanner API error:', errorMessage);
+        setError(errorMessage);
         
         toast({
-          title: result.alreadyScanned ? "Already Scanned" : "✅ ENTRY APPROVED",
-          description: result.alreadyScanned 
-            ? `Previously scanned on ${new Date(result.ticket.scannedAt).toLocaleDateString()}`
+          title: "❌ VALIDATION FAILED",
+          description: errorMessage,
+          variant: "destructive"
+        });
+        
+        // Enhanced haptic feedback for error
+        if (navigator.vibrate) {
+          navigator.vibrate([300, 100, 300]); // Error pattern
+        }
+        
+        return;
+      }
+      
+      const result = await response.json();
+      console.log('Scanner API result:', result);
+      
+      // Check if the result indicates success
+      if (result.valid !== false) {
+        // Success - valid ticket
+        const ticketData = result.ticketInfo || result.ticket || result;
+        setTicketInfo(ticketData);
+        
+        const isAlreadyScanned = result.alreadyScanned || ticketData.alreadyScanned;
+        
+        toast({
+          title: isAlreadyScanned ? "Already Scanned" : "✅ ENTRY APPROVED",
+          description: isAlreadyScanned 
+            ? `Previously scanned on ${new Date(ticketData.scannedAt || result.scannedAt).toLocaleDateString()}`
             : "Ticket validated successfully",
-          variant: result.alreadyScanned ? "default" : "default"
+          variant: isAlreadyScanned ? "default" : "default"
         });
 
         // Enhanced haptic feedback for success
         if (navigator.vibrate) {
-          if (result.alreadyScanned) {
+          if (isAlreadyScanned) {
             navigator.vibrate([200, 100, 200]); // Duplicate pattern
           } else {
             navigator.vibrate([100, 50, 100, 50, 100]); // Success pattern
@@ -364,12 +403,13 @@ const TicketScanner = () => {
         }
         
       } else {
-        // Error - invalid ticket or server error
-        setError(result.error || 'Failed to validate ticket');
+        // Handle invalid ticket response
+        const errorMessage = result.error || result.message || 'Invalid ticket code';
+        setError(errorMessage);
         
         toast({
-          title: "❌ ENTRY DENIED",
-          description: result.error || 'Invalid ticket code',
+          title: "❌ ENTRY DENIED", 
+          description: errorMessage,
           variant: "destructive"
         });
 
@@ -379,17 +419,37 @@ const TicketScanner = () => {
         }
       }
     } catch (error) {
-      console.error('Error validating ticket:', error);
-      setError('Failed to validate ticket. Please check your connection.');
+      console.error('Ticket validation error:', error);
+      
+      // More specific error handling
+      let errorMessage = 'Connection error - please try again';
+      if (error instanceof Error) {
+        if (error.message.includes('fetch')) {
+          errorMessage = 'Network connection failed - check internet connection';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = 'Request timeout - server may be busy';
+        } else if (error.message.includes('401') || error.message.includes('403')) {
+          errorMessage = 'Authentication failed - please refresh and try again';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setError(errorMessage);
       
       toast({
         title: "Connection Error",
-        description: "Please check your internet connection",
+        description: errorMessage,
         variant: "destructive"
       });
+      
+      // Enhanced haptic feedback for connection error
+      if (navigator.vibrate) {
+        navigator.vibrate([500, 200, 500]); // Connection error pattern
+      }
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
