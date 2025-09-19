@@ -722,13 +722,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Events routes
   router.get("/events", async (req: Request, res: Response) => {
     try {
-      console.log("Fetching all events...");
-      // Use real data from database
-      const events = await storage.getAllEvents();
-      console.log(`Successfully retrieved ${events?.length || 0} events`);
+      const status = req.query.status as string;
+      console.log(`Fetching events with status filter: ${status || 'all'}`);
+      
+      let events;
+      switch (status) {
+        case 'upcoming':
+          events = await storage.getUpcomingEvents();
+          console.log(`Successfully retrieved ${events?.length || 0} upcoming events`);
+          break;
+        case 'past':
+          events = await storage.getPastEvents();
+          console.log(`Successfully retrieved ${events?.length || 0} past events`);
+          break;
+        default:
+          events = await storage.getAllEvents();
+          console.log(`Successfully retrieved ${events?.length || 0} events`);
+          break;
+      }
+      
       return res.status(200).json(events || []);
     } catch (err) {
-      console.error("Error fetching all events:", err);
+      console.error("Error fetching events:", err);
       return res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -3995,6 +4010,55 @@ if (selectedTicket.status === 'hidden') {
         return res.status(404).json({ message: "Event not found" });
       }
       
+      // SECURITY: Prevent checkout for past events
+      try {
+        const eventDate = new Date(event.date);
+        const now = new Date();
+        
+        let isEventPast = false;
+        
+        // If we have an end time, use that for comparison
+        if (event.endTime) {
+          const [hours, minutes] = event.endTime.split(':').map(Number);
+          const eventEndDateTime = new Date(eventDate);
+          eventEndDateTime.setHours(hours, minutes, 0, 0);
+          isEventPast = eventEndDateTime < now;
+        } 
+        // If we have a duration and start time, calculate end time
+        else if (event.duration && event.time) {
+          const [hours, minutes] = event.time.split(':').map(Number);
+          const eventStartDateTime = new Date(eventDate);
+          eventStartDateTime.setHours(hours, minutes, 0, 0);
+          const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
+          isEventPast = eventEndDateTime < now;
+        } 
+        // If we have a start time but no end time/duration
+        else if (event.time) {
+          const [hours, minutes] = event.time.split(':').map(Number);
+          const eventStartDateTime = new Date(eventDate);
+          eventStartDateTime.setHours(hours, minutes, 0, 0);
+          // Add 4 hours as default event duration
+          const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
+          isEventPast = eventEndDateTime < now;
+        } 
+        // If no time specified, compare just the date
+        else {
+          const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+          const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          isEventPast = eventDateOnly < todayDateOnly;
+        }
+        
+        if (isEventPast) {
+          return res.status(400).json({ 
+            message: "This event has already ended. Tickets are no longer available for purchase.",
+            eventEnded: true 
+          });
+        }
+      } catch (error) {
+        console.error('Error checking if event is past:', error);
+        // Continue with payment if there's an error determining event status
+      }
+      
       let authoritativeAmount: number;
       let authoritativeCurrency: string;
       let finalTicketName = ticketName;
@@ -4092,6 +4156,55 @@ if (selectedTicket.status === 'hidden') {
       const event = await storage.getEvent(eventId);
       if (!event) {
         return res.status(404).json({ message: "Event not found" });
+      }
+      
+      // SECURITY: Prevent checkout for past events
+      try {
+        const eventDate = new Date(event.date);
+        const now = new Date();
+        
+        let isEventPast = false;
+        
+        // If we have an end time, use that for comparison
+        if (event.endTime) {
+          const [hours, minutes] = event.endTime.split(':').map(Number);
+          const eventEndDateTime = new Date(eventDate);
+          eventEndDateTime.setHours(hours, minutes, 0, 0);
+          isEventPast = eventEndDateTime < now;
+        } 
+        // If we have a duration and start time, calculate end time
+        else if (event.duration && event.time) {
+          const [hours, minutes] = event.time.split(':').map(Number);
+          const eventStartDateTime = new Date(eventDate);
+          eventStartDateTime.setHours(hours, minutes, 0, 0);
+          const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
+          isEventPast = eventEndDateTime < now;
+        } 
+        // If we have a start time but no end time/duration
+        else if (event.time) {
+          const [hours, minutes] = event.time.split(':').map(Number);
+          const eventStartDateTime = new Date(eventDate);
+          eventStartDateTime.setHours(hours, minutes, 0, 0);
+          // Add 4 hours as default event duration
+          const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
+          isEventPast = eventEndDateTime < now;
+        } 
+        // If no time specified, compare just the date
+        else {
+          const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+          const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          isEventPast = eventDateOnly < todayDateOnly;
+        }
+        
+        if (isEventPast) {
+          return res.status(400).json({ 
+            message: "This event has already ended. Tickets are no longer available for purchase.",
+            eventEnded: true 
+          });
+        }
+      } catch (error) {
+        console.error('Error checking if event is past:', error);
+        // Continue with payment if there's an error determining event status
       }
       
       let authoritativeAmount: number;

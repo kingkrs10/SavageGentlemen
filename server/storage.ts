@@ -146,6 +146,8 @@ export interface IStorage {
   // Event operations
   getEvent(id: number): Promise<Event | undefined>;
   getAllEvents(): Promise<Event[]>;
+  getUpcomingEvents(): Promise<Event[]>;
+  getPastEvents(): Promise<Event[]>;
   getFeaturedEvents(): Promise<Event[]>;
   createEvent(event: InsertEvent): Promise<Event>;
   updateEvent(id: number, eventData: Partial<InsertEvent>): Promise<Event | undefined>;
@@ -552,6 +554,116 @@ export class MemStorage implements IStorage {
     } catch (error) {
       console.error("Storage: Error in getFeaturedEvents:", error);
       // Return empty array instead of throwing to prevent API errors
+      return [];
+    }
+  }
+  
+  async getUpcomingEvents(): Promise<Event[]> {
+    try {
+      console.log("Storage: Getting upcoming events");
+      const allEvents = await this.getAllEvents();
+      const now = new Date();
+      
+      const upcomingEvents = allEvents.filter(event => {
+        try {
+          const eventDate = new Date(event.date);
+          
+          // If we have an end time, use that for comparison
+          if (event.endTime) {
+            const [hours, minutes] = event.endTime.split(':').map(Number);
+            const eventEndDateTime = new Date(eventDate);
+            eventEndDateTime.setHours(hours, minutes, 0, 0);
+            return eventEndDateTime >= now;
+          }
+          
+          // If we have a duration and start time, calculate end time
+          if (event.duration && event.time) {
+            const [hours, minutes] = event.time.split(':').map(Number);
+            const eventStartDateTime = new Date(eventDate);
+            eventStartDateTime.setHours(hours, minutes, 0, 0);
+            const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
+            return eventEndDateTime >= now;
+          }
+          
+          // If we have a start time but no end time/duration
+          if (event.time) {
+            const [hours, minutes] = event.time.split(':').map(Number);
+            const eventStartDateTime = new Date(eventDate);
+            eventStartDateTime.setHours(hours, minutes, 0, 0);
+            // Add 4 hours as default event duration
+            const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
+            return eventEndDateTime >= now;
+          }
+          
+          // If no time specified, compare just the date
+          const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+          const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          return eventDateOnly >= todayDateOnly;
+        } catch (error) {
+          console.error('Error determining if event is upcoming:', error);
+          return true; // Default to upcoming if there's an error
+        }
+      });
+      
+      console.log(`Storage: Retrieved ${upcomingEvents.length} upcoming events`);
+      return upcomingEvents;
+    } catch (error) {
+      console.error("Storage: Error in getUpcomingEvents:", error);
+      return [];
+    }
+  }
+
+  async getPastEvents(): Promise<Event[]> {
+    try {
+      console.log("Storage: Getting past events");
+      const allEvents = await this.getAllEvents();
+      const now = new Date();
+      
+      const pastEvents = allEvents.filter(event => {
+        try {
+          const eventDate = new Date(event.date);
+          
+          // If we have an end time, use that for comparison
+          if (event.endTime) {
+            const [hours, minutes] = event.endTime.split(':').map(Number);
+            const eventEndDateTime = new Date(eventDate);
+            eventEndDateTime.setHours(hours, minutes, 0, 0);
+            return eventEndDateTime < now;
+          }
+          
+          // If we have a duration and start time, calculate end time
+          if (event.duration && event.time) {
+            const [hours, minutes] = event.time.split(':').map(Number);
+            const eventStartDateTime = new Date(eventDate);
+            eventStartDateTime.setHours(hours, minutes, 0, 0);
+            const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
+            return eventEndDateTime < now;
+          }
+          
+          // If we have a start time but no end time/duration
+          if (event.time) {
+            const [hours, minutes] = event.time.split(':').map(Number);
+            const eventStartDateTime = new Date(eventDate);
+            eventStartDateTime.setHours(hours, minutes, 0, 0);
+            // Add 4 hours as default event duration
+            const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
+            return eventEndDateTime < now;
+          }
+          
+          // If no time specified, compare just the date
+          const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+          const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          return eventDateOnly < todayDateOnly;
+        } catch (error) {
+          console.error('Error determining if event is past:', error);
+          return false; // Default to not past if there's an error
+        }
+      });
+      
+      console.log(`Storage: Retrieved ${pastEvents.length} past events`);
+      return pastEvents;
+    } catch (error) {
+      console.error("Storage: Error in getPastEvents:", error);
       return [];
     }
   }
@@ -1990,6 +2102,98 @@ export class DatabaseStorage implements IStorage {
     );
     
     return eventsWithLowestPrice;
+  }
+  
+  async getUpcomingEvents(): Promise<Event[]> {
+    const allEvents = await this.getAllEvents();
+    const now = new Date();
+    
+    return allEvents.filter(event => {
+      try {
+        const eventDate = new Date(event.date);
+        
+        // If we have an end time, use that for comparison
+        if (event.endTime) {
+          const [hours, minutes] = event.endTime.split(':').map(Number);
+          const eventEndDateTime = new Date(eventDate);
+          eventEndDateTime.setHours(hours, minutes, 0, 0);
+          return eventEndDateTime >= now;
+        }
+        
+        // If we have a duration and start time, calculate end time
+        if (event.duration && event.time) {
+          const [hours, minutes] = event.time.split(':').map(Number);
+          const eventStartDateTime = new Date(eventDate);
+          eventStartDateTime.setHours(hours, minutes, 0, 0);
+          const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
+          return eventEndDateTime >= now;
+        }
+        
+        // If we have a start time but no end time/duration
+        if (event.time) {
+          const [hours, minutes] = event.time.split(':').map(Number);
+          const eventStartDateTime = new Date(eventDate);
+          eventStartDateTime.setHours(hours, minutes, 0, 0);
+          // Add 4 hours as default event duration
+          const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
+          return eventEndDateTime >= now;
+        }
+        
+        // If no time specified, compare just the date
+        const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+        const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        return eventDateOnly >= todayDateOnly;
+      } catch (error) {
+        console.error('Error determining if event is upcoming:', error);
+        return true; // Default to upcoming if there's an error
+      }
+    });
+  }
+
+  async getPastEvents(): Promise<Event[]> {
+    const allEvents = await this.getAllEvents();
+    const now = new Date();
+    
+    return allEvents.filter(event => {
+      try {
+        const eventDate = new Date(event.date);
+        
+        // If we have an end time, use that for comparison
+        if (event.endTime) {
+          const [hours, minutes] = event.endTime.split(':').map(Number);
+          const eventEndDateTime = new Date(eventDate);
+          eventEndDateTime.setHours(hours, minutes, 0, 0);
+          return eventEndDateTime < now;
+        }
+        
+        // If we have a duration and start time, calculate end time
+        if (event.duration && event.time) {
+          const [hours, minutes] = event.time.split(':').map(Number);
+          const eventStartDateTime = new Date(eventDate);
+          eventStartDateTime.setHours(hours, minutes, 0, 0);
+          const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
+          return eventEndDateTime < now;
+        }
+        
+        // If we have a start time but no end time/duration
+        if (event.time) {
+          const [hours, minutes] = event.time.split(':').map(Number);
+          const eventStartDateTime = new Date(eventDate);
+          eventStartDateTime.setHours(hours, minutes, 0, 0);
+          // Add 4 hours as default event duration
+          const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
+          return eventEndDateTime < now;
+        }
+        
+        // If no time specified, compare just the date
+        const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+        const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        return eventDateOnly < todayDateOnly;
+      } catch (error) {
+        console.error('Error determining if event is past:', error);
+        return false; // Default to not past if there's an error
+      }
+    });
   }
 
   async createEvent(eventData: InsertEvent): Promise<Event> {

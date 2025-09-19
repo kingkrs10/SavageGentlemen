@@ -76,3 +76,50 @@ export function formatTimeAgo(date: string | Date): string {
     });
   }
 }
+
+/**
+ * Determines if an event is in the past
+ * @param event - Event object with date and optional time/endTime
+ * @returns true if the event has ended, false otherwise
+ */
+export function isEventPast(event: { date: string | Date; time?: string; endTime?: string; duration?: number }): boolean {
+  try {
+    const eventDate = new Date(event.date);
+    const now = new Date();
+    
+    // If we have an end time, use that for comparison
+    if (event.endTime) {
+      const [hours, minutes] = event.endTime.split(':').map(Number);
+      const eventEndDateTime = new Date(eventDate);
+      eventEndDateTime.setHours(hours, minutes, 0, 0);
+      return eventEndDateTime < now;
+    }
+    
+    // If we have a duration, calculate the end time
+    if (event.duration && event.time) {
+      const [hours, minutes] = event.time.split(':').map(Number);
+      const eventStartDateTime = new Date(eventDate);
+      eventStartDateTime.setHours(hours, minutes, 0, 0);
+      const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
+      return eventEndDateTime < now;
+    }
+    
+    // If we have a start time but no end time/duration, assume event lasts until end of day
+    if (event.time) {
+      const [hours, minutes] = event.time.split(':').map(Number);
+      const eventStartDateTime = new Date(eventDate);
+      eventStartDateTime.setHours(hours, minutes, 0, 0);
+      // Add 4 hours as default event duration if no end time/duration specified
+      const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
+      return eventEndDateTime < now;
+    }
+    
+    // If no time specified, compare just the date (event is past if date < today)
+    const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+    const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return eventDateOnly < todayDateOnly;
+  } catch (error) {
+    console.error('Error determining if event is past:', error);
+    return false; // Default to not past if there's an error
+  }
+}
