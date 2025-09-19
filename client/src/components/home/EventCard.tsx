@@ -17,12 +17,14 @@ interface EventCardProps {
   event: Event;
   variant?: "horizontal" | "vertical";
   onGetTicket?: (eventId: number) => void;
+  isPastEvent?: boolean;
 }
 
 const EventCard = ({ 
   event, 
   variant = "vertical",
-  onGetTicket 
+  onGetTicket,
+  isPastEvent = false
 }: EventCardProps) => {
   const { id, title, description, date, time, location, price, imageUrl } = event;
   const { user, isAuthenticated } = useUser();
@@ -36,6 +38,16 @@ const EventCard = ({
   const handleGetTickets = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Prevent ticket purchase for past events
+    if (isPastEvent) {
+      toast({
+        title: "Event Ended",
+        description: "This event has already ended. Tickets are no longer available for purchase.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     // Check if user is authenticated before proceeding
     if (!isAuthenticated) {
@@ -63,12 +75,16 @@ const EventCard = ({
   
   if (variant === "horizontal") {
     return (
-      <div className="event-card rounded-xl overflow-hidden shadow-lg flex flex-col md:flex-row group hover:shadow-xl transition-shadow duration-300">
+      <div className={`event-card rounded-xl overflow-hidden shadow-lg flex flex-col md:flex-row group hover:shadow-xl transition-all duration-300 ${
+        isPastEvent ? 'opacity-60 grayscale hover:grayscale-0 hover:opacity-80' : ''
+      }`}>
         <Link href={`/events/${id}`} className="block w-full md:w-1/3 h-48 md:h-auto relative">
           <LazyImage 
             src={imageUrl}
             alt={title}
-            className="w-full h-full"
+            className={`w-full h-full transition-all duration-300 ${
+              isPastEvent ? 'filter grayscale' : ''
+            }`}
             fallbackSrc={SGFlyerLogoPng}
             placeholderColor="#1f2937"
             loadingClassName="w-full h-full bg-gray-800 animate-pulse"
@@ -77,6 +93,13 @@ const EventCard = ({
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent">
             {/* Subtle gradient overlay to improve visibility */}
           </div>
+          {isPastEvent && (
+            <div className="absolute top-2 left-2">
+              <Badge variant="secondary" className="bg-gray-800 text-gray-300 text-xs">
+                Event Ended
+              </Badge>
+            </div>
+          )}
           <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
             <ExternalLink className="w-8 h-8 text-white" />
           </div>
@@ -86,55 +109,82 @@ const EventCard = ({
             <div className="flex justify-between items-start">
               <div>
                 <Link href={`/events/${id}`} className="hover:underline">
-                  <h3 className="text-xl font-heading">{title}</h3>
+                  <h3 className={`text-xl font-heading transition-colors ${
+                    isPastEvent ? 'text-gray-400' : ''
+                  }`}>{title}</h3>
                 </Link>
-                <p className="text-sm text-gray-300 flex items-center mt-1">
+                <p className={`text-sm flex items-center mt-1 transition-colors ${
+                  isPastEvent ? 'text-gray-500' : 'text-gray-300'
+                }`}>
                   <Calendar className="w-4 h-4 mr-1" /> {formatDate(date, id, title, time)}
                 </p>
-                <p className="text-sm text-gray-300 flex items-center mt-1">
+                <p className={`text-sm flex items-center mt-1 transition-colors ${
+                  isPastEvent ? 'text-gray-500' : 'text-gray-300'
+                }`}>
                   <MapPin className="w-4 h-4 mr-1" /> {location}
                 </p>
               </div>
-              <Badge variant="outline" className="bg-accent text-black font-bold px-3 py-1 rounded-full">
+              <Badge variant="outline" className={`font-bold px-3 py-1 rounded-full transition-colors ${
+                isPastEvent ? 'bg-gray-700 text-gray-400 border-gray-600' : 'bg-accent text-black'
+              }`}>
                 {formatEventPrice(event)}
               </Badge>
             </div>
-            <p className="text-sm mt-3">{description}</p>
+            <p className={`text-sm mt-3 transition-colors ${
+              isPastEvent ? 'text-gray-500' : ''
+            }`}>{description}</p>
           </div>
           <div className="flex flex-col space-y-3 mt-4">
             <div className="flex justify-between items-center">
-              <Badge variant="secondary" className="bg-green-900 text-green-300 px-2 py-1 rounded">
-                <span className="mr-1">🎟️</span> Tickets available
+              <Badge variant="secondary" className={`px-2 py-1 rounded transition-colors ${
+                isPastEvent 
+                  ? 'bg-gray-800 text-gray-400' 
+                  : 'bg-green-900 text-green-300'
+              }`}>
+                <span className="mr-1">{isPastEvent ? '📅' : '🎟️'}</span> 
+                {isPastEvent ? 'Event ended' : 'Tickets available'}
               </Badge>
               <div className="flex space-x-2">
                 <Link href={`/events/${id}`}>
                   <Button 
                     variant="outline"
                     size="sm"
-                    className="border-primary text-primary hover:bg-primary hover:text-white transition"
+                    className={`transition-all ${
+                      isPastEvent
+                        ? 'border-gray-600 text-gray-400 hover:bg-gray-800 hover:text-gray-300'
+                        : 'border-primary text-primary hover:bg-primary hover:text-white'
+                    }`}
                   >
                     View Details
                   </Button>
                 </Link>
                 <Button 
-                  className="bg-primary text-white hover:bg-red-800 transition"
+                  className={`transition-all ${
+                    isPastEvent
+                      ? 'bg-gray-700 text-gray-400 cursor-not-allowed hover:bg-gray-700'
+                      : 'bg-primary text-white hover:bg-red-800'
+                  }`}
                   onClick={handleGetTickets}
+                  disabled={isPastEvent}
+                  data-testid={isPastEvent ? "button-tickets-disabled" : "button-get-tickets"}
                 >
-                  Get Tickets
+                  {isPastEvent ? 'Event Ended' : 'Get Tickets'}
                 </Button>
               </div>
             </div>
-            <div className="flex justify-end">
-              <AddToCalendarButton 
-                event={event} 
-                variant="ghost" 
-                size="sm" 
-                className="text-white/70 hover:text-white" 
-                showText={true}
-                showOneClickButton={true}
-                oneClickProvider="google"
-              />
-            </div>
+            {!isPastEvent && (
+              <div className="flex justify-end">
+                <AddToCalendarButton 
+                  event={event} 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-white/70 hover:text-white" 
+                  showText={true}
+                  showOneClickButton={true}
+                  oneClickProvider="google"
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -142,13 +192,17 @@ const EventCard = ({
   }
   
   return (
-    <div className="modern-card glass-card animate-fade-in-up group">
+    <div className={`modern-card glass-card animate-fade-in-up group transition-all duration-300 ${
+      isPastEvent ? 'opacity-70 grayscale hover:grayscale-0 hover:opacity-90' : ''
+    }`}>
       <Link href={`/events/${id}`} className="block relative">
         <div className="w-full h-48 overflow-hidden rounded-t-2xl">
           <LazyImage 
             src={imageUrl}
             alt={title}
-            className="w-full h-full group-hover:scale-105 transition-transform duration-500"
+            className={`w-full h-full group-hover:scale-105 transition-transform duration-500 ${
+              isPastEvent ? 'filter grayscale' : ''
+            }`}
             fallbackSrc={SGFlyerLogoPng}
             placeholderColor="#1f2937"
             loadingClassName="shimmer w-full h-full"
@@ -157,6 +211,13 @@ const EventCard = ({
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
             {/* Enhanced gradient overlay */}
           </div>
+          {isPastEvent && (
+            <div className="absolute top-2 left-2">
+              <Badge variant="secondary" className="bg-gray-800/90 text-gray-300 text-xs backdrop-blur-sm">
+                Event Ended
+              </Badge>
+            </div>
+          )}
           <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-300">
             <div className="transform scale-75 group-hover:scale-100 transition-transform duration-300">
               <ExternalLink className="w-8 h-8 text-white drop-shadow-lg" />
@@ -168,19 +229,31 @@ const EventCard = ({
         <div className="flex justify-between items-start mb-3">
           <div className="flex-1">
             <Link href={`/events/${id}`} className="hover:underline block">
-              <h3 className="heading-modern text-xl text-white/90 group-hover:text-white transition-colors">{title}</h3>
+              <h3 className={`heading-modern text-xl group-hover:text-white transition-colors ${
+                isPastEvent ? 'text-white/60' : 'text-white/90'
+              }`}>{title}</h3>
             </Link>
-            <p className="text-sm text-white/60 flex items-center mt-2">
+            <p className={`text-sm flex items-center mt-2 transition-colors ${
+              isPastEvent ? 'text-white/40' : 'text-white/60'
+            }`}>
               <Calendar className="w-3 h-3 mr-1" /> {formatDate(date, id, title)}
             </p>
           </div>
-          <Badge variant="outline" className="gradient-primary text-white text-xs font-bold px-3 py-1 rounded-full border-0 shadow-lg">
+          <Badge variant="outline" className={`text-xs font-bold px-3 py-1 rounded-full border-0 shadow-lg transition-colors ${
+            isPastEvent 
+              ? 'bg-gray-700 text-gray-400' 
+              : 'gradient-primary text-white'
+          }`}>
             {formatEventPrice(event)}
           </Badge>
         </div>
-        <p className="text-modern text-sm text-white/70 mt-2 line-clamp-2">{description}</p>
+        <p className={`text-modern text-sm mt-2 line-clamp-2 transition-colors ${
+          isPastEvent ? 'text-white/50' : 'text-white/70'
+        }`}>{description}</p>
         <div className="flex flex-wrap items-center gap-2 mt-4">
-          <span className="text-xs flex items-center text-white/60">
+          <span className={`text-xs flex items-center transition-colors ${
+            isPastEvent ? 'text-white/40' : 'text-white/60'
+          }`}>
             <MapPin className="w-3 h-3 mr-1" /> {location}
           </span>
           <div className="flex ml-auto space-x-2">
@@ -188,30 +261,42 @@ const EventCard = ({
               <Button 
                 variant="outline"
                 size="sm"
-                className="glass-effect border-white/20 text-white hover:bg-white/10 transition-all duration-300"
+                className={`transition-all duration-300 ${
+                  isPastEvent
+                    ? 'glass-effect border-white/10 text-white/60 hover:bg-white/5 hover:text-white/80'
+                    : 'glass-effect border-white/20 text-white hover:bg-white/10'
+                }`}
               >
                 Details
               </Button>
             </Link>
             <Button 
-              className="btn-modern gradient-primary text-white border-0 shadow-lg"
+              className={`border-0 shadow-lg transition-all duration-300 ${
+                isPastEvent
+                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed hover:bg-gray-700'
+                  : 'btn-modern gradient-primary text-white'
+              }`}
               size="sm"
               onClick={handleGetTickets}
+              disabled={isPastEvent}
+              data-testid={isPastEvent ? "button-tickets-disabled" : "button-get-tickets"}
             >
-              Get Tickets
+              {isPastEvent ? 'Event Ended' : 'Get Tickets'}
             </Button>
           </div>
         </div>
-        <div className="mt-4 border-t border-white/10 pt-4">
-          <AddToCalendarButton 
-            event={event} 
-            variant="ghost" 
-            size="sm"
-            className="text-white/70 hover:text-white w-full flex justify-center items-center transition-colors duration-300"
-            iconClassName="mr-2 h-4 w-4"
-            showText={true}
-          />
-        </div>
+        {!isPastEvent && (
+          <div className="mt-4 border-t border-white/10 pt-4">
+            <AddToCalendarButton 
+              event={event} 
+              variant="ghost" 
+              size="sm"
+              className="text-white/70 hover:text-white w-full flex justify-center items-center transition-colors duration-300"
+              iconClassName="mr-2 h-4 w-4"
+              showText={true}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
