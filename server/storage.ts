@@ -535,19 +535,63 @@ export class MemStorage implements IStorage {
 
   async getFeaturedEvents(): Promise<Event[]> {
     try {
-      console.log("Storage: Getting featured events");
+      console.log("Storage: Getting featured events (upcoming only)");
       if (!this.events) {
         console.log("Storage: Events map is undefined, returning empty array");
         return [];
       }
       
       const allEvents = Array.from(this.events.values());
-      const featuredEvents = allEvents.filter(event => event.featured);
-      console.log(`Storage: Retrieved ${featuredEvents.length} featured events out of ${allEvents.length} total events`);
+      const now = new Date();
+      
+      const featuredEvents = allEvents.filter(event => {
+        if (!event.featured) return false;
+        
+        try {
+          const eventDate = new Date(event.date);
+          
+          // If we have an end time, use that for comparison
+          if (event.endTime) {
+            const [hours, minutes] = event.endTime.split(':').map(Number);
+            const eventEndDateTime = new Date(eventDate);
+            eventEndDateTime.setHours(hours, minutes, 0, 0);
+            return eventEndDateTime >= now; // Event is still ongoing or in the future
+          }
+          
+          // If we have a duration and start time, calculate end time
+          if (event.duration && event.time) {
+            const [hours, minutes] = event.time.split(':').map(Number);
+            const eventStartDateTime = new Date(eventDate);
+            eventStartDateTime.setHours(hours, minutes, 0, 0);
+            const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
+            return eventEndDateTime >= now;
+          }
+          
+          // If we have a start time but no end time/duration
+          if (event.time) {
+            const [hours, minutes] = event.time.split(':').map(Number);
+            const eventStartDateTime = new Date(eventDate);
+            eventStartDateTime.setHours(hours, minutes, 0, 0);
+            // Add 4 hours as default event duration
+            const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
+            return eventEndDateTime >= now;
+          }
+          
+          // If no time specified, compare just the date
+          const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+          const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          return eventDateOnly >= todayDateOnly;
+        } catch (error) {
+          console.error('Storage: Error determining if featured event is upcoming:', error);
+          return true; // Default to showing if there's an error
+        }
+      });
+      
+      console.log(`Storage: Retrieved ${featuredEvents.length} upcoming featured events out of ${allEvents.length} total events`);
       
       // Log first featured event for debugging if available
       if (featuredEvents.length > 0) {
-        console.log("Storage: First featured event sample:", JSON.stringify(featuredEvents[0]));
+        console.log("Storage: First upcoming featured event sample:", JSON.stringify(featuredEvents[0]));
       }
       
       return featuredEvents;
@@ -2042,14 +2086,59 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFeaturedEvents(): Promise<Event[]> {
+    // Get featured events that are not past events (upcoming only)
+    const now = new Date();
+    
     const featuredEvents = await db
       .select()
       .from(events)
       .where(eq(events.featured, true));
       
-    // For each event, get the lowest active ticket price
+    // Filter out past events before processing tickets
+    const upcomingFeaturedEvents = featuredEvents.filter(event => {
+      try {
+        const eventDate = new Date(event.date);
+        
+        // If we have an end time, use that for comparison
+        if (event.endTime) {
+          const [hours, minutes] = event.endTime.split(':').map(Number);
+          const eventEndDateTime = new Date(eventDate);
+          eventEndDateTime.setHours(hours, minutes, 0, 0);
+          return eventEndDateTime >= now; // Event is still ongoing or in the future
+        }
+        
+        // If we have a duration and start time, calculate end time
+        if (event.duration && event.time) {
+          const [hours, minutes] = event.time.split(':').map(Number);
+          const eventStartDateTime = new Date(eventDate);
+          eventStartDateTime.setHours(hours, minutes, 0, 0);
+          const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
+          return eventEndDateTime >= now;
+        }
+        
+        // If we have a start time but no end time/duration
+        if (event.time) {
+          const [hours, minutes] = event.time.split(':').map(Number);
+          const eventStartDateTime = new Date(eventDate);
+          eventStartDateTime.setHours(hours, minutes, 0, 0);
+          // Add 4 hours as default event duration
+          const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
+          return eventEndDateTime >= now;
+        }
+        
+        // If no time specified, compare just the date
+        const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+        const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        return eventDateOnly >= todayDateOnly;
+      } catch (error) {
+        console.error('Database: Error determining if featured event is upcoming:', error);
+        return true; // Default to showing if there's an error
+      }
+    });
+    
+    // For each upcoming featured event, get the lowest active ticket price
     const eventsWithLowestPrice = await Promise.all(
-      featuredEvents.map(async (event) => {
+      upcomingFeaturedEvents.map(async (event) => {
         // Get all tickets for this event
         const eventTickets = await db
           .select()
@@ -2057,7 +2146,6 @@ export class DatabaseStorage implements IStorage {
           .where(eq(tickets.eventId, event.id));
           
         // Filter tickets that are active, within their sales period and have remaining quantity
-        const now = new Date();
         const activeTickets = eventTickets.filter(ticket => {
           // Check if ticket is active
           if (ticket.status !== 'active') return false;
