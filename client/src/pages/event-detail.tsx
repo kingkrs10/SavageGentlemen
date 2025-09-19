@@ -307,6 +307,60 @@ const EventDetail = () => {
         {/* Event Details */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-4">
+            {/* Event Ended Banner */}
+            {(() => {
+              // Check if event is in the past - consistent with the logic in action sidebar
+              const eventDate = new Date(event.date);
+              let isEventPast = false;
+              
+              try {
+                if (event.endTime) {
+                  const [hours, minutes] = event.endTime.split(':').map(Number);
+                  const eventEndDateTime = new Date(eventDate);
+                  eventEndDateTime.setHours(hours, minutes, 0, 0);
+                  isEventPast = new Date() > eventEndDateTime;
+                } else if (event.time) {
+                  const [hours, minutes] = event.time.split(':').map(Number);
+                  const eventStartDateTime = new Date(eventDate);
+                  eventStartDateTime.setHours(hours, minutes, 0, 0);
+                  // Add default 4 hour duration if no end time
+                  const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
+                  isEventPast = new Date() > eventEndDateTime;
+                } else {
+                  // No time specified, compare just the date
+                  const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+                  const todayDateOnly = new Date();
+                  todayDateOnly.setHours(0, 0, 0, 0);
+                  isEventPast = eventDateOnly < todayDateOnly;
+                }
+              } catch (error) {
+                console.error('Error determining if event is past:', error);
+                isEventPast = false;
+              }
+              
+              if (isEventPast) {
+                return (
+                  <div className="bg-gray-800/90 border-2 border-gray-600 rounded-lg p-4 mb-4 backdrop-blur-sm" data-testid="banner-event-ended">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0">
+                        <Badge variant="secondary" className="bg-gray-700 text-gray-300 px-3 py-1 text-sm">
+                          📅 Event Ended
+                        </Badge>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-300 mb-1">This Event Has Ended</h3>
+                        <p className="text-sm text-gray-400">
+                          This event took place on {formatEventDate(event.date)}{event.time && ` at ${formatEventTime(event.date, event.time)}`}. 
+                          Tickets are no longer available for purchase.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+            
             <Badge className="bg-primary text-white mb-2">{event.category}</Badge>
             <h1 className="text-3xl md:text-4xl font-heading mb-2">{event.title}</h1>
             
