@@ -1,232 +1,7 @@
 # Savage Gentlemen Web Application
 
 ## Overview
-A comprehensive mobile-first web application for Savage Gentlemen, empowering Caribbean-American community engagement through advanced authentication and event discovery.
-
-## Project Architecture
-- **Frontend**: React with TypeScript, Tailwind CSS, mobile-first responsive design
-- **Backend**: Express.js with PostgreSQL database using Drizzle ORM
-- **Authentication**: Token-based system with localStorage persistence
-- **Email System**: SendGrid with QR code attachments for ticket delivery
-- **Payment Processing**: Stripe and PayPal integration
-- **Analytics**: Comprehensive tracking with Google Analytics
-
-## Recent Changes
-- **July 25, 2025**: ✓ ENHANCED QR SCANNER WITH AUTOMATIC RECOGNITION - Upgraded scanner with 5x/sec scan rate and instant QR detection  
-- **July 25, 2025**: ✓ Added prominent visual feedback with large check marks, animated success states, and "ENTRY APPROVED" messaging
-- **July 25, 2025**: ✓ Implemented haptic feedback (vibration) for mobile devices - success patterns for valid tickets, error patterns for duplicates
-- **July 25, 2025**: ✓ Enhanced camera interface with corner guides, "AUTO-SCAN ACTIVE" indicator, and pulsing scan region
-- **July 25, 2025**: ✓ Improved duplicate prevention display with clear "Previously scanned on [date]" messaging
-- **July 25, 2025**: ✓ QR SCANNER UPGRADED TO HTML5-QRCODE - Completely migrated from qr-scanner to html5-qrcode library for production compatibility
-- **July 25, 2025**: ✓ Enhanced live scanning functionality with Html5QrcodeScanner integration for better mobile device support
-- **July 25, 2025**: ✓ Preserved all existing scanner features: manual entry, photo upload, and live camera scanning with haptic feedback
-- **July 25, 2025**: ✓ Build process completed successfully with html5-qrcode implementation - application ready for production deployment
-- **July 25, 2025**: ✓ Fixed ticket validation API connection issues - Corrected authentication headers and request format for successful scanning
-- **July 25, 2025**: ✓ SCANNER DATABASE SYNCHRONIZATION COMPLETE - Verified PostgreSQL database connections and updated all ticket scan records
-- **July 25, 2025**: ✓ Database integrity confirmed - 109 ticket purchases, 19 successful scans, all cross-references synchronized
-- **July 25, 2025**: ✓ Enhanced ticket scan API endpoint (/api/tickets/scan) with proper authentication and database recording
-- **July 25, 2025**: ✓ Ticket database reconciliation system operational - automatic sync between ticket_purchases and ticket_scans tables
-- **July 26, 2025**: ✓ PRODUCTION SCANNER CONNECTION FIXED - Enhanced error handling with specific connection error messages and authentication retry logic
-- **July 26, 2025**: ✓ Improved API request handling - Added skipErrorThrow option and robust response validation for production environments
-- **July 26, 2025**: ✓ Enhanced scanner feedback system - Better error categorization and user-friendly connection status messages
-- **July 25, 2025**: ✓ DEPLOYMENT CONFIGURATION COMPLETE - Fixed all deployment issues and configured for production deployment
-- **July 25, 2025**: ✓ Fixed duplicate method definitions in DatabaseStorage class preventing TypeScript compilation
-- **July 25, 2025**: ✓ Configured Firebase environment variables (VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID, VITE_FIREBASE_APP_ID)
-- **July 25, 2025**: ✓ Enhanced server startup with proper 0.0.0.0 binding and deployment readiness indicators
-- **July 25, 2025**: ✓ Fixed schema type issues and removed duplicate Livestream type exports in shared/schema.ts
-- **July 25, 2025**: ✓ Added missing user schema fields (bio, location, website) for proper type validation
-- **July 25, 2025**: ✓ Build process successfully completed with production-ready assets generated
-- **July 25, 2025**: ✓ Application confirmed accessible on external interfaces for deployment
-- **July 25, 2025**: ✓ ENHANCED QR SCANNER WITH AUTOMATIC RECOGNITION - Upgraded scanner with 5x/sec scan rate and instant QR detection
-- **July 25, 2025**: ✓ Added prominent visual feedback with large check marks, animated success states, and "ENTRY APPROVED" messaging
-- **July 25, 2025**: ✓ Implemented haptic feedback (vibration) for mobile devices - success patterns for valid tickets, error patterns for duplicates
-- **July 25, 2025**: ✓ Enhanced camera interface with corner guides, "AUTO-SCAN ACTIVE" indicator, and pulsing scan region
-- **July 25, 2025**: ✓ Improved duplicate prevention display with clear "Previously scanned on [date]" messaging
-- **July 25, 2025**: ✓ EMAIL SERVICE CONFIGURATION COMPLETE - Configured MailerSend with verified savgent.com domain (SPF, DKIM, RETURN-PATH)
-- **July 25, 2025**: ✓ Multi-provider email system with automatic failover between SendGrid, MailerSend, Brevo
-- **July 25, 2025**: ✓ Created complimentary tickets for Jclay (Order #149) with 2 Ladies General Admission tickets for R Y T H Y M > IN< R I D D I M
-- **July 25, 2025**: ✓ Generated backup QR code delivery system (jclay-ticket-qr-generator.html) with downloadable tickets
-- **July 25, 2025**: ✓ Verified tickets accessible in user "My Tickets" section with proper database associations
-- **July 20, 2025**: ✓ FIXED EVENT PRICING DISPLAY ACROSS ENTIRE SITE - Events now show lowest active ticket price instead of "Free"
-- **July 20, 2025**: ✓ Backend modified to calculate and return `lowestActivePrice` for all events and featured events
-- **July 20, 2025**: ✓ Fixed column name mapping issues (event_id → eventId, etc.) in ticket queries for Drizzle ORM
-- **July 20, 2025**: ✓ Added `lowestActivePrice` field to frontend Event interface for proper type safety
-- **July 17, 2025**: ✓ TICKET SCANNER ENHANCED WITH MODERN AESTHETICS - Applied glassmorphism effects, gradient text, and improved visual hierarchy
-- **July 17, 2025**: ✓ Enhanced scanner modes with modern button styling and improved card design for scan results
-- **July 17, 2025**: ✓ Verified ticket scanner functionality: 107 total tickets, 25 successfully scanned across 2 events
-- **July 17, 2025**: ✓ Confirmed database integrity: Events (2 records), Tickets (6 records), Ticket Purchases (107 records)
-- **July 17, 2025**: ✓ MODERN AESTHETIC ENHANCEMENTS - Implemented glassmorphism effects, enhanced animations, and improved visual hierarchy
-- **July 17, 2025**: ✓ Enhanced card designs with modern hover effects, gradient backgrounds, and improved typography
-- **July 17, 2025**: ✓ Added Inter font family for modern typography and improved button micro-interactions
-- **July 17, 2025**: ✓ Implemented staggered animations and shimmer loading states for better UX
-- **July 17, 2025**: ✓ REMOVED ALL PLACEHOLDER LIVESTREAMS - Disabled Rick Astley video from home page and removed fake upcoming events
-- **July 17, 2025**: ✓ Cleaned up live page by removing "Carnival Vibes" and "Reggae Sunday Sessions" placeholder events
-- **July 17, 2025**: ✓ SHOP PAGE STABILIZED - Using brand logo for all products due to expired Etsy image URLs (404 errors)
-- **July 17, 2025**: ✓ Updated image handling to use consistent brand logo display across all products
-- **July 16, 2025**: ✓ ADMIN DASHBOARD LIVE TAB ADDED - Integrated livestream management controls directly in admin dashboard
-- **July 16, 2025**: ✓ Fixed Etsy product image display across entire site - Products now show correct Etsy images instead of brand logo
-- **July 16, 2025**: ✓ Updated product database with authentic Etsy image URLs for all featured products
-- **July 16, 2025**: ✓ Enhanced ProductCard and Shop components to properly render Etsy images with fallback to brand logo
-- **July 16, 2025**: ✓ LIVE PAGE FULLY FUNCTIONAL - Enhanced livestream functionality with working WebSocket chat and video player
-- **July 16, 2025**: ✓ Created functional livestream system with current and upcoming streams display
-- **July 16, 2025**: ✓ Implemented real-time chat functionality with WebSocket connection and message broadcasting
-- **July 16, 2025**: ✓ Enhanced MultiPlatformPlayer component with YouTube, Twitch, and custom stream support
-- **July 16, 2025**: ✓ Added sample livestream data and upcoming events for testing live page functionality
-- **July 16, 2025**: ✓ FIXED PRODUCT IMAGE DISPLAY ACROSS ENTIRE SITE - Images now properly load with fallback to brand logo
-- **July 16, 2025**: ✓ Enhanced Shop page with proper image URL processing and proxy support for external images
-- **July 16, 2025**: ✓ Updated product database with category-specific Etsy image URLs for authentic product display  
-- **July 16, 2025**: ✓ Implemented robust image loading with error handling and smooth transitions
-- **July 16, 2025**: ✓ Updated all Shop page links to point to official Etsy store (sgxmerch.etsy.com) instead of Printify
-- **July 16, 2025**: ✓ Enhanced product cards with loading skeletons, proper error handling, and better image transitions
-- **July 16, 2025**: ✓ REMOVED ALL PLACEHOLDER IMAGES AND FAKE ETSY LISTINGS - Cleaned database of non-existent product URLs
-- **July 16, 2025**: ✓ Replaced 16 fake Etsy URLs with 14 authentic product listings with real descriptions and pricing
-- **July 16, 2025**: ✓ Fixed product database to show actual merchandise categories (hats, hoodies, shirts, activewear, pants)
-- **July 16, 2025**: ✓ Enhanced product cards with category overlays and proper brand representation
-- **July 16, 2025**: ✓ PERMANENT SHOP PAGE AND IMAGE PROCESSING FIX COMPLETE - Fixed database image processing and Etsy product display permanently
-- **July 16, 2025**: ✓ Enhanced image proxy endpoint with proper headers for Etsy image fetching and enhanced domain validation
-- **July 16, 2025**: ✓ Updated Shop page with improved product cards, loading states, and direct Etsy links for all products
-- **July 16, 2025**: ✓ Fixed product image loading with permanent solution - all Etsy product images now display correctly
-- **July 16, 2025**: ✓ Updated all Shop page links to point to official Etsy store (sgxmerch.etsy.com) instead of Printify
-- **July 16, 2025**: ✓ Enhanced product cards with loading skeletons, proper error handling, and better image transitions
-- **July 16, 2025**: ✓ ENHANCED PROFILE MANAGEMENT SYSTEM COMPLETE - Added comprehensive profile picture upload and payment information management
-- **July 16, 2025**: ✓ Created dedicated user avatar upload endpoint with file validation and automatic database updates
-- **July 16, 2025**: ✓ Added profile picture section with drag-and-drop functionality, upload progress indicators, and remove option
-- **July 16, 2025**: ✓ Enhanced profile settings with payment information display (Stripe/PayPal customer IDs) and secure processing indicators
-- **July 16, 2025**: ✓ Updated backend profile update endpoints to handle avatar field and payment information updates
-- **July 16, 2025**: ✓ Implemented comprehensive file upload validation (5MB limit, image type validation, secure storage)
-- **July 16, 2025**: ✓ COMPREHENSIVE COMPLIMENTARY TICKET DISTRIBUTION SYSTEM COMPLETE - Successfully delivered thank you tickets to 25 CSV users
-- **July 16, 2025**: ✓ Created personalized thank you email template acknowledging attendance at previous "Rhythm in Riddim" event
-- **July 16, 2025**: ✓ Analyzed CSV data and identified 25 users who attended first event but didn't register for new event
-- **July 16, 2025**: ✓ Automated email distribution system using Brevo email service with QR code generation
-- **July 16, 2025**: ✓ Updated event date in database to correct date: Friday July 25th, 2025
-- **July 16, 2025**: ✓ Fixed email service provider switching from SendGrid to Brevo due to credit exhaustion
-- **July 16, 2025**: ✓ Verified ticket delivery system working correctly with QR code generation and email delivery
-- **July 16, 2025**: ✓ Created ticket purchase record (ID: 109) with proper database associations and validation
-- **July 14, 2025**: ✓ CRITICAL PRICING SYSTEM FIX - Fixed site-wide pricing conversion where users had to enter 0.20 for $20.00 USD
-- **July 14, 2025**: ✓ Corrected frontend price conversion logic in admin-new-simple.tsx, admin-new.tsx, and TicketManager.tsx
-- **July 14, 2025**: ✓ Fixed price display conversion: prices now properly convert from cents to dollars when editing tickets/events
-- **July 14, 2025**: ✓ Fixed price input conversion: users can now enter "20" for $20.00 USD instead of "0.20"
-- **July 14, 2025**: ✓ Permanent pricing system correction across all admin forms - ticket creation, event creation, and editing
-- **July 14, 2025**: ✓ ENHANCED USER MANAGEMENT PAGE - Added comprehensive search, filtering, and statistics for easier navigation
-- **July 14, 2025**: ✓ Improved user deletion functionality with detailed confirmation dialogs and protected main admin account
-- **July 14, 2025**: ✓ Added user statistics cards showing total users, admins, moderators, registered, and guest counts
-- **July 14, 2025**: ✓ Enhanced filtering system with role and status filters, plus real-time search across username, display name, and email
-- **July 14, 2025**: ✓ Added empty state handling and clear filter options for better user experience
-- **July 14, 2025**: ✓ COMPREHENSIVE ANALYTICS DASHBOARD ENHANCEMENT - Upgraded all stats and metrics with authentic data calculations
-- **July 14, 2025**: ✓ Enhanced analytics backend with real-time revenue, user, and engagement calculations from actual database records
-- **July 14, 2025**: ✓ Added comprehensive daily data generation with proper date range filtering and authentic metrics
-- **July 14, 2025**: ✓ Created fully functional analytics tabs (Overview, Events, Products, Users) with interactive charts and percentage calculations
-- **July 14, 2025**: ✓ Implemented trending indicators, conversion rates, and click-through rates based on real data patterns
-- **July 11, 2025**: ✓ ENHANCED REVIEW EDITING SYSTEM - Added ability to edit existing reviews with visual indicators for user's own reviews
-- **July 11, 2025**: ✓ Review UI improvements - User's review highlighted in blue, "Edit Your Review" button when review exists
-- **July 11, 2025**: ✓ Fixed review submission functionality - Users can now create and update reviews successfully
-- **July 11, 2025**: ✓ PERMANENT HIDDEN TICKETS FIX - Fixed database sync logic to preserve "hidden" status permanently
-- **July 11, 2025**: ✓ Modified syncTicketDatabases function to prevent automatic status override from "hidden" to "on_sale"
-- **July 11, 2025**: ✓ REVIEWS SYSTEM FULLY OPERATIONAL - Enhanced EventReviews component with proper empty states and user interaction
-- **July 11, 2025**: ✓ Fixed hidden tickets functionality - Tickets with "hidden" status now properly filtered from public view
-- **July 11, 2025**: ✓ Added comprehensive past event validation - Prevents ticket purchases after event end times
-- **July 11, 2025**: ✓ Enhanced reviews UI with engaging empty state messages and intuitive user prompts
-- **July 11, 2025**: ✓ Verified reviews API endpoints working correctly with proper JSON responses and pagination
-- **July 10, 2025**: ✓ RESTORED COMPLETE IMAGE LOADING FUNCTIONALITY - Fixed static file serving for uploads directory
-- **July 10, 2025**: ✓ Added comprehensive static file serving with proper MIME types and caching for /uploads and /api/uploads routes
-- **July 10, 2025**: ✓ Verified image loading across entire site with HTTP 200 responses and correct Content-Type headers
-- **July 10, 2025**: ✓ AI Assistant integration fully operational with error handling and multi-provider support
-- **July 9, 2025**: ✓ CRITICAL IMAGE LOADING FIX COMPLETE - Fixed "R Y T H Y M > IN< R I D D I M" event image loading issue
-- **July 9, 2025**: ✓ Restored missing image files by copying rhythm-riddim-logo.png to missing filenames
-- **July 9, 2025**: ✓ Updated database to use existing rhythm-riddim-logo.png as primary image for Event ID 7
-- **July 9, 2025**: ✓ Set proper file permissions (644) for all uploaded images to ensure web server access
-- **July 9, 2025**: ✓ Verified image serving via HTTP 200 OK responses from /uploads/rhythm-riddim-logo.png
-- **July 9, 2025**: ✓ PERMANENT IMAGE LOADING FIXES COMPLETE - Enhanced static file serving with comprehensive MIME types
-- **July 9, 2025**: ✓ Enhanced /uploads route with proper caching, CORS headers, and immutable cache headers for images
-- **July 9, 2025**: ✓ Added alternative /api/uploads route for improved compatibility across different request patterns
-- **July 9, 2025**: ✓ Updated image URL normalization to ensure proper leading slash format for static serving
-- **July 9, 2025**: ✓ Enhanced LazyImage component with better error handling and fallback mechanisms
-- **July 9, 2025**: ✓ ADMIN USER DELETION FUNCTIONALITY COMPLETE - Added delete buttons with confirmation dialogs
-- **July 9, 2025**: ✓ Enhanced UserManagement component with Trash2 icons and proper mutation handling
-- **July 9, 2025**: ✓ Verified email marketing system working correctly with existing email lists and routes
-- **July 9, 2025**: ✓ Protected main admin user (ID: 1) from accidental deletion in UI and backend
-- **July 9, 2025**: ✓ COMPREHENSIVE SITE OPTIMIZATION COMPLETE - All 4 phases implemented successfully
-- **July 9, 2025**: ✓ Advanced analytics dashboard with real-time metrics and performance charts
-- **July 9, 2025**: ✓ Enhanced filtering system with date ranges, price filters, and advanced search
-- **July 9, 2025**: ✓ Notification center with customizable settings and real-time updates
-- **July 9, 2025**: ✓ Performance monitoring with system health, response times, and error tracking
-- **July 9, 2025**: ✓ Cache management system with optimization and cleanup tools
-- **July 9, 2025**: ✓ EMAIL DELIVERY SYSTEM OPERATIONAL - Created functional script to send tickets to 17 free registrations
-- **July 9, 2025**: ✓ Fixed QR code generation and email template formatting for R Y T H Y M > IN< R I D D I M event
-- **July 9, 2025**: ✓ Verified SendGrid API integration working correctly (blocked by account credit limits)
-- **July 9, 2025**: ✓ All 17 free ticket holders identified and ready for email delivery once SendGrid credits restored
-- **July 9, 2025**: ✓ ALTERNATIVE EMAIL SERVICE SETUP COMPLETE - Configured MailerSend, Brevo, and Gmail SMTP options
-- **July 9, 2025**: ✓ Created comprehensive email provider switching system with automatic failover
-- **July 9, 2025**: ✓ Identified MailerSend trial account limitations requiring upgrade or alternative provider
-- **July 9, 2025**: ✓ Fixed MailerSend domain configuration issue - remove "https://" prefix, use only "savgent.com"
-- **July 9, 2025**: ✓ Built comprehensive Brevo setup guide as recommended alternative (300 emails/day, no restrictions)
-- **July 9, 2025**: ✓ BREVO EMAIL SERVICE FULLY OPERATIONAL - Configured with correct SMTP credentials
-- **July 9, 2025**: ✓ Successfully sent free tickets to multiple attendees using Brevo SMTP service
-- **July 9, 2025**: ✓ Verified email delivery system working: guest@example.com, test@example.com, mobiletest@example.com, Ejarvis473@gmail.com
-- **July 9, 2025**: ✓ Built QR code generator tool for manual ticket distribution as backup solution
-- **June 28, 2025**: ✓ COMPREHENSIVE TICKET DATABASE SYNCHRONIZATION - Fixed all orphaned records and connections
-- **June 28, 2025**: ✓ Enhanced database integrity with automated ticket inventory management system
-- **June 28, 2025**: ✓ Added TicketDatabaseSync class for real-time cross-database reconciliation
-- **June 28, 2025**: ✓ Fixed 3 orphaned ticket purchases, 1 missing event reference, and 2 invalid user connections
-- **June 28, 2025**: ✓ Implemented site-wide ticket status validation and automatic inventory updates
-- **June 28, 2025**: ✓ Added comprehensive database startup synchronization for all ticket systems
-- **June 28, 2025**: ✓ Enhanced non-prefixed /tickets/free endpoint with proper JSON responses
-- **June 28, 2025**: ✓ FIXED FREE TICKET CLAIMING JSON ERROR - Enhanced mobile browser authentication handling
-- **June 28, 2025**: ✓ Added robust error detection for HTML responses (authentication failures) vs JSON responses
-- **June 28, 2025**: ✓ Improved guest authentication header injection for mobile environments  
-- **June 28, 2025**: ✓ Enhanced free ticket claim error messages with response truncation for debugging
-- **June 28, 2025**: ✓ Added complete account deletion functionality with confirmation dialog and admin notifications
-- **June 28, 2025**: ✓ COMPLETE GUEST FREE TICKET SYSTEM - Fixed database constraint and enabled guest email collection
-- **June 28, 2025**: ✓ Made ticket_id nullable in ticket_purchases table to support free events without specific ticket types
-- **June 28, 2025**: ✓ Guest users can now successfully claim free tickets by providing email addresses
-- **June 28, 2025**: ✓ Verified end-to-end flow: guest access → email collection → ticket generation → QR scanning
-- **June 28, 2025**: ✓ Fixed Rhythm in Riddim event image - replaced incorrect image with proper Savage Gentlemen logo
-- **June 28, 2025**: ✓ Preserved site structure while correcting event branding for featured event
-- **June 28, 2025**: ✓ Confirmed Shenell.whyte@gmail.com account setup as moderator with ticket scanning access
-- **June 27, 2025**: ✓ CRITICAL SECURITY FIX: Added sold out validation to free ticket endpoints - prevents bypassing sold out status
-- **June 27, 2025**: ✓ Enhanced ticket purchase protection with comprehensive status validation (sold_out, off_sale, staff_only)
-- **June 27, 2025**: ✓ RESOLVED: Jaytapper@hotmail.com missing ticket email - manually resent via API endpoint
-- **June 27, 2025**: ✓ CRITICAL FIX: Fixed scan data recording system - live scans now appear in cross-reference table
-- **June 27, 2025**: ✓ Enhanced scan record creation with proper user ID tracking for scanner identification
-- **June 27, 2025**: ✓ Unified scan logic: replaced duplicate implementation with centralized storage layer method
-- **June 27, 2025**: ✓ Verified scan data table functionality: new scans immediately appear in /scan-data cross-reference
-- **June 27, 2025**: ✓ Confirmed duplicate scan prevention working correctly with proper visual feedback
-- **June 27, 2025**: ✓ CRITICAL FIX: Resolved QR code scanning failures at events
-- **June 27, 2025**: ✓ Fixed QR scanner validation logic to properly handle EVENT-{eventId}-ORDER-{orderId}-{timestamp} format
-- **June 27, 2025**: ✓ Updated backend storage scanTicket method to support both new EVENT format and legacy SGX format
-- **June 27, 2025**: ✓ Removed duplicate scanning endpoints causing format conflicts
-- **June 27, 2025**: ✓ Enhanced duplicate prevention system using firstScanAt/lastScanAt/scanCount fields
-- **June 27, 2025**: ✓ Verified ticket scanning working: Jaytapper's ticket (EVENT-6-ORDER-MANUAL-1751038715755) ✓
-- **June 27, 2025**: ✓ Verified ticket scanning working: Bello's ticket (EVENT-6-ORDER-67-1750996460) ✓
-- **June 27, 2025**: ✓ Confirmed duplicate scan prevention: already scanned tickets return proper status
-- **June 27, 2025**: ✓ RESOLVED Bello's payment issue - created Order #67 and Ticket #62 for $40 USD payment
-- **June 27, 2025**: ✓ Confirmed Bello's bank statement payment: $40 USD converted to $56.31 CAD (ref: 517723839496)
-- **June 27, 2025**: ✓ RiddemRiot men's tickets now process in CAD currency (Event ID 6, Ticket ID 11)
-- **June 27, 2025**: ✓ Updated RiddemRiot location to "Toronto, ON" for proper Canadian currency detection
-- **June 27, 2025**: ✓ Verified complete CAD pricing system: location detection → currency display → payment processing
-- **June 27, 2025**: ✓ Updated organizer email to info@savgent.com across all events and admin forms
-- **June 27, 2025**: ✓ Enhanced mobile camera support for ticket scanning with fallback photo mode
-- **June 27, 2025**: ✓ Improved QR scanner initialization with better error handling for mobile devices
-- **June 27, 2025**: ✓ URGENT: Manually resent ticket confirmations to all today's purchasers (Marshajjg, Sav, Bello)
-- **June 27, 2025**: ✓ Verified email delivery system working correctly for ticket confirmations
-- **June 27, 2025**: ✓ RESOLVED: Jaytapper@hotmail.com missing ticket - manually created and sent ticket confirmation
-- **June 27, 2025**: ✓ Added Jaytapper ticket to database with QR code: EVENT-6-ORDER-MANUAL-1751038715755
-- **June 27, 2025**: ✓ Payment flow verified: Intent creation → Payment success → Webhook processing → Order completion
-- **June 27, 2025**: ✓ Comprehensive Stripe integration testing confirms all components working
-- **June 27, 2025**: Verified complete ticketing system functionality for bellomoyosoreoluwa@yahoo.com
-- **June 27, 2025**: Confirmed email delivery, ticket generation, QR code scanning, and duplicate prevention working correctly
-- **June 27, 2025**: Verified and sent ticket confirmations to all recent purchasers (SavageGentlemen, Apryl, Natalie)
-- **June 27, 2025**: Enhanced ticket scanner camera initialization with proper video element loading
-- **June 27, 2025**: Added comprehensive scan data viewer at /scan-data for tracking all ticket scans
-- **June 26, 2025**: Fixed QR code display in ticket emails using inline attachments
-- **June 26, 2025**: Resolved Stripe payment disconnection issues for June 20 purchases
-- **June 26, 2025**: Enhanced admin ticket management system authentication
-- **June 26, 2025**: Fixed image loading across entire site with proper static file serving
-- **June 26, 2025**: Added additional images display functionality for events
-- **June 26, 2025**: Updated frontend authentication to handle nested user data structure
-
-## Current Issues
-- None - All core functionality working correctly
+The Savage Gentlemen web application is a mobile-first platform designed to foster Caribbean-American community engagement. Its primary purpose is to facilitate event discovery, offer advanced authentication, and provide robust ticketing solutions. The project aims to empower users with seamless access to community events and services, while offering administrators powerful tools for event management, user interaction, and analytics.
 
 ## User Preferences
 - Focus on functionality over aesthetics
@@ -234,11 +9,29 @@ A comprehensive mobile-first web application for Savage Gentlemen, empowering Ca
 - Maintain proper email delivery with QR codes
 - Admin tools must be fully functional
 
-## Technical Decisions
-- QR codes embedded as inline email attachments (not data URLs)
-- Token-based authentication with fallback mechanisms
-- Mobile-first design approach
-- Real-time analytics tracking
-- Static file serving with proper MIME types and caching headers
-- Additional images stored as JSON arrays in database
-- Normalized image URL handling for consistent display
+## System Architecture
+The application is built with a **React (TypeScript)** frontend utilizing **Tailwind CSS** for a mobile-first responsive design. The backend is powered by **Express.js** and interacts with a **PostgreSQL** database via **Drizzle ORM**.
+
+Key architectural decisions and features include:
+- **Authentication**: Token-based system with `localStorage` persistence, supporting user and admin roles.
+- **UI/UX**: Mobile-first design principles, modern aesthetics with glassmorphism effects, gradient text, enhanced animations, and improved typography (Inter font family). Includes loading skeletons, shimmer loading states, and micro-interactions for improved user experience.
+- **Event Management**: Comprehensive system for creating, managing, and displaying events, including accurate pricing, location-based currency detection, and review functionality.
+- **Ticketing System**: Robust ticket generation, distribution, and scanning. Supports free tickets, paid tickets via Stripe/PayPal, QR code delivery (inline attachments), and a secure ticket scanner with haptic and visual feedback. Includes duplicate prevention and a database synchronization mechanism for ticket inventory.
+- **Livestreaming**: Functional live page with current and upcoming streams, real-time WebSocket chat, and multi-platform video player support (YouTube, Twitch, custom streams).
+- **Product Shop**: Integration with Etsy for merchandise display, featuring authentic product listings, image proxy handling, and direct links to the official Etsy store.
+- **Profile Management**: User profile management including avatar uploads (with validation), and secure display of payment information.
+- **Admin Dashboard**: Centralized dashboard for user management (search, filter, statistics, deletion protection for main admin), comprehensive analytics (real-time metrics, charts, trending indicators), and livestream controls.
+- **Image Handling**: Static file serving for uploaded images with proper MIME types, caching, and normalized URL handling. Additional images for events are stored as JSON arrays in the database.
+- **Pricing System**: Corrected site-wide pricing conversion to allow natural input (e.g., "20" for $20.00 USD) and proper display across all forms and event listings.
+
+## External Dependencies
+- **Payment Gateways**: Stripe, PayPal
+- **Email Services**: SendGrid, Brevo, MailerSend (with automatic failover)
+- **Analytics**: Google Analytics
+- **Database**: PostgreSQL
+- **ORM**: Drizzle ORM
+- **Frontend Framework**: React
+- **Styling**: Tailwind CSS
+- **QR Code Scanning**: `html5-qrcode` library
+- **Image Hosting/Product Source**: Etsy
+- **Authentication**: Firebase (for environment variables)
