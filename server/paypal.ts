@@ -66,21 +66,7 @@ export async function getClientToken() {
 
 export async function createPaypalOrder(req: Request, res: Response) {
   try {
-    const { amount, currency, intent, eventId, eventTitle, ticketId, ticketName } = req.body;
-
-    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-      return res
-        .status(400)
-        .json({
-          error: "Invalid amount. Amount must be a positive number.",
-        });
-    }
-
-    if (!currency) {
-      return res
-        .status(400)
-        .json({ error: "Invalid currency. Currency is required." });
-    }
+    const { intent, eventId, eventTitle, ticketId, ticketName, currency = "usd" } = req.body;
 
     if (!intent) {
       return res
@@ -88,26 +74,75 @@ export async function createPaypalOrder(req: Request, res: Response) {
         .json({ error: "Invalid intent. Intent is required." });
     }
 
-    // Create descriptive item name
-    let itemDescription = "SG Event Ticket";
-    if (eventTitle) {
-      itemDescription = eventTitle;
-      if (ticketName) {
-        itemDescription = `${eventTitle} - ${ticketName}`;
-      }
-    } else if (ticketName) {
-      itemDescription = ticketName;
+    // SECURITY: Validate that eventId is provided for pricing validation
+    if (!eventId) {
+      return res.status(400).json({ error: "Event ID is required for secure payment processing" });
     }
 
-    // Create the purchase unit with optional custom fields
+    // SECURITY: Get authoritative pricing from database
+    const storage = (global as any).storage;
+    const event = await storage.getEvent(eventId);
+    if (!event) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    let authoritativeAmount: number;
+    let authoritativeCurrency: string;
+    let finalTicketName = ticketName;
+    
+    if (ticketId) {
+      // Get ticket-specific pricing
+      const ticket = await storage.getTicket(ticketId);
+      if (!ticket || ticket.eventId !== eventId) {
+        return res.status(404).json({ error: "Invalid ticket for this event" });
+      }
+      
+      // Check ticket availability
+      if (!ticket.isActive || (ticket.remainingQuantity !== null && ticket.remainingQuantity <= 0)) {
+        return res.status(400).json({ error: "Ticket type is no longer available" });
+      }
+      
+      authoritativeAmount = (ticket.price || 0) / 100; // Convert from cents to dollars
+      finalTicketName = ticket.name;
+    } else {
+      // Use event base pricing
+      authoritativeAmount = (event.price || 0) / 100; // Convert from cents to dollars
+    }
+    
+    // Handle free tickets
+    if (authoritativeAmount === 0) {
+      return res.status(400).json({ 
+        error: "This is a free ticket. Please use the free ticket claim process instead.",
+        isFreeTicket: true
+      });
+    }
+    
+    // Determine currency from event location or database
+    authoritativeCurrency = event.currency?.toLowerCase() || 
+      (event.location && event.location.toLowerCase().includes('canad') ? 'cad' : 'usd');
+    
+    // Validate amount is positive
+    if (authoritativeAmount <= 0) {
+      return res.status(400).json({ error: "Invalid pricing configuration for this event" });
+    }
+
+    // Create descriptive item name using server-validated data
+    let itemDescription = finalTicketName || event.title || "SG Event Ticket";
+    if (event.title && finalTicketName && finalTicketName !== event.title) {
+      itemDescription = `${event.title} - ${finalTicketName}`;
+    }
+
+    // SECURITY: Create purchase unit with SERVER-VALIDATED pricing
     const purchaseUnit = {
       amount: {
-        currencyCode: currency,
-        value: amount,
+        currencyCode: authoritativeCurrency.toUpperCase(),
+        value: authoritativeAmount.toFixed(2), // Ensure 2 decimal places
       },
-      // Add custom metadata if event information is provided
-      custom_id: eventId ? `event_${eventId}${ticketId ? `_ticket_${ticketId}` : ''}` : undefined,
-      description: itemDescription
+      // Add custom metadata for tracking and validation
+      custom_id: `event_${eventId}${ticketId ? `_ticket_${ticketId}` : ''}_validated_${Date.now()}`,
+      description: itemDescription,
+      // Add additional metadata for security audit
+      reference_id: `sg_${eventId}_${ticketId || 'base'}_${authoritativeAmount}`
     };
 
     const collect = {
@@ -151,19 +186,55 @@ export async function capturePaypalOrder(req: Request, res: Response) {
     // If this is an event ticket purchase, create a ticket record
     if (jsonResponse.status === 'COMPLETED' && eventId) {
       try {
+        // SECURITY: Validate that the captured order matches the requested event/ticket
+        const purchaseUnit = jsonResponse.purchase_units[0];
+        if (!purchaseUnit) {
+          throw new Error('No purchase unit found in PayPal response');
+        }
+        
+        // Parse the server-set custom_id to validate against client request
+        const customId = purchaseUnit.custom_id;
+        if (!customId) {
+          throw new Error('Missing custom_id in PayPal order - security validation failed');
+        }
+        
+        // Extract event and ticket IDs from the custom_id we set during order creation
+        // Format: "event_{eventId}_ticket_{ticketId}_validated_{timestamp}" or "event_{eventId}_validated_{timestamp}"
+        const customIdMatch = customId.match(/^event_(\d+)(?:_ticket_(\d+))?_validated_\d+$/);
+        if (!customIdMatch) {
+          throw new Error(`Invalid custom_id format: ${customId} - security validation failed`);
+        }
+        
+        const authorizedEventId = parseInt(customIdMatch[1]);
+        const authorizedTicketId = customIdMatch[2] ? parseInt(customIdMatch[2]) : null;
+        
+        // SECURITY: Verify the client-supplied event/ticket IDs match what was paid for
+        if (authorizedEventId !== parseInt(eventId)) {
+          console.error(`PayPal security violation: Authorized event ${authorizedEventId}, requested event ${eventId}`);
+          throw new Error(`Security violation: Event ID mismatch. Order was for event ${authorizedEventId}, not ${eventId}`);
+        }
+        
+        if (ticketId && authorizedTicketId !== parseInt(ticketId)) {
+          console.error(`PayPal security violation: Authorized ticket ${authorizedTicketId}, requested ticket ${ticketId}`);
+          throw new Error(`Security violation: Ticket ID mismatch. Order was for ticket ${authorizedTicketId}, not ${ticketId}`);
+        }
+        
+        // If we reach here, the order is legitimate - proceed with ticket creation
+        console.log(`PayPal order ${orderID} validated: Event ${authorizedEventId}, Ticket ${authorizedTicketId}`);
+        
         // Import storage and email functions dynamically to avoid circular dependencies
         const { storage } = await import('./storage');
         const { sendTicketEmail } = await import('./email');
         
-        // Extract purchase details
-        const amount = parseFloat(jsonResponse.purchase_units[0]?.amount?.value || '0');
+        // Extract purchase details (using server-validated amount from PayPal response)
+        const amount = parseFloat(purchaseUnit.amount?.value || '0');
         const payerEmail = jsonResponse.payer?.email_address;
         const payerName = jsonResponse.payer?.name?.given_name + ' ' + jsonResponse.payer?.name?.surname;
         
-        // Get event details
-        const event = await storage.getEvent(Number(eventId));
+        // Get event details (using validated event ID)
+        const event = await storage.getEvent(authorizedEventId);
         if (!event) {
-          throw new Error(`Event ${eventId} not found`);
+          throw new Error(`Event ${authorizedEventId} not found`);
         }
         
         // Try to find user by email or create guest user

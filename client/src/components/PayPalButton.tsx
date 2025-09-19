@@ -39,14 +39,15 @@ export default function PayPalButton({
   ticketName,
 }: PayPalButtonProps) {
   const createOrder = async () => {
+    // SECURITY: Server-side pricing validation - DO NOT send client amounts
     const orderPayload = {
-      amount: amount,
-      currency: currency,
+      // REMOVED: amount - server validates pricing from database
+      currency: currency, // Currency preference only
       intent: intent,
-      // Include event information if available
-      eventId: eventId || undefined,
+      // Include event information for server pricing validation
+      eventId: eventId || undefined,     // Required for server pricing validation
       eventTitle: eventTitle || undefined,
-      ticketId: ticketId || undefined, 
+      ticketId: ticketId || undefined,   // Required for ticket-specific pricing
       ticketName: ticketName || undefined
     };
     const response = await fetch("/payment/paypal-order", {

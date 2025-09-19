@@ -12,6 +12,13 @@ The Savage Gentlemen web application is a mobile-first platform designed to fost
 ## System Architecture
 The application is built with a **React (TypeScript)** frontend utilizing **Tailwind CSS** for a mobile-first responsive design. The backend is powered by **Express.js** and interacts with a **PostgreSQL** database via **Drizzle ORM**.
 
+## Security Enhancements (September 2025)
+**CRITICAL PAYMENT SECURITY FIXES IMPLEMENTED:**
+- **Payment Price Manipulation Protection**: All payment amounts now validated server-side from database records, eliminating client-controlled pricing vulnerabilities
+- **Authentication Bypass Prevention**: Removed insecure header fallbacks (user-id/x-user-data) for all payment, admin, and ticket routes - strict Firebase token authentication required
+- **PayPal Order Integrity**: Added custom_id validation to prevent order switching attacks where users pay for cheap events but claim expensive tickets
+- **Comprehensive Payment Security**: Both Stripe (/api/payment/create-intent, /payment/create-intent) and PayPal endpoints now use authoritative database pricing with proper validation
+
 Key architectural decisions and features include:
 - **Authentication**: Token-based system with `localStorage` persistence, supporting user and admin roles.
 - **UI/UX**: Mobile-first design principles, modern aesthetics with glassmorphism effects, gradient text, enhanced animations, and improved typography (Inter font family). Includes loading skeletons, shimmer loading states, and micro-interactions for improved user experience.

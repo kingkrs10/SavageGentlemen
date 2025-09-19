@@ -52,38 +52,34 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
     }
   }
   
-  // If we couldn't authenticate via token, try user-id header as fallback
-  if (!user && userId) {
+  // SECURITY: Check if this is a payment-related or sensitive route requiring strict authentication
+  const isPaymentRoute = req.path.includes('/payment') || req.path.includes('create-intent') || req.path.includes('paypal');
+  const isSensitiveRoute = isPaymentRoute || req.path.includes('/admin') || req.path.includes('/ticket');
+  
+  if (isSensitiveRoute && !user) {
+    console.log("SECURITY: Strict authentication required for sensitive route:", req.path);
+    return res.status(401).json({ 
+      message: "Secure authentication required. Please sign in with a valid account.",
+      requiresAuth: true 
+    });
+  }
+  
+  // SECURITY: For non-sensitive routes only, allow limited fallback for development
+  // This prevents authentication bypass on payment/admin routes while maintaining compatibility
+  if (!user && !isSensitiveRoute && process.env.NODE_ENV === 'development' && userId) {
     try {
       const id = parseInt(userId as string);
       user = await storage.getUser(id);
       
       if (user) {
-        console.log("User authenticated via user-id header:", user.id);
+        console.log("DEV-ONLY: User authenticated via user-id header for non-sensitive route:", user.id);
       }
     } catch (userIdError) {
       console.error("Error authenticating with user-id:", userIdError);
     }
   }
   
-  // Try to use x-user-data header as another fallback
-  if (!user && req.headers['x-user-data']) {
-    try {
-      const userData = JSON.parse(req.headers['x-user-data'] as string);
-      
-      if (userData && userData.id) {
-        // Get the user from storage to ensure this is a real user
-        const userFromStorage = await storage.getUser(userData.id);
-        
-        if (userFromStorage) {
-          user = userFromStorage;
-          console.log("User authenticated via x-user-data header:", user.id);
-        }
-      }
-    } catch (xUserDataError) {
-      console.error("Error authenticating with x-user-data:", xUserDataError);
-    }
-  }
+  // REMOVED: x-user-data header fallback completely (too insecure even for dev)
   
   // If we still don't have a user, authentication failed
   if (!user) {

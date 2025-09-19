@@ -225,35 +225,27 @@ export default function SimpleStripeCheckout({
         // Detect currency based on user's location or URL parameter
         const currency = detectCurrency();
         
-        // Try both endpoints - first with API prefix, then without if that fails
+        // SECURITY: Use server-side pricing validation - DO NOT send client amounts
         let response = await apiRequest("POST", "/api/payment/create-intent", { 
-          amount: amount,
-          currency: currency,
-          eventId: eventId,
+          currency: currency, // Currency preference only
+          eventId: eventId,   // Required for server pricing validation
           eventTitle: eventTitle,
-          ticketId: ticketId,
-          ticketName: ticketName,
-          items: [{ 
-            id: ticketId ? `event-ticket-${eventId}-${ticketId}` : (eventId ? `event-ticket-${eventId}` : "sg-event-ticket"), 
-            name: ticketName ? `${eventTitle} - ${ticketName}` : (eventTitle || "Event Ticket"),
-            quantity: 1 
-          }]
+          ticketId: ticketId, // Required for ticket-specific pricing
+          ticketName: ticketName
+          // REMOVED: amount - server validates pricing from database
+          // REMOVED: items - server generates from validated data
         });
         
         // Try again with alternate endpoint if first one fails
         if (!response.ok) {
           response = await apiRequest("POST", "/payment/create-intent", { 
-            amount: amount,
-            currency: currency, // Use the detected currency
-            eventId: eventId,
+            currency: currency, // Currency preference only  
+            eventId: eventId,   // Required for server pricing validation
             eventTitle: eventTitle,
-            ticketId: ticketId,
-            ticketName: ticketName,
-            items: [{ 
-              id: ticketId ? `event-ticket-${eventId}-${ticketId}` : (eventId ? `event-ticket-${eventId}` : "sg-event-ticket"), 
-              name: ticketName ? `${eventTitle} - ${ticketName}` : (eventTitle || "Event Ticket"),
-              quantity: 1 
-            }]
+            ticketId: ticketId, // Required for ticket-specific pricing
+            ticketName: ticketName
+            // REMOVED: amount - server validates pricing from database
+            // REMOVED: items - server generates from validated data
           });
         }
         

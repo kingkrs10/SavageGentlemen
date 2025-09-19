@@ -49,6 +49,7 @@ import { analyticsRouter } from "./analytics-routes";
 import { emailMarketingRouter } from "./email-marketing-routes";
 import { registerSocialRoutes } from "./social-routes";
 import { registerEnhancedTicketingRoutes } from "./enhanced-ticketing-routes";
+import { authenticateUser } from "./auth-middleware";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -206,89 +207,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
   
-  // Authentication middleware
-  const authenticateUser = async (req: Request, res: Response, next: NextFunction) => {
-    // Try Authorization header first (for production)
-    const authHeader = req.headers['authorization'];
-    let userId = req.headers['user-id'];
-    let user = null;
-    
-    console.log("Authenticating request:", {
-      path: req.path,
-      userId: userId,
-      hasAuthHeader: !!authHeader
-    });
-    
-    // If we have an Authorization header, try to validate it
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        // Get the token
-        const token = authHeader.split(' ')[1];
-        
-        // Verify using Firebase Admin (if token exists)
-        if (token && token !== 'undefined' && token !== 'null') {
-          try {
-            const decodedToken = await admin.auth().verifyIdToken(token);
-            console.log("Firebase token verified:", decodedToken.uid);
-            
-            // Look up user by firebase uid
-            const userByFirebase = await storage.getUserByFirebaseId(decodedToken.uid);
-            if (userByFirebase) {
-              user = userByFirebase;
-              console.log("User authenticated via Firebase token:", user.id);
-            }
-          } catch (fbError) {
-            console.error("Firebase token verification failed:", fbError);
-          }
-        }
-      } catch (tokenError) {
-        console.error("Error processing auth token:", tokenError);
-      }
-    }
-    
-    // If we couldn't authenticate via token, try user-id header as fallback
-    if (!user && userId) {
-      try {
-        const id = parseInt(userId as string);
-        user = await storage.getUser(id);
-        
-        if (user) {
-          console.log("User authenticated via user-id header:", user.id);
-        }
-      } catch (userIdError) {
-        console.error("Error authenticating with user-id:", userIdError);
-      }
-    }
-    
-    // Try to use x-user-data header as another fallback
-    if (!user && req.headers['x-user-data']) {
-      try {
-        const userData = JSON.parse(req.headers['x-user-data'] as string);
-        
-        if (userData && userData.id) {
-          // Get the user from storage to ensure this is a real user
-          const userFromStorage = await storage.getUser(userData.id);
-          
-          if (userFromStorage) {
-            user = userFromStorage;
-            console.log("User authenticated via x-user-data header:", user.id);
-          }
-        }
-      } catch (xUserDataError) {
-        console.error("Error authenticating with x-user-data:", xUserDataError);
-      }
-    }
-    
-    // If we still don't have a user, authentication failed
-    if (!user) {
-      console.log("Authentication failed for request:", req.path);
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    
-    // Add user to request object
-    req.user = user;
-    next();
-  };
+  // SECURITY: Import secure authentication middleware instead of using local insecure version
+  // The previous local middleware had authentication bypass vulnerabilities via header fallbacks
   
   // Endpoint to check if user is logged in (for session validation)
   router.get("/me", async (req: Request, res: Response) => {
@@ -4042,7 +3962,7 @@ if (selectedTicket.status === 'hidden') {
   });
 
   // Stripe payment routes
-  // API prefixed create-intent endpoint
+  // API prefixed create-intent endpoint - SECURE VERSION WITH SERVER-SIDE PRICING
   router.post("/api/payment/create-intent", authenticateUser, async (req: Request, res: Response) => {
     try {
       const user = (req as any).user;
@@ -4056,50 +3976,78 @@ if (selectedTicket.status === 'hidden') {
       }
       
       const { 
-        items, 
-        amount, 
-        currency = "usd",
         eventId,
         eventTitle,
         ticketId,
-        ticketName
+        ticketName,
+        // DO NOT ACCEPT CLIENT AMOUNTS - SECURITY FIX
+        currency = "usd"
       } = req.body;
       
-      if (!amount) {
-        return res.status(400).json({ message: "Amount is required" });
+      // SECURITY: Validate that eventId is provided for pricing validation
+      if (!eventId) {
+        return res.status(400).json({ message: "Event ID is required for secure payment processing" });
       }
       
-      // Build metadata object with all relevant information
-      const metadata: Record<string, string> = {
-        items: JSON.stringify(items || [])
-      };
-      
-      // Add event information to metadata if provided
-      if (eventId) {
-        metadata.eventId = eventId.toString();
+      // SECURITY: Get authoritative pricing from database
+      const event = await storage.getEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
       }
       
-      if (eventTitle) {
-        metadata.eventTitle = eventTitle;
-      }
+      let authoritativeAmount: number;
+      let authoritativeCurrency: string;
+      let finalTicketName = ticketName;
       
-      // Add ticket information to metadata if provided
       if (ticketId) {
-        metadata.ticketId = ticketId.toString();
+        // Get ticket-specific pricing
+        const ticket = await storage.getTicket(ticketId);
+        if (!ticket || ticket.eventId !== eventId) {
+          return res.status(404).json({ message: "Invalid ticket for this event" });
+        }
+        
+        // Check ticket availability
+        if (!ticket.isActive || (ticket.remainingQuantity !== null && ticket.remainingQuantity <= 0)) {
+          return res.status(400).json({ message: "Ticket type is no longer available" });
+        }
+        
+        authoritativeAmount = ticket.price || 0; // Price is in cents
+        finalTicketName = ticket.name;
+      } else {
+        // Use event base pricing
+        authoritativeAmount = event.price || 0; // Price is in cents
       }
       
-      if (ticketName) {
-        metadata.ticketName = ticketName;
+      // Handle free tickets
+      if (authoritativeAmount === 0) {
+        return res.status(400).json({ 
+          message: "This is a free ticket. Please use the free ticket claim process instead.",
+          isFreeTicket: true
+        });
       }
       
-      // Create a PaymentIntent with the order amount and currency
+      // Determine currency from event location or database
+      authoritativeCurrency = event.currency?.toLowerCase() || 
+        (event.location && event.location.toLowerCase().includes('canad') ? 'cad' : 'usd');
+      
+      // SECURITY: Create PaymentIntent with SERVER-VALIDATED pricing
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to cents
-        currency: (eventId === 6 && ticketId === 11) ? "cad" : currency,
+        amount: authoritativeAmount, // Already in cents from database
+        currency: authoritativeCurrency,
         automatic_payment_methods: {
           enabled: true,
         },
-        metadata,
+        metadata: {
+          eventId: eventId.toString(),
+          eventTitle: event.title,
+          ticketId: ticketId ? ticketId.toString() : '',
+          ticketName: finalTicketName || '',
+          userId: user.id.toString(),
+          userEmail: user.email,
+          // Add server validation timestamp for security audit
+          serverValidatedAt: new Date().toISOString(),
+          authoritativeAmount: authoritativeAmount.toString()
+        },
       });
       
       return res.status(200).json({
@@ -4113,7 +4061,7 @@ if (selectedTicket.status === 'hidden') {
     }
   });
   
-  // Non-prefixed create-intent endpoint (for backward compatibility)
+  // Non-prefixed create-intent endpoint - SECURE VERSION (backward compatibility)
   router.post("/payment/create-intent", authenticateUser, async (req: Request, res: Response) => {
     try {
       const user = (req as any).user;
@@ -4127,50 +4075,78 @@ if (selectedTicket.status === 'hidden') {
       }
       
       const { 
-        items, 
-        amount, 
-        currency = "usd",
         eventId,
         eventTitle,
         ticketId,
-        ticketName
+        ticketName,
+        // DO NOT ACCEPT CLIENT AMOUNTS - SECURITY FIX
+        currency = "usd"
       } = req.body;
       
-      if (!amount) {
-        return res.status(400).json({ message: "Amount is required" });
+      // SECURITY: Validate that eventId is provided for pricing validation
+      if (!eventId) {
+        return res.status(400).json({ message: "Event ID is required for secure payment processing" });
       }
       
-      // Build metadata object with all relevant information
-      const metadata: Record<string, string> = {
-        items: JSON.stringify(items || [])
-      };
-      
-      // Add event information to metadata if provided
-      if (eventId) {
-        metadata.eventId = eventId.toString();
+      // SECURITY: Get authoritative pricing from database
+      const event = await storage.getEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
       }
       
-      if (eventTitle) {
-        metadata.eventTitle = eventTitle;
-      }
+      let authoritativeAmount: number;
+      let authoritativeCurrency: string;
+      let finalTicketName = ticketName;
       
-      // Add ticket information to metadata if provided
       if (ticketId) {
-        metadata.ticketId = ticketId.toString();
+        // Get ticket-specific pricing
+        const ticket = await storage.getTicket(ticketId);
+        if (!ticket || ticket.eventId !== eventId) {
+          return res.status(404).json({ message: "Invalid ticket for this event" });
+        }
+        
+        // Check ticket availability
+        if (!ticket.isActive || (ticket.remainingQuantity !== null && ticket.remainingQuantity <= 0)) {
+          return res.status(400).json({ message: "Ticket type is no longer available" });
+        }
+        
+        authoritativeAmount = ticket.price || 0; // Price is in cents
+        finalTicketName = ticket.name;
+      } else {
+        // Use event base pricing
+        authoritativeAmount = event.price || 0; // Price is in cents
       }
       
-      if (ticketName) {
-        metadata.ticketName = ticketName;
+      // Handle free tickets
+      if (authoritativeAmount === 0) {
+        return res.status(400).json({ 
+          message: "This is a free ticket. Please use the free ticket claim process instead.",
+          isFreeTicket: true
+        });
       }
       
-      // Create a PaymentIntent with the order amount and currency
+      // Determine currency from event location or database
+      authoritativeCurrency = event.currency?.toLowerCase() || 
+        (event.location && event.location.toLowerCase().includes('canad') ? 'cad' : 'usd');
+      
+      // SECURITY: Create PaymentIntent with SERVER-VALIDATED pricing
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to cents
-        currency: (eventId === 6 && ticketId === 11) ? "cad" : currency,
+        amount: authoritativeAmount, // Already in cents from database
+        currency: authoritativeCurrency,
         automatic_payment_methods: {
           enabled: true,
         },
-        metadata,
+        metadata: {
+          eventId: eventId.toString(),
+          eventTitle: event.title,
+          ticketId: ticketId ? ticketId.toString() : '',
+          ticketName: finalTicketName || '',
+          userId: user.id.toString(),
+          userEmail: user.email,
+          // Add server validation timestamp for security audit
+          serverValidatedAt: new Date().toISOString(),
+          authoritativeAmount: authoritativeAmount.toString()
+        },
       });
       
       return res.status(200).json({
