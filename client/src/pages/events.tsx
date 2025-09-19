@@ -4,7 +4,8 @@ import { API_ROUTES, EVENT_CATEGORIES } from "@/lib/constants";
 import { Event } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, MapPin, Badge as BadgeIcon, ExternalLink } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Calendar, MapPin, Badge as BadgeIcon, ExternalLink, Clock, CalendarOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import EventCard from "@/components/home/EventCard";
 import BrandLoader from "@/components/ui/BrandLoader";
@@ -16,21 +17,35 @@ import AddToCalendarButton from "@/components/events/AddToCalendarButton";
 
 const Events = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [activeTab, setActiveTab] = useState("upcoming");
   const { toast } = useToast();
   
-  const { data: events, isLoading, isError, error } = useQuery<Event[]>({
-    queryKey: [API_ROUTES.EVENTS]
+  const { data: upcomingEvents, isLoading: upcomingLoading, isError: upcomingError, error: upcomingErrorDetails } = useQuery<Event[]>({
+    queryKey: [API_ROUTES.EVENTS, 'upcoming'],
+    queryFn: () => fetch(`${API_ROUTES.EVENTS}?status=upcoming`).then(res => res.json())
   });
   
-  const filteredEvents = events?.filter(
+  const { data: pastEvents, isLoading: pastLoading, isError: pastError, error: pastErrorDetails } = useQuery<Event[]>({
+    queryKey: [API_ROUTES.EVENTS, 'past'],
+    queryFn: () => fetch(`${API_ROUTES.EVENTS}?status=past`).then(res => res.json())
+  });
+  
+  // Get the appropriate events based on active tab
+  const currentEvents = activeTab === "upcoming" ? upcomingEvents : pastEvents;
+  const isCurrentLoading = activeTab === "upcoming" ? upcomingLoading : pastLoading;
+  const isCurrentError = activeTab === "upcoming" ? upcomingError : pastError;
+  const currentError = activeTab === "upcoming" ? upcomingErrorDetails : pastErrorDetails;
+  
+  const filteredEvents = currentEvents?.filter(
     (event) => selectedCategory === "all" || event.category === selectedCategory
   );
   
-  const featuredEvent = events?.find((event) => event.featured);
+  // Featured event should always be from upcoming events
+  const featuredEvent = upcomingEvents?.find((event) => event.featured);
   
   const handleGetTicket = (eventId: number) => {
-    // Find the event to get its price
-    const event = events?.find(e => e.id === eventId);
+    // Find the event to get its price from current events
+    const event = currentEvents?.find(e => e.id === eventId);
     
     if (!event) {
       toast({
@@ -58,7 +73,7 @@ const Events = () => {
     <div>
       {/* Hero Event */}
       <div className="relative rounded-xl overflow-hidden mb-6 shadow-lg">
-        {isLoading ? (
+        {upcomingLoading ? (
           <div className="w-full h-64 bg-gray-900 flex items-center justify-center">
             <BrandLoader size="md" message="Loading featured event" />
           </div>
@@ -153,45 +168,124 @@ const Events = () => {
         </div>
       </div>
 
-      {/* Event List */}
-      <div className="space-y-4 mb-8">
-        {isLoading ? (
-          <div className="w-full h-[400px] flex items-center justify-center bg-gray-900/50 rounded-xl">
-            <BrandLoader size="lg" message="Loading events..." />
-          </div>
-        ) : isError ? (
-          <div className="text-center py-8 bg-red-900/30 rounded-xl border border-red-700">
-            <BadgeIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2 text-red-500">ERROR LOADING EVENTS</h3>
-            <p className="text-gray-300 mb-2">
-              We're having trouble loading events at the moment.
-            </p>
-            <code className="text-xs text-gray-400 bg-black/30 p-2 rounded block max-w-md mx-auto overflow-auto">
-              {error instanceof Error ? error.message : 'Unknown error'}
-            </code>
-            <Button className="mt-4 bg-primary" onClick={() => window.location.reload()}>
-              Try Again
-            </Button>
-          </div>
-        ) : filteredEvents && filteredEvents.length > 0 ? (
-          filteredEvents.map((event) => (
-            <EventCard 
-              key={event.id} 
-              event={event} 
-              variant="horizontal"
-              onGetTicket={handleGetTicket}
-            />
-          ))
-        ) : (
-          <div className="text-center py-8">
-            <BadgeIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No Events Found</h3>
-            <p className="text-gray-400">
-              There are no events matching your filter. Try changing your selection.
-            </p>
-          </div>
-        )}
-      </div>
+      {/* Event Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger 
+            value="upcoming" 
+            className="flex items-center gap-2"
+            data-testid="tab-upcoming-events"
+          >
+            <Clock className="w-4 h-4" />
+            Upcoming Events
+            {upcomingEvents && (
+              <Badge variant="secondary" className="ml-1 text-xs">
+                {upcomingEvents.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger 
+            value="past" 
+            className="flex items-center gap-2"
+            data-testid="tab-past-events"
+          >
+            <CalendarOff className="w-4 h-4" />
+            Past Events
+            {pastEvents && (
+              <Badge variant="secondary" className="ml-1 text-xs">
+                {pastEvents.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="upcoming" className="space-y-4">
+          {upcomingLoading ? (
+            <div className="w-full h-[400px] flex items-center justify-center bg-gray-900/50 rounded-xl">
+              <BrandLoader size="lg" message="Loading upcoming events..." />
+            </div>
+          ) : upcomingError ? (
+            <div className="text-center py-8 bg-red-900/30 rounded-xl border border-red-700">
+              <BadgeIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2 text-red-500">ERROR LOADING UPCOMING EVENTS</h3>
+              <p className="text-gray-300 mb-2">
+                We're having trouble loading upcoming events at the moment.
+              </p>
+              <code className="text-xs text-gray-400 bg-black/30 p-2 rounded block max-w-md mx-auto overflow-auto">
+                {upcomingErrorDetails instanceof Error ? upcomingErrorDetails.message : 'Unknown error'}
+              </code>
+              <Button className="mt-4 bg-primary" onClick={() => window.location.reload()}>
+                Try Again
+              </Button>
+            </div>
+          ) : filteredEvents && filteredEvents.length > 0 ? (
+            filteredEvents.map((event) => (
+              <EventCard 
+                key={event.id} 
+                event={event} 
+                variant="horizontal"
+                onGetTicket={handleGetTicket}
+                data-testid={`event-card-${event.id}`}
+              />
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">No Upcoming Events Found</h3>
+              <p className="text-gray-400">
+                {selectedCategory !== "all" 
+                  ? "There are no upcoming events matching your filter. Try changing your selection."
+                  : "There are no upcoming events scheduled at this time. Check back later!"
+                }
+              </p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="past" className="space-y-4">
+          {pastLoading ? (
+            <div className="w-full h-[400px] flex items-center justify-center bg-gray-900/50 rounded-xl">
+              <BrandLoader size="lg" message="Loading past events..." />
+            </div>
+          ) : pastError ? (
+            <div className="text-center py-8 bg-red-900/30 rounded-xl border border-red-700">
+              <BadgeIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2 text-red-500">ERROR LOADING PAST EVENTS</h3>
+              <p className="text-gray-300 mb-2">
+                We're having trouble loading past events at the moment.
+              </p>
+              <code className="text-xs text-gray-400 bg-black/30 p-2 rounded block max-w-md mx-auto overflow-auto">
+                {pastErrorDetails instanceof Error ? pastErrorDetails.message : 'Unknown error'}
+              </code>
+              <Button className="mt-4 bg-primary" onClick={() => window.location.reload()}>
+                Try Again
+              </Button>
+            </div>
+          ) : filteredEvents && filteredEvents.length > 0 ? (
+            filteredEvents.map((event) => (
+              <EventCard 
+                key={event.id} 
+                event={event} 
+                variant="horizontal"
+                onGetTicket={handleGetTicket}
+                isPastEvent={true}
+                data-testid={`event-card-past-${event.id}`}
+              />
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <CalendarOff className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">No Past Events Found</h3>
+              <p className="text-gray-400">
+                {selectedCategory !== "all" 
+                  ? "There are no past events matching your filter. Try changing your selection."
+                  : "No past events to display."
+                }
+              </p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
