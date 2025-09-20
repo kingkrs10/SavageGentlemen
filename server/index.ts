@@ -12,8 +12,11 @@ const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? [
         // Production domains
+        'https://savgent.com',
+        'https://www.savgent.com',
         'https://sgxmedia.com',
         'https://www.sgxmedia.com',
+        /\.savgent\.com$/,
         /\.sgxmedia\.com$/,
         /\.replit\.app$/,
         // Allow all during development, even in production mode
