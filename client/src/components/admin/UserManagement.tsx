@@ -171,7 +171,7 @@ const UserManagement = () => {
       case 'admin':
         return 'destructive';
       case 'moderator':
-        return 'warning';
+        return 'secondary';
       default:
         return 'outline';
     }
