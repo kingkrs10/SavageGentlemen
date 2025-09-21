@@ -1,8 +1,9 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-async function throwIfResNotOk(res: Response) {
+async function throwIfResNotOk(res: Response, errorMessage?: string) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
+    // Use the pre-read error message if available, otherwise read the response
+    const text = errorMessage || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }
 }
@@ -155,12 +156,20 @@ export async function apiRequest(
     credentials: "include",
   });
 
+  let errorMessage = '';
   if (!res.ok) {
     try {
       const errorData = await res.json();
       console.error(`API Error (${res.status}):`, errorData);
+      errorMessage = typeof errorData === 'string' ? errorData : errorData.message || JSON.stringify(errorData);
     } catch (e) {
-      console.error(`API Error (${res.status}):`, await res.text());
+      try {
+        errorMessage = await res.text();
+        console.error(`API Error (${res.status}):`, errorMessage);
+      } catch (textError) {
+        errorMessage = res.statusText;
+        console.error(`API Error (${res.status}):`, errorMessage);
+      }
     }
   }
 
@@ -171,7 +180,7 @@ export async function apiRequest(
   }
   
   // For all other requests, throw an error if the response is not ok
-  await throwIfResNotOk(res);
+  await throwIfResNotOk(res, errorMessage);
   return res;
 }
 
@@ -307,19 +316,29 @@ export const getQueryFn: <T>(options: {
       const normalizedUrl = normalizeUrl(url);
       console.log(`Query error (${res.status}) for ${normalizedUrl} (original: ${url})`);
       
+      let errorMessage = '';
       try {
         const errorData = await res.json();
         console.error(`Query Error (${res.status}):`, errorData);
+        errorMessage = typeof errorData === 'string' ? errorData : errorData.message || JSON.stringify(errorData);
       } catch (e) {
-        console.error(`Query Error (${res.status}):`, await res.text());
+        try {
+          errorMessage = await res.text();
+          console.error(`Query Error (${res.status}):`, errorMessage);
+        } catch (textError) {
+          errorMessage = res.statusText;
+          console.error(`Query Error (${res.status}):`, errorMessage);
+        }
       }
       
       if (unauthorizedBehavior === "returnNull" && res.status === 401) {
         return null;
       }
+      
+      // Throw error immediately with pre-read error message
+      throw new Error(`${res.status}: ${errorMessage}`);
     }
 
-    await throwIfResNotOk(res);
     return await res.json();
   };
 
