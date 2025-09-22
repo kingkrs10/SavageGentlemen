@@ -54,9 +54,11 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
   
   // SECURITY: Check if this is a payment-related or sensitive route requiring strict authentication
   const isPaymentRoute = req.path.includes('/payment') || req.path.includes('create-intent') || req.path.includes('paypal');
-  const isSensitiveRoute = isPaymentRoute || req.path.includes('/admin') || req.path.includes('/ticket');
+  const isTicketRoute = req.path.includes('/ticket');
+  const isAdminRoute = req.path.includes('/admin');
   
-  if (isSensitiveRoute && !user) {
+  // For payment and ticket routes, require strict Firebase authentication
+  if ((isPaymentRoute || isTicketRoute) && !user) {
     console.log("SECURITY: Strict authentication required for sensitive route:", req.path);
     return res.status(401).json({ 
       message: "Secure authentication required. Please sign in with a valid account.",
@@ -64,9 +66,42 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
     });
   }
   
+  // For admin routes, allow temporary fallback for admin users without Firebase IDs
+  if (isAdminRoute && !user && process.env.NODE_ENV === 'development' && userId) {
+    try {
+      const id = parseInt(userId as string);
+      const potentialUser = await storage.getUser(id);
+      
+      if (potentialUser && potentialUser.role === 'admin') {
+        // Check if this admin user has a Firebase ID
+        if (!potentialUser.firebaseId) {
+          console.log("TEMP: Allowing admin user without Firebase ID:", potentialUser.username);
+          user = potentialUser;
+        } else {
+          console.log("SECURITY: Admin user has Firebase ID but not using Firebase auth:", potentialUser.username);
+          return res.status(401).json({ 
+            message: "Admin users with linked Firebase accounts must use Firebase authentication.",
+            requiresAuth: true 
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error checking admin user:", error);
+    }
+  }
+  
+  // Final check for admin routes
+  if (isAdminRoute && !user) {
+    console.log("SECURITY: Authentication required for admin route:", req.path);
+    return res.status(401).json({ 
+      message: "Admin authentication required. Please sign in with your admin account.",
+      requiresAuth: true 
+    });
+  }
+  
   // SECURITY: For non-sensitive routes only, allow limited fallback for development
-  // This prevents authentication bypass on payment/admin routes while maintaining compatibility
-  if (!user && !isSensitiveRoute && process.env.NODE_ENV === 'development' && userId) {
+  // This prevents authentication bypass on payment/ticket routes while maintaining compatibility
+  if (!user && !isPaymentRoute && !isTicketRoute && !isAdminRoute && process.env.NODE_ENV === 'development' && userId) {
     try {
       const id = parseInt(userId as string);
       user = await storage.getUser(id);
