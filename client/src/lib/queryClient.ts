@@ -63,7 +63,7 @@ export async function apiRequest(
         
         if (userData && userData.id) {
           userId = userData.id.toString();
-          // Only add user-id header for non-payment/ticket routes (allow admin routes temporarily)
+          // Only add user-id header for non-payment/ticket routes
           if (!normalizedUrl.includes('/payment') && !normalizedUrl.includes('/ticket')) {
             headers["user-id"] = userId;
           }
@@ -163,7 +163,7 @@ export const getQueryFn: <T>(options: {
           
           if (userData && userData.id) {
             userId = userData.id.toString();
-            // Only add user-id header for non-payment/ticket routes (allow admin routes temporarily)
+            // Only add user-id header for non-payment/ticket routes
             if (!normalizedUrl.includes('/payment') && !normalizedUrl.includes('/ticket')) {
               headers["user-id"] = userId;
             }
