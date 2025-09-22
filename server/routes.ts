@@ -601,6 +601,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Link existing account to Firebase
+  router.post("/auth/link-firebase", async (req: Request, res: Response) => {
+    try {
+      const { username, password, firebaseToken } = req.body;
+      
+      if (!username || !password || !firebaseToken) {
+        return res.status(400).json({ 
+          message: "Username, password, and Firebase token are required" 
+        });
+      }
+      
+      // Verify the existing user credentials
+      const user = await storage.getUserByUsername(username);
+      if (!user || user.password !== password) {
+        return res.status(401).json({ 
+          message: "Invalid username or password" 
+        });
+      }
+      
+      // Verify the Firebase token
+      const { verifyFirebaseToken } = await import('./firebase.js');
+      const firebaseResult = await verifyFirebaseToken(firebaseToken);
+      
+      if (!firebaseResult.success) {
+        return res.status(401).json({ 
+          message: "Invalid Firebase token",
+          error: firebaseResult.error?.message 
+        });
+      }
+      
+      // Check if this Firebase UID is already linked to another user
+      const existingFirebaseUser = await storage.getUserByFirebaseId(firebaseResult.uid!);
+      if (existingFirebaseUser && existingFirebaseUser.id !== user.id) {
+        return res.status(409).json({ 
+          message: "This Firebase account is already linked to another user" 
+        });
+      }
+      
+      // Link the Firebase UID to the existing user
+      const updatedUser = await storage.updateUser(user.id, { 
+        firebaseId: firebaseResult.uid 
+      });
+      
+      if (!updatedUser) {
+        return res.status(500).json({ 
+          message: "Failed to link Firebase account" 
+        });
+      }
+      
+      console.log(`[AUTH] Successfully linked Firebase UID ${firebaseResult.uid} to user ${user.username} (ID: ${user.id})`);
+      
+      return res.status(200).json({
+        message: "Firebase account linked successfully",
+        user: {
+          id: updatedUser.id,
+          username: updatedUser.username,
+          displayName: updatedUser.displayName,
+          role: updatedUser.role,
+          firebaseLinked: true
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error linking Firebase account:', error);
+      return res.status(500).json({ 
+        message: "Internal server error" 
+      });
+    }
+  });
+  
   // Password Reset Routes
   // Step 1: Request password reset - generates a token and sends an email
   router.post("/auth/password-reset/request", async (req: Request, res: Response) => {
