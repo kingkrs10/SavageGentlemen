@@ -276,9 +276,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Not authenticated" });
       }
       
-      // Generate a new token for API authentication
-      const token = Buffer.from(`${user.id}:${user.username}:${Date.now()}`).toString('base64');
-      
       // Return user information without sensitive data
       return res.status(200).json({
         id: user.id,
@@ -286,8 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         displayName: user.displayName,
         avatar: user.avatar,
         isGuest: user.isGuest,
-        role: user.role,
-        token: token
+        role: user.role
       });
     } catch (error) {
       console.error("Error in /me endpoint:", error);
