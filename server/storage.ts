@@ -4103,21 +4103,22 @@ export class TicketDatabaseSync {
       await db
         .update(tickets)
         .set({
-          remainingQuantity: sql`GREATEST(0, COALESCE(remaining_quantity, quantity) + ${quantityChange})`,
+          remainingQuantity: sql`GREATEST(0, COALESCE(${tickets.remainingQuantity}, ${tickets.quantity}) + ${sql.param(quantityChange)})`,
           updatedAt: new Date()
         })
         .where(eq(tickets.id, ticketId));
         
       // Update status based on new inventory
-      await db.execute(sql`
-        UPDATE tickets 
-        SET status = CASE 
-          WHEN remaining_quantity <= 0 THEN 'sold_out'
-          WHEN remaining_quantity > 0 AND status = 'sold_out' THEN 'on_sale'
-          ELSE status
-        END
-        WHERE id = ${ticketId}
-      `);
+      await db
+        .update(tickets)
+        .set({
+          status: sql`CASE 
+            WHEN remaining_quantity <= 0 THEN 'sold_out'
+            WHEN remaining_quantity > 0 AND status = 'sold_out' THEN 'on_sale'
+            ELSE status
+          END`
+        })
+        .where(eq(tickets.id, ticketId));
     } catch (error) {
       console.error('Error updating ticket inventory:', error);
       throw error;
