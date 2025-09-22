@@ -39,7 +39,15 @@ export async function apiRequest(
     const normalizedUrl = normalizeUrl(url);
     console.log("API Request to:", normalizedUrl, "Method:", method);
     
-    // STEP 1: Try to get user ID and token from localStorage user object (primary source)
+    // STEP 1: Try Firebase token first (most secure)
+    const firebaseToken = localStorage.getItem("firebaseToken");
+    if (firebaseToken) {
+      authToken = firebaseToken;
+      headers["Authorization"] = `Bearer ${firebaseToken}`;
+      console.log("Using Firebase token");
+    }
+    
+    // STEP 2: Get user ID for non-sensitive routes only (remove for sensitive routes later)
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
@@ -55,47 +63,13 @@ export async function apiRequest(
         
         if (userData && userData.id) {
           userId = userData.id.toString();
-          headers["user-id"] = userId;
-          
-          // Set Authorization header if token exists in user object
-          if (userData.token) {
-            authToken = userData.token;
-            headers["Authorization"] = `Bearer ${authToken}`;
-            console.log("Using token from user object in localStorage");
+          // Only add user-id header for non-sensitive routes
+          if (!normalizedUrl.includes('/admin') && !normalizedUrl.includes('/payment') && !normalizedUrl.includes('/ticket')) {
+            headers["user-id"] = userId;
           }
         }
       } catch (parseError) {
         console.error("Error parsing user from localStorage:", parseError);
-      }
-    }
-    
-    // STEP 2: If no token yet, try standalone authToken in localStorage
-    if (!authToken) {
-      const localAuthToken = localStorage.getItem("authToken");
-      if (localAuthToken) {
-        authToken = localAuthToken;
-        headers["Authorization"] = `Bearer ${localAuthToken}`;
-        console.log("Using authToken from localStorage");
-      }
-    }
-    
-    // STEP 3: If still no token, try sessionStorage
-    if (!authToken) {
-      const sessionToken = sessionStorage.getItem("authToken");
-      if (sessionToken) {
-        authToken = sessionToken;
-        headers["Authorization"] = `Bearer ${sessionToken}`;
-        console.log("Using token from sessionStorage");
-      }
-    }
-    
-    // STEP 4: If we have a Firebase token, try that
-    if (!authToken) {
-      const firebaseToken = localStorage.getItem("firebaseToken");
-      if (firebaseToken) {
-        authToken = firebaseToken;
-        headers["Authorization"] = `Bearer ${firebaseToken}`;
-        console.log("Using Firebase token");
       }
     }
     
@@ -108,36 +82,6 @@ export async function apiRequest(
       console.log("Added Authorization header (token found)");
     } else {
       console.log("No authentication token available from any source");
-    }
-    
-    // STEP 5: Add user data as JSON in x-user-data header for extra redundancy
-    // This serves as a last resort fallback
-    try {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          const userData = parsedUser.data?.data || parsedUser.data || parsedUser;
-          
-          // Only add if we have valid user data with ID
-          if (userData && userData.id) {
-            // Create a minimal user object with just what's needed for authentication
-            const minimalUserData = {
-              id: userData.id,
-              username: userData.username,
-              role: userData.role
-            };
-            
-            // Add as a custom header
-            headers["x-user-data"] = JSON.stringify(minimalUserData);
-            console.log("Added x-user-data header with minimal user data");
-          }
-        } catch (error) {
-          console.error("Error preparing x-user-data header:", error);
-        }
-      }
-    } catch (error) {
-      console.error("Error setting up x-user-data header:", error);
     }
   } catch (error) {
     console.error("Error setting up authentication headers:", error);
@@ -200,7 +144,15 @@ export const getQueryFn: <T>(options: {
       const normalizedUrl = normalizeUrl(url);
       console.log("Query to:", normalizedUrl, "(original:", url, ")");
       
-      // STEP 1: Try to get user ID and token from localStorage user object (primary source)
+      // STEP 1: Try Firebase token first (most secure)
+      const firebaseToken = localStorage.getItem("firebaseToken");
+      if (firebaseToken) {
+        authToken = firebaseToken;
+        headers["Authorization"] = `Bearer ${firebaseToken}`;
+        console.log("Using Firebase token");
+      }
+      
+      // STEP 2: Get user ID for non-sensitive routes only
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         try {
@@ -211,13 +163,9 @@ export const getQueryFn: <T>(options: {
           
           if (userData && userData.id) {
             userId = userData.id.toString();
-            headers["user-id"] = userId;
-            
-            // Set Authorization header if token exists in user object
-            if (userData.token) {
-              authToken = userData.token;
-              headers["Authorization"] = `Bearer ${authToken}`;
-              console.log("Using token from user object in localStorage");
+            // Only add user-id header for non-sensitive routes
+            if (!normalizedUrl.includes('/admin') && !normalizedUrl.includes('/payment') && !normalizedUrl.includes('/ticket')) {
+              headers["user-id"] = userId;
             }
             
             // Log role if available (helpful for debugging permission issues)
@@ -230,36 +178,6 @@ export const getQueryFn: <T>(options: {
         }
       }
       
-      // STEP 2: If no token yet, try standalone authToken in localStorage
-      if (!authToken) {
-        const localAuthToken = localStorage.getItem("authToken");
-        if (localAuthToken) {
-          authToken = localAuthToken;
-          headers["Authorization"] = `Bearer ${localAuthToken}`;
-          console.log("Using authToken from localStorage");
-        }
-      }
-      
-      // STEP 3: If still no token, try sessionStorage
-      if (!authToken) {
-        const sessionToken = sessionStorage.getItem("authToken");
-        if (sessionToken) {
-          authToken = sessionToken;
-          headers["Authorization"] = `Bearer ${sessionToken}`;
-          console.log("Using token from sessionStorage");
-        }
-      }
-      
-      // STEP 4: If we have a Firebase token, try that
-      if (!authToken) {
-        const firebaseToken = localStorage.getItem("firebaseToken");
-        if (firebaseToken) {
-          authToken = firebaseToken;
-          headers["Authorization"] = `Bearer ${firebaseToken}`;
-          console.log("Using Firebase token");
-        }
-      }
-      
       // Log outcome of authentication gathering
       if (userId) {
         console.log("Added user-id header for user:", userId);
@@ -269,36 +187,6 @@ export const getQueryFn: <T>(options: {
         console.log("Added Authorization header (token found)");
       } else {
         console.log("No authentication token available from any source");
-      }
-      
-      // STEP 5: Add user data as JSON in x-user-data header for extra redundancy
-      // This serves as a last resort fallback
-      try {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          try {
-            const parsedUser = JSON.parse(storedUser);
-            const userData = parsedUser.data?.data || parsedUser.data || parsedUser;
-            
-            // Only add if we have valid user data with ID
-            if (userData && userData.id) {
-              // Create a minimal user object with just what's needed for authentication
-              const minimalUserData = {
-                id: userData.id,
-                username: userData.username,
-                role: userData.role
-              };
-              
-              // Add as a custom header
-              headers["x-user-data"] = JSON.stringify(minimalUserData);
-              console.log("Added x-user-data header with minimal user data");
-            }
-          } catch (error) {
-            console.error("Error preparing x-user-data header:", error);
-          }
-        }
-      } catch (error) {
-        console.error("Error setting up x-user-data header:", error);
       }
     } catch (error) {
       console.error("Error setting up authentication headers:", error);
