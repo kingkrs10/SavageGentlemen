@@ -33,7 +33,10 @@ import {
   loginSchema,
   insertAiAssistantConfigSchema,
   insertAiChatSessionSchema,
-  insertAiChatMessageSchema
+  insertAiChatMessageSchema,
+  insertMediaCollectionSchema,
+  insertMediaAssetSchema,
+  insertMediaAccessLogSchema
 } from "@shared/schema";
 import { validateRequest, authRateLimiter } from "./security/middleware";
 import { ZodError } from "zod";
@@ -1137,6 +1140,267 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const livestreams = await storage.getUpcomingLivestreams();
       return res.status(200).json(livestreams);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Media routes
+  // Get all media collections (public can only see active, public collections)
+  router.get("/media/collections", async (req: Request, res: Response) => {
+    try {
+      // Public users can only see active, public collections
+      // Admins can use query parameters to filter by visibility and status
+      let options: any = {};
+      
+      if (req.user?.role === 'admin') {
+        // Admin users can filter by visibility and isActive
+        const { visibility, isActive } = req.query;
+        if (visibility) options.visibility = visibility as string;
+        if (isActive !== undefined) options.isActive = isActive === 'true';
+      } else {
+        // Public users only see active, public collections
+        options = { visibility: 'public', isActive: true };
+      }
+      
+      const collections = await storage.getAllMediaCollections(options);
+      return res.status(200).json(collections);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get media collection by slug
+  router.get("/media/collections/slug/:slug", async (req: Request, res: Response) => {
+    try {
+      const { slug } = req.params;
+      const collection = await storage.getMediaCollectionBySlug(slug);
+      
+      if (!collection) {
+        return res.status(404).json({ message: "Collection not found" });
+      }
+      
+      // Only admins can see private/inactive collections
+      if (collection.visibility !== 'public' || !collection.isActive) {
+        if (req.user?.role !== 'admin') {
+          return res.status(404).json({ message: "Collection not found" });
+        }
+      }
+      
+      return res.status(200).json(collection);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get media collection by ID with assets
+  router.get("/media/collections/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const collection = await storage.getMediaCollection(id);
+      
+      if (!collection) {
+        return res.status(404).json({ message: "Collection not found" });
+      }
+      
+      // Only admins can see private/inactive collections
+      if (collection.visibility !== 'public' || !collection.isActive) {
+        if (req.user?.role !== 'admin') {
+          return res.status(404).json({ message: "Collection not found" });
+        }
+      }
+      
+      // Get assets for this collection
+      const { page = '1', limit = '20', published } = req.query;
+      const pageNum = parseInt(page as string) || 1;
+      const limitNum = parseInt(limit as string) || 20;
+      const offset = (pageNum - 1) * limitNum;
+      
+      const options: any = { limit: limitNum, offset };
+      
+      // Public users can only see published assets
+      // Admins can filter by published status
+      if (req.user?.role === 'admin') {
+        if (published !== undefined) options.isPublished = published === 'true';
+      } else {
+        options.isPublished = true; // Force published-only for public users
+      }
+      
+      const assets = await storage.getMediaAssetsByCollectionId(id, options);
+      
+      return res.status(200).json({
+        ...collection,
+        assets
+      });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Create media collection (admin only)
+  router.post("/media/collections", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      // Only admins can create collections
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized: Admin privileges required" });
+      }
+      
+      const collectionData = insertMediaCollectionSchema.parse(req.body);
+      // Set createdBy to the authenticated user
+      collectionData.createdBy = req.user.id;
+      
+      const collection = await storage.createMediaCollection(collectionData);
+      return res.status(201).json(collection);
+    } catch (err) {
+      return handleZodError(err, res);
+    }
+  });
+
+  // Update media collection (admin only)
+  router.put("/media/collections/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      // Only admins can update collections
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized: Admin privileges required" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const collectionData = insertMediaCollectionSchema.partial().parse(req.body);
+      
+      const collection = await storage.updateMediaCollection(id, collectionData);
+      if (!collection) {
+        return res.status(404).json({ message: "Collection not found" });
+      }
+      
+      return res.status(200).json(collection);
+    } catch (err) {
+      return handleZodError(err, res);
+    }
+  });
+
+  // Delete media collection (admin only)
+  router.delete("/media/collections/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      // Only admins can delete collections
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized: Admin privileges required" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteMediaCollection(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Collection not found" });
+      }
+      
+      return res.status(200).json({ message: "Collection deleted successfully" });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get media asset by ID
+  router.get("/media/assets/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const asset = await storage.getMediaAsset(id);
+      
+      if (!asset) {
+        return res.status(404).json({ message: "Asset not found" });
+      }
+      
+      // Check if asset is published and collection is public/active for non-admin users
+      const collection = await storage.getMediaCollection(asset.collectionId);
+      if (!collection) {
+        return res.status(404).json({ message: "Asset not found" });
+      }
+      
+      // Only admins can see unpublished assets or assets in private/inactive collections
+      if (!asset.isPublished || collection.visibility !== 'public' || !collection.isActive) {
+        if (req.user?.role !== 'admin') {
+          return res.status(404).json({ message: "Asset not found" });
+        }
+      }
+      
+      // Increment view count and log access
+      await storage.incrementAssetViewCount(id);
+      await storage.createMediaAccessLog({
+        assetId: id,
+        userId: req.user?.id || null,
+        accessType: 'view',
+        userAgent: req.headers['user-agent'] || null,
+        ipAddress: req.ip || req.connection.remoteAddress || null
+      });
+      
+      return res.status(200).json(asset);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Upload media asset (admin only)
+  router.post("/media/assets/upload", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      // Only admins can upload assets
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized: Admin privileges required" });
+      }
+      
+      const assetData = insertMediaAssetSchema.parse(req.body);
+      // Set createdBy to the authenticated user
+      assetData.createdBy = req.user.id;
+      
+      const asset = await storage.createMediaAsset(assetData);
+      return res.status(201).json(asset);
+    } catch (err) {
+      return handleZodError(err, res);
+    }
+  });
+
+  // Update media asset (admin only)
+  router.put("/media/assets/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      // Only admins can update assets
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized: Admin privileges required" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const assetData = insertMediaAssetSchema.partial().parse(req.body);
+      
+      const asset = await storage.updateMediaAsset(id, assetData);
+      if (!asset) {
+        return res.status(404).json({ message: "Asset not found" });
+      }
+      
+      return res.status(200).json(asset);
+    } catch (err) {
+      return handleZodError(err, res);
+    }
+  });
+
+  // Delete media asset (admin only)
+  router.delete("/media/assets/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      // Only admins can delete assets
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized: Admin privileges required" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteMediaAsset(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Asset not found" });
+      }
+      
+      return res.status(200).json({ message: "Asset deleted successfully" });
     } catch (err) {
       console.error(err);
       return res.status(500).json({ message: "Internal server error" });
