@@ -1845,7 +1845,15 @@ export class MemStorage implements IStorage {
   }
 
   async getMediaAsset(id: number): Promise<MediaAsset | undefined> {
-    return this.mediaAssets.get(id);
+    const asset = this.mediaAssets.get(id);
+    if (!asset) return undefined;
+    
+    // Add URL fields for frontend display
+    return {
+      ...asset,
+      url: `/uploads/${asset.storageKey}`,
+      thumbnailUrl: `/uploads/${asset.storageKey}` // Use same URL for thumbnail for now
+    } as MediaAsset & { url: string; thumbnailUrl: string };
   }
 
   async getMediaAssetsByCollectionId(collectionId: number, options?: { isPublished?: boolean; limit?: number; offset?: number }): Promise<MediaAsset[]> {
@@ -1867,7 +1875,12 @@ export class MemStorage implements IStorage {
       assets = assets.slice(0, options.limit);
     }
     
-    return assets;
+    // Add URL fields for frontend display
+    return assets.map(asset => ({
+      ...asset,
+      url: `/uploads/${asset.storageKey}`,
+      thumbnailUrl: `/uploads/${asset.storageKey}` // Use same URL for thumbnail for now
+    })) as (MediaAsset & { url: string; thumbnailUrl: string })[];
   }
 
   async updateMediaAsset(id: number, assetData: Partial<InsertMediaAsset>): Promise<MediaAsset | undefined> {
