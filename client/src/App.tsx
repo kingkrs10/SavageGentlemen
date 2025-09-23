@@ -23,6 +23,7 @@ const Home = lazy(() => import("@/pages/home"));
 const Events = lazy(() => import("@/pages/events"));
 const EventDetail = lazy(() => import("@/pages/event-detail"));
 const Shop = lazy(() => import("@/pages/shop"));
+const Media = lazy(() => import("@/pages/media"));
 const Live = lazy(() => import("@/pages/live"));
 const Checkout = lazy(() => import("@/pages/checkout"));
 const PaymentSuccess = lazy(() => import("@/pages/payment-success"));
@@ -64,6 +65,7 @@ function Router() {
         <Route path="/events/:id" component={EventDetail} />
         <Route path="/events/:id/:slug" component={EventDetail} />
         <Route path="/shop" component={Shop} />
+        <Route path="/media" component={Media} />
         <Route path="/live" component={Live} />
         <Route path="/checkout" component={Checkout} />
         <Route path="/payment-success" component={PaymentSuccess} />
