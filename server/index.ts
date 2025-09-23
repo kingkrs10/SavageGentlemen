@@ -7,8 +7,9 @@ import { securityHeaders, auditLogger, sanitizeInput } from './security/middlewa
 
 const app = express();
 
-// Trust proxy for rate limiting and proper IP detection (needed for Replit)
-app.set('trust proxy', true);
+// Trust proxy for rate limiting and proper IP detection (configured for development)
+// In development, we trust loopback IPs (127.0.0.1) for rate limiting
+app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : 'loopback');
 
 // Configure CORS - In development, we're more permissive
 const corsOptions = {
