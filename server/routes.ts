@@ -52,7 +52,7 @@ import { analyticsRouter } from "./analytics-routes";
 import { emailMarketingRouter } from "./email-marketing-routes";
 import { registerSocialRoutes } from "./social-routes";
 import { registerEnhancedTicketingRoutes } from "./enhanced-ticketing-routes";
-import { authenticateUser } from "./auth-middleware";
+import { authenticateUser, generateSecureLoginToken } from "./auth-middleware";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -364,8 +364,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Log successful logins for audit purposes
         console.log(`[AUTH] Successful login: ${username} from IP ${req.ip || req.socket.remoteAddress || 'unknown'}`);
         
-        // Generate a simple token for additional authentication
-        const token = Buffer.from(`${user.id}:${user.username}:${Date.now()}`).toString('base64');
+        // Generate a secure HMAC-signed token for authentication
+        const token = generateSecureLoginToken(user);
         
         return res.status(200).json({ 
           status: 'success',
@@ -442,8 +442,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Generate authentication token
-      const token = Buffer.from(`${user.id}:${user.username}:${Date.now()}`).toString('base64');
+      // Generate secure HMAC-signed authentication token
+      const token = generateSecureLoginToken(user);
       
       return res.status(201).json({ 
         id: user.id, 
