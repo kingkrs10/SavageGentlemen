@@ -1339,21 +1339,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Upload media asset (admin only)
-  router.post("/media/assets/upload", authenticateUser, async (req: Request, res: Response) => {
+  router.post("/media/assets/upload", upload.single('file'), async (req: Request, res: Response) => {
     try {
-      // Only admins can upload assets
-      if (req.user?.role !== 'admin') {
+      // Check authentication manually since multer needs to run before we access the file
+      const userId = req.headers['user-id'];
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required - No user ID" });
+      }
+
+      const id = parseInt(userId as string);
+      const user = await storage.getUser(id);
+      
+      if (!user || user.role !== 'admin') {
         return res.status(403).json({ message: "Unauthorized: Admin privileges required" });
       }
-      
-      const assetData = insertMediaAssetSchema.parse(req.body);
-      // Set createdBy to the authenticated user
-      assetData.createdBy = req.user.id;
-      
+
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Parse FormData fields
+      const collectionId = parseInt(req.body.collectionId);
+      const type = req.body.type || (req.file.mimetype.startsWith('video/') ? 'video' : 'image');
+      const title = req.body.title || req.file.originalname.split('.')[0];
+      const description = req.body.description || null;
+      const isPublished = req.body.isPublished === 'true';
+
+      if (!collectionId || isNaN(collectionId)) {
+        return res.status(400).json({ message: "Valid collection ID is required" });
+      }
+
+      // Verify collection exists
+      const collection = await storage.getMediaCollection(collectionId);
+      if (!collection) {
+        return res.status(400).json({ message: "Collection not found" });
+      }
+
+      // Generate storage key (relative path from uploads directory)
+      const storageKey = req.file.filename;
+
+      // Create media asset data
+      const assetData = {
+        collectionId,
+        type: type as 'image' | 'video',
+        title,
+        description,
+        storageKey,
+        originalFilename: req.file.originalname,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+        duration: null, // Could be extracted from video metadata later
+        dimensions: null, // Could be extracted from image metadata later
+        transcodedVariants: {},
+        displayOrder: 0,
+        isPublished,
+        watermarkEnabled: true,
+        downloadProtected: true,
+        createdBy: user.id
+      };
+
       const asset = await storage.createMediaAsset(assetData);
       return res.status(201).json(asset);
-    } catch (err) {
-      return handleZodError(err, res);
+    } catch (err: any) {
+      console.error('Media upload error:', err);
+      return res.status(500).json({ message: err.message || "Upload failed" });
     }
   });
 

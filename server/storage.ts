@@ -4434,6 +4434,92 @@ export class DatabaseStorage implements IStorage {
       .where(eq(mediaCollections.id, id));
     return result.rowCount > 0;
   }
+
+  // Media Asset operations
+  async createMediaAsset(assetData: InsertMediaAsset): Promise<MediaAsset> {
+    const result = await db.insert(mediaAssets).values(assetData).returning();
+    return result[0];
+  }
+
+  async getMediaAsset(id: number): Promise<MediaAsset | undefined> {
+    const [asset] = await db
+      .select()
+      .from(mediaAssets)
+      .where(eq(mediaAssets.id, id));
+    return asset;
+  }
+
+  async getMediaAssetsByCollectionId(collectionId: number, options?: { isPublished?: boolean; limit?: number; offset?: number }): Promise<MediaAsset[]> {
+    let query = db
+      .select()
+      .from(mediaAssets)
+      .where(eq(mediaAssets.collectionId, collectionId));
+    
+    if (options?.isPublished !== undefined) {
+      query = query.where(eq(mediaAssets.isPublished, options.isPublished));
+    }
+    
+    if (options?.limit) {
+      query = query.limit(options.limit);
+    }
+    
+    if (options?.offset) {
+      query = query.offset(options.offset);
+    }
+    
+    return await query;
+  }
+
+  async updateMediaAsset(id: number, assetData: Partial<InsertMediaAsset>): Promise<MediaAsset | undefined> {
+    const result = await db
+      .update(mediaAssets)
+      .set({ ...assetData, updatedAt: new Date() })
+      .where(eq(mediaAssets.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteMediaAsset(id: number): Promise<boolean> {
+    const result = await db
+      .delete(mediaAssets)
+      .where(eq(mediaAssets.id, id));
+    return result.rowCount > 0;
+  }
+
+  async incrementAssetViewCount(id: number): Promise<boolean> {
+    const result = await db
+      .update(mediaAssets)
+      .set({ 
+        viewCount: sql`${mediaAssets.viewCount} + 1`,
+        lastViewedAt: new Date()
+      })
+      .where(eq(mediaAssets.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Media Access Log operations
+  async createMediaAccessLog(logData: InsertMediaAccessLog): Promise<MediaAccessLog> {
+    const result = await db.insert(mediaAccessLogs).values(logData).returning();
+    return result[0];
+  }
+
+  async getMediaAccessLogsByAssetId(assetId: number, limit: number = 100): Promise<MediaAccessLog[]> {
+    return await db
+      .select()
+      .from(mediaAccessLogs)
+      .where(eq(mediaAccessLogs.assetId, assetId))
+      .limit(limit)
+      .orderBy(desc(mediaAccessLogs.createdAt));
+  }
+
+  async getMediaAccessLogsByUserId(userId: number, limit: number = 100): Promise<MediaAccessLog[]> {
+    return await db
+      .select()
+      .from(mediaAccessLogs)
+      .where(eq(mediaAccessLogs.userId, userId))
+      .limit(limit)
+      .orderBy(desc(mediaAccessLogs.createdAt));
+  }
 }
 
 export const storage = new DatabaseStorage();

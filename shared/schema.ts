@@ -422,7 +422,7 @@ export const insertMediaAssetSchema = createInsertSchema(mediaAssets)
     isPublished: true,
     watermarkEnabled: true,
     downloadProtected: true,
-    createdBy: true,
+    // createdBy is omitted - set programmatically from authenticated user
   })
   .extend({
     type: z.enum(['image', 'video']),
