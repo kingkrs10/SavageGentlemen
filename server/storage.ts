@@ -327,6 +327,15 @@ export interface IStorage {
   createMediaAccessLog(log: InsertMediaAccessLog): Promise<MediaAccessLog>;
   getMediaAccessLogsByAssetId(assetId: number, limit?: number): Promise<MediaAccessLog[]>;
   getMediaAccessLogsByUserId(userId: number, limit?: number): Promise<MediaAccessLog[]>;
+  
+  // Sponsored Content operations
+  getAllSponsoredContent(): Promise<SponsoredContent[]>;
+  getActiveSponsoredContent(): Promise<SponsoredContent[]>;
+  createSponsoredContent(data: InsertSponsoredContent): Promise<SponsoredContent>;
+  updateSponsoredContent(id: number, data: Partial<InsertSponsoredContent>): Promise<SponsoredContent>;
+  deleteSponsoredContent(id: number): Promise<void>;
+  incrementSponsoredContentClicks(id: number): Promise<void>;
+  incrementSponsoredContentViews(id: number): Promise<void>;
 }
 
 // In-memory storage implementation
@@ -347,6 +356,7 @@ export class MemStorage implements IStorage {
   private mediaCollections: Map<number, MediaCollection>;
   private mediaAssets: Map<number, MediaAsset>;
   private mediaAccessLogs: Map<number, MediaAccessLog>;
+  private sponsoredContent: Map<number, SponsoredContent>;
   
   private userCurrentId: number;
   private eventCurrentId: number;
@@ -364,6 +374,7 @@ export class MemStorage implements IStorage {
   private mediaCollectionCurrentId: number;
   private mediaAssetCurrentId: number;
   private mediaAccessLogCurrentId: number;
+  private sponsoredContentCurrentId: number;
 
   constructor() {
     this.users = new Map();
@@ -382,6 +393,7 @@ export class MemStorage implements IStorage {
     this.mediaCollections = new Map();
     this.mediaAssets = new Map();
     this.mediaAccessLogs = new Map();
+    this.sponsoredContent = new Map();
     
     this.userCurrentId = 1;
     this.eventCurrentId = 1;
@@ -399,6 +411,7 @@ export class MemStorage implements IStorage {
     this.mediaCollectionCurrentId = 1;
     this.mediaAssetCurrentId = 1;
     this.mediaAccessLogCurrentId = 1;
+    this.sponsoredContentCurrentId = 1;
     
     // Initialize with sample data
     this.initializeSampleData();
@@ -1915,6 +1928,79 @@ export class MemStorage implements IStorage {
     }
     
     return logs;
+  }
+
+  // Sponsored Content Management
+  async getAllSponsoredContent(): Promise<SponsoredContent[]> {
+    return Array.from(this.sponsoredContent.values())
+      .sort((a, b) => (b.priority || 0) - (a.priority || 0) || b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async getActiveSponsoredContent(): Promise<SponsoredContent[]> {
+    const now = new Date();
+    return Array.from(this.sponsoredContent.values())
+      .filter(content => {
+        if (!content.isActive) return false;
+        if (content.startDate && content.startDate > now) return false;
+        if (content.endDate && content.endDate < now) return false;
+        return true;
+      })
+      .sort((a, b) => (b.priority || 0) - (a.priority || 0) || b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async createSponsoredContent(data: InsertSponsoredContent): Promise<SponsoredContent> {
+    const id = this.sponsoredContentCurrentId++;
+    const content: SponsoredContent = {
+      id,
+      title: data.title,
+      content: data.content,
+      imageUrl: data.imageUrl || null,
+      linkUrl: data.linkUrl || null,
+      priority: data.priority || 0,
+      isActive: data.isActive ?? true,
+      startDate: data.startDate || null,
+      endDate: data.endDate || null,
+      targetAudience: data.targetAudience || null,
+      clicks: 0,
+      views: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.sponsoredContent.set(id, content);
+    return content;
+  }
+
+  async updateSponsoredContent(id: number, data: Partial<InsertSponsoredContent>): Promise<SponsoredContent> {
+    const content = this.sponsoredContent.get(id);
+    if (!content) {
+      throw new Error(`Sponsored content with id ${id} not found`);
+    }
+    
+    Object.assign(content, data, { updatedAt: new Date() });
+    this.sponsoredContent.set(id, content);
+    return content;
+  }
+
+  async deleteSponsoredContent(id: number): Promise<void> {
+    this.sponsoredContent.delete(id);
+  }
+
+  async incrementSponsoredContentClicks(id: number): Promise<void> {
+    const content = this.sponsoredContent.get(id);
+    if (content) {
+      content.clicks = (content.clicks || 0) + 1;
+      content.updatedAt = new Date();
+      this.sponsoredContent.set(id, content);
+    }
+  }
+
+  async incrementSponsoredContentViews(id: number): Promise<void> {
+    const content = this.sponsoredContent.get(id);
+    if (content) {
+      content.views = (content.views || 0) + 1;
+      content.updatedAt = new Date();
+      this.sponsoredContent.set(id, content);
+    }
   }
 }
 
