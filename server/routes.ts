@@ -266,24 +266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Try x-user-data as a last resort
-      if (!user && req.headers['x-user-data']) {
-        try {
-          const userData = JSON.parse(req.headers['x-user-data'] as string);
-          
-          if (userData && userData.id) {
-            // Get the user from storage to ensure this is a real user
-            const userFromStorage = await storage.getUser(userData.id);
-            
-            if (userFromStorage) {
-              user = userFromStorage;
-              console.log("User found via x-user-data header in /me endpoint:", user.id);
-            }
-          }
-        } catch (e) {
-          console.error("Error parsing x-user-data:", e);
-        }
-      }
+      // REMOVED: Insecure x-user-data fallback - only use secure HMAC/Firebase authentication
       
       // If no user found through any method, return authentication failure
       if (!user) {
@@ -4099,24 +4082,7 @@ if (selectedTicket.status === 'hidden') {
         }
       }
       
-      // 3. Try x-user-data as a last resort
-      if (!user && req.headers['x-user-data']) {
-        try {
-          const userData = JSON.parse(req.headers['x-user-data'] as string);
-          
-          if (userData && userData.id) {
-            // Get the user from storage to ensure this is a real user
-            const userFromStorage = await storage.getUser(userData.id);
-            
-            if (userFromStorage) {
-              user = userFromStorage;
-              console.log("User found via x-user-data header for free ticket (non-prefixed):", user.id);
-            }
-          }
-        } catch (e) {
-          console.error("Error parsing x-user-data:", e);
-        }
-      }
+      // REMOVED: Insecure x-user-data fallback - only use secure HMAC/Firebase authentication
       
       // If no user found through any method, return authentication failure
       if (!user) {
