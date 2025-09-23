@@ -24,7 +24,6 @@ const Events = lazy(() => import("@/pages/events"));
 const EventDetail = lazy(() => import("@/pages/event-detail"));
 const Shop = lazy(() => import("@/pages/shop"));
 const Live = lazy(() => import("@/pages/live"));
-const Community = lazy(() => import("@/pages/community"));
 const Checkout = lazy(() => import("@/pages/checkout"));
 const PaymentSuccess = lazy(() => import("@/pages/payment-success"));
 const Admin = lazy(() => import("@/pages/admin-temp"));
@@ -66,7 +65,6 @@ function Router() {
         <Route path="/events/:id/:slug" component={EventDetail} />
         <Route path="/shop" component={Shop} />
         <Route path="/live" component={Live} />
-        <Route path="/community" component={Community} />
         <Route path="/checkout" component={Checkout} />
         <Route path="/payment-success" component={PaymentSuccess} />
         <Route path="/admin" component={Admin} />

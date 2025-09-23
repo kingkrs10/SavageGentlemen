@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, Link } from "wouter";
-import { Home, CalendarDays, ShoppingBag, Video, Users, LayoutDashboard, Ticket } from "lucide-react";
+import { Home, CalendarDays, ShoppingBag, Video, LayoutDashboard, Ticket } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { User } from "@/lib/types";
 import { useUser } from "@/context/UserContext";
@@ -22,7 +22,6 @@ const BottomNavigation = ({ user: propUser }: BottomNavigationProps) => {
     { path: "/events", label: "Events", icon: CalendarDays },
     { path: "/shop", label: "Shop", icon: ShoppingBag },
     { path: "/live", label: "Live", icon: Video, hasNotification: true },
-    { path: "/community", label: "Community", icon: Users },
   ];
   
   // Add My Tickets if user is authenticated
