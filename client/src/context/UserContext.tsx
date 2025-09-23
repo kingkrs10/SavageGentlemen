@@ -37,15 +37,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           console.log("Parsed user:", parsedUser);
           
           // Temporarily set the user from localStorage
-          // Handle nested structure: { status: "success", data: { status: "success", data: { ... } } }
-          let userData = parsedUser;
-          if (userData.data?.data) {
-            // Double-nested structure
-            userData = userData.data.data;
-          } else if (userData.data) {
-            // Single-nested structure
-            userData = userData.data;
-          }
+          // Handle both formats: { data: { ... } } and direct { ... }
+          const userData = parsedUser.data || parsedUser;
           setUser(userData);
           
           // Validate the session with the server
