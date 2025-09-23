@@ -109,7 +109,13 @@ const AdminMediaPage = () => {
 
   // Auto-select the first collection when collections are loaded
   useEffect(() => {
+    console.log('Collection selection effect:', { 
+      collections: collections?.length, 
+      selectedCollection, 
+      firstCollectionId: collections?.[0]?.id 
+    });
     if (collections && collections.length > 0 && selectedCollection === null) {
+      console.log('Auto-selecting first collection:', collections[0].id);
       setSelectedCollection(collections[0].id);
     }
   }, [collections, selectedCollection]);
@@ -121,6 +127,18 @@ const AdminMediaPage = () => {
     staleTime: 0, // Force fresh data
     refetchOnMount: true,
   });
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Selected collection data query state:', {
+      selectedCollection,
+      userRole: user?.role,
+      queryEnabled: !!selectedCollection && user?.role === 'admin',
+      isLoading: selectedCollectionLoading,
+      hasData: !!selectedCollectionData,
+      assetsCount: selectedCollectionData?.assets?.length
+    });
+  }, [selectedCollection, user, selectedCollectionLoading, selectedCollectionData]);
 
   // Sync assetForm.collectionId with selectedCollection
   useEffect(() => {
