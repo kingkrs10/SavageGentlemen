@@ -55,6 +55,13 @@ import {
   InsertAiChatSession,
   AiChatMessage,
   InsertAiChatMessage,
+  // Media schemas
+  MediaCollection,
+  InsertMediaCollection,
+  MediaAsset,
+  InsertMediaAsset,
+  MediaAccessLog,
+  InsertMediaAccessLog,
   users,
   events,
   products,
@@ -83,7 +90,11 @@ import {
   // AI Assistant tables
   aiAssistantConfigs,
   aiChatSessions,
-  aiChatMessages
+  aiChatMessages,
+  // Media tables
+  mediaCollections,
+  mediaAssets,
+  mediaAccessLogs
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, sql, lte, lt, isNotNull, not } from "drizzle-orm";
@@ -295,6 +306,27 @@ export interface IStorage {
   getAiChatMessagesBySessionId(sessionId: number): Promise<AiChatMessage[]>;
   getAiChatMessage(id: number): Promise<AiChatMessage | undefined>;
   deleteAiChatMessage(id: number): Promise<boolean>;
+  
+  // Media Collection operations
+  createMediaCollection(collection: InsertMediaCollection): Promise<MediaCollection>;
+  getMediaCollection(id: number): Promise<MediaCollection | undefined>;
+  getMediaCollectionBySlug(slug: string): Promise<MediaCollection | undefined>;
+  getAllMediaCollections(options?: { visibility?: string; isActive?: boolean }): Promise<MediaCollection[]>;
+  updateMediaCollection(id: number, collectionData: Partial<InsertMediaCollection>): Promise<MediaCollection | undefined>;
+  deleteMediaCollection(id: number): Promise<boolean>;
+  
+  // Media Asset operations
+  createMediaAsset(asset: InsertMediaAsset): Promise<MediaAsset>;
+  getMediaAsset(id: number): Promise<MediaAsset | undefined>;
+  getMediaAssetsByCollectionId(collectionId: number, options?: { isPublished?: boolean; limit?: number; offset?: number }): Promise<MediaAsset[]>;
+  updateMediaAsset(id: number, assetData: Partial<InsertMediaAsset>): Promise<MediaAsset | undefined>;
+  deleteMediaAsset(id: number): Promise<boolean>;
+  incrementAssetViewCount(id: number): Promise<boolean>;
+  
+  // Media Access Log operations
+  createMediaAccessLog(log: InsertMediaAccessLog): Promise<MediaAccessLog>;
+  getMediaAccessLogsByAssetId(assetId: number, limit?: number): Promise<MediaAccessLog[]>;
+  getMediaAccessLogsByUserId(userId: number, limit?: number): Promise<MediaAccessLog[]>;
 }
 
 // In-memory storage implementation
@@ -312,6 +344,9 @@ export class MemStorage implements IStorage {
   private orderItems: Map<number, OrderItem>;
   private mediaUploads: Map<number, MediaUpload>;
   private ticketScans: Map<number, TicketScan>;
+  private mediaCollections: Map<number, MediaCollection>;
+  private mediaAssets: Map<number, MediaAsset>;
+  private mediaAccessLogs: Map<number, MediaAccessLog>;
   
   private userCurrentId: number;
   private eventCurrentId: number;
@@ -326,6 +361,9 @@ export class MemStorage implements IStorage {
   private orderItemCurrentId: number;
   private mediaUploadCurrentId: number;
   private ticketScanCurrentId: number;
+  private mediaCollectionCurrentId: number;
+  private mediaAssetCurrentId: number;
+  private mediaAccessLogCurrentId: number;
 
   constructor() {
     this.users = new Map();
@@ -341,6 +379,9 @@ export class MemStorage implements IStorage {
     this.orderItems = new Map();
     this.mediaUploads = new Map();
     this.ticketScans = new Map();
+    this.mediaCollections = new Map();
+    this.mediaAssets = new Map();
+    this.mediaAccessLogs = new Map();
     
     this.userCurrentId = 1;
     this.eventCurrentId = 1;
@@ -355,6 +396,9 @@ export class MemStorage implements IStorage {
     this.orderItemCurrentId = 1;
     this.mediaUploadCurrentId = 1;
     this.ticketScanCurrentId = 1;
+    this.mediaCollectionCurrentId = 1;
+    this.mediaAssetCurrentId = 1;
+    this.mediaAccessLogCurrentId = 1;
     
     // Initialize with sample data
     this.initializeSampleData();
@@ -1664,6 +1708,213 @@ export class MemStorage implements IStorage {
         postsData.forEach(postData => this.createPost(postData));
       }
     }, 100);
+  }
+
+  // Media Collection operations
+  async createMediaCollection(collectionData: InsertMediaCollection): Promise<MediaCollection> {
+    const id = this.mediaCollectionCurrentId++;
+    const collection: MediaCollection = {
+      id,
+      slug: collectionData.slug,
+      title: collectionData.title,
+      description: collectionData.description || null,
+      visibility: collectionData.visibility || 'public',
+      displayOrder: collectionData.displayOrder || 0,
+      thumbnailUrl: collectionData.thumbnailUrl || null,
+      isActive: collectionData.isActive ?? true,
+      createdBy: collectionData.createdBy,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.mediaCollections.set(id, collection);
+    return collection;
+  }
+
+  async getMediaCollection(id: number): Promise<MediaCollection | undefined> {
+    return this.mediaCollections.get(id);
+  }
+
+  async getMediaCollectionBySlug(slug: string): Promise<MediaCollection | undefined> {
+    return Array.from(this.mediaCollections.values()).find(
+      (collection) => collection.slug === slug
+    );
+  }
+
+  async getAllMediaCollections(options?: { visibility?: string; isActive?: boolean }): Promise<MediaCollection[]> {
+    let collections = Array.from(this.mediaCollections.values());
+    
+    if (options?.visibility) {
+      collections = collections.filter(c => c.visibility === options.visibility);
+    }
+    
+    if (options?.isActive !== undefined) {
+      collections = collections.filter(c => c.isActive === options.isActive);
+    }
+    
+    return collections.sort((a, b) => a.displayOrder - b.displayOrder);
+  }
+
+  async updateMediaCollection(id: number, collectionData: Partial<InsertMediaCollection>): Promise<MediaCollection | undefined> {
+    const collection = this.mediaCollections.get(id);
+    if (!collection) return undefined;
+    
+    Object.assign(collection, collectionData, { updatedAt: new Date() });
+    this.mediaCollections.set(id, collection);
+    return collection;
+  }
+
+  async deleteMediaCollection(id: number): Promise<boolean> {
+    // First, get all assets in this collection to delete their access logs
+    const assetsToDelete = Array.from(this.mediaAssets.values()).filter(
+      asset => asset.collectionId === id
+    );
+    
+    // Delete all access logs for assets in this collection
+    for (const asset of assetsToDelete) {
+      const logsToDelete = Array.from(this.mediaAccessLogs.entries()).filter(
+        ([, log]) => log.assetId === asset.id
+      );
+      logsToDelete.forEach(([logId]) => this.mediaAccessLogs.delete(logId));
+    }
+    
+    // Delete all assets in this collection
+    const assetEntries = Array.from(this.mediaAssets.entries()).filter(
+      ([, asset]) => asset.collectionId === id
+    );
+    assetEntries.forEach(([assetId]) => this.mediaAssets.delete(assetId));
+    
+    // Finally, delete the collection
+    return this.mediaCollections.delete(id);
+  }
+
+  // Media Asset operations
+  async createMediaAsset(assetData: InsertMediaAsset): Promise<MediaAsset> {
+    const id = this.mediaAssetCurrentId++;
+    const asset: MediaAsset = {
+      id,
+      collectionId: assetData.collectionId,
+      type: assetData.type,
+      title: assetData.title,
+      description: assetData.description || null,
+      storageKey: assetData.storageKey,
+      originalFilename: assetData.originalFilename,
+      fileSize: assetData.fileSize,
+      mimeType: assetData.mimeType,
+      duration: assetData.duration || null,
+      dimensions: assetData.dimensions || null,
+      transcodedVariants: assetData.transcodedVariants || {},
+      displayOrder: assetData.displayOrder || 0,
+      isPublished: assetData.isPublished ?? false,
+      watermarkEnabled: assetData.watermarkEnabled ?? true,
+      downloadProtected: assetData.downloadProtected ?? true,
+      viewCount: 0,
+      lastViewedAt: null,
+      createdBy: assetData.createdBy,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.mediaAssets.set(id, asset);
+    return asset;
+  }
+
+  async getMediaAsset(id: number): Promise<MediaAsset | undefined> {
+    return this.mediaAssets.get(id);
+  }
+
+  async getMediaAssetsByCollectionId(collectionId: number, options?: { isPublished?: boolean; limit?: number; offset?: number }): Promise<MediaAsset[]> {
+    let assets = Array.from(this.mediaAssets.values()).filter(
+      asset => asset.collectionId === collectionId
+    );
+    
+    if (options?.isPublished !== undefined) {
+      assets = assets.filter(asset => asset.isPublished === options.isPublished);
+    }
+    
+    assets.sort((a, b) => a.displayOrder - b.displayOrder);
+    
+    if (options?.offset) {
+      assets = assets.slice(options.offset);
+    }
+    
+    if (options?.limit) {
+      assets = assets.slice(0, options.limit);
+    }
+    
+    return assets;
+  }
+
+  async updateMediaAsset(id: number, assetData: Partial<InsertMediaAsset>): Promise<MediaAsset | undefined> {
+    const asset = this.mediaAssets.get(id);
+    if (!asset) return undefined;
+    
+    Object.assign(asset, assetData, { updatedAt: new Date() });
+    this.mediaAssets.set(id, asset);
+    return asset;
+  }
+
+  async deleteMediaAsset(id: number): Promise<boolean> {
+    // Delete all access logs for this asset
+    const logsToDelete = Array.from(this.mediaAccessLogs.entries()).filter(
+      ([, log]) => log.assetId === id
+    );
+    logsToDelete.forEach(([logId]) => this.mediaAccessLogs.delete(logId));
+    
+    // Delete the asset
+    return this.mediaAssets.delete(id);
+  }
+
+  async incrementAssetViewCount(id: number): Promise<boolean> {
+    const asset = this.mediaAssets.get(id);
+    if (!asset) return false;
+    
+    asset.viewCount = (asset.viewCount || 0) + 1;
+    asset.lastViewedAt = new Date();
+    this.mediaAssets.set(id, asset);
+    return true;
+  }
+
+  // Media Access Log operations
+  async createMediaAccessLog(logData: InsertMediaAccessLog): Promise<MediaAccessLog> {
+    const id = this.mediaAccessLogCurrentId++;
+    const log: MediaAccessLog = {
+      id,
+      assetId: logData.assetId,
+      userId: logData.userId || null,
+      accessType: logData.accessType,
+      userAgent: logData.userAgent || null,
+      ipAddress: logData.ipAddress || null,
+      success: logData.success ?? true,
+      failureReason: logData.failureReason || null,
+      accessedAt: new Date(),
+    };
+    this.mediaAccessLogs.set(id, log);
+    return log;
+  }
+
+  async getMediaAccessLogsByAssetId(assetId: number, limit?: number): Promise<MediaAccessLog[]> {
+    let logs = Array.from(this.mediaAccessLogs.values()).filter(
+      log => log.assetId === assetId
+    );
+    logs.sort((a, b) => b.accessedAt.getTime() - a.accessedAt.getTime());
+    
+    if (limit) {
+      logs = logs.slice(0, limit);
+    }
+    
+    return logs;
+  }
+
+  async getMediaAccessLogsByUserId(userId: number, limit?: number): Promise<MediaAccessLog[]> {
+    let logs = Array.from(this.mediaAccessLogs.values()).filter(
+      log => log.userId === userId
+    );
+    logs.sort((a, b) => b.accessedAt.getTime() - a.accessedAt.getTime());
+    
+    if (limit) {
+      logs = logs.slice(0, limit);
+    }
+    
+    return logs;
   }
 }
 
