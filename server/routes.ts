@@ -1347,15 +1347,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Parse and validate the request body with proper defaults for manual assets
-      const assetData = insertMediaAssetSchema.parse({
-        ...req.body,
-        type: req.body.type || 'image', // Default to image if not specified
-        storageKey: req.body.storageKey || `manual-${Date.now()}`, // Generate a key for manual assets
-        originalFilename: req.body.originalFilename || 'manual-asset',
-        fileSize: typeof req.body.fileSize === 'number' ? req.body.fileSize : 1, // Ensure it's a number >= 1
-        mimeType: req.body.mimeType || 'image/jpeg', // Default MIME type
-        createdBy: req.user.id
-      });
+      const headerUserId = req.headers['user-id'] as string;
+      const parsedUserId = parseInt(headerUserId);
+      const userId = req.user?.id || parsedUserId;
+      
+      console.log('Debug - req.user:', req.user, 'header user-id:', headerUserId, 'parsed:', parsedUserId, 'final userId:', userId);
+      
+      const assetData = {
+        ...insertMediaAssetSchema.parse({
+          ...req.body,
+          type: req.body.type || 'image', // Default to image if not specified
+          storageKey: req.body.storageKey || `manual-${Date.now()}`, // Generate a key for manual assets
+          originalFilename: req.body.originalFilename || 'manual-asset',
+          fileSize: typeof req.body.fileSize === 'number' ? req.body.fileSize : 1, // Ensure it's a number >= 1
+          mimeType: req.body.mimeType || 'image/jpeg', // Default MIME type
+        }),
+        createdBy: userId // Add createdBy after validation since schema omits it
+      };
 
       const asset = await storage.createMediaAsset(assetData);
       return res.status(201).json(asset);

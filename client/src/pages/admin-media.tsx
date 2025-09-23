@@ -81,6 +81,7 @@ const AdminMediaPage = () => {
   const [editingCollection, setEditingCollection] = useState<MediaCollection | null>(null);
   const [editingAsset, setEditingAsset] = useState<MediaAsset | null>(null);
   const [selectedCollection, setSelectedCollection] = useState<number | null>(null);
+  
   const [uploads, setUploads] = useState<UploadProgress[]>([]);
   
   // Form states
@@ -111,6 +112,23 @@ const AdminMediaPage = () => {
     queryKey: ['/api/media/collections', selectedCollection],
     enabled: !!selectedCollection && user?.role === 'admin',
   });
+
+  // Auto-select the first collection when collections are loaded
+  useEffect(() => {
+    if (collections && collections.length > 0 && selectedCollection === null) {
+      setSelectedCollection(collections[0].id);
+    }
+  }, [collections, selectedCollection]);
+
+  // Sync assetForm.collectionId with selectedCollection
+  useEffect(() => {
+    if (selectedCollection) {
+      setAssetForm(prev => ({
+        ...prev,
+        collectionId: selectedCollection
+      }));
+    }
+  }, [selectedCollection]);
 
   // Create collection mutation
   const createCollectionMutation = useMutation({
