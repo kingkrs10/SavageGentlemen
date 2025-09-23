@@ -4383,6 +4383,57 @@ export class DatabaseStorage implements IStorage {
       .where(eq(aiChatMessages.id, id));
     return result.rowCount > 0;
   }
+
+  // Media Collection operations
+  async createMediaCollection(collectionData: InsertMediaCollection): Promise<MediaCollection> {
+    const result = await db.insert(mediaCollections).values(collectionData).returning();
+    return result[0];
+  }
+
+  async getMediaCollection(id: number): Promise<MediaCollection | undefined> {
+    const [collection] = await db
+      .select()
+      .from(mediaCollections)
+      .where(eq(mediaCollections.id, id));
+    return collection;
+  }
+
+  async getMediaCollectionBySlug(slug: string): Promise<MediaCollection | undefined> {
+    const [collection] = await db
+      .select()
+      .from(mediaCollections)
+      .where(eq(mediaCollections.slug, slug));
+    return collection;
+  }
+
+  async getAllMediaCollections(options?: { visibility?: string; isActive?: boolean }): Promise<MediaCollection[]> {
+    let query = db.select().from(mediaCollections);
+    
+    if (options?.visibility) {
+      query = query.where(eq(mediaCollections.visibility, options.visibility));
+    }
+    if (options?.isActive !== undefined) {
+      query = query.where(eq(mediaCollections.isActive, options.isActive));
+    }
+    
+    return await query;
+  }
+
+  async updateMediaCollection(id: number, collectionData: Partial<InsertMediaCollection>): Promise<MediaCollection | undefined> {
+    const result = await db
+      .update(mediaCollections)
+      .set(collectionData)
+      .where(eq(mediaCollections.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteMediaCollection(id: number): Promise<boolean> {
+    const result = await db
+      .delete(mediaCollections)
+      .where(eq(mediaCollections.id, id));
+    return result.rowCount > 0;
+  }
 }
 
 export const storage = new DatabaseStorage();

@@ -367,7 +367,6 @@ export const insertMediaCollectionSchema = createInsertSchema(mediaCollections)
     displayOrder: true,
     thumbnailUrl: true,
     isActive: true,
-    createdBy: true,
   })
   .extend({
     slug: z.string()
