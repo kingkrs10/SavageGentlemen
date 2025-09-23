@@ -90,7 +90,7 @@ const MediaPage = () => {
 
   // Fetch assets for selected collection
   const { data: collectionWithAssets, isLoading: assetsLoading } = useQuery<MediaCollection>({
-    queryKey: ['/api/media/collections', selectedCollection?.id],
+    queryKey: [`/api/media/collections/${selectedCollection?.id}`],
     enabled: viewerMode === 'assets' && selectedCollection !== null,
   });
 
