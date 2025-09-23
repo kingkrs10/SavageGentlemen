@@ -107,18 +107,18 @@ const AdminMediaPage = () => {
     enabled: user?.role === 'admin', // Only fetch if admin
   });
 
-  // Fetch assets for selected collection
-  const { data: selectedCollectionData, isLoading: selectedCollectionLoading } = useQuery<MediaCollection>({
-    queryKey: ['/api/media/collections', selectedCollection],
-    enabled: !!selectedCollection && user?.role === 'admin',
-  });
-
   // Auto-select the first collection when collections are loaded
   useEffect(() => {
     if (collections && collections.length > 0 && selectedCollection === null) {
       setSelectedCollection(collections[0].id);
     }
   }, [collections, selectedCollection]);
+
+  // Fetch assets for selected collection
+  const { data: selectedCollectionData, isLoading: selectedCollectionLoading } = useQuery<MediaCollection>({
+    queryKey: ['/api/media/collections', selectedCollection],
+    enabled: !!selectedCollection && user?.role === 'admin',
+  });
 
   // Sync assetForm.collectionId with selectedCollection
   useEffect(() => {
