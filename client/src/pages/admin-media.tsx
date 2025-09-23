@@ -136,7 +136,8 @@ const AdminMediaPage = () => {
       queryEnabled: !!selectedCollection && user?.role === 'admin',
       isLoading: selectedCollectionLoading,
       hasData: !!selectedCollectionData,
-      assetsCount: selectedCollectionData?.assets?.length
+      assetsCount: selectedCollectionData?.assets?.length,
+      actualData: selectedCollectionData
     });
   }, [selectedCollection, user, selectedCollectionLoading, selectedCollectionData]);
 
