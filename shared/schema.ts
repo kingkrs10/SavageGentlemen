@@ -343,6 +343,127 @@ export const insertAiChatMessageSchema = createInsertSchema(aiChatMessages).pick
   processingTime: true,
 });
 
+// Media Collections schema - for grouping media assets (albums/galleries)
+export const mediaCollections = pgTable("media_collections", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(), // URL-friendly identifier
+  title: text("title").notNull(),
+  description: text("description"),
+  visibility: text("visibility").notNull().default("public"), // public, private, admin_only
+  displayOrder: integer("display_order").default(0),
+  thumbnailUrl: text("thumbnail_url"), // Collection cover image
+  isActive: boolean("is_active").default(true),
+  createdBy: integer("created_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertMediaCollectionSchema = createInsertSchema(mediaCollections)
+  .pick({
+    slug: true,
+    title: true,
+    description: true,
+    visibility: true,
+    displayOrder: true,
+    thumbnailUrl: true,
+    isActive: true,
+    createdBy: true,
+  })
+  .extend({
+    slug: z.string()
+      .min(3, 'Slug must be at least 3 characters')
+      .max(50, 'Slug must be at most 50 characters')
+      .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens'),
+    title: z.string()
+      .min(1, 'Title is required')
+      .max(200, 'Title must be at most 200 characters'),
+    description: z.string().max(1000, 'Description must be at most 1000 characters').optional(),
+    visibility: z.enum(['public', 'private', 'admin_only']).default('public'),
+  });
+
+// Media Assets schema - for individual media files
+export const mediaAssets = pgTable("media_assets", {
+  id: serial("id").primaryKey(),
+  collectionId: integer("collection_id").notNull(),
+  type: text("type").notNull(), // image, video
+  title: text("title").notNull(),
+  description: text("description"),
+  storageKey: text("storage_key").notNull(), // Hashed filename in storage
+  originalFilename: text("original_filename").notNull(),
+  fileSize: integer("file_size").notNull(), // in bytes
+  mimeType: text("mime_type").notNull(),
+  duration: integer("duration"), // for videos, in seconds
+  dimensions: jsonb("dimensions"), // { width: number, height: number }
+  transcodedVariants: jsonb("transcoded_variants").default({}), // { hls: string, webm: string, etc }
+  displayOrder: integer("display_order").default(0),
+  isPublished: boolean("is_published").default(false),
+  watermarkEnabled: boolean("watermark_enabled").default(true),
+  downloadProtected: boolean("download_protected").default(true),
+  viewCount: integer("view_count").default(0),
+  lastViewedAt: timestamp("last_viewed_at"),
+  createdBy: integer("created_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertMediaAssetSchema = createInsertSchema(mediaAssets)
+  .pick({
+    collectionId: true,
+    type: true,
+    title: true,
+    description: true,
+    storageKey: true,
+    originalFilename: true,
+    fileSize: true,
+    mimeType: true,
+    duration: true,
+    dimensions: true,
+    transcodedVariants: true,
+    displayOrder: true,
+    isPublished: true,
+    watermarkEnabled: true,
+    downloadProtected: true,
+    createdBy: true,
+  })
+  .extend({
+    type: z.enum(['image', 'video']),
+    title: z.string()
+      .min(1, 'Title is required')
+      .max(200, 'Title must be at most 200 characters'),
+    description: z.string().max(1000, 'Description must be at most 1000 characters').optional(),
+    storageKey: z.string().min(1, 'Storage key is required'),
+    originalFilename: z.string().min(1, 'Original filename is required'),
+    fileSize: z.number().min(1, 'File size must be greater than 0'),
+    mimeType: z.string().min(1, 'MIME type is required'),
+  });
+
+// Media Access Logs schema - for tracking views and access attempts
+export const mediaAccessLogs = pgTable("media_access_logs", {
+  id: serial("id").primaryKey(),
+  assetId: integer("asset_id").notNull(),
+  userId: integer("user_id"), // null for anonymous users
+  accessType: text("access_type").notNull(), // view, download_attempt, screenshot_attempt
+  userAgent: text("user_agent"),
+  ipAddress: text("ip_address"),
+  success: boolean("success").default(true),
+  failureReason: text("failure_reason"),
+  accessedAt: timestamp("accessed_at").defaultNow(),
+});
+
+export const insertMediaAccessLogSchema = createInsertSchema(mediaAccessLogs)
+  .pick({
+    assetId: true,
+    userId: true,
+    accessType: true,
+    userAgent: true,
+    ipAddress: true,
+    success: true,
+    failureReason: true,
+  })
+  .extend({
+    accessType: z.enum(['view', 'download_attempt', 'screenshot_attempt']),
+  });
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -1453,3 +1574,13 @@ export type InsertTicketAddon = z.infer<typeof insertTicketAddonSchema>;
 
 export type TicketAddonPurchase = typeof ticketAddonPurchases.$inferSelect;
 export type InsertTicketAddonPurchase = z.infer<typeof insertTicketAddonPurchaseSchema>;
+
+// Media types
+export type MediaCollection = typeof mediaCollections.$inferSelect;
+export type InsertMediaCollection = z.infer<typeof insertMediaCollectionSchema>;
+
+export type MediaAsset = typeof mediaAssets.$inferSelect;
+export type InsertMediaAsset = z.infer<typeof insertMediaAssetSchema>;
+
+export type MediaAccessLog = typeof mediaAccessLogs.$inferSelect;
+export type InsertMediaAccessLog = z.infer<typeof insertMediaAccessLogSchema>;
