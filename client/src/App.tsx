@@ -28,6 +28,7 @@ const Live = lazy(() => import("@/pages/live"));
 const Checkout = lazy(() => import("@/pages/checkout"));
 const PaymentSuccess = lazy(() => import("@/pages/payment-success"));
 const Admin = lazy(() => import("@/pages/admin-temp"));
+const AdminMedia = lazy(() => import("@/pages/admin-media"));
 const PasswordReset = lazy(() => import("@/pages/password-reset"));
 const AnalyticsDashboard = lazy(() => import("@/pages/analytics-dashboard"));
 const MyTickets = lazy(() => import("@/pages/my-tickets"));
@@ -70,6 +71,7 @@ function Router() {
         <Route path="/checkout" component={Checkout} />
         <Route path="/payment-success" component={PaymentSuccess} />
         <Route path="/admin" component={Admin} />
+        <Route path="/admin/media" component={AdminMedia} />
         <Route path="/password-reset" component={PasswordReset} />
         <Route path="/analytics" component={AnalyticsDashboard} />
         <Route path="/my-tickets" component={MyTickets} />
