@@ -659,7 +659,7 @@ const AdminMediaPage = () => {
             </div>
           </div>
 
-          {selectedCollection && selectedCollectionData?.assets ? (
+          {selectedCollection && selectedCollectionData?.assets && selectedCollectionData.assets.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {selectedCollectionData.assets.map((asset) => (
                 <Card key={asset.id} className="overflow-hidden">
