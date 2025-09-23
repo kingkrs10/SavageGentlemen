@@ -100,30 +100,16 @@ const AdminMediaPage = () => {
     isPublished: true
   });
 
-  // Check if user is admin
-  if (!user || user.role !== 'admin') {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto text-center py-12">
-          <AlertCircle className="w-16 h-16 mx-auto mb-6 text-red-500" />
-          <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
-          <p className="text-muted-foreground">
-            You need administrator privileges to access media management.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Fetch collections
+  // Fetch collections - moved before auth check to fix hooks order
   const { data: collections, isLoading: collectionsLoading } = useQuery<MediaCollection[]>({
     queryKey: ['/api/media/collections'],
+    enabled: user?.role === 'admin', // Only fetch if admin
   });
 
   // Fetch assets for selected collection
   const { data: selectedCollectionData } = useQuery<MediaCollection>({
     queryKey: ['/api/media/collections', selectedCollection],
-    enabled: !!selectedCollection,
+    enabled: !!selectedCollection && user?.role === 'admin',
   });
 
   // Create collection mutation
