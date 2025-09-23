@@ -108,7 +108,7 @@ const AdminMediaPage = () => {
   });
 
   // Fetch assets for selected collection
-  const { data: selectedCollectionData } = useQuery<MediaCollection>({
+  const { data: selectedCollectionData, isLoading: selectedCollectionLoading } = useQuery<MediaCollection>({
     queryKey: ['/api/media/collections', selectedCollection],
     enabled: !!selectedCollection && user?.role === 'admin',
   });

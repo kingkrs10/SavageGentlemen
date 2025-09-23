@@ -1347,11 +1347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Parse and validate the request body with proper defaults for manual assets
-      const headerUserId = req.headers['user-id'] as string;
-      const parsedUserId = parseInt(headerUserId);
-      const userId = req.user?.id || parsedUserId;
-      
-      console.log('Debug - req.user:', req.user, 'header user-id:', headerUserId, 'parsed:', parsedUserId, 'final userId:', userId);
+      const userId = req.user?.id || parseInt(req.headers['user-id'] as string);
       
       const assetData = {
         ...insertMediaAssetSchema.parse({
