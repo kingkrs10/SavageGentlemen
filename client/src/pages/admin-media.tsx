@@ -118,6 +118,8 @@ const AdminMediaPage = () => {
   const { data: selectedCollectionData, isLoading: selectedCollectionLoading } = useQuery<MediaCollection>({
     queryKey: ['/api/media/collections', selectedCollection],
     enabled: !!selectedCollection && user?.role === 'admin',
+    staleTime: 0, // Force fresh data
+    refetchOnMount: true,
   });
 
   // Sync assetForm.collectionId with selectedCollection
