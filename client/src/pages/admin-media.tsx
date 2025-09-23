@@ -96,7 +96,7 @@ const AdminMediaPage = () => {
   const [assetForm, setAssetForm] = useState({
     title: '',
     description: '',
-    collectionId: 0,
+    collectionId: selectedCollection || 0,
     isPublished: true
   });
 
@@ -239,7 +239,7 @@ const AdminMediaPage = () => {
     setAssetForm({
       title: '',
       description: '',
-      collectionId: 0,
+      collectionId: selectedCollection || 0,
       isPublished: true
     });
   };

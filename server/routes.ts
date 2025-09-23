@@ -1347,8 +1347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Parse and validate the request body with proper defaults for manual assets
-      console.log('Original request body:', req.body);
-      const dataToValidate = {
+      const assetData = insertMediaAssetSchema.parse({
         ...req.body,
         type: req.body.type || 'image', // Default to image if not specified
         storageKey: req.body.storageKey || `manual-${Date.now()}`, // Generate a key for manual assets
@@ -1356,10 +1355,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fileSize: typeof req.body.fileSize === 'number' ? req.body.fileSize : 1, // Ensure it's a number >= 1
         mimeType: req.body.mimeType || 'image/jpeg', // Default MIME type
         createdBy: req.user.id
-      };
-      console.log('Data after defaults applied:', dataToValidate);
-      
-      const assetData = insertMediaAssetSchema.parse(dataToValidate);
+      });
 
       const asset = await storage.createMediaAsset(assetData);
       return res.status(201).json(asset);

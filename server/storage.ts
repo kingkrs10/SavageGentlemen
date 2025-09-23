@@ -4435,10 +4435,17 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount > 0;
   }
 
-  // Media Asset operations
+  // Media Asset operations  
   async createMediaAsset(assetData: InsertMediaAsset): Promise<MediaAsset> {
     const result = await db.insert(mediaAssets).values(assetData).returning();
-    return result[0];
+    const asset = result[0];
+    
+    // Add URL fields for frontend display
+    return {
+      ...asset,
+      url: `/uploads/${asset.storageKey}`,
+      thumbnailUrl: `/uploads/${asset.storageKey}` // Use same URL for thumbnail for now
+    } as MediaAsset & { url: string; thumbnailUrl: string };
   }
 
   async getMediaAsset(id: number): Promise<MediaAsset | undefined> {
@@ -4446,7 +4453,15 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(mediaAssets)
       .where(eq(mediaAssets.id, id));
-    return asset;
+      
+    if (!asset) return undefined;
+    
+    // Add URL fields for frontend display
+    return {
+      ...asset,
+      url: `/uploads/${asset.storageKey}`,
+      thumbnailUrl: `/uploads/${asset.storageKey}` // Use same URL for thumbnail for now
+    } as MediaAsset & { url: string; thumbnailUrl: string };
   }
 
   async getMediaAssetsByCollectionId(collectionId: number, options?: { isPublished?: boolean; limit?: number; offset?: number }): Promise<MediaAsset[]> {
@@ -4467,7 +4482,14 @@ export class DatabaseStorage implements IStorage {
       query = query.offset(options.offset);
     }
     
-    return await query;
+    const assets = await query;
+    
+    // Add URL fields for frontend display
+    return assets.map(asset => ({
+      ...asset,
+      url: `/uploads/${asset.storageKey}`,
+      thumbnailUrl: `/uploads/${asset.storageKey}` // Use same URL for thumbnail for now  
+    })) as (MediaAsset & { url: string; thumbnailUrl: string })[];
   }
 
   async updateMediaAsset(id: number, assetData: Partial<InsertMediaAsset>): Promise<MediaAsset | undefined> {
