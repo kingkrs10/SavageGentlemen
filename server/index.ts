@@ -7,6 +7,9 @@ import { securityHeaders, auditLogger, sanitizeInput } from './security/middlewa
 
 const app = express();
 
+// Trust proxy for rate limiting and proper IP detection (needed for Replit)
+app.set('trust proxy', true);
+
 // Configure CORS - In development, we're more permissive
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 

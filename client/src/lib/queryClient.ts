@@ -102,13 +102,16 @@ export async function apiRequest(
 
   let errorMessage = '';
   if (!res.ok) {
+    // Clone the response so we can read the body for error logging without consuming the original
+    const clonedRes = res.clone();
     try {
-      const errorData = await res.json();
+      const errorData = await clonedRes.json();
       console.error(`API Error (${res.status}):`, errorData);
       errorMessage = typeof errorData === 'string' ? errorData : errorData.message || JSON.stringify(errorData);
     } catch (e) {
       try {
-        errorMessage = await res.text();
+        const clonedRes2 = res.clone();
+        errorMessage = await clonedRes2.text();
         console.error(`API Error (${res.status}):`, errorMessage);
       } catch (textError) {
         errorMessage = res.statusText;
