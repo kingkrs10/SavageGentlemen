@@ -21,7 +21,8 @@ import {
   Edit,
   Eye,
   BarChart3,
-  Radio
+  Radio,
+  Images
 } from "lucide-react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -946,6 +947,25 @@ export default function AdminTemp() {
                     className="w-full h-10 text-sm"
                   >
                     Manage Emails
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Media Management Card */}
+              <Card className="shadow-md">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base sm:text-lg flex items-center">
+                    <Images className="h-4 w-4 mr-2" />
+                    Media Management
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs sm:text-sm mb-4">Upload and manage photos and videos securely.</p>
+                  <Button 
+                    onClick={() => navigate('/admin/media')}
+                    className="w-full h-10 text-sm"
+                  >
+                    Manage Media
                   </Button>
                 </CardContent>
               </Card>
