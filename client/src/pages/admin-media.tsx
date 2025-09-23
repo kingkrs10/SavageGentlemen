@@ -122,7 +122,7 @@ const AdminMediaPage = () => {
 
   // Fetch assets for selected collection
   const { data: selectedCollectionData, isLoading: selectedCollectionLoading } = useQuery<MediaCollection>({
-    queryKey: ['/api/media/collections', selectedCollection],
+    queryKey: [`/api/media/collections/${selectedCollection}`],
     enabled: !!selectedCollection && user?.role === 'admin',
     staleTime: 0, // Force fresh data
     refetchOnMount: true,
@@ -225,7 +225,7 @@ const AdminMediaPage = () => {
     },
     onSuccess: () => {
       if (selectedCollection) {
-        queryClient.invalidateQueries({ queryKey: ['/api/media/collections', selectedCollection] });
+        queryClient.invalidateQueries({ queryKey: [`/api/media/collections/${selectedCollection}`] });
       }
       queryClient.invalidateQueries({ queryKey: ['/api/media/collections'] });
       setShowAssetDialog(false);
@@ -249,7 +249,7 @@ const AdminMediaPage = () => {
     },
     onSuccess: () => {
       if (selectedCollection) {
-        queryClient.invalidateQueries({ queryKey: ['/api/media/collections', selectedCollection] });
+        queryClient.invalidateQueries({ queryKey: [`/api/media/collections/${selectedCollection}`] });
       }
       queryClient.invalidateQueries({ queryKey: ['/api/media/collections'] });
       toast({ title: "Asset deleted successfully" });
@@ -419,7 +419,7 @@ const AdminMediaPage = () => {
         // Refresh collections data to show the new asset
         queryClient.invalidateQueries({ queryKey: ['/api/media/collections'] });
         if (selectedCollection) {
-          queryClient.invalidateQueries({ queryKey: ['/api/media/collections', selectedCollection] });
+          queryClient.invalidateQueries({ queryKey: [`/api/media/collections/${selectedCollection}`] });
         }
 
         toast({
