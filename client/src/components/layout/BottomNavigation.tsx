@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, Link } from "wouter";
-import { Home, CalendarDays, ShoppingBag, Video, LayoutDashboard, Ticket } from "lucide-react";
+import { Home, CalendarDays, ShoppingBag, Images, Video, LayoutDashboard, Ticket } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { User } from "@/lib/types";
 import { useUser } from "@/context/UserContext";
@@ -21,6 +21,7 @@ const BottomNavigation = ({ user: propUser }: BottomNavigationProps) => {
     { path: "/", label: "Home", icon: Home },
     { path: "/events", label: "Events", icon: CalendarDays },
     { path: "/shop", label: "Shop", icon: ShoppingBag },
+    { path: "/media", label: "Media", icon: Images },
     { path: "/live", label: "Live", icon: Video, hasNotification: true },
   ];
   
