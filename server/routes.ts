@@ -1338,6 +1338,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create media asset manually (admin only) - without file upload
+  router.post("/media/assets", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      // Only admins can create assets
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized: Admin privileges required" });
+      }
+
+      // Parse and validate the request body
+      const assetData = insertMediaAssetSchema.parse({
+        ...req.body,
+        type: req.body.type || 'image', // Default to image if not specified
+        storageKey: req.body.storageKey || `manual-${Date.now()}`, // Generate a key for manual assets
+        originalFilename: req.body.originalFilename || 'manual-asset',
+        fileSize: req.body.fileSize || 0, // Default to 0 for manual assets
+        mimeType: req.body.mimeType || 'image/jpeg', // Default MIME type
+        createdBy: req.user.id
+      });
+
+      const asset = await storage.createMediaAsset(assetData);
+      return res.status(201).json(asset);
+    } catch (err: any) {
+      console.error('Manual asset creation error:', err);
+      if (err.errors) {
+        return res.status(400).json({ errors: err.errors });
+      }
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update media asset (admin only)
+  router.put("/media/assets/:id", authenticateUser, async (req: Request, res: Response) => {
+    try {
+      // Only admins can update assets
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized: Admin privileges required" });
+      }
+
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+
+      const asset = await storage.updateMediaAsset(id, updates);
+      if (!asset) {
+        return res.status(404).json({ message: "Asset not found" });
+      }
+
+      return res.status(200).json(asset);
+    } catch (err) {
+      console.error('Asset update error:', err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Upload media asset (admin only)
   router.post("/media/assets/upload", upload.single('file'), async (req: Request, res: Response) => {
     try {

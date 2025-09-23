@@ -194,7 +194,7 @@ const AdminMediaPage = () => {
         const response = await apiRequest('PUT', `/api/media/assets/${data.id}`, data.assetData);
         return response.json();
       } else {
-        const response = await apiRequest('POST', '/api/media/assets/upload', data.assetData);
+        const response = await apiRequest('POST', '/api/media/assets', data.assetData);
         return response.json();
       }
     },
