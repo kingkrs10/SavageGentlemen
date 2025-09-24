@@ -8,6 +8,7 @@ import EventCard from "@/components/home/EventCard";
 import ProductCard from "@/components/home/ProductCard";
 import EventsBanner from "@/components/home/EventsBanner";
 import AdSpace from "@/components/home/AdSpace";
+import HeroEventCarousel from "@/components/home/HeroEventCarousel";
 import { API_ROUTES, EXTERNAL_URLS } from "@/lib/constants";
 import { Event, Product, Livestream } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -63,59 +64,70 @@ const Home = () => {
   
   return (
     <div className="mx-auto">
-      {/* Full Width Hero Banner with Video */}
-      <div className="relative w-full h-[100vh] overflow-hidden -mx-3">
-        <div className="relative h-full">
-          {/* Hero Background with Video */}
-          <div className="h-full w-full bg-black">
-            <video 
-              className="w-full h-full object-cover absolute inset-0 opacity-75"
-              autoPlay 
-              muted 
-              loop
-              playsInline
-            >
-              <source src={IntroVideo} type="video/mp4" />
-            </video>
-            
-            {/* Overlay and Logo */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/70 z-10 flex flex-col items-center justify-center">
-              <img 
-                src={SGFlyerLogoPng} 
-                alt="Savage Gentlemen" 
-                className="h-60 w-60 object-contain mb-12"
-              />
+      {/* Interactive Event Carousel Hero */}
+      {featuredEvents && featuredEvents.length > 0 ? (
+        <HeroEventCarousel 
+          events={featuredEvents}
+          onGetTicket={handleGetTicket}
+          className="-mx-3"
+        />
+      ) : eventsLoading ? (
+        <div className="relative w-full h-screen bg-black flex items-center justify-center -mx-3">
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-orange-500 mx-auto"></div>
+            <p className="text-white text-lg">Loading events...</p>
+          </div>
+        </div>
+      ) : (
+        // Fallback hero with video for when no events are available
+        <div className="relative w-full h-[100vh] overflow-hidden -mx-3">
+          <div className="relative h-full">
+            <div className="h-full w-full bg-black">
+              <video 
+                className="w-full h-full object-cover absolute inset-0 opacity-75"
+                autoPlay 
+                muted 
+                loop
+                playsInline
+              >
+                <source src={IntroVideo} type="video/mp4" />
+              </video>
               
-              {/* Main Headline */}
-              <h1 className="text-5xl md:text-7xl font-heading text-white uppercase tracking-wide mb-6 [text-shadow:_0_2px_5px_rgba(0,0,0,0.7)] text-center">
-                SAVAGE GENTLEMEN
-              </h1>
-              
-              {/* Subtitle */}
-              <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto mb-12 uppercase tracking-widest [text-shadow:_0_1px_3px_rgba(0,0,0,0.9)] text-center">
-                EVENTS · MERCHANDISE · LIVE STREAM · COMMUNITY
-              </p>
-              
-              {/* Action Buttons below Logo */}
-              <div className="flex flex-col gap-4 mx-auto max-w-md px-6">
-                <Button 
-                  className="btn-modern gradient-primary text-white px-8 py-6 uppercase tracking-widest text-lg font-semibold w-full border-0"
-                  onClick={() => navigate('/events')}
-                >
-                  VIEW EVENTS
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="btn-modern glass-effect border-white/20 text-white hover:bg-white/10 px-8 py-6 uppercase tracking-widest text-lg font-semibold backdrop-blur-sm w-full"
-                  onClick={() => window.open(EXTERNAL_URLS.ETSY_SHOP, '_blank', 'noopener,noreferrer')}
-                >
-                  SHOP COLLECTION
-                </Button>
+              <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/70 z-10 flex flex-col items-center justify-center">
+                <img 
+                  src={SGFlyerLogoPng} 
+                  alt="Savage Gentlemen" 
+                  className="h-60 w-60 object-contain mb-12"
+                />
+                
+                <h1 className="text-5xl md:text-7xl font-heading text-white uppercase tracking-wide mb-6 [text-shadow:_0_2px_5px_rgba(0,0,0,0.7)] text-center">
+                  SAVAGE GENTLEMEN
+                </h1>
+                
+                <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto mb-12 uppercase tracking-widest [text-shadow:_0_1px_3px_rgba(0,0,0,0.9)] text-center">
+                  EVENTS · MERCHANDISE · LIVE STREAM · COMMUNITY
+                </p>
+                
+                <div className="flex flex-col gap-4 mx-auto max-w-md px-6">
+                  <Button 
+                    className="btn-modern gradient-primary text-white px-8 py-6 uppercase tracking-widest text-lg font-semibold w-full border-0"
+                    onClick={() => navigate('/events')}
+                  >
+                    VIEW EVENTS
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="btn-modern glass-effect border-white/20 text-white hover:bg-white/10 px-8 py-6 uppercase tracking-widest text-lg font-semibold backdrop-blur-sm w-full"
+                    onClick={() => window.open(EXTERNAL_URLS.ETSY_SHOP, '_blank', 'noopener,noreferrer')}
+                  >
+                    SHOP COLLECTION
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Events Banner */}
       <EventsBanner />
@@ -160,39 +172,92 @@ const Home = () => {
               </section>
             )}
 
-            {/* Featured Products Section */}
+            {/* Explore Merch Section */}
             {featuredProducts && featuredProducts.length > 0 && (
-              <section>
-                <div className="flex items-center justify-between mb-8">
-                  <h2 className="heading-modern text-3xl gradient-text uppercase tracking-wide">Featured Products</h2>
-                  <Button 
-                    variant="outline" 
-                    className="btn-modern glass-effect border-white/20 text-white hover:bg-white/10 group"
-                    onClick={() => window.open(EXTERNAL_URLS.ETSY_SHOP, '_blank', 'noopener,noreferrer')}
-                  >
-                    Shop All
-                    <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
+              <section className="py-20 bg-gradient-to-b from-black to-gray-900">
+                <div className="text-center mb-12">
+                  <div className="inline-block mb-6">
+                    <img 
+                      src={SGFlyerLogoPng}
+                      alt="SG Logo" 
+                      className="w-16 h-16 mx-auto object-contain"
+                    />
+                  </div>
+                  <h2 className="text-4xl md:text-5xl font-bold uppercase tracking-wider text-white mb-4">
+                    EXPLORE MERCH
+                  </h2>
+                  <p className="text-gray-300 text-lg max-w-2xl mx-auto leading-relaxed">
+                    Discover our exclusive collection of Caribbean-inspired clothing and accessories designed by Savage Gentlemen.
+                  </p>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto px-4">
                   {productsLoading 
-                    ? Array(3).fill(0).map((_, i) => (
+                    ? Array(4).fill(0).map((_, i) => (
                         <div key={i} className="space-y-4">
-                          <div className="shimmer h-48 w-full rounded-2xl" />
-                          <div className="shimmer h-4 w-3/4 rounded" />
-                          <div className="shimmer h-4 w-1/2 rounded" />
+                          <div className="bg-gray-800/50 animate-pulse h-64 w-full rounded-xl" />
+                          <div className="bg-gray-800/50 animate-pulse h-4 w-3/4 rounded" />
+                          <div className="bg-gray-800/50 animate-pulse h-4 w-1/2 rounded" />
                         </div>
                       ))
-                    : featuredProducts.map((product, index) => (
-                        <div key={product.id} className={`animate-fade-in-up animate-delay-${(index + 1) * 100}`}>
-                          <ProductCard
-                            product={product}
-                            onAddToCart={handleAddToCart}
-                          />
+                    : featuredProducts.slice(0, 4).map((product, index) => (
+                        <div 
+                          key={product.id} 
+                          className={`group bg-black/40 backdrop-blur-sm rounded-xl overflow-hidden border border-gray-800 hover:border-primary transition-all duration-300 hover:scale-105 animate-fade-in-up animate-delay-${(index + 1) * 100}`}
+                          data-testid={`merch-product-${product.id}`}
+                        >
+                          <div className="aspect-square bg-gray-900 relative overflow-hidden">
+                            <img
+                              src={product.imageUrl || SGFlyerLogoPng}
+                              alt={product.title}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = SGFlyerLogoPng;
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            
+                            {/* Price overlay */}
+                            <div className="absolute top-4 right-4 bg-primary text-white px-3 py-1 rounded-full font-bold text-sm">
+                              ${(product.price / 100).toFixed(2)}
+                            </div>
+                          </div>
+                          
+                          <div className="p-4">
+                            <h3 className="font-bold text-white mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+                              {product.title}
+                            </h3>
+                            <p className="text-gray-400 text-sm mb-3 line-clamp-2">
+                              {product.description || "Premium Caribbean-inspired design"}
+                            </p>
+                            
+                            <Button
+                              size="sm"
+                              className="w-full bg-primary hover:bg-red-800 text-white font-medium uppercase tracking-wide transition-all duration-300"
+                              onClick={() => handleAddToCart(product.id)}
+                              data-testid={`add-to-cart-${product.id}`}
+                            >
+                              View Product
+                            </Button>
+                          </div>
                         </div>
                       ))
                   }
+                </div>
+
+                {/* Shop All Button */}
+                <div className="text-center mt-12">
+                  <Button 
+                    size="lg"
+                    variant="outline"
+                    className="border-primary text-primary hover:bg-primary hover:text-white px-8 py-4 text-lg uppercase tracking-wide font-semibold transition-all duration-300"
+                    onClick={() => window.open(EXTERNAL_URLS.ETSY_SHOP, '_blank', 'noopener,noreferrer')}
+                    data-testid="shop-all-products-button"
+                  >
+                    <ChevronRight className="mr-2 h-5 w-5" />
+                    SHOP ALL PRODUCTS
+                  </Button>
                 </div>
               </section>
             )}
