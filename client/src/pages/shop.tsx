@@ -18,9 +18,11 @@ const SimpleProductCard = ({ product, onAddToCart }: {
   
   // Enhanced image URL processing with proper fallback
   const getImageUrl = (url: string) => {
-    // Always use brand logo for consistent display
-    // Since Etsy URLs are returning 404, we'll use brand logo
-    return SGFlyerLogoPng;
+    if (!url || url.trim() === '') {
+      return SGFlyerLogoPng; // Fallback to brand logo for empty URLs
+    }
+    // Use the actual Etsy image URL first, fallback to brand logo on error
+    return url;
   };
   
   const imageUrl = getImageUrl(product.imageUrl);
