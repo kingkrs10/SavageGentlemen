@@ -96,8 +96,8 @@ const SimpleProductCard = ({ product, onAddToCart }: {
 };
 
 const Shop = () => {
-  // Temporary unavailable flag
-  const isShopTemporarilyUnavailable = true;
+  // Shop is now available
+  const isShopTemporarilyUnavailable = false;
   
   const [selectedCategory, setSelectedCategory] = useState("all");
   const { toast } = useToast();
