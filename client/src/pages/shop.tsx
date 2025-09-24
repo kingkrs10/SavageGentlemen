@@ -96,6 +96,9 @@ const SimpleProductCard = ({ product, onAddToCart }: {
 };
 
 const Shop = () => {
+  // Temporary unavailable flag
+  const isShopTemporarilyUnavailable = true;
+  
   const [selectedCategory, setSelectedCategory] = useState("all");
   const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
@@ -143,6 +146,67 @@ const Shop = () => {
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
   };
+
+  // Show temporary unavailable message
+  if (isShopTemporarilyUnavailable) {
+    return (
+      <div className="pb-20">
+        {/* Header section with logo */}
+        <div className="relative overflow-hidden mb-8 shadow-2xl border-b-4 border-primary">
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10"></div>
+          <div className="bg-black h-[300px] flex flex-col items-center justify-center relative">
+            <img 
+              src={SGFlyerLogoPng} 
+              alt="SG Logo" 
+              className="w-40 h-40 object-contain mb-2 relative z-20"
+            />
+            <h1 className="text-5xl md:text-6xl font-bold tracking-wider text-white uppercase text-center relative z-20 mb-0">
+              SAVAGE GENTLEMEN
+            </h1>
+            <p className="text-xl text-gray-300 tracking-wide uppercase mt-2 relative z-20">
+              MERCHANDISE • COLLECTION
+            </p>
+          </div>
+        </div>
+
+        {/* Temporary unavailable message */}
+        <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+          <div className="bg-gray-900/50 backdrop-blur border border-gray-800 rounded-xl p-12">
+            <div className="inline-block mb-6">
+              <ShoppingBag className="h-16 w-16 text-primary mx-auto mb-4" />
+            </div>
+            <h2 className="text-4xl font-bold text-white mb-6 uppercase tracking-wider">
+              Shop Temporarily Unavailable
+            </h2>
+            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
+              We're currently updating our shop to bring you an even better shopping experience. 
+              Thank you for your patience while we make some exciting improvements.
+            </p>
+            <div className="space-y-4">
+              <p className="text-lg text-gray-400">
+                In the meantime, you can still check out our collection on Etsy:
+              </p>
+              <a 
+                href={EXTERNAL_URLS.ETSY_SHOP} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-block"
+                data-testid="button-etsy-shop"
+              >
+                <Button 
+                  size="lg" 
+                  className="bg-primary hover:bg-red-800 text-white text-lg uppercase tracking-wider font-bold py-6 px-8"
+                >
+                  <ShoppingCart className="h-5 w-5 mr-2" />
+                  VISIT ETSY SHOP
+                </Button>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="pb-20">
