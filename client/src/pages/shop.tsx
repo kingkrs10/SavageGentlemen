@@ -184,23 +184,9 @@ const Shop = () => {
             </p>
             <div className="space-y-4">
               <p className="text-lg text-gray-400">
-                In the meantime, you can still check out our collection on Etsy:
+                All shopping links are temporarily disabled during this maintenance period. 
+                Please check back soon for updates.
               </p>
-              <a 
-                href={EXTERNAL_URLS.ETSY_SHOP} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="inline-block"
-                data-testid="button-etsy-shop"
-              >
-                <Button 
-                  size="lg" 
-                  className="bg-primary hover:bg-red-800 text-white text-lg uppercase tracking-wider font-bold py-6 px-8"
-                >
-                  <ShoppingCart className="h-5 w-5 mr-2" />
-                  VISIT ETSY SHOP
-                </Button>
-              </a>
             </div>
           </div>
         </div>
