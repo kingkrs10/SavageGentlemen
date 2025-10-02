@@ -13,7 +13,7 @@ import { API_ROUTES, EXTERNAL_URLS } from "@/lib/constants";
 import { Event, Product, Livestream } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import SGFlyerLogoPng from "@/assets/SGFLYERLOGO.png";
-import IntroVideo from "@/assets/videos/intro.mp4";
+import BrandVideo from "@/assets/videos/brand-video.mp4";
 
 const Home = () => {
   const [, navigate] = useLocation();
@@ -90,7 +90,7 @@ const Home = () => {
                 loop
                 playsInline
               >
-                <source src={IntroVideo} type="video/mp4" />
+                <source src={BrandVideo} type="video/mp4" />
               </video>
               
               <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/70 z-10 flex flex-col items-center justify-center">
@@ -128,6 +128,71 @@ const Home = () => {
           </div>
         </div>
       )}
+
+      {/* Brand Manifesto Section */}
+      <section className="relative py-20 bg-gradient-to-b from-black via-gray-900 to-black overflow-hidden">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Video Player */}
+            <div className="relative group">
+              <div className="aspect-video rounded-2xl overflow-hidden border-2 border-primary/30 shadow-2xl">
+                <video 
+                  className="w-full h-full object-cover"
+                  controls
+                  poster={SGFlyerLogoPng}
+                  playsInline
+                  data-testid="brand-manifesto-video"
+                >
+                  <source src={BrandVideo} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+              {/* Glow effect */}
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary to-orange-600 rounded-2xl opacity-20 blur-xl group-hover:opacity-40 transition-opacity duration-300 -z-10"></div>
+            </div>
+
+            {/* Manifesto Content */}
+            <div className="space-y-6">
+              <div className="inline-block">
+                <img 
+                  src={SGFlyerLogoPng}
+                  alt="SG Logo" 
+                  className="w-20 h-20 object-contain"
+                />
+              </div>
+              
+              <h2 className="text-4xl md:text-5xl font-bold uppercase tracking-wider text-white leading-tight">
+                The Savage Gentlemen
+                <span className="block mt-2 bg-gradient-to-r from-primary to-orange-500 bg-clip-text text-transparent">
+                  Experience
+                </span>
+              </h2>
+              
+              <p className="text-lg text-gray-300 leading-relaxed">
+                We're more than events. We're a movement celebrating Caribbean-American culture through unforgettable experiences, authentic merchandise, and a vibrant community that lives for the moment.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <Button 
+                  className="btn-modern gradient-primary text-white px-6 py-6 uppercase tracking-widest text-sm font-semibold border-0"
+                  onClick={() => navigate('/events')}
+                  data-testid="brand-cta-events"
+                >
+                  EXPLORE EVENTS
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="btn-modern glass-effect border-white/20 text-white hover:bg-white/10 px-6 py-6 uppercase tracking-widest text-sm font-semibold backdrop-blur-sm"
+                  onClick={() => window.open(EXTERNAL_URLS.ETSY_SHOP, '_blank', 'noopener,noreferrer')}
+                  data-testid="brand-cta-shop"
+                >
+                  SHOP COLLECTION
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Events Banner */}
       <EventsBanner />
