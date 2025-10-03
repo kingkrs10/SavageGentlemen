@@ -62,6 +62,11 @@ import {
   InsertMediaAsset,
   MediaAccessLog,
   InsertMediaAccessLog,
+  // Music Mix schemas
+  MusicMix,
+  InsertMusicMix,
+  MusicMixPurchase,
+  InsertMusicMixPurchase,
   users,
   events,
   products,
@@ -94,7 +99,10 @@ import {
   // Media tables
   mediaCollections,
   mediaAssets,
-  mediaAccessLogs
+  mediaAccessLogs,
+  // Music Mix tables
+  musicMixes,
+  musicMixPurchases
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, sql, lte, lt, isNotNull, not } from "drizzle-orm";
@@ -328,6 +336,17 @@ export interface IStorage {
   createMediaAccessLog(log: InsertMediaAccessLog): Promise<MediaAccessLog>;
   getMediaAccessLogsByAssetId(assetId: number, limit?: number): Promise<MediaAccessLog[]>;
   getMediaAccessLogsByUserId(userId: number, limit?: number): Promise<MediaAccessLog[]>;
+  
+  // Music Mix operations
+  getMusicMix(id: number): Promise<any | undefined>;
+  getAllMusicMixes(): Promise<any[]>;
+  getPublishedMusicMixes(): Promise<any[]>;
+  createMusicMix(mix: any): Promise<any>;
+  updateMusicMix(id: number, mixData: any): Promise<any | undefined>;
+  deleteMusicMix(id: number): Promise<boolean>;
+  getMusicMixPurchase(userId: number, mixId: number): Promise<any | undefined>;
+  createMusicMixPurchase(purchase: any): Promise<any>;
+  incrementMusicMixDownloadCount(purchaseId: number): Promise<void>;
   
   // Sponsored Content operations
   getAllSponsoredContent(): Promise<SponsoredContent[]>;
@@ -4554,6 +4573,74 @@ export class DatabaseStorage implements IStorage {
       .where(eq(mediaAccessLogs.userId, userId))
       .limit(limit)
       .orderBy(desc(mediaAccessLogs.createdAt));
+  }
+
+  // Music Mix operations
+  async getMusicMix(id: number): Promise<MusicMix | undefined> {
+    const [mix] = await db
+      .select()
+      .from(musicMixes)
+      .where(eq(musicMixes.id, id));
+    return mix;
+  }
+
+  async getAllMusicMixes(): Promise<MusicMix[]> {
+    return await db
+      .select()
+      .from(musicMixes)
+      .orderBy(desc(musicMixes.displayOrder), desc(musicMixes.createdAt));
+  }
+
+  async getPublishedMusicMixes(): Promise<MusicMix[]> {
+    return await db
+      .select()
+      .from(musicMixes)
+      .where(eq(musicMixes.isPublished, true))
+      .orderBy(desc(musicMixes.displayOrder), desc(musicMixes.createdAt));
+  }
+
+  async createMusicMix(mixData: InsertMusicMix): Promise<MusicMix> {
+    const result = await db.insert(musicMixes).values(mixData).returning();
+    return result[0];
+  }
+
+  async updateMusicMix(id: number, mixData: Partial<InsertMusicMix>): Promise<MusicMix | undefined> {
+    const result = await db
+      .update(musicMixes)
+      .set({ ...mixData, updatedAt: new Date() })
+      .where(eq(musicMixes.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteMusicMix(id: number): Promise<boolean> {
+    const result = await db
+      .delete(musicMixes)
+      .where(eq(musicMixes.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getMusicMixPurchase(userId: number, mixId: number): Promise<MusicMixPurchase | undefined> {
+    const [purchase] = await db
+      .select()
+      .from(musicMixPurchases)
+      .where(and(
+        eq(musicMixPurchases.userId, userId),
+        eq(musicMixPurchases.mixId, mixId)
+      ));
+    return purchase;
+  }
+
+  async createMusicMixPurchase(purchaseData: InsertMusicMixPurchase): Promise<MusicMixPurchase> {
+    const result = await db.insert(musicMixPurchases).values(purchaseData).returning();
+    return result[0];
+  }
+
+  async incrementMusicMixDownloadCount(purchaseId: number): Promise<void> {
+    await db
+      .update(musicMixPurchases)
+      .set({ downloadCount: sql`${musicMixPurchases.downloadCount} + 1` })
+      .where(eq(musicMixPurchases.id, purchaseId));
   }
 }
 
