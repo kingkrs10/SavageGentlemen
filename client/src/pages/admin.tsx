@@ -55,6 +55,7 @@ interface Ticket {
   remainingQuantity: number;
   isActive: boolean;
   maxPerPurchase?: number;
+  description?: string | null;
 }
 
 interface Order {
@@ -99,6 +100,23 @@ interface Livestream {
   // Legacy field
   streamUrl?: string | null;
 }
+
+interface MusicMix {
+  id: number;
+  title: string;
+  description: string | null;
+  priceInCents: number;
+  fileUrl: string;
+  previewUrl: string | null;
+  artworkUrl: string | null;
+  durationSeconds: number | null;
+  fileSize: number | null;
+  isPublished: boolean;
+  displayOrder: number;
+  uploadedBy: number | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
 import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -141,7 +159,8 @@ import {
   Lock,
   Radio,
   MoreHorizontal,
-  Video
+  Video,
+  Music
 } from "lucide-react";
 import LivestreamManager from "@/components/admin/LivestreamManager";
 
@@ -181,6 +200,8 @@ export default function AdminPage() {
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
   const [livestreamDialogOpen, setLivestreamDialogOpen] = useState(false);
   const [currentLivestream, setCurrentLivestream] = useState<Livestream | null>(null);
+  const [musicMixDialogOpen, setMusicMixDialogOpen] = useState(false);
+  const [currentMusicMix, setCurrentMusicMix] = useState<MusicMix | null>(null);
   
   // User form state
   const [userForm, setUserForm] = useState({
@@ -208,6 +229,17 @@ export default function AdminPage() {
     tiktokUsername: '',
     customStreamUrl: '',
     embedCode: ''
+  });
+  
+  // Music Mix form state
+  const [musicMixForm, setMusicMixForm] = useState({
+    title: '',
+    description: '',
+    priceInCents: 199,
+    isPublished: false,
+    fullMixFile: null as File | null,
+    previewFile: null as File | null,
+    artworkFile: null as File | null,
   });
   
   // Event form state
@@ -329,6 +361,16 @@ export default function AdminPage() {
     enabled: !!currentUser,
   });
   
+  // Fetch music mixes
+  const {
+    data: musicMixes,
+    isLoading: musicMixesLoading,
+    error: musicMixesError
+  } = useQuery<MusicMix[]>({
+    queryKey: ["/api/music/mixes"],
+    enabled: !!currentUser,
+  });
+  
   // Handle ticket form submission
   // State for tickets management
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -395,6 +437,7 @@ export default function AdminPage() {
       hideAfterSalesEnd: false,
       lockMinQuantity: null,
       lockTicketTypeId: null,
+      status: 'on_sale'
     });
     
     // Open the ticket dialog
@@ -881,6 +924,176 @@ export default function AdminPage() {
     }
   };
 
+  // Music Mix handlers
+  const handleCreateMusicMix = async () => {
+    try {
+      if (!musicMixForm.title) {
+        toast({
+          title: "Missing fields",
+          description: "Title is required",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const mixData = {
+        title: musicMixForm.title,
+        description: musicMixForm.description || null,
+        priceInCents: musicMixForm.priceInCents,
+        isPublished: musicMixForm.isPublished,
+        fileUrl: 'placeholder',
+        uploadedBy: currentUser?.id,
+      };
+
+      const response = await fetch('/api/music/mixes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(mixData),
+      });
+
+      const newMix = await response.json();
+
+      if (musicMixForm.fullMixFile) {
+        await handleUploadMixFile(newMix.id, musicMixForm.fullMixFile);
+      }
+
+      if (musicMixForm.previewFile) {
+        await handleUploadPreview(newMix.id, musicMixForm.previewFile);
+      }
+
+      if (musicMixForm.artworkFile) {
+        await handleUploadArtwork(newMix.id, musicMixForm.artworkFile);
+      }
+
+      toast({
+        title: "Music Mix Created",
+        description: `Music mix "${musicMixForm.title}" created successfully`,
+      });
+
+      setMusicMixDialogOpen(false);
+      setMusicMixForm({
+        title: '',
+        description: '',
+        priceInCents: 199,
+        isPublished: false,
+        fullMixFile: null,
+        previewFile: null,
+        artworkFile: null,
+      });
+
+      queryClient.invalidateQueries({queryKey: ["/api/music/mixes"]});
+    } catch (error) {
+      console.error("Failed to create music mix:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create music mix. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUploadMixFile = async (mixId: number, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`/api/music/mixes/${mixId}/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to upload mix file');
+    }
+  };
+
+  const handleUploadPreview = async (mixId: number, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`/api/music/mixes/${mixId}/upload-preview`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to upload preview file');
+    }
+  };
+
+  const handleUploadArtwork = async (mixId: number, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`/api/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to upload artwork');
+    }
+
+    const result = await response.json();
+    
+    await fetch(`/api/music/mixes/${mixId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ artworkUrl: result.url }),
+    });
+  };
+
+  const handleToggleMixPublished = async (mix: MusicMix) => {
+    try {
+      const response = await fetch(`/api/music/mixes/${mix.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isPublished: !mix.isPublished }),
+      });
+
+      toast({
+        title: mix.isPublished ? "Mix Unpublished" : "Mix Published",
+        description: `The mix "${mix.title}" is now ${!mix.isPublished ? 'published' : 'unpublished'}`,
+      });
+
+      queryClient.invalidateQueries({queryKey: ["/api/music/mixes"]});
+    } catch (error) {
+      console.error('Error toggling mix published status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update mix status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteMix = async (mix: MusicMix) => {
+    try {
+      const response = await fetch(`/api/music/mixes/${mix.id}`, {
+        method: 'DELETE',
+      });
+
+      toast({
+        title: "Mix Deleted",
+        description: `The mix "${mix.title}" has been deleted`,
+      });
+
+      queryClient.invalidateQueries({queryKey: ["/api/music/mixes"]});
+    } catch (error) {
+      console.error('Error deleting mix:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete mix",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
       <div className="space-y-6">
@@ -903,7 +1116,7 @@ export default function AdminPage() {
         <Separator />
       
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid grid-cols-6 mb-8">
+          <TabsList className="grid grid-cols-7 mb-8">
           <TabsTrigger value="products" className="flex items-center gap-2">
             <PackageOpen className="h-4 w-4" /> Products
           </TabsTrigger>
@@ -921,6 +1134,9 @@ export default function AdminPage() {
           </TabsTrigger>
           <TabsTrigger value="livestreams" className="flex items-center gap-2">
             <Radio className="h-4 w-4" /> Livestreams
+          </TabsTrigger>
+          <TabsTrigger value="musicmixes" className="flex items-center gap-2">
+            <Music className="h-4 w-4" /> Music Mixes
           </TabsTrigger>
         </TabsList>
         
@@ -2111,7 +2327,218 @@ export default function AdminPage() {
         <TabsContent value="livestreams" className="space-y-4">
           <LivestreamManager />
         </TabsContent>
+        
+        {/* Music Mixes Tab */}
+        <TabsContent value="musicmixes" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Music Mixes</CardTitle>
+                <CardDescription>Manage your music mixes and digital downloads</CardDescription>
+              </div>
+              <Button className="sg-btn" onClick={() => setMusicMixDialogOpen(true)} data-testid="button-add-music-mix">
+                <Music className="h-4 w-4 mr-2" /> Add Music Mix
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {musicMixesLoading ? (
+                <div className="py-10 text-center" data-testid="loading-music-mixes">Loading music mixes...</div>
+              ) : musicMixesError ? (
+                <div className="py-10 text-center text-red-500" data-testid="error-music-mixes">
+                  Error loading music mixes. Please try again.
+                </div>
+              ) : musicMixes && musicMixes.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Published</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {musicMixes.map((mix) => (
+                        <TableRow key={mix.id} data-testid={`row-music-mix-${mix.id}`}>
+                          <TableCell className="font-medium" data-testid={`text-mix-id-${mix.id}`}>{mix.id}</TableCell>
+                          <TableCell data-testid={`text-mix-title-${mix.id}`}>{mix.title}</TableCell>
+                          <TableCell data-testid={`text-mix-price-${mix.id}`}>${(mix.priceInCents / 100).toFixed(2)}</TableCell>
+                          <TableCell>
+                            <span 
+                              className={`px-2 py-1 rounded text-xs font-medium ${
+                                mix.isPublished 
+                                  ? "bg-green-100 text-green-700" 
+                                  : "bg-gray-100 text-gray-700"
+                              }`}
+                              data-testid={`badge-mix-status-${mix.id}`}
+                            >
+                              {mix.isPublished ? "Published" : "Draft"}
+                            </span>
+                          </TableCell>
+                          <TableCell data-testid={`text-mix-created-${mix.id}`}>
+                            {typeof mix.createdAt === 'string' 
+                              ? new Date(mix.createdAt).toLocaleDateString() 
+                              : mix.createdAt.toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                variant={mix.isPublished ? "outline" : "default"}
+                                size="sm"
+                                onClick={() => handleToggleMixPublished(mix)}
+                                data-testid={`button-toggle-publish-${mix.id}`}
+                              >
+                                {mix.isPublished ? "Unpublish" : "Publish"}
+                              </Button>
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => handleDeleteMix(mix)}
+                                data-testid={`button-delete-mix-${mix.id}`}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="py-10 text-center" data-testid="empty-music-mixes">
+                  <Music className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium">No music mixes found</h3>
+                  <p className="text-sm text-gray-500">
+                    Create your first music mix by clicking the "Add Music Mix" button above.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Music Mix Dialog */}
+          <Dialog open={musicMixDialogOpen} onOpenChange={setMusicMixDialogOpen}>
+            <DialogContent className="sm:max-w-[500px] bg-[#141e2e] text-white">
+              <DialogHeader>
+                <DialogTitle className="text-white text-xl">Create new music mix</DialogTitle>
+                <DialogDescription className="text-slate-400">
+                  Add a new music mix with audio files and artwork.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="mix-title" className="text-white">Title *</Label>
+                  <Input
+                    id="mix-title"
+                    placeholder="Enter mix title"
+                    className="bg-slate-700 border border-slate-600 text-white"
+                    value={musicMixForm.title}
+                    onChange={(e) => setMusicMixForm({...musicMixForm, title: e.target.value})}
+                    data-testid="input-mix-title"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="mix-description" className="text-white">Description</Label>
+                  <Textarea
+                    id="mix-description"
+                    placeholder="Enter mix description"
+                    className="bg-slate-700 border border-slate-600 text-white min-h-[80px]"
+                    value={musicMixForm.description}
+                    onChange={(e) => setMusicMixForm({...musicMixForm, description: e.target.value})}
+                    data-testid="textarea-mix-description"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="mix-price" className="text-white">Price (in cents)</Label>
+                  <Input
+                    id="mix-price"
+                    type="number"
+                    placeholder="199"
+                    className="bg-slate-700 border border-slate-600 text-white"
+                    value={musicMixForm.priceInCents}
+                    onChange={(e) => setMusicMixForm({...musicMixForm, priceInCents: parseInt(e.target.value) || 0})}
+                    data-testid="input-mix-price"
+                  />
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="mix-published"
+                    checked={musicMixForm.isPublished}
+                    onCheckedChange={(checked) => setMusicMixForm({...musicMixForm, isPublished: checked as boolean})}
+                    data-testid="checkbox-mix-published"
+                  />
+                  <Label htmlFor="mix-published" className="text-white">Is Published</Label>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="mix-full-file" className="text-white">Full Mix File (Audio/Video) *</Label>
+                  <Input
+                    id="mix-full-file"
+                    type="file"
+                    accept="audio/*,video/*"
+                    className="bg-slate-700 border border-slate-600 text-white"
+                    onChange={(e) => setMusicMixForm({...musicMixForm, fullMixFile: e.target.files?.[0] || null})}
+                    data-testid="input-mix-full-file"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="mix-preview-file" className="text-white">Preview File (Audio/Video)</Label>
+                  <Input
+                    id="mix-preview-file"
+                    type="file"
+                    accept="audio/*,video/*"
+                    className="bg-slate-700 border border-slate-600 text-white"
+                    onChange={(e) => setMusicMixForm({...musicMixForm, previewFile: e.target.files?.[0] || null})}
+                    data-testid="input-mix-preview-file"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="mix-artwork" className="text-white">Artwork (Image)</Label>
+                  <Input
+                    id="mix-artwork"
+                    type="file"
+                    accept="image/*"
+                    className="bg-slate-700 border border-slate-600 text-white"
+                    onChange={(e) => setMusicMixForm({...musicMixForm, artworkFile: e.target.files?.[0] || null})}
+                    data-testid="input-mix-artwork"
+                  />
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={() => setMusicMixDialogOpen(false)}
+                  data-testid="button-cancel-mix"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="bg-teal-500 hover:bg-teal-600 text-white"
+                  onClick={handleCreateMusicMix}
+                  disabled={!musicMixForm.title || !musicMixForm.fullMixFile}
+                  data-testid="button-save-mix"
+                >
+                  Create Mix
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }
