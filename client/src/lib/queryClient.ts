@@ -47,29 +47,37 @@ export async function apiRequest(
       console.log("Using Firebase token");
     }
     
-    // STEP 2: Get user ID for non-sensitive routes only (remove for sensitive routes later)
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        const user = JSON.parse(storedUser);
-        
-        // Handle nested data structures: { data: { data: { id: ... } } }, { data: { id: ... } }, { id: ... }
-        let userData = user;
-        if (user.data && user.data.data) {
-          userData = user.data.data;
-        } else if (user.data) {
-          userData = user.data;
-        }
-        
-        if (userData && userData.id) {
-          userId = userData.id.toString();
-          // Only add user-id header for non-payment/ticket routes (allow admin routes)
-          if (!normalizedUrl.includes('/payment') && !normalizedUrl.includes('/ticket')) {
-            headers["user-id"] = userId;
+    // STEP 2: Try user's stored token (secure login token)
+    if (!authToken) {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        try {
+          const user = JSON.parse(storedUser);
+          
+          // Handle nested data structures: { data: { data: { id: ... } } }, { data: { id: ... } }, { id: ... }
+          let userData = user;
+          if (user.data && user.data.data) {
+            userData = user.data.data;
+          } else if (user.data) {
+            userData = user.data;
           }
+          
+          if (userData && userData.token) {
+            authToken = userData.token;
+            headers["Authorization"] = `Bearer ${userData.token}`;
+            console.log("Using stored user token");
+          }
+          
+          if (userData && userData.id) {
+            userId = userData.id.toString();
+            // Only add user-id header for non-payment/ticket routes (allow admin routes)
+            if (!normalizedUrl.includes('/payment') && !normalizedUrl.includes('/ticket')) {
+              headers["user-id"] = userId;
+            }
+          }
+        } catch (parseError) {
+          console.error("Error parsing user from localStorage:", parseError);
         }
-      } catch (parseError) {
-        console.error("Error parsing user from localStorage:", parseError);
       }
     }
     
@@ -155,34 +163,42 @@ export const getQueryFn: <T>(options: {
         console.log("Using Firebase token");
       }
       
-      // STEP 2: Get user ID for non-sensitive routes only
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        try {
-          const user = JSON.parse(storedUser);
-          
-          // Handle nested data structures: { data: { data: { id: ... } } }, { data: { id: ... } }, { id: ... }
-          let userData = user;
-          if (user.data && user.data.data) {
-            userData = user.data.data;
-          } else if (user.data) {
-            userData = user.data;
-          }
-          
-          if (userData && userData.id) {
-            userId = userData.id.toString();
-            // Only add user-id header for non-payment/ticket routes (allow admin routes)
-            if (!normalizedUrl.includes('/payment') && !normalizedUrl.includes('/ticket')) {
-              headers["user-id"] = userId;
+      // STEP 2: Try user's stored token (secure login token)
+      if (!authToken) {
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          try {
+            const user = JSON.parse(storedUser);
+            
+            // Handle nested data structures: { data: { data: { id: ... } } }, { data: { id: ... } }, { id: ... }
+            let userData = user;
+            if (user.data && user.data.data) {
+              userData = user.data.data;
+            } else if (user.data) {
+              userData = user.data;
             }
             
-            // Log role if available (helpful for debugging permission issues)
-            if (userData.role) {
-              console.log("User role:", userData.role);
+            if (userData && userData.token) {
+              authToken = userData.token;
+              headers["Authorization"] = `Bearer ${userData.token}`;
+              console.log("Using stored user token");
             }
+            
+            if (userData && userData.id) {
+              userId = userData.id.toString();
+              // Only add user-id header for non-payment/ticket routes (allow admin routes)
+              if (!normalizedUrl.includes('/payment') && !normalizedUrl.includes('/ticket')) {
+                headers["user-id"] = userId;
+              }
+              
+              // Log role if available (helpful for debugging permission issues)
+              if (userData.role) {
+                console.log("User role:", userData.role);
+              }
+            }
+          } catch (parseError) {
+            console.error("Error parsing user from localStorage:", parseError);
           }
-        } catch (parseError) {
-          console.error("Error parsing user from localStorage:", parseError);
         }
       }
       

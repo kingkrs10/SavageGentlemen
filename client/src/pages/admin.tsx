@@ -386,7 +386,30 @@ export default function AdminPage() {
     setTicketsError(null);
     
     try {
-      const response = await fetch(`/api/admin/tickets/event/${eventId}`);
+      // Build auth headers manually
+      const headers: Record<string, string> = {};
+      const firebaseToken = localStorage.getItem("firebaseToken");
+      if (firebaseToken) {
+        headers["Authorization"] = `Bearer ${firebaseToken}`;
+      } else {
+        // Try user's stored token
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          const userData = user?.data?.data || user?.data || user;
+          if (userData?.token) {
+            headers["Authorization"] = `Bearer ${userData.token}`;
+          }
+          if (userData?.id) {
+            headers["user-id"] = userData.id.toString();
+          }
+        }
+      }
+
+      const response = await fetch(`/api/admin/tickets/event/${eventId}`, {
+        headers,
+        credentials: 'include',
+      });
       
       if (!response.ok) {
         throw new Error(`Failed to fetch tickets: ${response.statusText}`);
@@ -482,12 +505,7 @@ export default function AdminPage() {
       const newStatus = !livestream.isLive;
       
       // Make API call to update the livestream's status
-      const response = await fetch(`/api/admin/livestreams/${livestream.id}/toggle-status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await apiRequest('PUT', `/api/admin/livestreams/${livestream.id}/toggle-status`);
       
       if (!response.ok) {
         throw new Error('Failed to update livestream status');
@@ -518,12 +536,7 @@ export default function AdminPage() {
       const newStatus = !ticket.isActive;
       
       // Make API call to update the ticket's status
-      const response = await fetch(`/api/admin/tickets/${ticket.id}/toggle-status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await apiRequest('PUT', `/api/admin/tickets/${ticket.id}/toggle-status`);
       
       if (!response.ok) {
         throw new Error('Failed to update ticket status');
@@ -570,13 +583,7 @@ export default function AdminPage() {
       };
 
       // Make API call to create user
-      const response = await fetch('/api/admin/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
+      const response = await apiRequest('POST', '/api/admin/users', userData);
 
       if (!response.ok) {
         throw new Error('Failed to create user');
@@ -650,13 +657,7 @@ export default function AdminPage() {
       };
 
       // Make API call to create event
-      const response = await fetch('/api/admin/events', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(eventData),
-      });
+      const response = await apiRequest('POST', '/api/admin/events', eventData);
 
       if (!response.ok) {
         throw new Error('Failed to create event');
@@ -755,13 +756,7 @@ export default function AdminPage() {
       
       const method = currentLivestream ? 'PUT' : 'POST';
       
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(streamData),
-      });
+      const response = await apiRequest(method, url, streamData);
 
       if (!response.ok) {
         throw new Error('Failed to save livestream');
@@ -852,13 +847,7 @@ export default function AdminPage() {
       }
       
       // Make API call to create or update the ticket
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(ticketData),
-      });
+      const response = await apiRequest(method, url, ticketData);
       
       if (!response.ok) {
         throw new Error('Failed to save ticket');
@@ -945,13 +934,7 @@ export default function AdminPage() {
         uploadedBy: currentUser?.id,
       };
 
-      const response = await fetch('/api/music/mixes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(mixData),
-      });
+      const response = await apiRequest('POST', '/api/music/mixes', mixData);
 
       const newMix = await response.json();
 
@@ -998,9 +981,31 @@ export default function AdminPage() {
     const formData = new FormData();
     formData.append('file', file);
 
+    // Build auth headers manually for FormData uploads
+    const headers: Record<string, string> = {};
+    const firebaseToken = localStorage.getItem("firebaseToken");
+    if (firebaseToken) {
+      headers["Authorization"] = `Bearer ${firebaseToken}`;
+    } else {
+      // Try user's stored token
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        const userData = user?.data?.data || user?.data || user;
+        if (userData?.token) {
+          headers["Authorization"] = `Bearer ${userData.token}`;
+        }
+        if (userData?.id) {
+          headers["user-id"] = userData.id.toString();
+        }
+      }
+    }
+
     const response = await fetch(`/api/music/mixes/${mixId}/upload`, {
       method: 'POST',
+      headers,
       body: formData,
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -1012,9 +1017,31 @@ export default function AdminPage() {
     const formData = new FormData();
     formData.append('file', file);
 
+    // Build auth headers manually for FormData uploads
+    const headers: Record<string, string> = {};
+    const firebaseToken = localStorage.getItem("firebaseToken");
+    if (firebaseToken) {
+      headers["Authorization"] = `Bearer ${firebaseToken}`;
+    } else {
+      // Try user's stored token
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        const userData = user?.data?.data || user?.data || user;
+        if (userData?.token) {
+          headers["Authorization"] = `Bearer ${userData.token}`;
+        }
+        if (userData?.id) {
+          headers["user-id"] = userData.id.toString();
+        }
+      }
+    }
+
     const response = await fetch(`/api/music/mixes/${mixId}/upload-preview`, {
       method: 'POST',
+      headers,
       body: formData,
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -1026,9 +1053,31 @@ export default function AdminPage() {
     const formData = new FormData();
     formData.append('file', file);
 
+    // Build auth headers manually for FormData uploads
+    const headers: Record<string, string> = {};
+    const firebaseToken = localStorage.getItem("firebaseToken");
+    if (firebaseToken) {
+      headers["Authorization"] = `Bearer ${firebaseToken}`;
+    } else {
+      // Try user's stored token
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        const userData = user?.data?.data || user?.data || user;
+        if (userData?.token) {
+          headers["Authorization"] = `Bearer ${userData.token}`;
+        }
+        if (userData?.id) {
+          headers["user-id"] = userData.id.toString();
+        }
+      }
+    }
+
     const response = await fetch(`/api/upload`, {
       method: 'POST',
+      headers,
       body: formData,
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -1037,23 +1086,13 @@ export default function AdminPage() {
 
     const result = await response.json();
     
-    await fetch(`/api/music/mixes/${mixId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ artworkUrl: result.url }),
-    });
+    await apiRequest('PUT', `/api/music/mixes/${mixId}`, { artworkUrl: result.url });
   };
 
   const handleToggleMixPublished = async (mix: MusicMix) => {
     try {
-      const response = await fetch(`/api/music/mixes/${mix.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ isPublished: !mix.isPublished }),
+      const response = await apiRequest('PUT', `/api/music/mixes/${mix.id}`, { 
+        isPublished: !mix.isPublished 
       });
 
       toast({
@@ -1074,9 +1113,7 @@ export default function AdminPage() {
 
   const handleDeleteMix = async (mix: MusicMix) => {
     try {
-      const response = await fetch(`/api/music/mixes/${mix.id}`, {
-        method: 'DELETE',
-      });
+      const response = await apiRequest('DELETE', `/api/music/mixes/${mix.id}`);
 
       toast({
         title: "Mix Deleted",
