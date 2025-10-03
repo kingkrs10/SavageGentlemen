@@ -1104,7 +1104,7 @@ export default function AdminPage() {
               Manage your products, events, users, and more.
             </p>
           </div>
-          {currentUser && (
+          {currentUser && currentUser.username && (
             <div className="flex items-center gap-2">
               <span className="text-sm hidden md:inline">Logged in as: <span className="font-medium">{currentUser.username}</span></span>
               <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white text-sm">
@@ -1503,7 +1503,7 @@ export default function AdminPage() {
                                 />
                               ) : (
                                 <div className="h-full w-full bg-primary flex items-center justify-center text-white text-xs">
-                                  {user.username.charAt(0).toUpperCase()}
+                                  {user.username?.charAt(0).toUpperCase() || '?'}
                                 </div>
                               )}
                             </div>
