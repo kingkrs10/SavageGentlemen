@@ -1319,6 +1319,36 @@ export const ticketAddonPurchases = pgTable("ticket_addon_purchases", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Music Mixes
+export const musicMixes = pgTable("music_mixes", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  priceInCents: integer("price_in_cents").notNull().default(199), // $1.99
+  fileUrl: text("file_url").notNull(), // Full mix file path
+  previewUrl: text("preview_url"), // Preview/sample clip path
+  artworkUrl: text("artwork_url"), // Cover art
+  durationSeconds: integer("duration_seconds"), // Duration in seconds
+  fileSize: integer("file_size"), // File size in bytes
+  isPublished: boolean("is_published").default(false),
+  displayOrder: integer("display_order").default(0),
+  uploadedBy: integer("uploaded_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Music Mix Purchases
+export const musicMixPurchases = pgTable("music_mix_purchases", {
+  id: serial("id").primaryKey(),
+  mixId: integer("mix_id").notNull().references(() => musicMixes.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  amountPaid: integer("amount_paid").notNull(), // in cents
+  currency: text("currency").default("usd"),
+  purchasedAt: timestamp("purchased_at").defaultNow(),
+  downloadCount: integer("download_count").default(0),
+});
+
 // Define email marketing relations
 export const emailListsRelations = relations(emailLists, ({ many }) => ({
   subscribers: many(emailListSubscribers),
@@ -1546,6 +1576,36 @@ export const insertTicketAddonPurchaseSchema = createInsertSchema(ticketAddonPur
   quantity: z.number().min(1),
 });
 
+export const insertMusicMixSchema = createInsertSchema(musicMixes).pick({
+  title: true,
+  description: true,
+  priceInCents: true,
+  fileUrl: true,
+  previewUrl: true,
+  artworkUrl: true,
+  durationSeconds: true,
+  fileSize: true,
+  isPublished: true,
+  displayOrder: true,
+  uploadedBy: true,
+}).extend({
+  title: z.string().min(1, 'Title is required'),
+  priceInCents: z.number().min(0).default(199),
+  fileUrl: z.string().min(1, 'File URL is required'),
+});
+
+export const insertMusicMixPurchaseSchema = createInsertSchema(musicMixPurchases).pick({
+  mixId: true,
+  userId: true,
+  stripePaymentIntentId: true,
+  amountPaid: true,
+  currency: true,
+}).extend({
+  mixId: z.number().min(1),
+  userId: z.number().min(1),
+  amountPaid: z.number().min(0),
+});
+
 // Type exports for new tables
 export type EventCheckin = typeof eventCheckins.$inferSelect;
 export type InsertEventCheckin = z.infer<typeof insertEventCheckinSchema>;
@@ -1583,3 +1643,10 @@ export type InsertMediaAsset = z.infer<typeof insertMediaAssetSchema>;
 
 export type MediaAccessLog = typeof mediaAccessLogs.$inferSelect;
 export type InsertMediaAccessLog = z.infer<typeof insertMediaAccessLogSchema>;
+
+// Music Mix types
+export type MusicMix = typeof musicMixes.$inferSelect;
+export type InsertMusicMix = z.infer<typeof insertMusicMixSchema>;
+
+export type MusicMixPurchase = typeof musicMixPurchases.$inferSelect;
+export type InsertMusicMixPurchase = z.infer<typeof insertMusicMixPurchaseSchema>;
