@@ -27,7 +27,7 @@ const Media = lazy(() => import("@/pages/media"));
 const Live = lazy(() => import("@/pages/live"));
 const Checkout = lazy(() => import("@/pages/checkout"));
 const PaymentSuccess = lazy(() => import("@/pages/payment-success"));
-const Admin = lazy(() => import("@/pages/admin-temp"));
+const Admin = lazy(() => import("@/pages/admin"));
 const AdminMedia = lazy(() => import("@/pages/admin-media"));
 const PasswordReset = lazy(() => import("@/pages/password-reset"));
 const AnalyticsDashboard = lazy(() => import("@/pages/analytics-dashboard"));
