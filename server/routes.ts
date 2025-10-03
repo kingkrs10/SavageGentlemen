@@ -36,7 +36,9 @@ import {
   insertAiChatMessageSchema,
   insertMediaCollectionSchema,
   insertMediaAssetSchema,
-  insertMediaAccessLogSchema
+  insertMediaAccessLogSchema,
+  insertMusicMixSchema,
+  insertMusicMixPurchaseSchema
 } from "@shared/schema";
 import { validateRequest, authRateLimiter } from "./security/middleware";
 import { ZodError } from "zod";
@@ -89,19 +91,20 @@ const upload = multer({
     fileSize: 100 * 1024 * 1024, // 100MB limit for videos
   },
   fileFilter: (req, file, cb) => {
-    // Accept images and videos for media management
-    if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp|mp4|webm|mov|avi|mkv)$/i)) {
-      return cb(new Error('Only image and video files are allowed!'), false);
+    // Accept images, videos, and audio files for media management
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp|mp4|webm|mov|avi|mkv|m4v|mp3|m4a|wav|aac)$/i)) {
+      return cb(new Error('Only image, video, and audio files are allowed!'), false);
     }
     
     // Also check MIME type for additional security
     const validMimeTypes = [
       'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-      'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska'
+      'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska', 'video/x-m4v',
+      'audio/mp4', 'audio/mpeg', 'audio/x-m4a', 'audio/wav', 'audio/aac'
     ];
     
     if (!validMimeTypes.includes(file.mimetype)) {
-      return cb(new Error('Invalid file type. Only images and videos are allowed!'), false);
+      return cb(new Error('Invalid file type. Only images, videos, and audio files are allowed!'), false);
     }
     
     cb(null, true);
@@ -1964,6 +1967,271 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Failed to fetch low stock products" });
     }
   });
+
+  // Music Mix Routes
+  // Create uploads/mixes directory if it doesn't exist
+  const mixesUploadDir = path.join(process.cwd(), 'uploads', 'mixes');
+  if (!fs.existsSync(mixesUploadDir)) {
+    fs.mkdirSync(mixesUploadDir, { recursive: true });
+  }
+
+  // GET /music/mixes - Get all published mixes (public, no auth required)
+  router.get("/music/mixes", asyncHandler(async (req: Request, res: Response) => {
+    const mixes = await storage.getPublishedMusicMixes();
+    return res.status(200).json(mixes);
+  }));
+
+  // GET /music/mixes/:id - Get single mix with purchase status for user
+  router.get("/music/mixes/:id", asyncHandler(async (req: Request, res: Response) => {
+    const mixId = parseInt(req.params.id);
+    const mix = await storage.getMusicMix(mixId);
+
+    if (!mix) {
+      return res.status(404).json({ message: "Music mix not found" });
+    }
+
+    // Check if user has purchased this mix
+    let hasPurchased = false;
+    const userId = req.headers['user-id'];
+    const user = req.user;
+
+    if (userId || user) {
+      const userIdNum = user?.id || parseInt(userId as string);
+      const purchase = await storage.getMusicMixPurchase(userIdNum, mixId);
+      hasPurchased = !!purchase;
+    }
+
+    // Check if user is admin
+    const isAdmin = user?.role === 'admin';
+
+    return res.status(200).json({
+      ...mix,
+      hasPurchased,
+      isAdmin
+    });
+  }));
+
+  // POST /music/mixes - Admin only: Create new mix
+  router.post("/music/mixes", authenticateUser, authorizeAdmin, asyncHandler(async (req: Request, res: Response) => {
+    const mixData = insertMusicMixSchema.parse(req.body);
+    const mix = await storage.createMusicMix({
+      ...mixData,
+      uploadedBy: req.user?.id
+    });
+    return res.status(201).json(mix);
+  }));
+
+  // PUT /music/mixes/:id - Admin only: Update mix
+  router.put("/music/mixes/:id", authenticateUser, authorizeAdmin, asyncHandler(async (req: Request, res: Response) => {
+    const mixId = parseInt(req.params.id);
+    const mixData = insertMusicMixSchema.partial().parse(req.body);
+    const mix = await storage.updateMusicMix(mixId, mixData);
+
+    if (!mix) {
+      return res.status(404).json({ message: "Music mix not found" });
+    }
+
+    return res.status(200).json(mix);
+  }));
+
+  // DELETE /music/mixes/:id - Admin only: Delete mix
+  router.delete("/music/mixes/:id", authenticateUser, authorizeAdmin, asyncHandler(async (req: Request, res: Response) => {
+    const mixId = parseInt(req.params.id);
+    const success = await storage.deleteMusicMix(mixId);
+
+    if (!success) {
+      return res.status(404).json({ message: "Music mix not found" });
+    }
+
+    return res.status(200).json({ message: "Music mix deleted successfully" });
+  }));
+
+  // POST /music/mixes/:id/checkout - Create Stripe payment intent for $1.99
+  router.post("/music/mixes/:id/checkout", asyncHandler(async (req: Request, res: Response) => {
+    const mixId = parseInt(req.params.id);
+    const mix = await storage.getMusicMix(mixId);
+
+    if (!mix) {
+      return res.status(404).json({ message: "Music mix not found" });
+    }
+
+    // Create Stripe payment intent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: 199, // $1.99 in cents
+      currency: 'usd',
+      metadata: {
+        mixId: mixId.toString(),
+        mixTitle: mix.title
+      }
+    });
+
+    return res.status(200).json({
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id
+    });
+  }));
+
+  // POST /music/mixes/:id/confirm - Confirm payment and create purchase record
+  router.post("/music/mixes/:id/confirm", asyncHandler(async (req: Request, res: Response) => {
+    const mixId = parseInt(req.params.id);
+    const { paymentIntentId } = req.body;
+
+    if (!paymentIntentId) {
+      return res.status(400).json({ message: "Payment intent ID is required" });
+    }
+
+    // Verify payment with Stripe
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+    if (paymentIntent.status !== 'succeeded') {
+      return res.status(400).json({ message: "Payment not completed" });
+    }
+
+    // Get user ID
+    const userId = req.headers['user-id'];
+    const user = req.user;
+
+    if (!userId && !user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const userIdNum = user?.id || parseInt(userId as string);
+
+    // Check if purchase already exists
+    const existingPurchase = await storage.getMusicMixPurchase(userIdNum, mixId);
+
+    if (existingPurchase) {
+      return res.status(200).json({
+        message: "Purchase already exists",
+        purchase: existingPurchase
+      });
+    }
+
+    // Create purchase record
+    const purchase = await storage.createMusicMixPurchase({
+      mixId,
+      userId: userIdNum,
+      stripePaymentIntentId: paymentIntentId,
+      amountPaid: 199,
+      currency: 'usd'
+    });
+
+    return res.status(201).json({
+      message: "Purchase confirmed",
+      purchase
+    });
+  }));
+
+  // GET /music/mixes/:id/download - Download mix (requires purchase or admin)
+  router.get("/music/mixes/:id/download", asyncHandler(async (req: Request, res: Response) => {
+    const mixId = parseInt(req.params.id);
+    const mix = await storage.getMusicMix(mixId);
+
+    if (!mix) {
+      return res.status(404).json({ message: "Music mix not found" });
+    }
+
+    // Get user ID
+    const userId = req.headers['user-id'];
+    const user = req.user;
+
+    if (!userId && !user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const userIdNum = user?.id || parseInt(userId as string);
+
+    // Check if user is admin
+    const isAdmin = user?.role === 'admin';
+
+    if (!isAdmin) {
+      // Check if user has purchased this mix
+      const purchase = await storage.getMusicMixPurchase(userIdNum, mixId);
+
+      if (!purchase) {
+        return res.status(403).json({ message: "Purchase required to download this mix" });
+      }
+
+      // Increment download count
+      await storage.incrementMusicMixDownloadCount(purchase.id);
+    }
+
+    // Stream the file
+    const filePath = path.join(process.cwd(), mix.fileUrl);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: "Mix file not found" });
+    }
+
+    return res.download(filePath, `${mix.title}.${path.extname(filePath)}`);
+  }));
+
+  // POST /music/mixes/:id/upload - Admin only: Upload full mix file using multer
+  router.post("/music/mixes/:id/upload", authenticateUser, authorizeAdmin, upload.single('file'), asyncHandler(async (req: Request, res: Response) => {
+    const mixId = parseInt(req.params.id);
+    const mix = await storage.getMusicMix(mixId);
+
+    if (!mix) {
+      return res.status(404).json({ message: "Music mix not found" });
+    }
+
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    // Move file to mixes directory
+    const newFileName = `mix-${mixId}-${Date.now()}${path.extname(file.originalname)}`;
+    const newPath = path.join(mixesUploadDir, newFileName);
+    fs.renameSync(file.path, newPath);
+
+    const fileUrl = `/uploads/mixes/${newFileName}`;
+
+    // Update mix with file URL and file size
+    const updatedMix = await storage.updateMusicMix(mixId, {
+      fileUrl,
+      fileSize: file.size
+    });
+
+    return res.status(200).json({
+      message: "Mix file uploaded successfully",
+      mix: updatedMix
+    });
+  }));
+
+  // POST /music/mixes/:id/upload-preview - Admin only: Upload preview file using multer
+  router.post("/music/mixes/:id/upload-preview", authenticateUser, authorizeAdmin, upload.single('file'), asyncHandler(async (req: Request, res: Response) => {
+    const mixId = parseInt(req.params.id);
+    const mix = await storage.getMusicMix(mixId);
+
+    if (!mix) {
+      return res.status(404).json({ message: "Music mix not found" });
+    }
+
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    // Move file to mixes directory
+    const newFileName = `preview-${mixId}-${Date.now()}${path.extname(file.originalname)}`;
+    const newPath = path.join(mixesUploadDir, newFileName);
+    fs.renameSync(file.path, newPath);
+
+    const previewUrl = `/uploads/mixes/${newFileName}`;
+
+    // Update mix with preview URL
+    const updatedMix = await storage.updateMusicMix(mixId, {
+      previewUrl
+    });
+
+    return res.status(200).json({
+      message: "Preview file uploaded successfully",
+      mix: updatedMix
+    });
+  }));
   
   // User profile picture upload (for regular users)
   router.post("/users/upload-avatar", upload.single('file'), async (req: Request, res: Response) => {
