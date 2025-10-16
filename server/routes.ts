@@ -152,6 +152,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
   
+  // Middleware to block direct access to music mix files
+  app.use('/uploads/mixes', (req, res) => {
+    return res.status(403).json({ 
+      message: 'Direct access to music files is not allowed. Use the streaming endpoints.' 
+    });
+  });
+
   // Serve uploaded files with comprehensive MIME type handling
   app.use('/uploads', express.static(uploadsDir, {
     maxAge: '1y',
@@ -162,6 +169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     setHeaders: (res, filePath) => {
       // Enhanced MIME type detection for all image and video formats
       const ext = path.extname(filePath).toLowerCase();
+      
       switch (ext) {
         case '.mp4':
           res.setHeader('Content-Type', 'video/mp4');
@@ -2011,7 +2019,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ? await storage.getAllMusicMixes() 
       : await storage.getPublishedMusicMixes();
     
-    return res.status(200).json(mixes);
+    // Don't expose direct file URLs - use streaming endpoints instead
+    const mixesResponse = mixes.map(mix => ({
+      ...mix,
+      fileUrl: null, // Never expose full file URL
+      previewUrl: mix.previewUrl ? `/api/music/mixes/${mix.id}/preview` : null, // Use streaming endpoint
+    }));
+    
+    return res.status(200).json(mixesResponse);
   }));
 
   // GET /music/mixes/:id - Get single mix with purchase status for user
@@ -2037,11 +2052,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Check if user is admin
     const isAdmin = user?.role === 'admin';
 
-    return res.status(200).json({
+    // Don't expose direct file URLs - use streaming endpoints instead
+    const mixResponse = {
       ...mix,
+      fileUrl: null, // Never expose full file URL
+      previewUrl: mix.previewUrl ? `/api/music/mixes/${mixId}/preview` : null, // Use streaming endpoint
       hasPurchased,
       isAdmin
-    });
+    };
+
+    return res.status(200).json(mixResponse);
   }));
 
   // POST /music/mixes - Admin only: Create new mix
@@ -2153,6 +2173,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       message: "Purchase confirmed",
       purchase
     });
+  }));
+
+  // GET /music/mixes/:id/preview - Stream preview (public, no auth required)
+  router.get("/music/mixes/:id/preview", asyncHandler(async (req: Request, res: Response) => {
+    const mixId = parseInt(req.params.id);
+    const mix = await storage.getMusicMix(mixId);
+
+    if (!mix || !mix.previewUrl) {
+      return res.status(404).json({ message: "Preview not found" });
+    }
+
+    // Normalize the preview URL by removing leading slashes
+    const normalizedPath = mix.previewUrl.replace(/^\/+/, '');
+    
+    // Construct the absolute file path
+    const filePath = path.resolve(process.cwd(), normalizedPath);
+    
+    // Security check: ensure the resolved path is within the uploads directory
+    const uploadsDir = path.resolve(process.cwd(), 'uploads');
+    if (!filePath.startsWith(uploadsDir)) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: "Preview file not found" });
+    }
+
+    // Set headers to prevent download and force streaming only
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+
+    // Stream the file
+    const stat = fs.statSync(filePath);
+    res.setHeader('Content-Length', stat.size);
+
+    const stream = fs.createReadStream(filePath);
+    stream.pipe(res);
   }));
 
   // GET /music/mixes/:id/download - Download mix (requires purchase or admin)

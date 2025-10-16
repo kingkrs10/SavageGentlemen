@@ -427,8 +427,10 @@ const MediaPage = () => {
                   <div className="w-full">
                     <audio 
                       controls 
+                      controlsList="nodownload noplaybackrate"
                       className="w-full h-8"
                       preload="metadata"
+                      onContextMenu={(e) => e.preventDefault()}
                       data-testid={`audio-preview-${mix.id}`}
                     >
                       <source src={mix.previewUrl} type="audio/mpeg" />
