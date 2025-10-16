@@ -27,12 +27,18 @@ Key architectural decisions and features include:
 - **Livestreaming**: Functional live page with current and upcoming streams, real-time WebSocket chat, and multi-platform video player support (YouTube, Twitch, custom streams).
 - **Product Shop**: Integration with Etsy for merchandise display, featuring authentic product listings, image proxy handling, and direct links to the official Etsy store.
 - **Music Mixes Marketplace** (October 2025): Monetized music mix platform with $1.99 pricing. Features include:
-  - Audio preview streaming before purchase
+  - Audio preview streaming before purchase with download prevention
   - Secure Stripe payment processing
   - Post-purchase download tracking
   - Admin upload interface with full/preview file support
   - Purchase history tracking per user
   - File storage in uploads/mixes/ directory
+  - **Download Security (October 2025)**: Multi-layer protection preventing unauthorized downloads:
+    - Frontend: Audio player with `controlsList="nodownload"` and context menu prevention
+    - Backend: Preview files served through protected streaming endpoint (`/api/music/mixes/:id/preview`)
+    - Direct file access to `/uploads/mixes/` blocked with 403 error
+    - API responses never expose direct file paths
+    - Path traversal protection with uploads directory boundary checks
 - **Profile Management**: User profile management including avatar uploads (with validation), and secure display of payment information.
 - **Admin Dashboard**: Centralized dashboard for user management (search, filter, statistics, deletion protection for main admin), comprehensive analytics (real-time metrics, charts, trending indicators), livestream controls, and music mix management.
 - **Image Handling**: Static file serving for uploaded images with proper MIME types, caching, and normalized URL handling. Additional images for events are stored as JSON arrays in the database.
