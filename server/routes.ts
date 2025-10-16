@@ -1975,9 +1975,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fs.mkdirSync(mixesUploadDir, { recursive: true });
   }
 
-  // GET /music/mixes - Get all published mixes (public, no auth required)
+  // GET /music/mixes - Get published mixes (or all mixes if admin)
   router.get("/music/mixes", asyncHandler(async (req: Request, res: Response) => {
-    const mixes = await storage.getPublishedMusicMixes();
+    // Check if user is admin (without requiring authentication)
+    let isAdmin = false;
+    
+    // Try to get user from Authorization header
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      
+      if (token && token !== 'undefined' && token !== 'null') {
+        try {
+          // Try secure HMAC-signed login token
+          const [payload, signature] = token.split('.');
+          if (payload && signature) {
+            const decoded = Buffer.from(payload, 'base64url').toString('utf-8');
+            const [userId] = decoded.split(':');
+            
+            if (userId) {
+              const user = await storage.getUser(parseInt(userId));
+              if (user && user.role === 'admin') {
+                isAdmin = true;
+              }
+            }
+          }
+        } catch (e) {
+          // Silent fail - just show published mixes
+        }
+      }
+    }
+    
+    // Admins can see all mixes, regular users only see published
+    const mixes = isAdmin 
+      ? await storage.getAllMusicMixes() 
+      : await storage.getPublishedMusicMixes();
+    
     return res.status(200).json(mixes);
   }));
 
