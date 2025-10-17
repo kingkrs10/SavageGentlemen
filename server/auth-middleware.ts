@@ -20,7 +20,10 @@ const TOKEN_SECRET = process.env.TOKEN_SECRET || 'CHANGE_THIS_IN_PRODUCTION_' + 
 const validateSecureLoginToken = async (token: string): Promise<User | null> => {
   try {
     const [payload, signature] = token.split('.');
-    if (!payload || !signature) return null;
+    if (!payload || !signature) {
+      console.log("Token format invalid - missing payload or signature");
+      return null;
+    }
 
     // Verify signature
     const expectedSignature = crypto
@@ -29,7 +32,7 @@ const validateSecureLoginToken = async (token: string): Promise<User | null> => 
       .digest('base64url');
     
     if (expectedSignature !== signature) {
-      console.log("Token signature verification failed");
+      console.log("Token signature verification failed - token was signed with different secret");
       return null;
     }
 
@@ -37,7 +40,10 @@ const validateSecureLoginToken = async (token: string): Promise<User | null> => 
     const decoded = Buffer.from(payload, 'base64url').toString('utf-8');
     const [userId, username, timestamp] = decoded.split(':');
     
-    if (!userId || !username || !timestamp) return null;
+    if (!userId || !username || !timestamp) {
+      console.log("Token payload invalid - missing userId, username, or timestamp");
+      return null;
+    }
 
     // Check token age (24 hour expiry)
     const tokenAge = Date.now() - parseInt(timestamp);
@@ -51,10 +57,11 @@ const validateSecureLoginToken = async (token: string): Promise<User | null> => 
     // Verify user exists and username matches
     const user = await storage.getUser(parseInt(userId));
     if (!user || user.username !== username) {
-      console.log("Token user validation failed");
+      console.log("Token user validation failed - user not found or username mismatch");
       return null;
     }
 
+    console.log("✓ Secure login token validated successfully for user:", user.id, user.username);
     return user;
   } catch (error) {
     console.error("Secure token validation error:", error);
