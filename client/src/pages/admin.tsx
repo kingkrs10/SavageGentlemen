@@ -160,9 +160,11 @@ import {
   Radio,
   MoreHorizontal,
   Video,
-  Music
+  Music,
+  ScanLine
 } from "lucide-react";
 import LivestreamManager from "@/components/admin/LivestreamManager";
+import TicketScanner from "@/components/admin/TicketScanner";
 
 export default function AdminPage() {
   const { toast } = useToast();
@@ -1186,7 +1188,7 @@ export default function AdminPage() {
         <Separator />
       
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid grid-cols-7 mb-8">
+          <TabsList className="grid grid-cols-8 mb-8">
           <TabsTrigger value="products" className="flex items-center gap-2">
             <PackageOpen className="h-4 w-4" /> Products
           </TabsTrigger>
@@ -1207,6 +1209,9 @@ export default function AdminPage() {
           </TabsTrigger>
           <TabsTrigger value="musicmixes" className="flex items-center gap-2">
             <Music className="h-4 w-4" /> Music Mixes
+          </TabsTrigger>
+          <TabsTrigger value="scanner" className="flex items-center gap-2">
+            <ScanLine className="h-4 w-4" /> Scanner
           </TabsTrigger>
         </TabsList>
         
@@ -2672,6 +2677,19 @@ export default function AdminPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+        </TabsContent>
+
+        {/* Scanner Tab */}
+        <TabsContent value="scanner" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Ticket Scanner</CardTitle>
+              <CardDescription>Scan and validate event tickets</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TicketScanner />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
       </div>
