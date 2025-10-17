@@ -202,6 +202,8 @@ export default function AdminPage() {
   const [currentLivestream, setCurrentLivestream] = useState<Livestream | null>(null);
   const [musicMixDialogOpen, setMusicMixDialogOpen] = useState(false);
   const [currentMusicMix, setCurrentMusicMix] = useState<MusicMix | null>(null);
+  const [artworkUploadMixId, setArtworkUploadMixId] = useState<number | null>(null);
+  const [artworkFile, setArtworkFile] = useState<File | null>(null);
   
   // User form state
   const [userForm, setUserForm] = useState({
@@ -1126,6 +1128,37 @@ export default function AdminPage() {
       toast({
         title: "Error",
         description: "Failed to delete mix",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUploadArtworkForMix = async () => {
+    if (!artworkUploadMixId || !artworkFile) {
+      toast({
+        title: "Missing Information",
+        description: "Please select an artwork file",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await handleUploadArtwork(artworkUploadMixId, artworkFile);
+
+      toast({
+        title: "Artwork Uploaded",
+        description: "Artwork has been added to the music mix",
+      });
+
+      setArtworkUploadMixId(null);
+      setArtworkFile(null);
+      queryClient.invalidateQueries({queryKey: ["/api/music/mixes"]});
+    } catch (error) {
+      console.error('Error uploading artwork:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload artwork",
         variant: "destructive",
       });
     }
@@ -2422,6 +2455,18 @@ export default function AdminPage() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
+                              {!mix.artworkUrl && (
+                                <Button 
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setArtworkUploadMixId(mix.id);
+                                  }}
+                                  data-testid={`button-add-artwork-${mix.id}`}
+                                >
+                                  Add Artwork
+                                </Button>
+                              )}
                               <Button 
                                 variant={mix.isPublished ? "outline" : "default"}
                                 size="sm"
@@ -2569,6 +2614,60 @@ export default function AdminPage() {
                   data-testid="button-save-mix"
                 >
                   Create Mix
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Artwork Upload Dialog */}
+          <Dialog open={artworkUploadMixId !== null} onOpenChange={(open) => {
+            if (!open) {
+              setArtworkUploadMixId(null);
+              setArtworkFile(null);
+            }
+          }}>
+            <DialogContent className="sm:max-w-[400px] bg-[#141e2e] text-white">
+              <DialogHeader>
+                <DialogTitle className="text-white text-xl">Add Artwork</DialogTitle>
+                <DialogDescription className="text-slate-400">
+                  Upload artwork image for this music mix.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="artwork-upload" className="text-white">Artwork Image</Label>
+                  <Input
+                    id="artwork-upload"
+                    type="file"
+                    accept="image/*"
+                    className="bg-slate-700 border border-slate-600 text-white"
+                    onChange={(e) => setArtworkFile(e.target.files?.[0] || null)}
+                    data-testid="input-artwork-upload"
+                  />
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={() => {
+                    setArtworkUploadMixId(null);
+                    setArtworkFile(null);
+                  }}
+                  data-testid="button-cancel-artwork"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="bg-teal-500 hover:bg-teal-600 text-white"
+                  onClick={handleUploadArtworkForMix}
+                  disabled={!artworkFile}
+                  data-testid="button-upload-artwork"
+                >
+                  Upload Artwork
                 </Button>
               </DialogFooter>
             </DialogContent>
