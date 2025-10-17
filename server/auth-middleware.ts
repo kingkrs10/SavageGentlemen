@@ -124,11 +124,11 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
   
   // SECURITY: Check if this is a payment-related or sensitive route requiring strict authentication
   const isPaymentRoute = req.path.includes('/payment') || req.path.includes('create-intent') || req.path.includes('paypal');
-  const isTicketRoute = req.path.includes('/ticket');
+  const isTicketRoute = req.path.includes('/ticket') && !req.path.startsWith('/api/admin');
   const isAdminRoute = req.path.startsWith('/api/admin') || req.path === '/admin' || req.path.startsWith('/admin/');
   
-  // For payment and ticket routes, require strict Firebase authentication
-  if ((isPaymentRoute || isTicketRoute) && !user) {
+  // For payment and ticket routes (excluding admin routes), require strict authentication
+  if ((isPaymentRoute || isTicketRoute) && !user && !isAdminRoute) {
     console.log("SECURITY: Strict authentication required for sensitive route:", req.path);
     return res.status(401).json({ 
       message: "Secure authentication required. Please sign in with a valid account.",
