@@ -1073,7 +1073,7 @@ export default function AdminPage() {
       }
     }
 
-    const response = await fetch(`/api/upload`, {
+    const response = await fetch(`/api/admin/uploads`, {
       method: 'POST',
       headers,
       body: formData,
@@ -1086,7 +1086,7 @@ export default function AdminPage() {
 
     const result = await response.json();
     
-    await apiRequest('PUT', `/api/music/mixes/${mixId}`, { artworkUrl: result.url });
+    await apiRequest('PUT', `/api/music/mixes/${mixId}`, { artworkUrl: result.file.url });
   };
 
   const handleToggleMixPublished = async (mix: MusicMix) => {
