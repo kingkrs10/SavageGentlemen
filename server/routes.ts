@@ -2200,8 +2200,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Preview file not found" });
     }
 
+    // Detect MIME type based on file extension
+    const ext = path.extname(filePath).toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      '.mp3': 'audio/mpeg',
+      '.mp4': 'video/mp4',
+      '.m4a': 'audio/mp4',
+      '.m4v': 'video/mp4',
+      '.wav': 'audio/wav',
+      '.webm': 'video/webm',
+      '.ogg': 'audio/ogg',
+      '.oga': 'audio/ogg',
+      '.ogv': 'video/ogg',
+    };
+    const contentType = mimeTypes[ext] || 'application/octet-stream';
+
     // Set headers to prevent download and force streaming only
-    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', 'inline');
     res.setHeader('Accept-Ranges', 'bytes');
     res.setHeader('Cache-Control', 'public, max-age=3600');

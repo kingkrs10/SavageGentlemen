@@ -422,20 +422,20 @@ const MediaPage = () => {
                   )}
                 </div>
 
-                {/* Audio Preview Player */}
+                {/* Media Preview Player (supports both audio and video) */}
                 {mix.previewUrl && (
                   <div className="w-full">
-                    <audio 
+                    <video 
                       controls 
                       controlsList="nodownload noplaybackrate"
-                      className="w-full h-8"
+                      className="w-full max-h-48 bg-black rounded"
                       preload="metadata"
                       onContextMenu={(e) => e.preventDefault()}
-                      data-testid={`audio-preview-${mix.id}`}
+                      data-testid={`media-preview-${mix.id}`}
                     >
-                      <source src={mix.previewUrl} type="audio/mpeg" />
-                      Your browser does not support audio playback.
-                    </audio>
+                      <source src={mix.previewUrl} />
+                      Your browser does not support media playback.
+                    </video>
                   </div>
                 )}
 
