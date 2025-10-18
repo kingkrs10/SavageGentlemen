@@ -265,12 +265,64 @@ export default function AdminPage() {
     if (storedUser) {
       try {
         const user = JSON.parse(storedUser);
-        setCurrentUser(user);
+        
+        // Extract user data from nested structure
+        const userData = user?.data?.data || user?.data || user;
+        setCurrentUser(userData);
+        
+        // Check if user has a token and validate its age
+        if (userData?.token) {
+          try {
+            // Decode the HMAC token to check its timestamp
+            // Token format: base64url(userId:username:timestamp).signature
+            const [payload] = userData.token.split('.');
+            if (payload) {
+              // Convert base64url to base64: replace - with +, _ with /, and add padding
+              let base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+              const padding = base64.length % 4;
+              if (padding) {
+                base64 += '='.repeat(4 - padding);
+              }
+              
+              // Decode the payload (format: userId:username:timestamp)
+              const decoded = atob(base64);
+              const parts = decoded.split(':');
+              
+              if (parts.length === 3) {
+                const timestamp = parseInt(parts[2]);
+                if (!isNaN(timestamp)) {
+                  const tokenAge = Date.now() - timestamp;
+                  const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+                  
+                  // If token is expired (>24 hours)
+                  if (tokenAge >= maxAge) {
+                    toast({
+                      title: "Session Expired",
+                      description: "Your session has expired. Please log out and log back in to continue using admin features.",
+                      variant: "destructive",
+                    });
+                  }
+                  // If token will expire soon (<2 hours remaining)
+                  else if (tokenAge >= maxAge - (2 * 60 * 60 * 1000)) {
+                    const hoursRemaining = ((maxAge - tokenAge) / (60 * 60 * 1000)).toFixed(1);
+                    toast({
+                      title: "Session Expiring Soon",
+                      description: `Your session will expire in ${hoursRemaining} hours. Please save your work and re-login soon.`,
+                      variant: "default",
+                    });
+                  }
+                }
+              }
+            }
+          } catch (tokenError) {
+            console.error("Error checking token age:", tokenError);
+          }
+        }
         
         // Create a mock admin user for development
-        if (!user.role || user.role !== "admin") {
+        if (!userData.role || userData.role !== "admin") {
           const adminUser = {
-            ...user,
+            ...userData,
             role: "admin"
           };
           setCurrentUser(adminUser);
@@ -971,11 +1023,20 @@ export default function AdminPage() {
       });
 
       queryClient.invalidateQueries({queryKey: ["/api/music/mixes"]});
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create music mix:", error);
+      
+      // Check if it's an authentication error
+      const isAuthError = error?.message?.includes('401') || 
+                         error?.message?.includes('403') || 
+                         error?.message?.includes('authentication') ||
+                         error?.message?.includes('Admin access');
+      
       toast({
         title: "Error",
-        description: "Failed to create music mix. Please try again.",
+        description: isAuthError 
+          ? "Your session has expired. Please log out and log back in to continue." 
+          : "Failed to create music mix. Please try again.",
         variant: "destructive"
       });
     }
