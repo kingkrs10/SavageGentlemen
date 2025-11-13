@@ -490,6 +490,111 @@ export class PassportService {
     // Filter out null entries (missing profiles)
     return attendees.filter((a): a is NonNullable<typeof a> => a !== null);
   }
+
+  /**
+   * Get all available tiers
+   */
+  async getAllTiers(): Promise<PassportTier[]> {
+    const tiers = await storage.getAllPassportTiers();
+    return tiers;
+  }
+
+  /**
+   * Get all available missions
+   */
+  async getAllMissions(): Promise<PassportMission[]> {
+    const missions = await storage.getAllPassportMissions();
+    return missions;
+  }
+
+  /**
+   * Get leaderboard - top passport holders by points
+   */
+  async getLeaderboard(limit: number = 50): Promise<Array<{
+    profile: PassportProfile;
+    rank: number;
+  }>> {
+    const allProfiles = await storage.getAllPassportProfiles();
+    
+    // Sort by totalPoints descending
+    const sorted = allProfiles
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+      .slice(0, limit);
+    
+    // Add rank numbers
+    return sorted.map((profile, index) => ({
+      profile,
+      rank: index + 1
+    }));
+  }
+
+  /**
+   * Get detailed user statistics
+   */
+  async getUserStats(userId: number): Promise<{
+    profile: PassportProfile | null;
+    totalStamps: number;
+    stampsByCountry: Record<string, number>;
+    stampsByCircuit: Record<string, number>;
+    recentStamps: PassportStamp[];
+    availableRewards: PassportReward[];
+    nextTier: PassportTier | null;
+    pointsToNextTier: number;
+  }> {
+    const profile = await storage.getPassportProfile(userId);
+    if (!profile) {
+      return {
+        profile: null,
+        totalStamps: 0,
+        stampsByCountry: {},
+        stampsByCircuit: {},
+        recentStamps: [],
+        availableRewards: [],
+        nextTier: null,
+        pointsToNextTier: 0
+      };
+    }
+
+    const stamps = await storage.getPassportStampsByUserId(userId);
+    const rewards = await storage.getPassportRewardsByUserId(userId);
+    const availableRewards = rewards.filter(r => r.status === 'AVAILABLE');
+
+    // Group stamps by country
+    const stampsByCountry: Record<string, number> = {};
+    stamps.forEach(stamp => {
+      const country = stamp.countryCode || 'UNKNOWN';
+      stampsByCountry[country] = (stampsByCountry[country] || 0) + 1;
+    });
+
+    // Group stamps by circuit
+    const stampsByCircuit: Record<string, number> = {};
+    stamps.forEach(stamp => {
+      const circuit = stamp.carnivalCircuit || 'UNKNOWN';
+      stampsByCircuit[circuit] = (stampsByCircuit[circuit] || 0) + 1;
+    });
+
+    // Get recent stamps (last 10)
+    const recentStamps = stamps
+      .sort((a, b) => new Date(b.earnedAt).getTime() - new Date(a.earnedAt).getTime())
+      .slice(0, 10);
+
+    // Find next tier
+    const tiers = await storage.getAllPassportTiers();
+    const tiersSorted = tiers.sort((a, b) => a.pointsRequired - b.pointsRequired);
+    const nextTier = tiersSorted.find(t => t.pointsRequired > profile.totalPoints) || null;
+    const pointsToNextTier = nextTier ? nextTier.pointsRequired - profile.totalPoints : 0;
+
+    return {
+      profile,
+      totalStamps: stamps.length,
+      stampsByCountry,
+      stampsByCircuit,
+      recentStamps,
+      availableRewards,
+      nextTier,
+      pointsToNextTier
+    };
+  }
 }
 
 export const passportService = new PassportService();
