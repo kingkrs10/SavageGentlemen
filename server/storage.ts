@@ -383,6 +383,7 @@ export interface IStorage {
   // Passport Stamp operations
   getPassportStamp(id: number): Promise<PassportStamp | undefined>;
   getPassportStampsByUserId(userId: number, limit?: number): Promise<PassportStamp[]>;
+  getPassportStampsByEventId(eventId: number): Promise<PassportStamp[]>;
   getPassportStampByUserAndEvent(userId: number, eventId: number): Promise<PassportStamp | undefined>;
   createPassportStamp(stamp: InsertPassportStamp): Promise<PassportStamp>;
   getStampCountByCountry(userId: number, countryCode: string): Promise<number>;
@@ -4767,6 +4768,14 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await query;
+  }
+
+  async getPassportStampsByEventId(eventId: number): Promise<PassportStamp[]> {
+    return await db
+      .select()
+      .from(passportStamps)
+      .where(eq(passportStamps.eventId, eventId))
+      .orderBy(desc(passportStamps.stampedAt));
   }
 
   async getPassportStampByUserAndEvent(userId: number, eventId: number): Promise<PassportStamp | undefined> {
