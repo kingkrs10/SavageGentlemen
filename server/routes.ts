@@ -149,6 +149,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Warning: Ticket database sync failed on startup:", error);
     }
   })();
+
+  // Seed passport tiers on startup
+  (async () => {
+    try {
+      const { seedPassportTiers } = await import("./seed-passport-tiers");
+      await seedPassportTiers();
+    } catch (error) {
+      console.error("Warning: Passport tier seeding failed on startup:", error);
+    }
+  })();
   
   // Create uploads directory for media files if it doesn't exist
   const uploadsDir = path.join(process.cwd(), 'uploads');
