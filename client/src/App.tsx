@@ -41,6 +41,7 @@ const EmailManagement = lazy(() => import("@/pages/email-management"));
 const Profile = lazy(() => import("@/pages/profile"));
 const Settings = lazy(() => import("@/pages/settings"));
 const AiAssistant = lazy(() => import("@/pages/ai-assistant"));
+const Passport = lazy(() => import("@/pages/passport"));
 
 function Router() {
   const [location] = useLocation();
@@ -84,6 +85,7 @@ function Router() {
         <Route path="/profile" component={Profile} />
         <Route path="/settings" component={Settings} />
         <Route path="/ai-assistant" component={AiAssistant} />
+        <Route path="/passport" component={Passport} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>

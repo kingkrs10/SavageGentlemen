@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, boolean, timestamp, jsonb, uuid, date, numeric, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -1658,12 +1659,22 @@ export const passportStamps = pgTable("passport_stamps", {
   };
 });
 
+// Tier Perks Type
+export interface TierPerks {
+  description: string;
+  perks: string[];
+  discounts: string[];
+  earlyAccess: boolean;
+  earlyAccessHours?: number;
+  vipPerks?: string[];
+}
+
 // Passport Tiers - Configurable tier levels
 export const passportTiers = pgTable("passport_tiers", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(), // BRONZE, SILVER, GOLD, ELITE
   minPoints: integer("min_points").notNull(), // Minimum points required for this tier
-  perks: jsonb("perks").notNull().default('{}'), // JSON object with tier perks
+  perks: jsonb("perks").$type<TierPerks>().notNull().default(sql`'{}'::jsonb`), // JSON object with tier perks
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => {
@@ -1672,12 +1683,21 @@ export const passportTiers = pgTable("passport_tiers", {
   };
 });
 
+// Reward Metadata Type
+export interface RewardMetadata {
+  title: string;
+  description: string;
+  tierRequired: string; // BRONZE, SILVER, GOLD, ELITE
+  pointsCost: number | null;
+  isActive: boolean;
+}
+
 // Passport Rewards - Rewards unlocked by users
 export const passportRewards = pgTable("passport_rewards", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   rewardType: text("reward_type").notNull(), // MERCH_DISCOUNT, VIP_LINE, FREE_DRINK, EARLY_ACCESS
-  metadata: jsonb("metadata").notNull().default('{}'), // Additional reward data
+  metadata: jsonb("metadata").$type<RewardMetadata>().notNull().default(sql`'{}'::jsonb`), // Additional reward data
   status: text("status").notNull().default("AVAILABLE"), // AVAILABLE, REDEEMED, EXPIRED
   createdAt: timestamp("created_at").defaultNow(),
   expiresAt: timestamp("expires_at"),
