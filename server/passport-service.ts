@@ -509,9 +509,14 @@ export class PassportService {
 
   /**
    * Get leaderboard - top passport holders by points
+   * Returns public-safe profile data (no sensitive fields)
    */
   async getLeaderboard(limit: number = 50): Promise<Array<{
-    profile: PassportProfile;
+    handle: string;
+    currentTier: string;
+    totalPoints: number;
+    totalEvents: number;
+    totalCountries: number;
     rank: number;
   }>> {
     const allProfiles = await storage.getAllPassportProfiles();
@@ -521,9 +526,13 @@ export class PassportService {
       .sort((a, b) => b.totalPoints - a.totalPoints)
       .slice(0, limit);
     
-    // Add rank numbers
+    // Return only public-safe fields
     return sorted.map((profile, index) => ({
-      profile,
+      handle: profile.handle,
+      currentTier: profile.currentTier,
+      totalPoints: profile.totalPoints,
+      totalEvents: profile.totalEvents,
+      totalCountries: profile.totalCountries,
       rank: index + 1
     }));
   }
