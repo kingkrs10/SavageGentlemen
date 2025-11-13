@@ -102,7 +102,23 @@ import {
   mediaAccessLogs,
   // Music Mix tables
   musicMixes,
-  musicMixPurchases
+  musicMixPurchases,
+  // Passport tables
+  passportProfiles,
+  passportStamps,
+  passportTiers,
+  passportRewards,
+  passportMissions,
+  PassportProfile,
+  InsertPassportProfile,
+  PassportStamp,
+  InsertPassportStamp,
+  PassportTier,
+  InsertPassportTier,
+  PassportReward,
+  InsertPassportReward,
+  PassportMission,
+  InsertPassportMission
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, sql, lte, lt, isNotNull, not } from "drizzle-orm";
@@ -356,6 +372,40 @@ export interface IStorage {
   deleteSponsoredContent(id: number): Promise<void>;
   incrementSponsoredContentClicks(id: number): Promise<void>;
   incrementSponsoredContentViews(id: number): Promise<void>;
+  
+  // Passport Profile operations
+  getPassportProfile(userId: number): Promise<PassportProfile | undefined>;
+  getPassportProfileByHandle(handle: string): Promise<PassportProfile | undefined>;
+  createPassportProfile(profile: InsertPassportProfile): Promise<PassportProfile>;
+  updatePassportProfile(userId: number, data: Partial<InsertPassportProfile>): Promise<PassportProfile | undefined>;
+  addPointsToProfile(userId: number, points: number): Promise<PassportProfile | undefined>;
+  
+  // Passport Stamp operations
+  getPassportStamp(id: number): Promise<PassportStamp | undefined>;
+  getPassportStampsByUserId(userId: number, limit?: number): Promise<PassportStamp[]>;
+  getPassportStampByUserAndEvent(userId: number, eventId: number): Promise<PassportStamp | undefined>;
+  createPassportStamp(stamp: InsertPassportStamp): Promise<PassportStamp>;
+  getStampCountByCountry(userId: number, countryCode: string): Promise<number>;
+  getStampCountByCarnival(userId: number, carnivalCircuit: string): Promise<number>;
+  
+  // Passport Tier operations
+  getPassportTier(name: string): Promise<PassportTier | undefined>;
+  getAllPassportTiers(): Promise<PassportTier[]>;
+  createPassportTier(tier: InsertPassportTier): Promise<PassportTier>;
+  updatePassportTier(name: string, data: Partial<InsertPassportTier>): Promise<PassportTier | undefined>;
+  
+  // Passport Reward operations
+  getPassportReward(id: number): Promise<PassportReward | undefined>;
+  getPassportRewardsByUserId(userId: number, status?: string): Promise<PassportReward[]>;
+  createPassportReward(reward: InsertPassportReward): Promise<PassportReward>;
+  updatePassportReward(id: number, data: Partial<InsertPassportReward>): Promise<PassportReward | undefined>;
+  redeemPassportReward(id: number): Promise<PassportReward | undefined>;
+  
+  // Passport Mission operations
+  getPassportMission(id: number): Promise<PassportMission | undefined>;
+  getAllPassportMissions(isActive?: boolean): Promise<PassportMission[]>;
+  createPassportMission(mission: InsertPassportMission): Promise<PassportMission>;
+  updatePassportMission(id: number, data: Partial<InsertPassportMission>): Promise<PassportMission | undefined>;
 }
 
 // In-memory storage implementation
@@ -4641,6 +4691,258 @@ export class DatabaseStorage implements IStorage {
       .update(musicMixPurchases)
       .set({ downloadCount: sql`${musicMixPurchases.downloadCount} + 1` })
       .where(eq(musicMixPurchases.id, purchaseId));
+  }
+
+  // Passport Profile operations
+  async getPassportProfile(userId: number): Promise<PassportProfile | undefined> {
+    const [profile] = await db
+      .select()
+      .from(passportProfiles)
+      .where(eq(passportProfiles.userId, userId));
+    return profile;
+  }
+
+  async getPassportProfileByHandle(handle: string): Promise<PassportProfile | undefined> {
+    const [profile] = await db
+      .select()
+      .from(passportProfiles)
+      .where(eq(passportProfiles.handle, handle));
+    return profile;
+  }
+
+  async createPassportProfile(profileData: InsertPassportProfile): Promise<PassportProfile> {
+    const [profile] = await db
+      .insert(passportProfiles)
+      .values({
+        ...profileData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return profile;
+  }
+
+  async updatePassportProfile(userId: number, data: Partial<InsertPassportProfile>): Promise<PassportProfile | undefined> {
+    const [profile] = await db
+      .update(passportProfiles)
+      .set({ 
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(passportProfiles.userId, userId))
+      .returning();
+    return profile;
+  }
+
+  async addPointsToProfile(userId: number, points: number): Promise<PassportProfile | undefined> {
+    const [profile] = await db
+      .update(passportProfiles)
+      .set({ 
+        totalPoints: sql`${passportProfiles.totalPoints} + ${points}`,
+        updatedAt: new Date()
+      })
+      .where(eq(passportProfiles.userId, userId))
+      .returning();
+    return profile;
+  }
+
+  // Passport Stamp operations
+  async getPassportStamp(id: number): Promise<PassportStamp | undefined> {
+    const [stamp] = await db
+      .select()
+      .from(passportStamps)
+      .where(eq(passportStamps.id, id));
+    return stamp;
+  }
+
+  async getPassportStampsByUserId(userId: number, limit?: number): Promise<PassportStamp[]> {
+    let query = db
+      .select()
+      .from(passportStamps)
+      .where(eq(passportStamps.userId, userId))
+      .orderBy(desc(passportStamps.stampedAt));
+    
+    if (limit) {
+      query = query.limit(limit) as any;
+    }
+    
+    return await query;
+  }
+
+  async getPassportStampByUserAndEvent(userId: number, eventId: number): Promise<PassportStamp | undefined> {
+    const [stamp] = await db
+      .select()
+      .from(passportStamps)
+      .where(and(
+        eq(passportStamps.userId, userId),
+        eq(passportStamps.eventId, eventId)
+      ));
+    return stamp;
+  }
+
+  async createPassportStamp(stampData: InsertPassportStamp): Promise<PassportStamp> {
+    const [stamp] = await db
+      .insert(passportStamps)
+      .values({
+        ...stampData,
+        stampedAt: new Date()
+      })
+      .returning();
+    return stamp;
+  }
+
+  async getStampCountByCountry(userId: number, countryCode: string): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(passportStamps)
+      .where(and(
+        eq(passportStamps.userId, userId),
+        eq(passportStamps.countryCode, countryCode)
+      ));
+    return result[0]?.count || 0;
+  }
+
+  async getStampCountByCarnival(userId: number, carnivalCircuit: string): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(passportStamps)
+      .where(and(
+        eq(passportStamps.userId, userId),
+        eq(passportStamps.carnivalCircuit, carnivalCircuit)
+      ));
+    return result[0]?.count || 0;
+  }
+
+  // Passport Tier operations
+  async getPassportTier(name: string): Promise<PassportTier | undefined> {
+    const [tier] = await db
+      .select()
+      .from(passportTiers)
+      .where(eq(passportTiers.name, name));
+    return tier;
+  }
+
+  async getAllPassportTiers(): Promise<PassportTier[]> {
+    return await db
+      .select()
+      .from(passportTiers)
+      .orderBy(passportTiers.minPoints);
+  }
+
+  async createPassportTier(tierData: InsertPassportTier): Promise<PassportTier> {
+    const [tier] = await db
+      .insert(passportTiers)
+      .values(tierData)
+      .returning();
+    return tier;
+  }
+
+  async updatePassportTier(name: string, data: Partial<InsertPassportTier>): Promise<PassportTier | undefined> {
+    const [tier] = await db
+      .update(passportTiers)
+      .set(data)
+      .where(eq(passportTiers.name, name))
+      .returning();
+    return tier;
+  }
+
+  // Passport Reward operations
+  async getPassportReward(id: number): Promise<PassportReward | undefined> {
+    const [reward] = await db
+      .select()
+      .from(passportRewards)
+      .where(eq(passportRewards.id, id));
+    return reward;
+  }
+
+  async getPassportRewardsByUserId(userId: number, status?: string): Promise<PassportReward[]> {
+    let query = db
+      .select()
+      .from(passportRewards)
+      .where(eq(passportRewards.userId, userId));
+    
+    if (status) {
+      query = query.where(eq(passportRewards.status, status)) as any;
+    }
+    
+    return await query.orderBy(desc(passportRewards.unlockedAt));
+  }
+
+  async createPassportReward(rewardData: InsertPassportReward): Promise<PassportReward> {
+    const [reward] = await db
+      .insert(passportRewards)
+      .values({
+        ...rewardData,
+        unlockedAt: new Date()
+      })
+      .returning();
+    return reward;
+  }
+
+  async updatePassportReward(id: number, data: Partial<InsertPassportReward>): Promise<PassportReward | undefined> {
+    const [reward] = await db
+      .update(passportRewards)
+      .set(data)
+      .where(eq(passportRewards.id, id))
+      .returning();
+    return reward;
+  }
+
+  async redeemPassportReward(id: number): Promise<PassportReward | undefined> {
+    const [reward] = await db
+      .update(passportRewards)
+      .set({ 
+        status: 'REDEEMED',
+        redeemedAt: new Date()
+      })
+      .where(eq(passportRewards.id, id))
+      .returning();
+    return reward;
+  }
+
+  // Passport Mission operations
+  async getPassportMission(id: number): Promise<PassportMission | undefined> {
+    const [mission] = await db
+      .select()
+      .from(passportMissions)
+      .where(eq(passportMissions.id, id));
+    return mission;
+  }
+
+  async getAllPassportMissions(isActive?: boolean): Promise<PassportMission[]> {
+    let query = db
+      .select()
+      .from(passportMissions);
+    
+    if (isActive !== undefined) {
+      query = query.where(eq(passportMissions.isActive, isActive)) as any;
+    }
+    
+    return await query.orderBy(desc(passportMissions.createdAt));
+  }
+
+  async createPassportMission(missionData: InsertPassportMission): Promise<PassportMission> {
+    const [mission] = await db
+      .insert(passportMissions)
+      .values({
+        ...missionData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return mission;
+  }
+
+  async updatePassportMission(id: number, data: Partial<InsertPassportMission>): Promise<PassportMission | undefined> {
+    const [mission] = await db
+      .update(passportMissions)
+      .set({ 
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(passportMissions.id, id))
+      .returning();
+    return mission;
   }
 }
 
