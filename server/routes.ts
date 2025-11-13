@@ -2970,6 +2970,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use the storage layer scanTicket method with the user's ID
       const scanResult = await storage.scanTicket(ticketCode, user.id);
       
+      // If scan was successful and this is a first-time scan, award Soca Passport stamp
+      if (scanResult.valid && scanResult.alreadyScanned === false && scanResult.ticketInfo) {
+        try {
+          const { PassportService } = await import('./passport-service');
+          
+          // Get ticket purchase to retrieve userId and eventId
+          const ticketPurchase = await storage.getTicketPurchaseByIds(
+            scanResult.ticketInfo.ticketId,
+            scanResult.ticketInfo.orderId
+          );
+          
+          if (ticketPurchase && ticketPurchase.userId) {
+            // Get event to check if passport is enabled
+            const event = await storage.getEvent(ticketPurchase.eventId);
+            
+            if (event && event.isSocaPassportEnabled) {
+              console.log(`🎫 Awarding Soca Passport stamp for user ${ticketPurchase.userId} at event ${event.id}`);
+              
+              const passportService = new PassportService();
+              const stampResult = await passportService.awardStamp(
+                ticketPurchase.userId,
+                event.id,
+                event
+              );
+              
+              console.log(`✅ Successfully awarded passport stamp to user ${ticketPurchase.userId}:`, {
+                stampId: stampResult.stamp.id,
+                pointsEarned: stampResult.pointsAwarded,
+                newTotalPoints: stampResult.newTotalPoints,
+                tierChanged: stampResult.tierChanged,
+                newTier: stampResult.newTier
+              });
+            }
+          }
+        } catch (passportError: any) {
+          // Log the error but don't fail the scan
+          // This includes duplicate stamp attempts which are expected for re-scans
+          if (passportError?.message?.includes('already awarded')) {
+            console.log(`ℹ️  Passport stamp already exists for this scan (expected for re-scans)`);
+          } else {
+            console.error('⚠️  Error awarding passport stamp:', passportError);
+          }
+        }
+      }
+      
       return res.status(200).json(scanResult);
     } catch (err) {
       console.error("Error scanning ticket:", err);
