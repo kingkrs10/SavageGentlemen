@@ -1,0 +1,149 @@
+You are building **Soca Passport 1.0** as a new loyalty layer on top of an existing Next.js / React + Node/Express (or similar) stack for savgent.com.
+
+### HIGH-LEVEL GOAL
+
+Add a **Soca Passport** system that:
+- Tracks event attendance (via existing ticket QR scans)
+- Awards points + “stamps” per event
+- Calculates user tiers (Bronze / Silver / Gold / Elite)
+- Shows a new `/passport` page and a “Passport” tab in the user profile
+- Adds a small “Soca Passport Enabled” badge + points info on event pages
+- Adds a basic promoter view inside the admin dashboard
+
+Assume:
+- There is already a `users` table and `events` table.
+- There is already a ticketing + QR scan system with a `ticket_scans` table or equivalent.
+
+---
+
+## 1. DATA MODEL / DATABASE CHANGES
+
+### 1.1 Existing tables to extend
+
+**Table: `events`**
+Add:
+- `is_soca_passport_enabled` BOOLEAN NOT NULL DEFAULT FALSE
+- `stamp_points_default` INT NOT NULL DEFAULT 50
+- `country_code` VARCHAR(4) NULL        -- e.g. "TT", "US", "CA", "GB"
+- `carnival_circuit` VARCHAR(120) NULL  -- e.g. "Trinidad Carnival", "Miami Carnival"
+
+**Table: `ticket_scans`** (or equivalent)
+Add:
+- `passport_stamp_id` UUID NULL         -- FK → `passport_stamps.id` (for auditing)
+
+---
+
+### 1.2 New tables
+
+**Table: `passport_profiles`**
+
+Represents the soca passport identity for a user.
+
+- `id` UUID PK
+- `user_id` UUID FK → users(id)
+- `handle` VARCHAR(50) UNIQUE NOT NULL      -- public display name
+- `total_points` INT NOT NULL DEFAULT 0
+- `current_tier` VARCHAR(20) NOT NULL DEFAULT 'BRONZE'
+- `total_events` INT NOT NULL DEFAULT 0
+- `total_countries` INT NOT NULL DEFAULT 0
+- `created_at` TIMESTAMP NOT NULL DEFAULT now()
+- `updated_at` TIMESTAMP NOT NULL DEFAULT now()
+
+---
+
+**Table: `passport_stamps`**
+
+One row per event “stamp” earned.
+
+- `id` UUID PK
+- `user_id` UUID FK → users(id)
+- `event_id` UUID FK → events(id)
+- `country_code` VARCHAR(4) NOT NULL
+- `carnival_circuit` VARCHAR(120) NULL
+- `points_earned` INT NOT NULL
+- `source` VARCHAR(30) NOT NULL DEFAULT 'TICKET_SCAN'
+    -- allowed values: 'TICKET_SCAN' | 'MISSION' | 'BONUS'
+- `created_at` TIMESTAMP NOT NULL DEFAULT now()
+
+Index: (`user_id`, `event_id`) UNIQUE to prevent duplicate stamps for same event.
+
+---
+
+**Table: `passport_tiers`**
+
+Configurable tiers + thresholds.
+
+- `id` UUID PK
+- `name` VARCHAR(20) UNIQUE NOT NULL       -- 'BRONZE', 'SILVER', 'GOLD', 'ELITE'
+- `min_points` INT NOT NULL               -- inclusive lower bound
+- `perks_json` JSONB NOT NULL DEFAULT '{}'::jsonb
+    -- Example: { "vip_line": true, "discount_percent": 10 }
+
+Seed data (example):
+
+- BRONZE: min_points = 0
+- SILVER: min_points = 300
+- GOLD:   min_points = 800
+- ELITE:  min_points = 1500
+
+---
+
+**Table: `passport_rewards`**
+
+Represents rewards unlocked by a user.
+
+- `id` UUID PK
+- `user_id` UUID FK → users(id)
+- `reward_type` VARCHAR(40) NOT NULL
+    -- e.g. 'MERCH_DISCOUNT', 'VIP_LINE', 'FREE_DRINK', 'EARLY_ACCESS'
+- `metadata_json` JSONB NOT NULL DEFAULT '{}'::jsonb
+- `status` VARCHAR(20) NOT NULL DEFAULT 'AVAILABLE'
+    -- 'AVAILABLE' | 'REDEEMED' | 'EXPIRED'
+- `created_at` TIMESTAMP NOT NULL DEFAULT now()
+- `expires_at` TIMESTAMP NULL
+
+---
+
+**Table: `passport_missions`** (PHASE 2 – optional for now)
+
+We only need the table stub so schema is future-proof.
+
+- `id` UUID PK
+- `title` VARCHAR(120) NOT NULL
+- `description` TEXT NULL
+- `points_reward` INT NOT NULL
+- `rules_json` JSONB NOT NULL DEFAULT '{}'::jsonb
+- `active_from` TIMESTAMP NOT NULL
+- `active_to` TIMESTAMP NOT NULL
+- `created_at` TIMESTAMP NOT NULL DEFAULT now()
+
+PHASE 1 implementation can ignore business logic for missions.
+
+---
+
+## 2. CORE BACKEND LOGIC
+
+Create a `PassportService` module with the following responsibilities:
+
+### 2.1 `getOrCreatePassportProfile(userId: string): Promise<PassportProfile>`
+
+- Looks for an existing `passport_profiles` row.
+- If not found:
+  - Create a new profile with:
+    - `user_id = userId`
+    - `handle` = derived from user (e.g. username or "savgent_<shortid>")
+    - `current_tier = 'BRONZE'`
+    - `total_points = 0`, etc.
+- Returns the profile.
+
+---
+
+### 2.2 `awardStampForEventScan(params): Promise<{ stamp; profile; }>`
+Input:
+
+```ts
+type AwardStampParams = {
+  userId: string;
+  eventId: string;
+  source?: 'TICKET_SCAN' | 'MISSION' | 'BONUS';
+};
