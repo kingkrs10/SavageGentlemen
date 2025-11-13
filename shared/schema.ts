@@ -90,6 +90,11 @@ export const events = pgTable("events", {
   featured: boolean("featured").default(false),
   organizerName: text("organizer_name").default("Savage Gentlemen"),
   organizerEmail: text("organizer_email").default("savgmen@gmail.com"),
+  // Soca Passport fields
+  isSocaPassportEnabled: boolean("is_soca_passport_enabled").default(false),
+  stampPointsDefault: integer("stamp_points_default").default(50),
+  countryCode: text("country_code"), // ISO country code (e.g., "TT", "US", "CA")
+  carnivalCircuit: text("carnival_circuit"), // e.g., "Trinidad Carnival", "Miami Carnival"
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -121,10 +126,18 @@ export const insertEventSchema = createInsertSchema(events)
     featured: true,
     organizerName: true,
     organizerEmail: true,
+    isSocaPassportEnabled: true,
+    stampPointsDefault: true,
+    countryCode: true,
+    carnivalCircuit: true,
   })
   .extend({
     price: z.number().nullable().optional(),
     currency: z.enum(["USD", "CAD"]).default("USD"),
+    isSocaPassportEnabled: z.boolean().default(false),
+    stampPointsDefault: z.number().min(0).default(50),
+    countryCode: z.string().length(2).transform((val) => val.toUpperCase()).optional(),
+    carnivalCircuit: z.string().max(120).optional(),
   })
   .transform((data) => {
     // If date is provided as a string, convert it to a Date object
@@ -777,6 +790,7 @@ export const ticketScans = pgTable("ticket_scans", {
   scannedBy: integer("scanned_by"), // User ID of admin who scanned the ticket
   status: text("status").default("valid"), // valid, already_used, invalid
   notes: text("notes"),
+  passportStampId: integer("passport_stamp_id").references(() => passportStamps.id, { onDelete: "set null" }), // FK to passport_stamps for auditing
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1605,6 +1619,179 @@ export const insertMusicMixPurchaseSchema = createInsertSchema(musicMixPurchases
   userId: z.number().min(1),
   amountPaid: z.number().min(0),
 });
+
+// ===========================================
+// SOCA PASSPORT LOYALTY SYSTEM TABLES
+// ===========================================
+
+// Passport Profiles - User's passport identity
+export const passportProfiles = pgTable("passport_profiles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  handle: text("handle").notNull().unique(), // Public display name
+  totalPoints: integer("total_points").notNull().default(0),
+  currentTier: text("current_tier").notNull().default("BRONZE"), // BRONZE, SILVER, GOLD, ELITE
+  totalEvents: integer("total_events").notNull().default(0),
+  totalCountries: integer("total_countries").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => {
+  return {
+    userIdIdx: uniqueIndex("passport_profiles_user_id_idx").on(table.userId),
+    handleIdx: uniqueIndex("passport_profiles_handle_idx").on(table.handle),
+  };
+});
+
+// Passport Stamps - One per event attended
+export const passportStamps = pgTable("passport_stamps", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  eventId: integer("event_id").notNull().references(() => events.id, { onDelete: "cascade" }),
+  countryCode: text("country_code").notNull(), // ISO country code
+  carnivalCircuit: text("carnival_circuit"), // e.g., "Trinidad Carnival"
+  pointsEarned: integer("points_earned").notNull(),
+  source: text("source").notNull().default("TICKET_SCAN"), // TICKET_SCAN, MISSION, BONUS
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => {
+  return {
+    userEventIdx: uniqueIndex("passport_stamps_user_event_idx").on(table.userId, table.eventId),
+  };
+});
+
+// Passport Tiers - Configurable tier levels
+export const passportTiers = pgTable("passport_tiers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(), // BRONZE, SILVER, GOLD, ELITE
+  minPoints: integer("min_points").notNull(), // Minimum points required for this tier
+  perks: jsonb("perks").notNull().default('{}'), // JSON object with tier perks
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => {
+  return {
+    nameIdx: uniqueIndex("passport_tiers_name_idx").on(table.name),
+  };
+});
+
+// Passport Rewards - Rewards unlocked by users
+export const passportRewards = pgTable("passport_rewards", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  rewardType: text("reward_type").notNull(), // MERCH_DISCOUNT, VIP_LINE, FREE_DRINK, EARLY_ACCESS
+  metadata: jsonb("metadata").notNull().default('{}'), // Additional reward data
+  status: text("status").notNull().default("AVAILABLE"), // AVAILABLE, REDEEMED, EXPIRED
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+});
+
+// Passport Missions - Future feature for gamification (stub for now)
+export const passportMissions = pgTable("passport_missions", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  pointsReward: integer("points_reward").notNull(),
+  rules: jsonb("rules").notNull().default('{}'), // Mission completion criteria
+  activeFrom: timestamp("active_from").notNull(),
+  activeTo: timestamp("active_to").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Passport Profile Insert Schema
+export const insertPassportProfileSchema = createInsertSchema(passportProfiles)
+  .pick({
+    userId: true,
+    handle: true,
+    totalPoints: true,
+    currentTier: true,
+    totalEvents: true,
+    totalCountries: true,
+  })
+  .extend({
+    handle: z.string()
+      .min(3, 'Handle must be at least 3 characters')
+      .max(50, 'Handle must be at most 50 characters')
+      .regex(/^[a-zA-Z0-9_-]+$/, 'Handle can only contain letters, numbers, underscores, and hyphens'),
+    currentTier: z.enum(['BRONZE', 'SILVER', 'GOLD', 'ELITE']).default('BRONZE'),
+    totalPoints: z.number().min(0).default(0),
+    totalEvents: z.number().min(0).default(0),
+    totalCountries: z.number().min(0).default(0),
+  });
+
+// Passport Stamp Insert Schema
+export const insertPassportStampSchema = createInsertSchema(passportStamps)
+  .pick({
+    userId: true,
+    eventId: true,
+    countryCode: true,
+    carnivalCircuit: true,
+    pointsEarned: true,
+    source: true,
+  })
+  .extend({
+    countryCode: z.string().length(2).transform((val) => val.toUpperCase()),
+    carnivalCircuit: z.string().max(120).optional(),
+    pointsEarned: z.number().min(1, 'Points must be at least 1'),
+    source: z.enum(['TICKET_SCAN', 'MISSION', 'BONUS']).default('TICKET_SCAN'),
+  });
+
+// Passport Tier Insert Schema
+export const insertPassportTierSchema = createInsertSchema(passportTiers)
+  .pick({
+    name: true,
+    minPoints: true,
+    perks: true,
+  })
+  .extend({
+    name: z.enum(['BRONZE', 'SILVER', 'GOLD', 'ELITE']),
+    minPoints: z.number().min(0),
+    perks: z.record(z.any()).default({}),
+  });
+
+// Passport Reward Insert Schema
+export const insertPassportRewardSchema = createInsertSchema(passportRewards)
+  .pick({
+    userId: true,
+    rewardType: true,
+    metadata: true,
+    status: true,
+    expiresAt: true,
+  })
+  .extend({
+    rewardType: z.enum(['MERCH_DISCOUNT', 'VIP_LINE', 'FREE_DRINK', 'EARLY_ACCESS', 'PRIORITY_ENTRY', 'BACKSTAGE_ACCESS']),
+    status: z.enum(['AVAILABLE', 'REDEEMED', 'EXPIRED']).default('AVAILABLE'),
+    metadata: z.record(z.any()).default({}),
+  });
+
+// Passport Mission Insert Schema
+export const insertPassportMissionSchema = createInsertSchema(passportMissions)
+  .pick({
+    title: true,
+    description: true,
+    pointsReward: true,
+    rules: true,
+    activeFrom: true,
+    activeTo: true,
+  })
+  .extend({
+    title: z.string().min(1, 'Title is required').max(120),
+    pointsReward: z.number().min(1, 'Points reward must be at least 1'),
+    rules: z.record(z.any()).default({}),
+  });
+
+// Export Passport Types
+export type PassportProfile = typeof passportProfiles.$inferSelect;
+export type InsertPassportProfile = z.infer<typeof insertPassportProfileSchema>;
+
+export type PassportStamp = typeof passportStamps.$inferSelect;
+export type InsertPassportStamp = z.infer<typeof insertPassportStampSchema>;
+
+export type PassportTier = typeof passportTiers.$inferSelect;
+export type InsertPassportTier = z.infer<typeof insertPassportTierSchema>;
+
+export type PassportReward = typeof passportRewards.$inferSelect;
+export type InsertPassportReward = z.infer<typeof insertPassportRewardSchema>;
+
+export type PassportMission = typeof passportMissions.$inferSelect;
+export type InsertPassportMission = z.infer<typeof insertPassportMissionSchema>;
 
 // Type exports for new tables
 export type EventCheckin = typeof eventCheckins.$inferSelect;
