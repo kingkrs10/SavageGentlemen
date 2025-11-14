@@ -66,9 +66,8 @@ router.patch(
     const schema = z.object({
       totalPoints: z.number().min(0).optional(),
       currentTier: z.enum(['BRONZE', 'SILVER', 'GOLD', 'ELITE']).optional(),
-      stampsCollected: z.number().min(0).optional(),
-      bio: z.string().max(500).optional(),
-      countryCode: z.string().length(2).optional(),
+      totalEvents: z.number().min(0).optional(),
+      totalCountries: z.number().min(0).optional(),
     });
 
     const data = schema.parse(req.body);

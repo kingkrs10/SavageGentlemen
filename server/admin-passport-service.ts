@@ -167,9 +167,8 @@ export class AdminPassportService {
     data: {
       totalPoints?: number;
       currentTier?: string;
-      stampsCollected?: number;
-      bio?: string;
-      countryCode?: string;
+      totalEvents?: number;
+      totalCountries?: number;
     }
   ): Promise<PassportProfile | null> {
     try {
@@ -206,8 +205,8 @@ export class AdminPassportService {
       if (startDate && endDate) {
         stampQuery = stampQuery.where(
           and(
-            gte(passportStamps.awardedAt, startDate),
-            sql`${passportStamps.awardedAt} <= ${endDate}`
+            gte(passportStamps.createdAt, startDate),
+            sql`${passportStamps.createdAt} <= ${endDate}`
           )
         ) as any;
       }
@@ -244,13 +243,13 @@ export class AdminPassportService {
 
       const recentActivityResults = await db
         .select({
-          date: sql<string>`DATE(${passportStamps.awardedAt})`.as('date'),
+          date: sql<string>`DATE(${passportStamps.createdAt})`.as('date'),
           count: sql<number>`count(*)::int`.as('count'),
         })
         .from(passportStamps)
-        .where(gte(passportStamps.awardedAt, thirtyDaysAgo))
-        .groupBy(sql`DATE(${passportStamps.awardedAt})`)
-        .orderBy(sql`DATE(${passportStamps.awardedAt})`);
+        .where(gte(passportStamps.createdAt, thirtyDaysAgo))
+        .groupBy(sql`DATE(${passportStamps.createdAt})`)
+        .orderBy(sql`DATE(${passportStamps.createdAt})`);
 
       const recentActivity = recentActivityResults.map((result) => ({
         date: result.date,
