@@ -130,6 +130,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, sql, lte, lt, isNotNull, not } from "drizzle-orm";
+import crypto from "crypto";
 
 // Interface for storage operations
 // Store for recently deleted events (for undo functionality)
@@ -881,6 +882,11 @@ export class MemStorage implements IStorage {
 
   async createEvent(eventData: InsertEvent): Promise<Event> {
     const id = this.eventCurrentId++;
+    
+    const accessCode = eventData.isSocaPassportEnabled 
+      ? crypto.randomBytes(16).toString('hex')
+      : null;
+    
     const event: Event = {
       id,
       title: eventData.title,
@@ -890,7 +896,12 @@ export class MemStorage implements IStorage {
       description: eventData.description || null,
       imageUrl: eventData.imageUrl || null,
       category: eventData.category || null,
-      featured: eventData.featured || false
+      featured: eventData.featured || false,
+      isSocaPassportEnabled: eventData.isSocaPassportEnabled || false,
+      stampPointsDefault: eventData.stampPointsDefault || null,
+      countryCode: eventData.countryCode || null,
+      carnivalCircuit: eventData.carnivalCircuit || null,
+      accessCode: accessCode
     };
     this.events.set(id, event);
     return event;
@@ -902,9 +913,15 @@ export class MemStorage implements IStorage {
       return undefined;
     }
     
+    let accessCode = event.accessCode;
+    if (eventData.isSocaPassportEnabled && !accessCode) {
+      accessCode = crypto.randomBytes(16).toString('hex');
+    }
+    
     const updatedEvent: Event = {
       ...event,
-      ...eventData
+      ...eventData,
+      accessCode: accessCode
     };
     
     this.events.set(id, updatedEvent);
