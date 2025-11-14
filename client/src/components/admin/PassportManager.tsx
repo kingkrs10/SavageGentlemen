@@ -39,7 +39,8 @@ interface PassportProfile {
   handle: string;
   totalPoints: number;
   currentTier: string;
-  stampsCollected: number;
+  totalEvents: number;
+  totalCountries: number;
   username: string;
   email: string;
 }
@@ -88,7 +89,8 @@ export default function PassportManager() {
   const [editFormData, setEditFormData] = useState({
     totalPoints: 0,
     currentTier: "",
-    stampsCollected: 0,
+    totalEvents: 0,
+    totalCountries: 0,
   });
 
   // Fetch passport profiles
@@ -129,7 +131,8 @@ export default function PassportManager() {
       setEditFormData({
         totalPoints: data.profile.totalPoints,
         currentTier: data.profile.currentTier,
-        stampsCollected: data.profile.stampsCollected,
+        totalEvents: data.profile.totalEvents,
+        totalCountries: data.profile.totalCountries,
       });
     },
   });
@@ -266,7 +269,7 @@ export default function PassportManager() {
                         <TableHead>Handle</TableHead>
                         <TableHead>Tier</TableHead>
                         <TableHead className="text-right">Points</TableHead>
-                        <TableHead className="text-right">Stamps</TableHead>
+                        <TableHead className="text-right">Events</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -281,7 +284,7 @@ export default function PassportManager() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">{profile.totalPoints}</TableCell>
-                          <TableCell className="text-right">{profile.stampsCollected}</TableCell>
+                          <TableCell className="text-right">{profile.totalEvents}</TableCell>
                           <TableCell className="text-right">
                             <Button
                               variant="outline"
@@ -555,15 +558,28 @@ export default function PassportManager() {
                 </div>
 
                 <div>
-                  <Label htmlFor="stampsCollected">Stamps Collected</Label>
+                  <Label htmlFor="totalEvents">Total Events Attended</Label>
                   <Input
-                    id="stampsCollected"
+                    id="totalEvents"
                     type="number"
-                    value={editFormData.stampsCollected}
+                    value={editFormData.totalEvents}
                     onChange={(e) =>
-                      setEditFormData({ ...editFormData, stampsCollected: parseInt(e.target.value) || 0 })
+                      setEditFormData({ ...editFormData, totalEvents: parseInt(e.target.value) || 0 })
                     }
-                    data-testid="input-edit-stamps"
+                    data-testid="input-edit-events"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="totalCountries">Total Countries Visited</Label>
+                  <Input
+                    id="totalCountries"
+                    type="number"
+                    value={editFormData.totalCountries}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, totalCountries: parseInt(e.target.value) || 0 })
+                    }
+                    data-testid="input-edit-countries"
                   />
                 </div>
               </div>
@@ -576,7 +592,7 @@ export default function PassportManager() {
                     <div key={stamp.id} className="text-sm flex justify-between">
                       <span>Event ID: {stamp.eventId}</span>
                       <span className="text-muted-foreground">
-                        {new Date(stamp.awardedAt).toLocaleDateString()}
+                        {new Date(stamp.createdAt).toLocaleDateString()}
                       </span>
                     </div>
                   ))}

@@ -4781,7 +4781,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(passportStamps)
       .where(eq(passportStamps.userId, userId))
-      .orderBy(desc(passportStamps.stampedAt));
+      .orderBy(desc(passportStamps.createdAt));
     
     if (limit) {
       query = query.limit(limit) as any;
@@ -4795,7 +4795,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(passportStamps)
       .where(eq(passportStamps.eventId, eventId))
-      .orderBy(desc(passportStamps.stampedAt));
+      .orderBy(desc(passportStamps.createdAt));
   }
 
   async getPassportStampByUserAndEvent(userId: number, eventId: number): Promise<PassportStamp | undefined> {
@@ -4812,10 +4812,7 @@ export class DatabaseStorage implements IStorage {
   async createPassportStamp(stampData: InsertPassportStamp): Promise<PassportStamp> {
     const [stamp] = await db
       .insert(passportStamps)
-      .values({
-        ...stampData,
-        stampedAt: new Date()
-      })
+      .values(stampData)
       .returning();
     return stamp;
   }
@@ -4894,16 +4891,13 @@ export class DatabaseStorage implements IStorage {
       query = query.where(eq(passportRewards.status, status)) as any;
     }
     
-    return await query.orderBy(desc(passportRewards.unlockedAt));
+    return await query.orderBy(desc(passportRewards.createdAt));
   }
 
   async createPassportReward(rewardData: InsertPassportReward): Promise<PassportReward> {
     const [reward] = await db
       .insert(passportRewards)
-      .values({
-        ...rewardData,
-        unlockedAt: new Date()
-      })
+      .values(rewardData)
       .returning();
     return reward;
   }
