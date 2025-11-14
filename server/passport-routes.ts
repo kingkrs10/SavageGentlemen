@@ -334,44 +334,27 @@ router.post(
       });
     }
 
-    // Step 6: Award stamp and points
-    const pointsAwarded = event.stampPointsDefault || 50;
-    
-    const stamp = await storage.createPassportStamp({
-      userId,
-      eventId: event.id,
-      eventTitle: event.title,
-      eventDate: event.date,
-      eventLocation: event.location,
-      pointsAwarded,
-      countryCode: event.countryCode || 'US',
-      carnivalCircuit: event.carnivalCircuit || null,
-    });
-
-    // Update user's profile
-    await storage.updatePassportProfile(userId, {
-      totalPoints: profile.totalPoints + pointsAwarded,
-      totalEvents: profile.totalEvents + 1,
-    });
-
-    // Get updated profile
-    const updatedProfile = await storage.getPassportProfile(userId);
+    // Step 6: Award stamp and points using passport service
+    const result = await passportService.awardStamp(userId, event.id, event);
 
     res.json({
       success: true,
-      message: `✓ Stamp awarded! ${pointsAwarded} points earned`,
-      stamp,
+      message: `✓ Stamp awarded! ${result.stamp.pointsEarned} points earned`,
+      stamp: result.stamp,
       user: {
-        handle: updatedProfile?.handle,
-        totalPoints: updatedProfile?.totalPoints,
-        currentTier: updatedProfile?.currentTier,
+        handle: result.profile.handle,
+        totalPoints: result.profile.totalPoints,
+        currentTier: result.profile.currentTier,
       },
       event: {
         title: event.title,
         date: event.date,
         location: event.location,
       },
-      pointsAwarded,
+      pointsAwarded: result.stamp.pointsEarned,
+      tierUpdated: result.tierUpdated,
+      previousTier: result.previousTier,
+      newTier: result.newTier,
     });
   })
 );

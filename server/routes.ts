@@ -2562,7 +2562,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Modified endpoint for event updates to add fallback authentication
-  router.put("/admin/events/:id", async (req: Request, res: Response, next: NextFunction) => {
+  // Support both PUT and PATCH methods
+  const eventUpdateHandler = async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Try to authenticate via headers first - simple header check for admin page
       const userId = req.headers['user-id'];
@@ -2617,7 +2618,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error in admin events auth middleware:", error);
       return res.status(500).json({ message: "Authentication error" });
     }
-  }, upload.fields([
+  };
+
+  router.put("/admin/events/:id", eventUpdateHandler, upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'additionalImages', maxCount: 10 }
+  ]), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const event = await storage.getEvent(id);
+      
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      // Get the request data
+      const requestData = req.body;
+      
+      // Process uploaded files if present
+      if (req.files) {
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+        
+        // Process main image
+        if (files['image'] && files['image'][0]) {
+          const mainImage = files['image'][0];
+          const mainImagePath = `/uploads/${mainImage.filename}`;
+          requestData.imageUrl = mainImagePath;
+        }
+        
+        // Process additional images
+        if (files['additionalImages'] && files['additionalImages'].length > 0) {
+          const additionalImagePaths = files['additionalImages'].map(
+            file => `/uploads/${file.filename}`
+          );
+          
+          // If we're retaining existing images and adding new ones
+          if (requestData.retainExistingImages === 'true' && event.additionalImages) {
+            // Combine with existing images (if event.additionalImages is not null)
+            requestData.additionalImages = [
+              ...(Array.isArray(event.additionalImages) ? event.additionalImages : []),
+              ...additionalImagePaths
+            ];
+          } else {
+            // Only use the newly uploaded images
+            requestData.additionalImages = additionalImagePaths;
+          }
+        } else if (requestData.additionalImages) {
+          // If no new files but additionalImages comes as a string, convert to array
+          if (typeof requestData.additionalImages === 'string') {
+            requestData.additionalImages = [requestData.additionalImages];
+          }
+        }
+      }
+      
+      // Parse additionalImages from JSON string if it comes in that format
+      if (typeof requestData.additionalImages === 'string' && requestData.additionalImages.startsWith('[')) {
+        try {
+          requestData.additionalImages = JSON.parse(requestData.additionalImages);
+        } catch (e) {
+          console.error('Error parsing additionalImages JSON:', e);
+        }
+      }
+      
+      // Always ensure date is properly converted to a Date object
+      if (requestData.date) {
+        try {
+          // Handle ISO string format from client
+          if (typeof requestData.date === 'string') {
+            requestData.date = new Date(requestData.date);
+            
+            // Verify date is valid
+            if (isNaN(requestData.date.getTime())) {
+              throw new Error('Invalid date format');
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing date:', error, 'Received date:', requestData.date);
+          return res.status(400).json({ message: "Invalid date format" });
+        }
+      }
+      
+      // Log the update details
+      console.log(`Updating event ${id} with date:`, requestData.date);
+      console.log(`Image URL:`, requestData.imageUrl);
+      console.log(`Additional Images:`, requestData.additionalImages);
+      
+      // Clean up by removing properties we don't want to persist
+      delete requestData.retainExistingImages;
+      
+      // Now update the event with the processed data
+      const updatedEvent = await storage.updateEvent(id, requestData);
+      return res.status(200).json(updatedEvent);
+    } catch (err) {
+      console.error("Event update error:", err);
+      return res.status(500).json({ message: "Failed to update event" });
+    }
+  });
+
+  // Also support PATCH method for event updates (for client compatibility)
+  router.patch("/admin/events/:id", eventUpdateHandler, upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'additionalImages', maxCount: 10 }
   ]), async (req: Request, res: Response) => {
