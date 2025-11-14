@@ -4,15 +4,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trophy, Calendar, Globe, MapPin, Award, Star, Lock } from "lucide-react";
+import { Trophy, Calendar, Globe, MapPin, Award, Star, Lock, QrCode } from "lucide-react";
 import { Helmet } from "react-helmet";
 import { Link } from "wouter";
 import type { PassportProfile, PassportStamp, PassportTier, PassportReward } from "@shared/schema";
+import QRCodeLib from "qrcode";
+import { useEffect, useState } from "react";
+
+// API response includes dynamically generated qrData
+interface PassportProfileWithQR extends PassportProfile {
+  qrData?: string;
+}
 
 export default function Passport() {
   const { user } = useUser();
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
 
-  const { data: profile, isLoading: profileLoading } = useQuery<PassportProfile>({
+  const { data: profile, isLoading: profileLoading} = useQuery<PassportProfileWithQR>({
     queryKey: ['/api/passport/profile'],
     enabled: !!user
   });
@@ -35,6 +43,24 @@ export default function Passport() {
     queryKey: ['/api/passport/stats'],
     enabled: !!user
   });
+
+  // Generate QR code when profile data is available
+  useEffect(() => {
+    if (profile?.qrData) {
+      QRCodeLib.toDataURL(profile.qrData, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      }).then(url => {
+        setQrCodeUrl(url);
+      }).catch(err => {
+        console.error('Error generating QR code:', err);
+      });
+    }
+  }, [profile?.qrData]);
 
   if (!user) {
     return (
@@ -168,6 +194,45 @@ export default function Passport() {
             )}
           </CardContent>
         </Card>
+
+        {/* Check-In QR Code */}
+        {profile?.qrData && (
+          <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-background" data-testid="card-qr-code">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <QrCode className="w-5 h-5 text-primary" />
+                <CardTitle>Event Check-In Code</CardTitle>
+              </div>
+              <CardDescription>
+                Show this QR code at passport-enabled events to collect your stamp
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center gap-4">
+                {qrCodeUrl ? (
+                  <div className="bg-white p-4 rounded-xl shadow-lg">
+                    <img 
+                      src={qrCodeUrl} 
+                      alt="Passport Check-In QR Code" 
+                      className="w-64 h-64"
+                      data-testid="img-qr-code"
+                    />
+                  </div>
+                ) : (
+                  <Skeleton className="w-64 h-64" />
+                )}
+                <div className="text-center space-y-2 max-w-md">
+                  <p className="text-sm text-muted-foreground">
+                    Present this code at the event entrance for scanning. A new code is generated every 24 hours for security.
+                  </p>
+                  <Badge variant="outline" className="text-xs">
+                    Valid for 24 hours
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Tier Perks */}
         {currentTier && (

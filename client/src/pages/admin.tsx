@@ -48,6 +48,7 @@ interface Event {
   stampPointsDefault?: number;
   countryCode?: string | null;
   carnivalCircuit?: string | null;
+  accessCode?: string | null;
 }
 
 interface Ticket {
@@ -1397,6 +1398,7 @@ export default function AdminPage() {
                         <TableHead>Date</TableHead>
                         <TableHead>Location</TableHead>
                         <TableHead>Price</TableHead>
+                        <TableHead>Check-In</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1438,6 +1440,29 @@ export default function AdminPage() {
                           </TableCell>
                           <TableCell>{event.location}</TableCell>
                           <TableCell>${(event.price / 100).toFixed(2)}</TableCell>
+                          <TableCell>
+                            {event.isSocaPassportEnabled && event.accessCode ? (
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const url = `${window.location.origin}/socapassport/checkin/${event.accessCode}`;
+                                    navigator.clipboard.writeText(url);
+                                    toast({
+                                      title: "Check-In URL Copied",
+                                      description: "Share this URL with event staff for check-ins"
+                                    });
+                                  }}
+                                  data-testid={`button-copy-checkin-${event.id}`}
+                                >
+                                  Copy URL
+                                </Button>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button 
