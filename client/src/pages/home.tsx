@@ -116,6 +116,13 @@ const Home = () => {
                     VIEW EVENTS
                   </Button>
                   <Button 
+                    className="btn-modern glass-effect border-emerald-500/50 bg-gradient-to-r from-emerald-500/20 to-purple-500/20 text-white hover:from-emerald-500/30 hover:to-purple-500/30 px-8 py-6 uppercase tracking-widest text-lg font-semibold backdrop-blur-sm w-full"
+                    onClick={() => navigate('/socaport-app')}
+                    data-testid="button-passport-home"
+                  >
+                    🎫 GET YOUR PASSPORT
+                  </Button>
+                  <Button 
                     variant="outline" 
                     className="btn-modern glass-effect border-white/20 text-white hover:bg-white/10 px-8 py-6 uppercase tracking-widest text-lg font-semibold backdrop-blur-sm w-full"
                     onClick={() => window.open(EXTERNAL_URLS.ETSY_SHOP, '_blank', 'noopener,noreferrer')}
