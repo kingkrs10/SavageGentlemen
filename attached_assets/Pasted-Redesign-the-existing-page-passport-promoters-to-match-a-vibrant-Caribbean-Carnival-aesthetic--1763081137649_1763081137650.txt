@@ -1,0 +1,102 @@
+Redesign the existing page `/passport-promoters` to match a **vibrant Caribbean Carnival aesthetic** while keeping the current structure and functionality intact.
+
+### Goals:
+1. Keep all existing sections (Hero → Features → How It Works).
+2. Transform the visual identity to match:
+   - Carnival neon colors
+   - Soca culture textures
+   - Mas-inspired overlays
+   - Luxury Caribbean nightlife (Savage Gentlemen look)
+3. Do NOT change backend functionality; ONLY update UI + copy + styling.
+4. Maintain dark mode base as the foundation.
+
+---
+
+## HERO SECTION
+- Add a Caribbean-themed background gradient:
+  - Black (#0B0B0E) → deep emerald (#005137) → ultraviolet (#6B2AFF).
+- Add light carnival bokeh + feather overlays at 5–10% opacity.
+- Update title to:
+  **SOCA PASSPORT FOR PROMOTERS**
+- Add subheading:
+  *Reward your fête fans, track loyalty across events, and see who keeps coming back.*
+- Add optional hero collage (maskable, responsive):
+  - Mas bands
+  - Glow fête crowds
+  - DJ lights
+  - Fog haze
+
+---
+
+## FEATURE BLOCKS (Know Your Superfans, Reward Loyalty, Multi-Event Insights)
+### Style changes:
+- Use neon glow borders (purple/orange/green).
+- Add subtle floating feather or powder textures behind each card.
+- Add hover glow effect.
+- Update icon styles to Caribbean-inspired neon outlines.
+
+### New copy (replace the old descriptions):
+#### KNOW YOUR SUPERFANS
+See who follows your events across cities, islands, and carnival circuits.
+
+#### REWARD LOYALTY EASILY
+Automatically award stamps and perks to attendees. Build a loyal carnival tribe around your brand.
+
+#### MULTI-EVENT INSIGHTS
+Track who moves with you from city to city and understand your most engaged audiences.
+
+---
+
+## HOW IT WORKS
+### Update visuals:
+- Replace step circles with “wristband-style” step badges.
+- Add neon glow effect around steps.
+
+### New copy:
+1. **Create Your Account**  
+   Sign up as a promoter and tell us about your brand or event company.
+
+2. **Enable Passport**  
+   Add your events and enable stamps, rewards, and carnival circuits.
+
+3. **Scan & Reward**  
+   Scan attendees at the door to give stamps and Fête Credits instantly.
+
+4. **Track the Movement**  
+   See how fans travel between cities, carnivals, and islands.
+
+---
+
+## NEW MID-SECTION (Add This)
+Add a themed strip with diagonal feather overlays and text:
+
+**Designed for Every Caribbean Experience**  
+- J’ouvert • Glow Parties • Soca Brunches • Mas Bands • Boat Rides • Carnival Concerts • Diaspora Fêtes
+
+---
+
+## CTA SECTION
+### Style updates:
+- Add Caribbean sunset gradient:
+  - Orange (#FF7E39) → Purple (#C25BFF)
+- Add animated glow edges.
+
+### Buttons:
+- Primary CTA: **Become a Passport Promoter**
+- Secondary CTA: **Learn how it works**
+
+---
+
+## OVERALL DESIGN NOTES
+- Keep layout and component hierarchy identical.
+- Apply thematic enhancements without altering functionality.
+- Ensure everything remains mobile-first and responsive.
+- Preserve dark mode ambiance but add vibrant carnival neon accents.
+
+Generate:
+- Updated JSX
+- Updated Tailwind/CSS styles
+- Optional asset placeholders
+- Clean, modular components
+
+Follow existing project coding style EXACTLY.
