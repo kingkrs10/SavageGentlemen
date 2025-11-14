@@ -2770,10 +2770,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createEvent(eventData: InsertEvent): Promise<Event> {
+    const accessCode = eventData.isSocaPassportEnabled 
+      ? crypto.randomBytes(16).toString('hex')
+      : null;
+    
     const [event] = await db
       .insert(events)
       .values({
         ...eventData,
+        accessCode: accessCode,
         createdAt: new Date(),
         updatedAt: new Date()
       })
@@ -2782,10 +2787,21 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateEvent(id: number, eventData: Partial<InsertEvent>): Promise<Event | undefined> {
+    const existingEvent = await this.getEvent(id);
+    if (!existingEvent) {
+      return undefined;
+    }
+    
+    let accessCode = existingEvent.accessCode;
+    if (eventData.isSocaPassportEnabled && !accessCode) {
+      accessCode = crypto.randomBytes(16).toString('hex');
+    }
+    
     const [event] = await db
       .update(events)
       .set({
         ...eventData,
+        accessCode: accessCode,
         updatedAt: new Date()
       })
       .where(eq(events.id, id))
