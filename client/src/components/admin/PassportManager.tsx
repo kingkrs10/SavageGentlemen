@@ -82,7 +82,7 @@ export default function PassportManager() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("users");
   const [searchTerm, setSearchTerm] = useState("");
-  const [tierFilter, setTierFilter] = useState<string>("");
+  const [tierFilter, setTierFilter] = useState<string>("ALL");
   const [selectedProfile, setSelectedProfile] = useState<PassportDetails | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({
@@ -95,7 +95,7 @@ export default function PassportManager() {
   const buildProfilesUrl = () => {
     const params = new URLSearchParams();
     if (searchTerm) params.append('search', searchTerm);
-    if (tierFilter) params.append('tierFilter', tierFilter);
+    if (tierFilter && tierFilter !== "ALL") params.append('tierFilter', tierFilter);
     params.append('limit', '50');
     params.append('offset', '0');
     return `/api/admin/passport/profiles?${params.toString()}`;
@@ -246,7 +246,7 @@ export default function PassportManager() {
                     <SelectValue placeholder="Filter by tier" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Tiers</SelectItem>
+                    <SelectItem value="ALL">All Tiers</SelectItem>
                     <SelectItem value="BRONZE">Bronze</SelectItem>
                     <SelectItem value="SILVER">Silver</SelectItem>
                     <SelectItem value="GOLD">Gold</SelectItem>

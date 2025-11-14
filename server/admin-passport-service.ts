@@ -4,7 +4,16 @@ import { passportProfiles, passportStamps, passportRewards, passportMemberships,
 import { eq, desc, sql, and, gte, count } from 'drizzle-orm';
 import { PassportProfile, PassportStamp, PassportReward, PassportMembership, Promoter } from '@shared/schema';
 
-interface PassportProfileWithUser extends PassportProfile {
+interface PassportProfileWithUser {
+  id: number;
+  userId: number;
+  handle: string;
+  totalPoints: number;
+  currentTier: string;
+  totalEvents: number;
+  totalCountries: number;
+  createdAt: Date | null;
+  updatedAt: Date | null;
   username: string;
   email: string;
 }
@@ -61,9 +70,8 @@ export class AdminPassportService {
           handle: passportProfiles.handle,
           totalPoints: passportProfiles.totalPoints,
           currentTier: passportProfiles.currentTier,
-          stampsCollected: passportProfiles.stampsCollected,
-          bio: passportProfiles.bio,
-          countryCode: passportProfiles.countryCode,
+          totalEvents: passportProfiles.totalEvents,
+          totalCountries: passportProfiles.totalCountries,
           createdAt: passportProfiles.createdAt,
           updatedAt: passportProfiles.updatedAt,
           username: users.username,
@@ -104,7 +112,7 @@ export class AdminPassportService {
       const [{ count: total }] = await countQuery;
 
       return {
-        profiles: profiles as PassportProfileWithUser[],
+        profiles,
         total: total || 0,
       };
     } catch (error) {
