@@ -1,0 +1,242 @@
+You are updating an existing production web app for savgent.com.
+
+The app already includes:
+- A "Soca Passport" loyalty system with:
+  - `/passport` page for logged-in users
+  - Backend logic for stamps, tiers, rewards, etc.
+- An events + ticketing system.
+- User auth.
+
+⚠️ IMPORTANT CONSTRAINTS
+
+1. **Do NOT break or heavily refactor existing Soca Passport behavior.**
+   - The current `/passport` route, backend models, and logic MUST remain functional.
+   - All enhancements must be additive and backward compatible.
+2. Any new tables, API routes, or pages must be implemented so that:
+   - If they are disabled, the existing platform still behaves exactly the same.
+3. Keep code organized and modular so future subscription features can be layered in later.
+
+---
+
+## PART 1 — PUBLIC ENTRY POINTS FOR SOCA PASSPORT
+
+### GOAL
+
+Enable:
+1. **Global users** (not yet SavGent customers) to discover and sign up for Soca Passport.
+2. **External event creators / promoters** (not affiliated with SavGent) to register and start using Soca Passport at their own events.
+3. Set up **monetization scaffolding**:
+   - Per-event fees (no subscriptions yet).
+   - User upgrade tiers (paid membership levels).
+
+The work in this task focuses mostly on:
+- New pages: `GET /socaport-app`, `GET /passport-promoters`
+- New onboarding flows for users and promoters.
+- Database + API scaffolding for:
+  - Per-event billing
+  - User premium membership
+- Minimal UI for these monetization features (we will refine pricing and UX later).
+
+---
+
+## 1. PUBLIC USER LANDING PAGE — `/socaport-app`
+
+### Purpose
+
+This is a **marketing + signup landing page** for Soca Passport that works for ANY user, even if they have never purchased a SavGent ticket.
+
+**URL:** `https://savgent.com/socaport-app`
+
+### Requirements
+
+1. **Content / Sections**
+   - Hero section:
+     - Title: “Soca Passport”
+     - Subtitle: “Your Caribbean Carnival Journey in One Digital Passport.”
+     - CTA button: “Create Your Free Passport”
+   - Benefits section:
+     - Bullet points showing:
+       - Track your events across multiple carnivals.
+       - Earn Fête Credits and unlock perks.
+       - Keep a digital record of your Caribbean journey.
+   - How it works section (3 steps):
+       1. Create your free passport.
+       2. Attend passport-enabled events and get scanned.
+       3. Collect stamps, earn rewards, and upgrade your status.
+   - “For Promoters” teaser:
+       - Small block with link to `/passport-promoters`.
+
+2. **CTA Behavior**
+   - If user is **not logged in**:
+     - Clicking “Create Your Free Passport”:
+       - Takes them to login/register (reuse existing auth flow), then redirects to `/passport`.
+   - If user **is logged in but has no passport profile**:
+       - Clicking CTA triggers a backend call to create a `passport_profile` for that user (reuse existing helper if it exists, or call something like `PassportService.getOrCreatePassportProfile(userId)`).
+       - Redirect to `/passport`.
+   - If user **already has a Soca Passport**:
+       - CTA simply redirects directly to `/passport`.
+
+3. **Implementation Notes**
+   - Build `/socaport-app` as a React/Next.js page that:
+     - Uses existing layout / header so it visually matches SavGent.
+     - Is mobile-first and matches the screenshot style of the current `/passport` page (dark theme cards, etc.).
+   - Keep copy and styling in-code so we can tweak later.
+
+---
+
+## 2. PROMOTER PORTAL ENTRY PAGE — `/passport-promoters`
+
+We need a simple, clear entry point for external promoters.
+
+**URL:** `https://savgent.com/passport-promoters`
+
+(If the project already uses a “/partners” or “/admin” naming scheme, keep this page separate; it is NOT the same as the existing SavGent admin dashboard.)
+
+### Purpose
+
+- Explain Soca Passport from the **promoter** perspective.
+- Let external event creators sign up and request access to use Soca Passport for their events.
+
+### Requirements
+
+1. **Content / Sections**
+   - Hero section:
+     - Title: “Soca Passport for Promoters”
+     - Subtitle: “Reward your fête fans, track loyalty across events, and see who keeps coming back.”
+     - Primary CTA: “Get Started as a Promoter”
+   - Benefits section:
+     - Short cards:
+       - “Know Your Superfans” (repeat attendees, countries, circuits).
+       - “Reward Loyalty Easily” (stamps + perks).
+       - “Multi-Event Insights” (who follows you from city to city).
+   - “How It Works” (for promoters):
+       1. Create a promoter account.
+       2. Add your event and enable Soca Passport.
+       3. Scan attendees at the door and issue stamps.
+   - Pricing note:
+       - Simple placeholder text for now:
+         > “Per-event pricing coming soon. During beta, you can request access to try Soca Passport at your event.”
+
+2. **Promoter Signup Flow (MVP)**
+   - For now, we just need:
+     - A simple **promoter registration form** that stores data for manual approval:
+       - Name
+       - Email
+       - Organization / brand
+       - Primary location (city / country)
+       - Website or IG handle
+       - Type of events (fêtes, brunches, carnivals, etc.)
+   - On submit:
+     - Create a new `promoter` record (see DB section below).
+     - Optionally link to the current `user` if logged in.
+     - Show a confirmation screen:
+       > “Thanks! We’ll contact you shortly to activate Soca Passport for your events.”
+   - Make the flow compatible with future logic where:
+     - Promoters can log in and manage events.
+
+3. **Preserve existing admin dashboard**
+   - This new promoter flow should NOT affect the current SavGent admin.
+   - Implementation should assume promoters may be a different user role or table.
+
+---
+
+## 3. DATABASE CHANGES — PROMOTERS + PER-EVENT FEES + USER PREMIUM
+
+Add new tables that are **scaffolding only** for now; minimal business logic is fine.
+
+> Important: keep migration scripts safe and non-breaking.
+
+### 3.1 New table: `promoters`
+
+Represents external event creators that want to use Soca Passport.
+
+Fields (example Postgres schema):
+
+- `id` UUID PK
+- `user_id` UUID NULL      -- optional FK → users(id) if they have a login
+- `name` VARCHAR(120) NOT NULL
+- `email` VARCHAR(255) NOT NULL
+- `organization` VARCHAR(255) NULL
+- `location_city` VARCHAR(120) NULL
+- `location_country` VARCHAR(4) NULL      -- e.g. "US", "TT"
+- `website_or_social` VARCHAR(255) NULL
+- `event_types` VARCHAR(255) NULL         -- simple comma-separated or JSON
+- `status` VARCHAR(20) NOT NULL DEFAULT 'PENDING'
+    -- 'PENDING' | 'APPROVED' | 'REJECTED'
+- `created_at` TIMESTAMP NOT NULL DEFAULT now()
+- `updated_at` TIMESTAMP NOT NULL DEFAULT now()
+
+We will later reuse this table to:
+- Link events → promoters.
+- Control who can access the promoter dashboard.
+
+---
+
+### 3.2 New table: `event_passport_billing`
+
+Tracks **per-event fees** for using Soca Passport. This is scaffolding for monetization; we don’t need full payment flows yet.
+
+Fields:
+
+- `id` UUID PK
+- `event_id` UUID NOT NULL          -- FK → events(id)
+- `promoter_id` UUID NULL           -- FK → promoters(id)
+- `billing_model` VARCHAR(30) NOT NULL DEFAULT 'PER_EVENT'
+    -- for now only 'PER_EVENT'; future: 'SUBSCRIPTION', 'HYBRID'
+- `fee_amount_cents` INT NULL       -- e.g., 1999 (i.e. $19.99), value can be null until pricing decided
+- `currency` VARCHAR(4) NOT NULL DEFAULT 'USD'
+- `status` VARCHAR(20) NOT NULL DEFAULT 'DRAFT'
+    -- 'DRAFT' | 'PENDING_PAYMENT' | 'PAID' | 'WAIVED'
+- `notes` TEXT NULL
+- `created_at` TIMESTAMP NOT NULL DEFAULT now()
+- `updated_at` TIMESTAMP NOT NULL DEFAULT now()
+
+MVP behavior:
+- When an event is created by a promoter and Soca Passport is enabled for that event (future step), we can create a `event_passport_billing` row with status `DRAFT`.
+- No actual payments or Stripe integration needed yet; just the data model.
+
+---
+
+### 3.3 New table: `passport_memberships`
+
+Scaffolding for **user upgrades / premium tiers**.
+
+Fields:
+
+- `id` UUID PK
+- `user_id` UUID NOT NULL           -- FK → users(id)
+- `tier` VARCHAR(20) NOT NULL       -- e.g. 'FREE', 'GOLD', 'ELITE'
+- `status` VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'
+    -- 'ACTIVE' | 'CANCELLED' | 'EXPIRED'
+- `started_at` TIMESTAMP NOT NULL DEFAULT now()
+- `expires_at` TIMESTAMP NULL
+- `metadata_json` JSONB NOT NULL DEFAULT '{}'::jsonb
+    -- store Stripe subscription IDs, notes, etc. later
+
+Initial behavior:
+- Every Soca Passport user implicitly is considered FREE tier; we can:
+  - Either infer that from absence of a membership row.
+  - Or create a membership row with `tier = 'FREE'` when passport profile is created.
+- No payment integration yet; just ability to:
+  - Read the tier.
+  - Later restrict features based on it.
+
+---
+
+## 4. API ENDPOINTS FOR THIS PHASE
+
+We only need a few simple endpoints in this task.
+
+### 4.1 `GET /api/passport/landing-info`
+
+Purpose:
+- Provide display data for `/socaport-app` (text, stats like “X passports created”, etc.).
+- This can be basic now; even static placeholder numbers are fine.
+
+Response example:
+
+```json
+{
+  "totalPassportUsers": 0,
+  "totalStampsIssued": 0
+}
