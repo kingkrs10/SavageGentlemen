@@ -120,7 +120,7 @@ const Home = () => {
                     onClick={() => navigate('/socaport-app')}
                     data-testid="button-passport-home"
                   >
-                    🎫 GET YOUR PASSPORT
+                    🎫 GET YOUR SOCA PASSPORT
                   </Button>
                   <Button 
                     variant="outline" 

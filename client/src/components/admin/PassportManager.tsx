@@ -148,7 +148,13 @@ export default function PassportManager() {
         title: "Profile Updated",
         description: "Passport profile has been successfully updated.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/passport/profiles"] });
+      // Invalidate all passport profile queries (with any filters/search)
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return typeof key === 'string' && key.includes('/api/admin/passport/profiles');
+        }
+      });
       setEditDialogOpen(false);
       setSelectedProfile(null);
     },
