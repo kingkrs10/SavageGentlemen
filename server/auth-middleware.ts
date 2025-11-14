@@ -195,3 +195,20 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
   req.user = user;
   next();
 };
+
+/**
+ * Middleware to require admin role
+ * Must be used after authenticateUser
+ */
+export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+  
+  if (req.user.role !== 'admin' && req.user.role !== 'super_admin') {
+    console.log("SECURITY: Admin access denied for user:", req.user.username, "Role:", req.user.role);
+    return res.status(403).json({ message: "Admin privileges required" });
+  }
+  
+  next();
+};

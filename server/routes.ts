@@ -56,6 +56,8 @@ import { registerSocialRoutes } from "./social-routes";
 import { registerEnhancedTicketingRoutes } from "./enhanced-ticketing-routes";
 import { passportRouter } from "./passport-routes";
 import { promotersRouter } from "./promoters-routes";
+import { adminPassportRouter } from "./admin-passport-routes";
+import { adminPromotersRouter } from "./admin-promoters-routes";
 import { authenticateUser, generateSecureLoginToken } from "./auth-middleware";
 
 // Initialize Stripe
@@ -137,6 +139,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register promoters routes
   router.use("/promoters", promotersRouter);
+  
+  // Register admin passport routes
+  router.use("/admin/passport", adminPassportRouter);
+  
+  // Register admin promoters routes
+  router.use("/admin/promoters", adminPromotersRouter);
   
   // Register social and enhanced ticketing routes
   registerSocialRoutes(app);
