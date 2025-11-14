@@ -13,9 +13,19 @@ import { Html5Qrcode } from "html5-qrcode";
 import { apiRequest } from "@/lib/queryClient";
 import type { Event } from "@shared/schema";
 
-interface CheckInEvent extends Event {
-  passportStampEnabled: boolean;
-  pointsAwarded: number;
+interface CheckInEventData {
+  id: number;
+  title: string;
+  date: string | null;
+  location: string | null;
+  stampPointsDefault: number;
+  countryCode: string | null;
+  carnivalCircuit: string | null;
+}
+
+interface CheckInResponse {
+  success: boolean;
+  event: CheckInEventData;
 }
 
 export default function PassportCheckIn() {
@@ -26,11 +36,13 @@ export default function PassportCheckIn() {
   const [scanResult, setScanResult] = useState<{ success: boolean; message: string; points?: number } | null>(null);
 
   // Fetch event details by access code
-  const { data: event, isLoading: eventLoading } = useQuery<CheckInEvent>({
-    queryKey: ['/api/passport/checkin', code],
+  const { data: response, isLoading: eventLoading } = useQuery<CheckInResponse>({
+    queryKey: [`/api/passport/checkin/${code}`],
     enabled: !!code,
     retry: false
   });
+
+  const event = response?.event;
 
   // Check-in mutation
   const checkInMutation = useMutation({
@@ -143,7 +155,7 @@ export default function PassportCheckIn() {
     );
   }
 
-  if (!event || !event.passportStampEnabled) {
+  if (!event) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20 flex items-center justify-center p-4">
         <Helmet>
@@ -195,7 +207,7 @@ export default function PassportCheckIn() {
                 <span className="font-semibold">Points per check-in:</span>
               </div>
               <Badge variant="default" className="text-lg px-3 py-1">
-                +{event.pointsAwarded} points
+                +{event.stampPointsDefault} points
               </Badge>
             </div>
           </CardContent>
