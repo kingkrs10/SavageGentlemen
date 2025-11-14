@@ -7,12 +7,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Users, BarChart3, Heart, CheckCircle } from "lucide-react";
+import { Users, BarChart3, Heart, CheckCircle, Sparkles } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import carnivalVideo from "@assets/Caribbean_Nightlife_Loop_Animation_1763081047699.mp4";
 
 const promoterFormSchema = z.object({
   name: z.string().min(1, "Name is required").max(120),
@@ -75,21 +76,29 @@ export default function PassportPromoters() {
           title="Soca Passport for Promoters - Thank You"
           description="Thank you for your interest in Soca Passport for event promoters."
         />
-        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center px-4">
-          <Card className="max-w-2xl w-full" data-testid="card-thank-you">
+        <div className="min-h-screen bg-gradient-to-br from-[#0B0B0E] via-[#005137] to-[#6B2AFF] flex items-center justify-center px-4 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(107,42,255,0.1),transparent_50%)] pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,126,57,0.08),transparent_40%)] pointer-events-none" />
+          
+          <Card className="max-w-2xl w-full bg-black/40 backdrop-blur-xl border-2 border-purple-500/30 shadow-2xl shadow-purple-500/20" data-testid="card-thank-you">
             <CardContent className="pt-12 pb-12 text-center space-y-6">
               <div className="flex justify-center">
-                <div className="bg-green-500/10 p-6 rounded-full">
-                  <CheckCircle className="h-16 w-16 text-green-500" data-testid="icon-success" />
+                <div className="bg-gradient-to-br from-green-400 to-emerald-600 p-6 rounded-full shadow-lg shadow-green-500/50 animate-pulse">
+                  <CheckCircle className="h-16 w-16 text-white" data-testid="icon-success" />
                 </div>
               </div>
-              <h1 className="text-4xl font-bold" data-testid="text-thank-you-title">Thank You!</h1>
-              <p className="text-xl text-muted-foreground" data-testid="text-thank-you-message">
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-green-400 via-emerald-500 to-teal-400 bg-clip-text text-transparent" data-testid="text-thank-you-title">
+                Welcome to the Carnival!
+              </h1>
+              <p className="text-xl text-gray-200" data-testid="text-thank-you-message">
                 We've received your application and will contact you shortly to activate Soca Passport for your events.
               </p>
-              <p className="text-muted-foreground" data-testid="text-expected-response-time">
+              <p className="text-gray-300" data-testid="text-expected-response-time">
                 You can expect to hear from us within 2-3 business days.
               </p>
+              <div className="pt-4">
+                <Sparkles className="h-8 w-8 text-yellow-400 mx-auto animate-spin" style={{ animationDuration: '3s' }} />
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -104,103 +113,195 @@ export default function PassportPromoters() {
         description="Track loyalty across events, see who keeps coming back, and reward your superfans with Soca Passport."
         ogImage="/og-socapassport-promoters.jpg"
       />
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-        <div className="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
-          <div className="text-center space-y-8 mb-20">
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
-              Soca Passport for Promoters
+      <div className="min-h-screen bg-gradient-to-br from-[#0B0B0E] via-[#005137] to-[#6B2AFF] relative overflow-hidden">
+        {/* Video Background */}
+        <div className="absolute inset-0 overflow-hidden">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover opacity-20"
+          >
+            <source src={carnivalVideo} type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
+        </div>
+
+        {/* Carnival Bokeh Overlays */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(255,126,57,0.06),transparent_40%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(107,42,255,0.08),transparent_50%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,255,135,0.04),transparent_60%)] pointer-events-none" />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
+          {/* HERO SECTION */}
+          <div className="text-center space-y-8 mb-20 relative">
+            <div className="absolute inset-0 blur-3xl opacity-30 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 -z-10" />
+            
+            <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black tracking-tight bg-gradient-to-r from-orange-400 via-pink-500 to-purple-600 bg-clip-text text-transparent drop-shadow-2xl animate-pulse" style={{ animationDuration: '3s' }}>
+              SOCA PASSPORT
+              <br />
+              <span className="text-5xl sm:text-6xl lg:text-7xl">FOR PROMOTERS</span>
             </h1>
-            <p className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-2xl sm:text-3xl text-gray-100 max-w-4xl mx-auto font-light leading-relaxed drop-shadow-lg">
               Reward your fête fans, track loyalty across events, and see who keeps coming back.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-20">
-            <Card className="border-2 hover:border-primary/50 transition-all">
-              <CardContent className="pt-6 space-y-4">
-                <div className="bg-primary/10 p-4 rounded-full w-fit">
-                  <Users className="h-8 w-8 text-primary" />
+          {/* FEATURE BLOCKS */}
+          <div className="grid md:grid-cols-3 gap-8 mb-24">
+            {/* Know Your Superfans */}
+            <Card className="relative group bg-black/40 backdrop-blur-xl border-2 border-purple-500/50 hover:border-purple-400 transition-all duration-500 overflow-hidden shadow-xl hover:shadow-purple-500/50 hover:scale-105">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-500" />
+              
+              <CardContent className="relative pt-8 space-y-4">
+                <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-4 rounded-2xl w-fit shadow-lg shadow-purple-500/50">
+                  <Users className="h-10 w-10 text-white" />
                 </div>
-                <h3 className="text-xl font-bold">Know Your Superfans</h3>
-                <p className="text-muted-foreground">
-                  See who attends your events repeatedly across cities, countries, and carnival circuits.
+                <h3 className="text-2xl font-bold text-white">Know Your Superfans</h3>
+                <p className="text-gray-300 leading-relaxed">
+                  See who follows your events across cities, islands, and carnival circuits.
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-primary/50 transition-all">
-              <CardContent className="pt-6 space-y-4">
-                <div className="bg-primary/10 p-4 rounded-full w-fit">
-                  <Heart className="h-8 w-8 text-primary" />
+            {/* Reward Loyalty */}
+            <Card className="relative group bg-black/40 backdrop-blur-xl border-2 border-orange-500/50 hover:border-orange-400 transition-all duration-500 overflow-hidden shadow-xl hover:shadow-orange-500/50 hover:scale-105">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="absolute -inset-1 bg-gradient-to-r from-orange-600 to-yellow-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-500" />
+              
+              <CardContent className="relative pt-8 space-y-4">
+                <div className="bg-gradient-to-br from-orange-500 to-yellow-600 p-4 rounded-2xl w-fit shadow-lg shadow-orange-500/50">
+                  <Heart className="h-10 w-10 text-white" />
                 </div>
-                <h3 className="text-xl font-bold">Reward Loyalty Easily</h3>
-                <p className="text-muted-foreground">
-                  Automatically award stamps and perks to attendees. Build a community of loyal fans.
+                <h3 className="text-2xl font-bold text-white">Reward Loyalty Easily</h3>
+                <p className="text-gray-300 leading-relaxed">
+                  Automatically award stamps and perks to attendees. Build a loyal carnival tribe around your brand.
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-primary/50 transition-all">
-              <CardContent className="pt-6 space-y-4">
-                <div className="bg-primary/10 p-4 rounded-full w-fit">
-                  <BarChart3 className="h-8 w-8 text-primary" />
+            {/* Multi-Event Insights */}
+            <Card className="relative group bg-black/40 backdrop-blur-xl border-2 border-green-500/50 hover:border-green-400 transition-all duration-500 overflow-hidden shadow-xl hover:shadow-green-500/50 hover:scale-105">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="absolute -inset-1 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-500" />
+              
+              <CardContent className="relative pt-8 space-y-4">
+                <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-4 rounded-2xl w-fit shadow-lg shadow-green-500/50">
+                  <BarChart3 className="h-10 w-10 text-white" />
                 </div>
-                <h3 className="text-xl font-bold">Multi-Event Insights</h3>
-                <p className="text-muted-foreground">
-                  Track who follows you from city to city and understand your most engaged audiences.
+                <h3 className="text-2xl font-bold text-white">Multi-Event Insights</h3>
+                <p className="text-gray-300 leading-relaxed">
+                  Track who moves with you from city to city and understand your most engaged audiences.
                 </p>
               </CardContent>
             </Card>
           </div>
 
-          <div className="bg-card rounded-3xl p-12 mb-20 border-2">
-            <h2 className="text-4xl font-bold text-center mb-12">How It Works</h2>
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="text-center space-y-4">
-                <div className="bg-primary text-primary-foreground rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold mx-auto">
-                  1
+          {/* HOW IT WORKS */}
+          <div className="bg-black/50 backdrop-blur-2xl rounded-3xl p-12 mb-20 border-2 border-purple-500/30 shadow-2xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-600/5 via-pink-600/5 to-orange-600/5 pointer-events-none" />
+            
+            <h2 className="text-5xl font-black text-center mb-16 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
+              How It Works
+            </h2>
+            <div className="grid md:grid-cols-4 gap-8 relative">
+              {/* Step 1 */}
+              <div className="text-center space-y-4 group">
+                <div className="relative mx-auto w-20 h-20 mb-4">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full blur-xl opacity-50 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative bg-gradient-to-br from-purple-500 to-pink-600 rounded-full w-20 h-20 flex items-center justify-center text-2xl font-black text-white shadow-2xl shadow-purple-500/50 border-4 border-white/20">
+                    1
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold">Create Your Account</h3>
-                <p className="text-muted-foreground">
-                  Sign up as a promoter and tell us about your events.
+                <h3 className="text-xl font-bold text-white">Create Your Account</h3>
+                <p className="text-gray-300 leading-relaxed">
+                  Sign up as a promoter and tell us about your brand or event company.
                 </p>
               </div>
 
-              <div className="text-center space-y-4">
-                <div className="bg-primary text-primary-foreground rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold mx-auto">
-                  2
+              {/* Step 2 */}
+              <div className="text-center space-y-4 group">
+                <div className="relative mx-auto w-20 h-20 mb-4">
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-yellow-600 rounded-full blur-xl opacity-50 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative bg-gradient-to-br from-orange-500 to-yellow-600 rounded-full w-20 h-20 flex items-center justify-center text-2xl font-black text-white shadow-2xl shadow-orange-500/50 border-4 border-white/20">
+                    2
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold">Enable Passport</h3>
-                <p className="text-muted-foreground">
-                  Add your events and enable Soca Passport for each one.
+                <h3 className="text-xl font-bold text-white">Enable Passport</h3>
+                <p className="text-gray-300 leading-relaxed">
+                  Add your events and enable stamps, rewards, and carnival circuits.
                 </p>
               </div>
 
-              <div className="text-center space-y-4">
-                <div className="bg-primary text-primary-foreground rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold mx-auto">
-                  3
+              {/* Step 3 */}
+              <div className="text-center space-y-4 group">
+                <div className="relative mx-auto w-20 h-20 mb-4">
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full blur-xl opacity-50 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative bg-gradient-to-br from-green-500 to-emerald-600 rounded-full w-20 h-20 flex items-center justify-center text-2xl font-black text-white shadow-2xl shadow-green-500/50 border-4 border-white/20">
+                    3
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold">Scan & Reward</h3>
-                <p className="text-muted-foreground">
-                  Scan attendees at the door and automatically issue stamps.
+                <h3 className="text-xl font-bold text-white">Scan & Reward</h3>
+                <p className="text-gray-300 leading-relaxed">
+                  Scan attendees at the door to give stamps and Fête Credits instantly.
+                </p>
+              </div>
+
+              {/* Step 4 */}
+              <div className="text-center space-y-4 group">
+                <div className="relative mx-auto w-20 h-20 mb-4">
+                  <div className="absolute inset-0 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full blur-xl opacity-50 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative bg-gradient-to-br from-pink-500 to-purple-600 rounded-full w-20 h-20 flex items-center justify-center text-2xl font-black text-white shadow-2xl shadow-pink-500/50 border-4 border-white/20">
+                    4
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-white">Track the Movement</h3>
+                <p className="text-gray-300 leading-relaxed">
+                  See how fans travel between cities, carnivals, and islands.
                 </p>
               </div>
             </div>
           </div>
 
-          <Card className="bg-gradient-to-r from-primary/10 to-purple-500/10 border-2 border-primary/20 mb-12">
-            <CardContent className="p-12 text-center space-y-4">
-              <h2 className="text-3xl font-bold">Pricing</h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          {/* NEW MID-SECTION - Caribbean Experiences */}
+          <div className="relative mb-24 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-600/20 via-purple-600/20 to-pink-600/20 backdrop-blur-sm transform -skew-y-2" />
+            <div className="relative py-16 px-8 text-center">
+              <h2 className="text-4xl sm:text-5xl font-black text-white mb-8 drop-shadow-2xl">
+                Designed for Every Caribbean Experience
+              </h2>
+              <div className="flex flex-wrap justify-center gap-4 text-lg sm:text-xl text-gray-200 font-medium">
+                <span className="px-4 py-2 bg-orange-500/20 rounded-full border border-orange-400/50">J'ouvert</span>
+                <span className="px-4 py-2 bg-purple-500/20 rounded-full border border-purple-400/50">Glow Parties</span>
+                <span className="px-4 py-2 bg-pink-500/20 rounded-full border border-pink-400/50">Soca Brunches</span>
+                <span className="px-4 py-2 bg-green-500/20 rounded-full border border-green-400/50">Mas Bands</span>
+                <span className="px-4 py-2 bg-yellow-500/20 rounded-full border border-yellow-400/50">Boat Rides</span>
+                <span className="px-4 py-2 bg-blue-500/20 rounded-full border border-blue-400/50">Carnival Concerts</span>
+                <span className="px-4 py-2 bg-red-500/20 rounded-full border border-red-400/50">Diaspora Fêtes</span>
+              </div>
+            </div>
+          </div>
+
+          {/* PRICING SECTION */}
+          <Card className="bg-gradient-to-r from-purple-900/40 to-pink-900/40 backdrop-blur-xl border-2 border-purple-400/30 mb-16 shadow-2xl shadow-purple-500/20 overflow-hidden relative">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.03),transparent)] pointer-events-none" />
+            <CardContent className="relative p-12 text-center space-y-4">
+              <h2 className="text-4xl font-black text-white drop-shadow-lg">Pricing</h2>
+              <p className="text-xl text-gray-200 max-w-2xl mx-auto leading-relaxed">
                 Per-event pricing coming soon. During beta, you can request access to try Soca Passport at your event.
               </p>
             </CardContent>
           </Card>
 
-          <Card className="max-w-3xl mx-auto">
-            <CardHeader>
-              <CardTitle className="text-3xl">Get Started as a Promoter</CardTitle>
-              <CardDescription>
+          {/* REGISTRATION FORM */}
+          <Card className="max-w-3xl mx-auto bg-black/60 backdrop-blur-2xl border-2 border-purple-500/40 shadow-2xl shadow-purple-500/30">
+            <CardHeader className="text-center space-y-3 pb-8">
+              <CardTitle className="text-4xl font-black bg-gradient-to-r from-orange-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">
+                Get Started as a Promoter
+              </CardTitle>
+              <CardDescription className="text-lg text-gray-300">
                 Fill out the form below and we'll contact you shortly to activate Soca Passport for your events.
               </CardDescription>
             </CardHeader>
@@ -212,9 +313,14 @@ export default function PassportPromoters() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Name *</FormLabel>
+                        <FormLabel className="text-gray-200 text-base">Name *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Your full name" {...field} data-testid="input-name" />
+                          <Input 
+                            placeholder="Your full name" 
+                            {...field} 
+                            data-testid="input-name"
+                            className="bg-white/5 border-gray-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500/50"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -226,9 +332,15 @@ export default function PassportPromoters() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email *</FormLabel>
+                        <FormLabel className="text-gray-200 text-base">Email *</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="your@email.com" {...field} data-testid="input-email" />
+                          <Input 
+                            type="email" 
+                            placeholder="your@email.com" 
+                            {...field} 
+                            data-testid="input-email"
+                            className="bg-white/5 border-gray-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500/50"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -240,9 +352,14 @@ export default function PassportPromoters() {
                     name="organization"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Organization / Brand</FormLabel>
+                        <FormLabel className="text-gray-200 text-base">Organization / Brand</FormLabel>
                         <FormControl>
-                          <Input placeholder="Your event company or brand" {...field} data-testid="input-organization" />
+                          <Input 
+                            placeholder="Your event company or brand" 
+                            {...field} 
+                            data-testid="input-organization"
+                            className="bg-white/5 border-gray-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500/50"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -255,9 +372,14 @@ export default function PassportPromoters() {
                       name="locationCity"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>City</FormLabel>
+                          <FormLabel className="text-gray-200 text-base">City</FormLabel>
                           <FormControl>
-                            <Input placeholder="Miami" {...field} data-testid="input-city" />
+                            <Input 
+                              placeholder="Miami" 
+                              {...field} 
+                              data-testid="input-city"
+                              className="bg-white/5 border-gray-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500/50"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -269,9 +391,15 @@ export default function PassportPromoters() {
                       name="locationCountry"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Country Code</FormLabel>
+                          <FormLabel className="text-gray-200 text-base">Country Code</FormLabel>
                           <FormControl>
-                            <Input placeholder="US" {...field} data-testid="input-country" maxLength={2} />
+                            <Input 
+                              placeholder="US" 
+                              {...field} 
+                              data-testid="input-country" 
+                              maxLength={2}
+                              className="bg-white/5 border-gray-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500/50"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -284,9 +412,14 @@ export default function PassportPromoters() {
                     name="websiteOrSocial"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Website or Instagram Handle</FormLabel>
+                        <FormLabel className="text-gray-200 text-base">Website or Instagram Handle</FormLabel>
                         <FormControl>
-                          <Input placeholder="@yourhandle or https://yourwebsite.com" {...field} data-testid="input-website" />
+                          <Input 
+                            placeholder="@yourhandle or https://yourwebsite.com" 
+                            {...field} 
+                            data-testid="input-website"
+                            className="bg-white/5 border-gray-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500/50"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -298,9 +431,14 @@ export default function PassportPromoters() {
                     name="eventTypes"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Type of Events</FormLabel>
+                        <FormLabel className="text-gray-200 text-base">Type of Events</FormLabel>
                         <FormControl>
-                          <Input placeholder="fêtes, brunches, carnivals, etc." {...field} data-testid="input-event-types" />
+                          <Input 
+                            placeholder="fêtes, brunches, carnivals, etc." 
+                            {...field} 
+                            data-testid="input-event-types"
+                            className="bg-white/5 border-gray-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500/50"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -310,11 +448,11 @@ export default function PassportPromoters() {
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full"
+                    className="w-full bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 hover:from-orange-600 hover:via-pink-600 hover:to-purple-700 text-white font-bold text-lg py-6 shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-300 border-2 border-white/10"
                     disabled={registerMutation.isPending}
                     data-testid="button-submit-promoter"
                   >
-                    {registerMutation.isPending ? "Submitting..." : "Submit Application"}
+                    {registerMutation.isPending ? "Submitting..." : "Become a Passport Promoter"}
                   </Button>
                 </form>
               </Form>
