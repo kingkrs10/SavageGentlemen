@@ -1715,6 +1715,49 @@ export const passportMissions = pgTable("passport_missions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Promoters - External event creators using Soca Passport
+export const promoters = pgTable("promoters", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }), // Optional FK if promoter has a login
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  organization: text("organization"),
+  locationCity: text("location_city"),
+  locationCountry: text("location_country"), // ISO country code (e.g., "US", "TT", "CA")
+  websiteOrSocial: text("website_or_social"),
+  eventTypes: text("event_types"), // Comma-separated or JSON string
+  status: text("status").notNull().default("PENDING"), // PENDING, APPROVED, REJECTED
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Event Passport Billing - Per-event fees for using Soca Passport
+export const eventPassportBilling = pgTable("event_passport_billing", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").notNull().references(() => events.id, { onDelete: "cascade" }),
+  promoterId: integer("promoter_id").references(() => promoters.id, { onDelete: "set null" }),
+  billingModel: text("billing_model").notNull().default("PER_EVENT"), // PER_EVENT, SUBSCRIPTION, HYBRID
+  feeAmountCents: integer("fee_amount_cents"), // e.g., 1999 for $19.99, null until pricing decided
+  currency: text("currency").notNull().default("USD"),
+  status: text("status").notNull().default("DRAFT"), // DRAFT, PENDING_PAYMENT, PAID, WAIVED
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Passport Memberships - User upgrade tiers (FREE, GOLD, ELITE)
+export const passportMemberships = pgTable("passport_memberships", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tier: text("tier").notNull().default("FREE"), // FREE, GOLD, ELITE
+  status: text("status").notNull().default("ACTIVE"), // ACTIVE, CANCELLED, EXPIRED
+  startedAt: timestamp("started_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+  metadataJson: jsonb("metadata_json").notNull().default(sql`'{}'::jsonb`), // Stripe subscription IDs, notes, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Passport Profile Insert Schema
 export const insertPassportProfileSchema = createInsertSchema(passportProfiles)
   .pick({
@@ -1797,6 +1840,53 @@ export const insertPassportMissionSchema = createInsertSchema(passportMissions)
     rules: z.record(z.any()).default({}),
   });
 
+// Promoter Insert Schema
+export const insertPromoterSchema = createInsertSchema(promoters)
+  .omit({ id: true, createdAt: true, updatedAt: true, status: true })
+  .extend({
+    name: z.string().min(1, 'Name is required').max(120),
+    email: z.string().email('Valid email is required'),
+    organization: z.string().max(255).optional(),
+    locationCity: z.string().max(120).optional(),
+    locationCountry: z.string().length(2, 'Country code must be 2 characters').optional(),
+    websiteOrSocial: z.string().max(255).optional(),
+    eventTypes: z.string().max(255).optional(),
+  });
+
+// Event Passport Billing Insert Schema
+export const insertEventPassportBillingSchema = createInsertSchema(eventPassportBilling)
+  .pick({
+    eventId: true,
+    promoterId: true,
+    billingModel: true,
+    feeAmountCents: true,
+    currency: true,
+    status: true,
+    notes: true,
+  })
+  .extend({
+    billingModel: z.enum(['PER_EVENT', 'SUBSCRIPTION', 'HYBRID']).default('PER_EVENT'),
+    feeAmountCents: z.number().min(0).optional(),
+    currency: z.string().length(3).default('USD'),
+    status: z.enum(['DRAFT', 'PENDING_PAYMENT', 'PAID', 'WAIVED']).default('DRAFT'),
+  });
+
+// Passport Membership Insert Schema
+export const insertPassportMembershipSchema = createInsertSchema(passportMemberships)
+  .pick({
+    userId: true,
+    tier: true,
+    status: true,
+    startedAt: true,
+    expiresAt: true,
+    metadataJson: true,
+  })
+  .extend({
+    tier: z.enum(['FREE', 'GOLD', 'ELITE']).default('FREE'),
+    status: z.enum(['ACTIVE', 'CANCELLED', 'EXPIRED']).default('ACTIVE'),
+    metadataJson: z.record(z.any()).default({}),
+  });
+
 // Export Passport Types
 export type PassportProfile = typeof passportProfiles.$inferSelect;
 export type InsertPassportProfile = z.infer<typeof insertPassportProfileSchema>;
@@ -1812,6 +1902,15 @@ export type InsertPassportReward = z.infer<typeof insertPassportRewardSchema>;
 
 export type PassportMission = typeof passportMissions.$inferSelect;
 export type InsertPassportMission = z.infer<typeof insertPassportMissionSchema>;
+
+export type Promoter = typeof promoters.$inferSelect;
+export type InsertPromoter = z.infer<typeof insertPromoterSchema>;
+
+export type EventPassportBilling = typeof eventPassportBilling.$inferSelect;
+export type InsertEventPassportBilling = z.infer<typeof insertEventPassportBillingSchema>;
+
+export type PassportMembership = typeof passportMemberships.$inferSelect;
+export type InsertPassportMembership = z.infer<typeof insertPassportMembershipSchema>;
 
 // Type exports for new tables
 export type EventCheckin = typeof eventCheckins.$inferSelect;

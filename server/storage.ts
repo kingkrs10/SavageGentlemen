@@ -118,7 +118,15 @@ import {
   PassportReward,
   InsertPassportReward,
   PassportMission,
-  InsertPassportMission
+  InsertPassportMission,
+  // Promoter tables
+  promoters,
+  Promoter,
+  InsertPromoter,
+  // Passport Membership tables
+  passportMemberships,
+  PassportMembership,
+  InsertPassportMembership
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, sql, lte, lt, isNotNull, not } from "drizzle-orm";
@@ -407,6 +415,18 @@ export interface IStorage {
   getAllPassportMissions(isActive?: boolean): Promise<PassportMission[]>;
   createPassportMission(mission: InsertPassportMission): Promise<PassportMission>;
   updatePassportMission(id: number, data: Partial<InsertPassportMission>): Promise<PassportMission | undefined>;
+  
+  // Passport Landing Page operations
+  getPassportLandingStats(): Promise<{ totalPassportUsers: number; totalStampsIssued: number }>;
+  
+  // Promoter operations
+  createPromoter(promoter: InsertPromoter): Promise<Promoter>;
+  getPromoterByUserId(userId: number): Promise<Promoter | undefined>;
+  getPromoter(id: number): Promise<Promoter | undefined>;
+  
+  // Passport Membership operations
+  createPassportMembership(membership: InsertPassportMembership): Promise<PassportMembership>;
+  getPassportMembershipByUserId(userId: number): Promise<PassportMembership | undefined>;
 }
 
 // In-memory storage implementation
@@ -4952,6 +4972,72 @@ export class DatabaseStorage implements IStorage {
       .where(eq(passportMissions.id, id))
       .returning();
     return mission;
+  }
+
+  async getPassportLandingStats(): Promise<{ totalPassportUsers: number; totalStampsIssued: number }> {
+    const [userCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(passportProfiles)
+      .where(gt(passportProfiles.totalPoints, 0));
+    
+    const [stampCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(passportStamps);
+    
+    return {
+      totalPassportUsers: userCount?.count || 0,
+      totalStampsIssued: stampCount?.count || 0
+    };
+  }
+
+  async createPromoter(promoterData: InsertPromoter): Promise<Promoter> {
+    const [promoter] = await db
+      .insert(promoters)
+      .values({
+        ...promoterData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return promoter;
+  }
+
+  async getPromoterByUserId(userId: number): Promise<Promoter | undefined> {
+    const [promoter] = await db
+      .select()
+      .from(promoters)
+      .where(eq(promoters.userId, userId));
+    return promoter;
+  }
+
+  async getPromoter(id: number): Promise<Promoter | undefined> {
+    const [promoter] = await db
+      .select()
+      .from(promoters)
+      .where(eq(promoters.id, id));
+    return promoter;
+  }
+
+  async createPassportMembership(membershipData: InsertPassportMembership): Promise<PassportMembership> {
+    const [membership] = await db
+      .insert(passportMemberships)
+      .values({
+        ...membershipData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return membership;
+  }
+
+  async getPassportMembershipByUserId(userId: number): Promise<PassportMembership | undefined> {
+    const [membership] = await db
+      .select()
+      .from(passportMemberships)
+      .where(eq(passportMemberships.userId, userId))
+      .orderBy(desc(passportMemberships.createdAt))
+      .limit(1);
+    return membership;
   }
 }
 

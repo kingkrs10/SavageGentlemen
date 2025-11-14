@@ -208,4 +208,35 @@ router.get(
   })
 );
 
+/**
+ * GET /api/passport/landing-info
+ * Get stats for the public landing page
+ * Public endpoint - no authentication required
+ */
+router.get(
+  '/landing-info',
+  asyncHandler(async (req: Request, res: Response) => {
+    const stats = await storage.getPassportLandingStats();
+    res.json(stats);
+  })
+);
+
+/**
+ * POST /api/passport/profile
+ * Create a new passport profile for the authenticated user
+ * Requires authentication
+ */
+router.post(
+  '/profile',
+  authenticateUser,
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new AuthenticationError('User must be logged in to create passport');
+    }
+
+    const profile = await passportService.getOrCreateProfile(req.user.id, req.user.username || 'User');
+    res.json(profile);
+  })
+);
+
 export { router as passportRouter };

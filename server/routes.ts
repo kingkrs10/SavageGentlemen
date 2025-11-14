@@ -55,6 +55,7 @@ import { emailMarketingRouter } from "./email-marketing-routes";
 import { registerSocialRoutes } from "./social-routes";
 import { registerEnhancedTicketingRoutes } from "./enhanced-ticketing-routes";
 import { passportRouter } from "./passport-routes";
+import { promotersRouter } from "./promoters-routes";
 import { authenticateUser, generateSecureLoginToken } from "./auth-middleware";
 
 // Initialize Stripe
@@ -133,6 +134,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register passport routes
   router.use("/passport", passportRouter);
+  
+  // Register promoters routes
+  router.use("/promoters", promotersRouter);
   
   // Register social and enhanced ticketing routes
   registerSocialRoutes(app);

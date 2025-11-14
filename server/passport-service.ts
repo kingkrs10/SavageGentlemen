@@ -52,6 +52,13 @@ export class PassportService {
       };
       
       profile = await storage.createPassportProfile(profileData);
+      
+      await storage.createPassportMembership({
+        userId,
+        tier: 'FREE',
+        status: 'ACTIVE',
+        metadataJson: {}
+      });
     }
     
     return profile;
