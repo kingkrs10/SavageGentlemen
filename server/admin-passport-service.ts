@@ -92,11 +92,16 @@ export class AdminPassportService {
       const profiles = await query.limit(limit).offset(offset);
 
       // Get total count
-      const [{ count: total }] = await db
+      let countQuery = db
         .select({ count: sql<number>`count(*)::int` })
         .from(passportProfiles)
-        .innerJoin(users, eq(passportProfiles.userId, users.id))
-        .where(conditions.length > 0 ? and(...conditions) : undefined);
+        .innerJoin(users, eq(passportProfiles.userId, users.id));
+      
+      if (conditions.length > 0) {
+        countQuery = countQuery.where(and(...conditions)) as any;
+      }
+      
+      const [{ count: total }] = await countQuery;
 
       return {
         profiles: profiles as PassportProfileWithUser[],
