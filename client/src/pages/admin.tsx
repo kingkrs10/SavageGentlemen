@@ -271,6 +271,7 @@ export default function AdminPage() {
     countryCode: '',
     carnivalCircuit: ''
   });
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   
   React.useEffect(() => {
     // Check if user is logged in and is admin
@@ -684,6 +685,104 @@ export default function AdminPage() {
       toast({
         title: "Error",
         description: "Failed to create user. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Event edit handler
+  const handleEditEvent = (event: Event) => {
+    setEditingEvent(event);
+    const eventDate = new Date(event.date);
+    const dateStr = eventDate.toISOString().split('T')[0];
+    const timeStr = eventDate.toTimeString().slice(0, 5);
+    
+    setEventForm({
+      title: event.title,
+      date: dateStr,
+      time: timeStr,
+      location: event.location,
+      price: event.price / 100,
+      description: event.description || '',
+      imageUrl: event.imageUrl || '',
+      category: event.category || 'party',
+      featured: event.featured || false,
+      isSocaPassportEnabled: event.isSocaPassportEnabled || false,
+      stampPointsDefault: event.stampPointsDefault || 50,
+      countryCode: event.countryCode || '',
+      carnivalCircuit: event.carnivalCircuit || ''
+    });
+    setEventDialogOpen(true);
+  };
+
+  // Event update handler
+  const handleUpdateEvent = async () => {
+    if (!editingEvent) return;
+    
+    try {
+      if (!eventForm.title || !eventForm.date || !eventForm.location) {
+        toast({
+          title: "Missing fields",
+          description: "Title, date, and location are required",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const priceInCents = Math.round(eventForm.price * 100);
+      const dateTimeString = `${eventForm.date}T${eventForm.time || '00:00:00'}`;
+      const eventDate = new Date(dateTimeString);
+      
+      const eventData = {
+        title: eventForm.title,
+        date: eventDate,
+        location: eventForm.location,
+        price: priceInCents,
+        description: eventForm.description || null,
+        imageUrl: eventForm.imageUrl || null,
+        category: eventForm.category || 'party',
+        featured: eventForm.featured,
+        isSocaPassportEnabled: eventForm.isSocaPassportEnabled,
+        stampPointsDefault: eventForm.stampPointsDefault,
+        countryCode: eventForm.countryCode || null,
+        carnivalCircuit: eventForm.carnivalCircuit || null
+      };
+
+      const response = await apiRequest('PATCH', `/api/admin/events/${editingEvent.id}`, eventData);
+
+      if (!response.ok) {
+        throw new Error('Failed to update event');
+      }
+
+      toast({
+        title: "Event Updated",
+        description: `Event "${eventForm.title}" updated successfully`,
+      });
+      
+      setEventDialogOpen(false);
+      setEditingEvent(null);
+      setEventForm({
+        title: '',
+        date: '',
+        time: '',
+        location: '',
+        price: 0,
+        description: '',
+        imageUrl: '',
+        category: 'party',
+        featured: false,
+        isSocaPassportEnabled: false,
+        stampPointsDefault: 50,
+        countryCode: '',
+        carnivalCircuit: ''
+      });
+      
+      queryClient.invalidateQueries({queryKey: ["/api/events"]});
+    } catch (error) {
+      console.error("Failed to update event:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update event. Please try again.",
         variant: "destructive"
       });
     }
@@ -1468,10 +1567,8 @@ export default function AdminPage() {
                               <Button 
                                 variant="outline" 
                                 size="sm"
-                                onClick={() => toast({
-                                  title: "Edit Event",
-                                  description: "Coming soon"
-                                })}
+                                onClick={() => handleEditEvent(event)}
+                                data-testid={`button-edit-event-${event.id}`}
                               >
                                 Edit
                               </Button>
@@ -1505,12 +1602,34 @@ export default function AdminPage() {
           </Card>
 
           {/* Event Dialog */}
-          <Dialog open={eventDialogOpen} onOpenChange={setEventDialogOpen}>
+          <Dialog open={eventDialogOpen} onOpenChange={(open) => {
+            setEventDialogOpen(open);
+            if (!open) {
+              setEditingEvent(null);
+              setEventForm({
+                title: '',
+                date: '',
+                time: '',
+                location: '',
+                price: 0,
+                description: '',
+                imageUrl: '',
+                category: 'party',
+                featured: false,
+                isSocaPassportEnabled: false,
+                stampPointsDefault: 50,
+                countryCode: '',
+                carnivalCircuit: ''
+              });
+            }
+          }}>
             <DialogContent className="sm:max-w-[450px] bg-[#141e2e] text-white">
               <DialogHeader>
-                <DialogTitle className="text-white text-xl">Create new event</DialogTitle>
+                <DialogTitle className="text-white text-xl">
+                  {editingEvent ? 'Edit Event' : 'Create new event'}
+                </DialogTitle>
                 <DialogDescription className="text-slate-400">
-                  Add a new event to the system with appropriate details.
+                  {editingEvent ? 'Update event details below.' : 'Add a new event to the system with appropriate details.'}
                 </DialogDescription>
               </DialogHeader>
               
@@ -1727,10 +1846,10 @@ export default function AdminPage() {
                   Cancel
                 </Button>
                 <Button 
-                  onClick={handleCreateEvent} 
+                  onClick={editingEvent ? handleUpdateEvent : handleCreateEvent} 
                   className="sg-btn"
                 >
-                  Create Event
+                  {editingEvent ? 'Update Event' : 'Create Event'}
                 </Button>
               </DialogFooter>
             </DialogContent>

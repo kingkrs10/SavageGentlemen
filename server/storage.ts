@@ -918,9 +918,12 @@ export class MemStorage implements IStorage {
       accessCode = crypto.randomBytes(16).toString('hex');
     }
     
+    const updateData = { ...eventData };
+    delete updateData.accessCode;
+    
     const updatedEvent: Event = {
       ...event,
-      ...eventData,
+      ...updateData,
       accessCode: accessCode
     };
     
@@ -2797,10 +2800,13 @@ export class DatabaseStorage implements IStorage {
       accessCode = crypto.randomBytes(16).toString('hex');
     }
     
+    const updateData = { ...eventData };
+    delete updateData.accessCode;
+    
     const [event] = await db
       .update(events)
       .set({
-        ...eventData,
+        ...updateData,
         accessCode: accessCode,
         updatedAt: new Date()
       })
