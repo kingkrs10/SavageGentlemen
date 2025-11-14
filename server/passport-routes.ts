@@ -4,12 +4,14 @@ import { storage } from './storage';
 import { asyncHandler, AppError, AuthenticationError } from './middleware/error-handler';
 import { authenticateUser } from './auth-middleware';
 import { z } from 'zod';
+import { generatePassportQR, verifyPassportQR } from './utils/crypto';
 
 const router = Router();
 
 /**
  * GET /api/passport/profile
  * Get user's passport profile (or create if doesn't exist)
+ * Includes cryptographic QR code for check-in
  * Requires authentication
  */
 router.get(
@@ -21,7 +23,14 @@ router.get(
     }
 
     const profile = await passportService.getOrCreateProfile(req.user.id, req.user.username || 'User');
-    res.json(profile);
+    
+    // Generate secure QR code for check-in
+    const qrData = generatePassportQR(req.user.id);
+    
+    res.json({
+      ...profile,
+      qrData // Add QR code to response
+    });
   })
 );
 
@@ -236,6 +245,134 @@ router.post(
 
     const profile = await passportService.getOrCreateProfile(req.user.id, req.user.username || 'User');
     res.json(profile);
+  })
+);
+
+/**
+ * GET /api/passport/checkin/:accessCode
+ * Fetch event details for check-in scanner page
+ * Public endpoint - no authentication required
+ */
+router.get(
+  '/checkin/:accessCode',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { accessCode } = req.params;
+
+    const event = await storage.getEventByAccessCode(accessCode);
+    if (!event) {
+      throw new AppError('Invalid access code', 404, 'INVALID_ACCESS_CODE');
+    }
+
+    if (!event.isSocaPassportEnabled) {
+      throw new AppError('Soca Passport not enabled for this event', 403, 'PASSPORT_NOT_ENABLED');
+    }
+
+    // Return safe subset of event data for public scanner
+    res.json({
+      success: true,
+      event: {
+        id: event.id,
+        title: event.title,
+        date: event.date,
+        location: event.location,
+        stampPointsDefault: event.stampPointsDefault,
+        countryCode: event.countryCode,
+        carnivalCircuit: event.carnivalCircuit,
+      }
+    });
+  })
+);
+
+/**
+ * POST /api/passport/checkin
+ * Check in a user by scanning their passport QR code
+ * Public endpoint - no authentication required (for promoters)
+ */
+router.post(
+  '/checkin',
+  asyncHandler(async (req: Request, res: Response) => {
+    const checkinSchema = z.object({
+      qrData: z.string(),
+      accessCode: z.string(),
+    });
+
+    const { qrData, accessCode } = checkinSchema.parse(req.body);
+
+    // Step 1: Verify QR signature
+    const qrResult = verifyPassportQR(qrData);
+    if (!qrResult) {
+      throw new AppError('Invalid or expired QR code', 400, 'INVALID_QR_CODE');
+    }
+
+    const { userId } = qrResult;
+
+    // Step 2: Validate access code and get event
+    const event = await storage.getEventByAccessCode(accessCode);
+    if (!event) {
+      throw new AppError('Invalid access code', 404, 'INVALID_ACCESS_CODE');
+    }
+
+    // Step 3: Check if event has passport enabled
+    if (!event.isSocaPassportEnabled) {
+      throw new AppError('Soca Passport not enabled for this event', 403, 'PASSPORT_NOT_ENABLED');
+    }
+
+    // Step 4: Get user's passport profile
+    const profile = await storage.getPassportProfile(userId);
+    if (!profile) {
+      throw new AppError('User does not have a Soca Passport', 404, 'NO_PASSPORT_PROFILE');
+    }
+
+    // Step 5: Check for duplicate stamps
+    const existingStamp = await storage.getPassportStampByUserAndEvent(userId, event.id);
+    if (existingStamp) {
+      return res.status(409).json({ 
+        success: false, 
+        message: 'User already checked in for this event',
+        alreadyStamped: true,
+        stamp: existingStamp
+      });
+    }
+
+    // Step 6: Award stamp and points
+    const pointsAwarded = event.stampPointsDefault || 50;
+    
+    const stamp = await storage.createPassportStamp({
+      userId,
+      eventId: event.id,
+      eventTitle: event.title,
+      eventDate: event.date,
+      eventLocation: event.location,
+      pointsAwarded,
+      countryCode: event.countryCode || 'US',
+      carnivalCircuit: event.carnivalCircuit || null,
+    });
+
+    // Update user's profile
+    await storage.updatePassportProfile(userId, {
+      totalPoints: profile.totalPoints + pointsAwarded,
+      totalEvents: profile.totalEvents + 1,
+    });
+
+    // Get updated profile
+    const updatedProfile = await storage.getPassportProfile(userId);
+
+    res.json({
+      success: true,
+      message: `✓ Stamp awarded! ${pointsAwarded} points earned`,
+      stamp,
+      user: {
+        handle: updatedProfile?.handle,
+        totalPoints: updatedProfile?.totalPoints,
+        currentTier: updatedProfile?.currentTier,
+      },
+      event: {
+        title: event.title,
+        date: event.date,
+        location: event.location,
+      },
+      pointsAwarded,
+    });
   })
 );
 

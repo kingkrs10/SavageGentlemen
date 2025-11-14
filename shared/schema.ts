@@ -96,6 +96,7 @@ export const events = pgTable("events", {
   stampPointsDefault: integer("stamp_points_default").default(50),
   countryCode: text("country_code"), // ISO country code (e.g., "TT", "US", "CA")
   carnivalCircuit: text("carnival_circuit"), // e.g., "Trinidad Carnival", "Miami Carnival"
+  accessCode: text("access_code"), // Unique code for promoter check-in (e.g., "EVT-123-ABC456")
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

@@ -189,6 +189,7 @@ export interface IStorage {
   
   // Event operations
   getEvent(id: number): Promise<Event | undefined>;
+  getEventByAccessCode(accessCode: string): Promise<Event | undefined>;
   getAllEvents(): Promise<Event[]>;
   getUpcomingEvents(): Promise<Event[]>;
   getPastEvents(): Promise<Event[]>;
@@ -668,6 +669,11 @@ export class MemStorage implements IStorage {
   // Event operations
   async getEvent(id: number): Promise<Event | undefined> {
     return this.events.get(id);
+  }
+
+  async getEventByAccessCode(accessCode: string): Promise<Event | undefined> {
+    const allEvents = Array.from(this.events.values());
+    return allEvents.find(event => event.accessCode === accessCode);
   }
 
   async getAllEvents(): Promise<Event[]> {
@@ -2474,6 +2480,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(events)
       .where(eq(events.id, id));
+    return event;
+  }
+
+  async getEventByAccessCode(accessCode: string): Promise<Event | undefined> {
+    const [event] = await db
+      .select()
+      .from(events)
+      .where(eq(events.accessCode, accessCode));
     return event;
   }
 
