@@ -44,6 +44,10 @@ interface Event {
   imageUrl: string | null;
   category: string | null;
   featured?: boolean;
+  isSocaPassportEnabled?: boolean;
+  stampPointsDefault?: number;
+  countryCode?: string | null;
+  carnivalCircuit?: string | null;
 }
 
 interface Ticket {
@@ -150,6 +154,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { 
   PackageOpen, 
   Calendar, 
@@ -258,7 +264,11 @@ export default function AdminPage() {
     description: '',
     imageUrl: '',
     category: 'party',
-    featured: false
+    featured: false,
+    isSocaPassportEnabled: false,
+    stampPointsDefault: 50,
+    countryCode: '',
+    carnivalCircuit: ''
   });
   
   React.useEffect(() => {
@@ -711,7 +721,11 @@ export default function AdminPage() {
         description: eventForm.description || null,
         imageUrl: eventForm.imageUrl || null, // Original URL is stored in the database
         category: eventForm.category || 'party',
-        featured: eventForm.featured
+        featured: eventForm.featured,
+        isSocaPassportEnabled: eventForm.isSocaPassportEnabled,
+        stampPointsDefault: eventForm.stampPointsDefault,
+        countryCode: eventForm.countryCode || null,
+        carnivalCircuit: eventForm.carnivalCircuit || null
       };
 
       // Make API call to create event
@@ -741,7 +755,11 @@ export default function AdminPage() {
         description: '',
         imageUrl: '',
         category: 'party',
-        featured: false
+        featured: false,
+        isSocaPassportEnabled: false,
+        stampPointsDefault: 50,
+        countryCode: '',
+        carnivalCircuit: ''
       });
       
       // Invalidate the events query to refetch events and update the UI
@@ -1400,7 +1418,19 @@ export default function AdminPage() {
                               )}
                             </div>
                           </TableCell>
-                          <TableCell className="font-medium">{event.title}</TableCell>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <span>{event.title}</span>
+                              {event.isSocaPassportEnabled && (
+                                <Badge 
+                                  variant="outline" 
+                                  className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 text-xs"
+                                >
+                                  🎫 Passport
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
                           <TableCell>
                             {typeof event.date === 'string' 
                               ? new Date(event.date).toLocaleDateString() 
@@ -1576,6 +1606,89 @@ export default function AdminPage() {
                   >
                     Feature this event on homepage
                   </label>
+                </div>
+
+                <Separator className="my-4 bg-slate-600" />
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="passport-enabled" className="text-white font-semibold">
+                        🎫 Soca Passport Integration
+                      </Label>
+                      <p className="text-xs text-slate-400">
+                        Award stamps and points when tickets are scanned
+                      </p>
+                    </div>
+                    <Switch
+                      id="passport-enabled"
+                      checked={eventForm.isSocaPassportEnabled}
+                      onCheckedChange={(checked) => 
+                        setEventForm({...eventForm, isSocaPassportEnabled: checked})
+                      }
+                    />
+                  </div>
+
+                  {eventForm.isSocaPassportEnabled && (
+                    <div className="space-y-3 pl-4 border-l-2 border-emerald-500">
+                      <div className="space-y-2">
+                        <Label htmlFor="stamp-points" className="text-white text-sm">
+                          Points per Stamp
+                        </Label>
+                        <Input
+                          id="stamp-points"
+                          type="number"
+                          min="1"
+                          step="1"
+                          placeholder="50"
+                          className="bg-slate-700 border border-slate-600 text-white"
+                          value={eventForm.stampPointsDefault}
+                          onChange={(e) => setEventForm({...eventForm, stampPointsDefault: parseInt(e.target.value) || 50})}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="country-code" className="text-white text-sm">
+                          Country
+                        </Label>
+                        <Select 
+                          value={eventForm.countryCode} 
+                          onValueChange={(value) => setEventForm({...eventForm, countryCode: value})}
+                        >
+                          <SelectTrigger className="bg-slate-700 border border-slate-600 text-white">
+                            <SelectValue placeholder="Select country" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-slate-700 text-white">
+                            <SelectItem value="US">🇺🇸 United States</SelectItem>
+                            <SelectItem value="TT">🇹🇹 Trinidad & Tobago</SelectItem>
+                            <SelectItem value="JM">🇯🇲 Jamaica</SelectItem>
+                            <SelectItem value="BB">🇧🇧 Barbados</SelectItem>
+                            <SelectItem value="GD">🇬🇩 Grenada</SelectItem>
+                            <SelectItem value="LC">🇱🇨 Saint Lucia</SelectItem>
+                            <SelectItem value="VC">🇻🇨 Saint Vincent</SelectItem>
+                            <SelectItem value="AG">🇦🇬 Antigua & Barbuda</SelectItem>
+                            <SelectItem value="KN">🇰🇳 Saint Kitts & Nevis</SelectItem>
+                            <SelectItem value="DM">🇩🇲 Dominica</SelectItem>
+                            <SelectItem value="CA">🇨🇦 Canada</SelectItem>
+                            <SelectItem value="GB">🇬🇧 United Kingdom</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="carnival-circuit" className="text-white text-sm">
+                          Carnival Circuit
+                        </Label>
+                        <Input
+                          id="carnival-circuit"
+                          placeholder="e.g., Miami Carnival, Trinidad Carnival"
+                          className="bg-slate-700 border border-slate-600 text-white"
+                          value={eventForm.carnivalCircuit}
+                          onChange={(e) => setEventForm({...eventForm, carnivalCircuit: e.target.value})}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
               </div>
