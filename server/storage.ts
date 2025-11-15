@@ -139,7 +139,29 @@ import {
   // Passport Membership tables
   passportMemberships,
   PassportMembership,
-  InsertPassportMembership
+  InsertPassportMembership,
+  // Passport Credit System tables
+  passportCreditTransactions,
+  passportAchievementDefinitions,
+  passportUserAchievements,
+  passportRedemptionOffers,
+  passportUserRedemptions,
+  passportSocialShares,
+  passportQrCheckins,
+  PassportCreditTransaction,
+  InsertPassportCreditTransaction,
+  PassportAchievementDefinition,
+  InsertPassportAchievementDefinition,
+  PassportUserAchievement,
+  InsertPassportUserAchievement,
+  PassportRedemptionOffer,
+  InsertPassportRedemptionOffer,
+  PassportUserRedemption,
+  InsertPassportUserRedemption,
+  PassportSocialShare,
+  InsertPassportSocialShare,
+  PassportQrCheckin,
+  InsertPassportQrCheckin
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, sql, lte, lt, isNotNull, not } from "drizzle-orm";
@@ -466,6 +488,42 @@ export interface IStorage {
   // Passport Membership operations
   createPassportMembership(membership: InsertPassportMembership): Promise<PassportMembership>;
   getPassportMembershipByUserId(userId: number): Promise<PassportMembership | undefined>;
+  
+  // Passport Credit Transaction operations
+  createCreditTransaction(transaction: InsertPassportCreditTransaction): Promise<PassportCreditTransaction>;
+  getCreditTransactionsByUserId(userId: number, limit?: number): Promise<PassportCreditTransaction[]>;
+  getUserCreditBalance(userId: number): Promise<number>;
+  awardCredits(userId: number, amount: number, sourceType: string, sourceId?: number, memo?: string): Promise<{ transaction: PassportCreditTransaction; newBalance: number }>;
+  deductCredits(userId: number, amount: number, sourceType: string, sourceId?: number, memo?: string): Promise<{ transaction: PassportCreditTransaction; newBalance: number }>;
+  
+  // Passport Achievement operations
+  createAchievementDefinition(achievement: InsertPassportAchievementDefinition): Promise<PassportAchievementDefinition>;
+  getAllAchievementDefinitions(category?: string): Promise<PassportAchievementDefinition[]>;
+  getAchievementDefinitionBySlug(slug: string): Promise<PassportAchievementDefinition | undefined>;
+  updateAchievementDefinition(id: number, data: Partial<InsertPassportAchievementDefinition>): Promise<PassportAchievementDefinition | undefined>;
+  unlockUserAchievement(userId: number, achievementId: number): Promise<PassportUserAchievement>;
+  getUserAchievements(userId: number): Promise<PassportUserAchievement[]>;
+  checkAndUnlockAchievements(userId: number): Promise<PassportUserAchievement[]>;
+  
+  // Passport Redemption Offer operations
+  createRedemptionOffer(offer: InsertPassportRedemptionOffer): Promise<PassportRedemptionOffer>;
+  getAllRedemptionOffers(category?: string, tierRequirement?: string): Promise<PassportRedemptionOffer[]>;
+  getRedemptionOfferBySlug(slug: string): Promise<PassportRedemptionOffer | undefined>;
+  updateRedemptionOffer(id: number, data: Partial<InsertPassportRedemptionOffer>): Promise<PassportRedemptionOffer | undefined>;
+  claimRedemption(userId: number, offerId: number): Promise<PassportUserRedemption>;
+  getUserRedemptions(userId: number, status?: string): Promise<PassportUserRedemption[]>;
+  validateRedemptionCode(validationCode: string): Promise<PassportUserRedemption | undefined>;
+  markRedemptionAsRedeemed(id: number, redeemedBy: number): Promise<PassportUserRedemption | undefined>;
+  
+  // Passport QR Check-in operations
+  createQrCheckin(checkin: InsertPassportQrCheckin): Promise<PassportQrCheckin>;
+  getUserCheckins(userId: number, limit?: number): Promise<PassportQrCheckin[]>;
+  getEventCheckins(eventId: number): Promise<PassportQrCheckin[]>;
+  getCheckinByUserAndEvent(userId: number, eventId: number): Promise<PassportQrCheckin | undefined>;
+  
+  // Passport Social Share operations
+  createSocialShare(share: InsertPassportSocialShare): Promise<PassportSocialShare>;
+  getUserSocialShares(userId: number, limit?: number): Promise<PassportSocialShare[]>;
 }
 
 // In-memory storage implementation
@@ -5282,6 +5340,476 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(passportMemberships.createdAt))
       .limit(1);
     return membership;
+  }
+
+  // ===== PASSPORT CREDIT SYSTEM METHODS =====
+
+  // Credit Transaction operations
+  async createCreditTransaction(transactionData: InsertPassportCreditTransaction): Promise<PassportCreditTransaction> {
+    const [transaction] = await db
+      .insert(passportCreditTransactions)
+      .values({
+        ...transactionData,
+        createdAt: new Date()
+      })
+      .returning();
+    return transaction;
+  }
+
+  async getCreditTransactionsByUserId(userId: number, limit?: number): Promise<PassportCreditTransaction[]> {
+    const query = db
+      .select()
+      .from(passportCreditTransactions)
+      .where(eq(passportCreditTransactions.userId, userId))
+      .orderBy(desc(passportCreditTransactions.createdAt));
+    
+    if (limit) {
+      query.limit(limit);
+    }
+    
+    return await query;
+  }
+
+  async getUserCreditBalance(userId: number): Promise<number> {
+    const profile = await this.getPassportProfile(userId);
+    if (!profile) return 0;
+    
+    // Get latest transaction balance or use profile totalPoints
+    const [latestTransaction] = await db
+      .select()
+      .from(passportCreditTransactions)
+      .where(eq(passportCreditTransactions.userId, userId))
+      .orderBy(desc(passportCreditTransactions.createdAt))
+      .limit(1);
+    
+    return latestTransaction?.balanceAfter ?? profile.totalPoints;
+  }
+
+  async awardCredits(
+    userId: number, 
+    amount: number, 
+    sourceType: string, 
+    sourceId?: number, 
+    memo?: string
+  ): Promise<{ transaction: PassportCreditTransaction; newBalance: number }> {
+    const currentBalance = await this.getUserCreditBalance(userId);
+    const newBalance = currentBalance + amount;
+    
+    const transaction = await this.createCreditTransaction({
+      userId,
+      delta: amount,
+      balanceAfter: newBalance,
+      sourceType,
+      sourceId,
+      memo
+    });
+    
+    // Update profile totalPoints
+    await this.updatePassportProfile(userId, { totalPoints: newBalance });
+    
+    return { transaction, newBalance };
+  }
+
+  async deductCredits(
+    userId: number, 
+    amount: number, 
+    sourceType: string, 
+    sourceId?: number, 
+    memo?: string
+  ): Promise<{ transaction: PassportCreditTransaction; newBalance: number }> {
+    const currentBalance = await this.getUserCreditBalance(userId);
+    
+    if (currentBalance < amount) {
+      throw new Error('Insufficient credits');
+    }
+    
+    const newBalance = currentBalance - amount;
+    
+    const transaction = await this.createCreditTransaction({
+      userId,
+      delta: -amount,
+      balanceAfter: newBalance,
+      sourceType,
+      sourceId,
+      memo
+    });
+    
+    // Update profile totalPoints
+    await this.updatePassportProfile(userId, { totalPoints: newBalance });
+    
+    return { transaction, newBalance };
+  }
+
+  // Achievement operations
+  async createAchievementDefinition(achievementData: InsertPassportAchievementDefinition): Promise<PassportAchievementDefinition> {
+    const [achievement] = await db
+      .insert(passportAchievementDefinitions)
+      .values({
+        ...achievementData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return achievement;
+  }
+
+  async getAllAchievementDefinitions(category?: string): Promise<PassportAchievementDefinition[]> {
+    const query = db
+      .select()
+      .from(passportAchievementDefinitions)
+      .where(eq(passportAchievementDefinitions.isActive, true))
+      .orderBy(passportAchievementDefinitions.sortOrder, passportAchievementDefinitions.name);
+    
+    if (category) {
+      return await db
+        .select()
+        .from(passportAchievementDefinitions)
+        .where(
+          and(
+            eq(passportAchievementDefinitions.category, category),
+            eq(passportAchievementDefinitions.isActive, true)
+          )
+        )
+        .orderBy(passportAchievementDefinitions.sortOrder, passportAchievementDefinitions.name);
+    }
+    
+    return await query;
+  }
+
+  async getAchievementDefinitionBySlug(slug: string): Promise<PassportAchievementDefinition | undefined> {
+    const [achievement] = await db
+      .select()
+      .from(passportAchievementDefinitions)
+      .where(eq(passportAchievementDefinitions.slug, slug));
+    return achievement;
+  }
+
+  async updateAchievementDefinition(id: number, data: Partial<InsertPassportAchievementDefinition>): Promise<PassportAchievementDefinition | undefined> {
+    const [achievement] = await db
+      .update(passportAchievementDefinitions)
+      .set({
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(passportAchievementDefinitions.id, id))
+      .returning();
+    return achievement;
+  }
+
+  async unlockUserAchievement(userId: number, achievementId: number): Promise<PassportUserAchievement> {
+    const [achievement] = await db
+      .insert(passportUserAchievements)
+      .values({
+        userId,
+        achievementId,
+        unlockedAt: new Date(),
+        createdAt: new Date()
+      })
+      .returning();
+    return achievement;
+  }
+
+  async getUserAchievements(userId: number): Promise<PassportUserAchievement[]> {
+    return await db
+      .select()
+      .from(passportUserAchievements)
+      .where(eq(passportUserAchievements.userId, userId))
+      .orderBy(desc(passportUserAchievements.unlockedAt));
+  }
+
+  async checkAndUnlockAchievements(userId: number): Promise<PassportUserAchievement[]> {
+    // Get user profile and stats
+    const profile = await this.getPassportProfile(userId);
+    if (!profile) return [];
+    
+    const allAchievements = await this.getAllAchievementDefinitions();
+    const userAchievements = await this.getUserAchievements(userId);
+    const unlockedAchievementIds = new Set(userAchievements.map(a => a.achievementId));
+    
+    const newlyUnlocked: PassportUserAchievement[] = [];
+    
+    for (const achievement of allAchievements) {
+      // Skip if already unlocked and not repeatable
+      if (unlockedAchievementIds.has(achievement.id) && !achievement.isRepeatable) {
+        continue;
+      }
+      
+      // Check criteria
+      const criteria = achievement.criteria as any;
+      let shouldUnlock = false;
+      
+      if (criteria.eventsAttended && profile.totalEvents >= criteria.eventsAttended) {
+        shouldUnlock = true;
+      }
+      if (criteria.countriesVisited && profile.totalCountries >= criteria.countriesVisited) {
+        shouldUnlock = true;
+      }
+      if (criteria.creditsEarned && profile.totalPoints >= criteria.creditsEarned) {
+        shouldUnlock = true;
+      }
+      
+      if (shouldUnlock) {
+        try {
+          const unlocked = await this.unlockUserAchievement(userId, achievement.id);
+          
+          // Award bonus credits if applicable
+          if (achievement.creditBonus && achievement.creditBonus > 0) {
+            await this.awardCredits(
+              userId,
+              achievement.creditBonus,
+              'BONUS',
+              achievement.id,
+              `Achievement unlocked: ${achievement.name}`
+            );
+          }
+          
+          newlyUnlocked.push(unlocked);
+        } catch (error) {
+          // Ignore duplicate unlock errors
+          console.log(`Achievement ${achievement.slug} already unlocked for user ${userId}`);
+        }
+      }
+    }
+    
+    return newlyUnlocked;
+  }
+
+  // Redemption Offer operations
+  async createRedemptionOffer(offerData: InsertPassportRedemptionOffer): Promise<PassportRedemptionOffer> {
+    const [offer] = await db
+      .insert(passportRedemptionOffers)
+      .values({
+        ...offerData,
+        inventoryRemaining: offerData.inventory,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return offer;
+  }
+
+  async getAllRedemptionOffers(category?: string, tierRequirement?: string): Promise<PassportRedemptionOffer[]> {
+    let conditions = [eq(passportRedemptionOffers.isActive, true)];
+    
+    if (category) {
+      conditions.push(eq(passportRedemptionOffers.category, category));
+    }
+    if (tierRequirement) {
+      conditions.push(eq(passportRedemptionOffers.tierRequirement, tierRequirement));
+    }
+    
+    return await db
+      .select()
+      .from(passportRedemptionOffers)
+      .where(and(...conditions))
+      .orderBy(passportRedemptionOffers.sortOrder, passportRedemptionOffers.name);
+  }
+
+  async getRedemptionOfferBySlug(slug: string): Promise<PassportRedemptionOffer | undefined> {
+    const [offer] = await db
+      .select()
+      .from(passportRedemptionOffers)
+      .where(eq(passportRedemptionOffers.slug, slug));
+    return offer;
+  }
+
+  async updateRedemptionOffer(id: number, data: Partial<InsertPassportRedemptionOffer>): Promise<PassportRedemptionOffer | undefined> {
+    const [offer] = await db
+      .update(passportRedemptionOffers)
+      .set({
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(passportRedemptionOffers.id, id))
+      .returning();
+    return offer;
+  }
+
+  async claimRedemption(userId: number, offerId: number): Promise<PassportUserRedemption> {
+    // Get offer details
+    const [offer] = await db
+      .select()
+      .from(passportRedemptionOffers)
+      .where(eq(passportRedemptionOffers.id, offerId));
+    
+    if (!offer) {
+      throw new Error('Redemption offer not found');
+    }
+    
+    if (!offer.isActive) {
+      throw new Error('Redemption offer is not active');
+    }
+    
+    // Check inventory
+    if (offer.inventory !== null && (offer.inventoryRemaining ?? 0) <= 0) {
+      throw new Error('Redemption offer is out of stock');
+    }
+    
+    // Check user credits
+    const userBalance = await this.getUserCreditBalance(userId);
+    if (userBalance < offer.pointsCost) {
+      throw new Error('Insufficient credits');
+    }
+    
+    // Deduct credits
+    const { transaction } = await this.deductCredits(
+      userId,
+      offer.pointsCost,
+      'REDEMPTION',
+      offerId,
+      `Redeemed: ${offer.name}`
+    );
+    
+    // Generate validation code
+    const validationCode = `RDM-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
+    
+    // Create redemption record
+    const [redemption] = await db
+      .insert(passportUserRedemptions)
+      .values({
+        userId,
+        offerId,
+        transactionId: transaction.id,
+        status: 'CLAIMED',
+        validationCode,
+        expiresAt: offer.validTo,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    
+    // Update inventory
+    if (offer.inventory !== null) {
+      await db
+        .update(passportRedemptionOffers)
+        .set({
+          inventoryRemaining: sql`${passportRedemptionOffers.inventoryRemaining} - 1`,
+          updatedAt: new Date()
+        })
+        .where(eq(passportRedemptionOffers.id, offerId));
+    }
+    
+    return redemption;
+  }
+
+  async getUserRedemptions(userId: number, status?: string): Promise<PassportUserRedemption[]> {
+    const query = db
+      .select()
+      .from(passportUserRedemptions)
+      .where(eq(passportUserRedemptions.userId, userId))
+      .orderBy(desc(passportUserRedemptions.createdAt));
+    
+    if (status) {
+      return await db
+        .select()
+        .from(passportUserRedemptions)
+        .where(
+          and(
+            eq(passportUserRedemptions.userId, userId),
+            eq(passportUserRedemptions.status, status)
+          )
+        )
+        .orderBy(desc(passportUserRedemptions.createdAt));
+    }
+    
+    return await query;
+  }
+
+  async validateRedemptionCode(validationCode: string): Promise<PassportUserRedemption | undefined> {
+    const [redemption] = await db
+      .select()
+      .from(passportUserRedemptions)
+      .where(eq(passportUserRedemptions.validationCode, validationCode));
+    return redemption;
+  }
+
+  async markRedemptionAsRedeemed(id: number, redeemedBy: number): Promise<PassportUserRedemption | undefined> {
+    const [redemption] = await db
+      .update(passportUserRedemptions)
+      .set({
+        status: 'REDEEMED',
+        redeemedAt: new Date(),
+        redeemedBy,
+        updatedAt: new Date()
+      })
+      .where(eq(passportUserRedemptions.id, id))
+      .returning();
+    return redemption;
+  }
+
+  // QR Check-in operations
+  async createQrCheckin(checkinData: InsertPassportQrCheckin): Promise<PassportQrCheckin> {
+    const [checkin] = await db
+      .insert(passportQrCheckins)
+      .values({
+        ...checkinData,
+        checkedInAt: new Date(),
+        createdAt: new Date()
+      })
+      .returning();
+    return checkin;
+  }
+
+  async getUserCheckins(userId: number, limit?: number): Promise<PassportQrCheckin[]> {
+    const query = db
+      .select()
+      .from(passportQrCheckins)
+      .where(eq(passportQrCheckins.userId, userId))
+      .orderBy(desc(passportQrCheckins.checkedInAt));
+    
+    if (limit) {
+      query.limit(limit);
+    }
+    
+    return await query;
+  }
+
+  async getEventCheckins(eventId: number): Promise<PassportQrCheckin[]> {
+    return await db
+      .select()
+      .from(passportQrCheckins)
+      .where(eq(passportQrCheckins.eventId, eventId))
+      .orderBy(desc(passportQrCheckins.checkedInAt));
+  }
+
+  async getCheckinByUserAndEvent(userId: number, eventId: number): Promise<PassportQrCheckin | undefined> {
+    const [checkin] = await db
+      .select()
+      .from(passportQrCheckins)
+      .where(
+        and(
+          eq(passportQrCheckins.userId, userId),
+          eq(passportQrCheckins.eventId, eventId)
+        )
+      );
+    return checkin;
+  }
+
+  // Social Share operations
+  async createSocialShare(shareData: InsertPassportSocialShare): Promise<PassportSocialShare> {
+    const [share] = await db
+      .insert(passportSocialShares)
+      .values({
+        ...shareData,
+        sharedAt: new Date(),
+        createdAt: new Date()
+      })
+      .returning();
+    return share;
+  }
+
+  async getUserSocialShares(userId: number, limit?: number): Promise<PassportSocialShare[]> {
+    const query = db
+      .select()
+      .from(passportSocialShares)
+      .where(eq(passportSocialShares.userId, userId))
+      .orderBy(desc(passportSocialShares.sharedAt));
+    
+    if (limit) {
+      query.limit(limit);
+    }
+    
+    return await query;
   }
 }
 

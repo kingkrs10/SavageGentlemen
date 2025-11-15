@@ -1,4 +1,11 @@
 import { storage } from './storage';
+import { db } from './db';
+import { 
+  passportQrCheckins,
+  passportStamps,
+  passportCreditTransactions,
+  passportProfiles
+} from '@shared/schema';
 import type { 
   PassportProfile, 
   InsertPassportProfile, 
@@ -22,6 +29,9 @@ interface StampAwardResult {
   previousTier?: string;
   newTier?: string;
   rewardsUnlocked: PassportReward[];
+  achievementsUnlocked?: Array<any>; // PassportUserAchievement[]
+  creditsAwarded?: number;
+  creditTransaction?: any;
 }
 
 interface TierProgressInfo {
@@ -82,74 +92,107 @@ export class PassportService {
 
   /**
    * Award a stamp to a user for attending an event
-   * This is the core function called during ticket scanning
+   * Uses database transaction for atomicity across checkin/stamp/credits
    */
   async awardStamp(
     userId: number, 
     eventId: number, 
     event: Event
   ): Promise<StampAwardResult> {
-    // Check if stamp already exists (prevent duplicates)
-    const existingStamp = await storage.getPassportStampByUserAndEvent(userId, eventId);
-    if (existingStamp) {
-      throw new Error('Stamp already awarded for this event');
-    }
-
     // Ensure user has a passport profile
     let profile = await this.getOrCreateProfile(userId);
-
-    // Determine points to award
-    const pointsEarned = event.stampPointsDefault || 50;
-
-    // Create the stamp record
-    const stampData: InsertPassportStamp = {
-      userId,
-      eventId,
-      countryCode: event.countryCode || 'US',
-      carnivalCircuit: event.carnivalCircuit || undefined,
-      pointsEarned,
-      source: 'TICKET_SCAN'
-    };
-
-    const stamp = await storage.createPassportStamp(stampData);
-
-    // Store previous values before updates
-    const previousPoints = profile.totalPoints;
     const previousTier = profile.currentTier;
-    
-    // Update profile with points
-    await storage.addPointsToProfile(userId, pointsEarned);
 
-    // Update stamp count and country stats
-    const stampCount = await this.getStampCountForUser(userId);
-    const countries = await this.getUniqueCountriesCount(userId);
+    // Calculate credits to award based on event type
+    const creditsToAward = this.computeStampCredits(event);
 
-    await storage.updatePassportProfile(userId, {
-      totalEvents: stampCount,
-      totalCountries: countries
-    });
+    // === ATOMIC TRANSACTION: checkin + stamp + credit + profile update ===
+    const { stamp, checkin, creditTransaction } = await db.transaction(async (tx) => {
+      // 1. Check for existing check-in (idempotency within transaction)
+      const existing = await tx.query.passportQrCheckins.findFirst({
+        where: (checkins, { and, eq }) => and(
+          eq(checkins.userId, userId),
+          eq(checkins.eventId, eventId)
+        )
+      });
 
-    // Refetch profile to get all updates
-    const updatedProfile = await storage.getPassportProfile(userId);
-    if (updatedProfile) {
-      profile = updatedProfile;
-    }
-
-    // Check for tier upgrade with fresh profile data
-    const tierUpdate = await this.checkAndUpdateTier(userId, profile.totalPoints, previousTier);
-    
-    // Refetch profile again if tier was upgraded
-    if (tierUpdate.upgraded) {
-      const tierUpdatedProfile = await storage.getPassportProfile(userId);
-      if (tierUpdatedProfile) {
-        profile = tierUpdatedProfile;
+      if (existing) {
+        throw new Error('User already checked in for this event');
       }
+
+      // 2. Create QR check-in record
+      const [checkin] = await tx.insert(passportQrCheckins).values({
+        userId,
+        eventId,
+        creditsEarned: creditsToAward,
+        isPremium: event.isPremiumPassport || false,
+        accessCode: event.accessCode || undefined,
+        checkinMethod: 'QR_SCAN',
+        metadata: {}
+      }).returning();
+
+      // 3. Create passport stamp
+      const [stamp] = await tx.insert(passportStamps).values({
+        userId,
+        eventId,
+        countryCode: event.countryCode || 'US',
+        carnivalCircuit: event.carnivalCircuit || undefined,
+        pointsEarned: creditsToAward,
+        source: 'TICKET_SCAN'
+      }).returning();
+
+      // 4. Create credit transaction ledger entry
+      const [creditTransaction] = await tx.insert(passportCreditTransactions).values({
+        userId,
+        amount: creditsToAward,
+        transactionType: 'EARN',
+        reason: 'CHECK_IN',
+        relatedEntityId: stamp.id,
+        description: `Event check-in: ${event.title}`,
+        metadata: { eventId, checkinId: checkin.id }
+      }).returning();
+
+      // 5. Compute stats atomically within transaction
+      const { eq, count, countDistinct } = await import('drizzle-orm');
+      const { sql } = await import('drizzle-orm');
+      
+      // Count total stamps for this user (including the one we just created)
+      const [stampStats] = await tx.select({
+        totalEvents: count(),
+        totalCountries: countDistinct(passportStamps.countryCode)
+      })
+      .from(passportStamps)
+      .where(eq(passportStamps.userId, userId));
+
+      // 6. Update profile atomically (points + stats)
+      await tx.update(passportProfiles)
+        .set({ 
+          totalPoints: sql`total_points + ${creditsToAward}`,
+          totalEvents: stampStats.totalEvents,
+          totalCountries: stampStats.totalCountries
+        })
+        .where(eq(passportProfiles.userId, userId));
+
+      return { stamp, checkin, creditTransaction };
+    });
+    // === END TRANSACTION ===
+
+    // CRITICAL: Refetch profile immediately to get all updated values from transaction
+    profile = await storage.getPassportProfile(userId) || profile;
+
+    // Check for tier upgrade (eventual consistency)
+    const tierUpdate = await this.checkAndUpdateTier(userId, profile.totalPoints, previousTier);
+    if (tierUpdate.upgraded) {
+      profile = await storage.getPassportProfile(userId) || profile;
     }
-    
-    // Check for new rewards with current profile state
+
+    // Unlock achievements based on updated profile (eventual consistency)
+    const achievementsUnlocked = await storage.checkAndUnlockAchievements(userId);
+
+    // Legacy tier-based rewards (keeping for backward compatibility)
     const rewardsUnlocked = await this.checkAndUnlockRewards(userId, profile, tierUpdate.newTier);
 
-    // Final refetch to ensure returned profile reflects all changes
+    // Final profile fetch
     const finalProfile = await storage.getPassportProfile(userId);
     if (finalProfile) {
       profile = finalProfile;
@@ -161,8 +204,29 @@ export class PassportService {
       tierUpdated: tierUpdate.upgraded,
       previousTier: tierUpdate.previousTier,
       newTier: tierUpdate.newTier,
-      rewardsUnlocked
+      rewardsUnlocked,
+      achievementsUnlocked,
+      creditsAwarded: creditsToAward,
+      creditTransaction
     };
+  }
+
+  /**
+   * Compute credits to award for a stamp based on event configuration
+   */
+  private computeStampCredits(event: Event): number {
+    // Priority 1: Event-specific override
+    if (event.stampPointsDefault && event.stampPointsDefault > 0) {
+      return event.stampPointsDefault;
+    }
+    
+    // Priority 2: Premium event (75 credits)
+    if (event.isPremiumPassport) {
+      return 75;
+    }
+    
+    // Default: Standard event (50 credits)
+    return 50;
   }
 
   /**

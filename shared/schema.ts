@@ -94,6 +94,7 @@ export const events = pgTable("events", {
   // Soca Passport fields
   isSocaPassportEnabled: boolean("is_soca_passport_enabled").default(false),
   stampPointsDefault: integer("stamp_points_default").default(50),
+  isPremiumPassport: boolean("is_premium_passport").default(false), // Premium events award 75 credits instead of 50
   countryCode: text("country_code"), // ISO country code (e.g., "TT", "US", "CA")
   carnivalCircuit: text("carnival_circuit"), // e.g., "Trinidad Carnival", "Miami Carnival"
   accessCode: text("access_code"), // Unique code for promoter check-in (e.g., "EVT-123-ABC456")
@@ -130,6 +131,7 @@ export const insertEventSchema = createInsertSchema(events)
     organizerEmail: true,
     isSocaPassportEnabled: true,
     stampPointsDefault: true,
+    isPremiumPassport: true,
     countryCode: true,
     carnivalCircuit: true,
   })
@@ -138,6 +140,7 @@ export const insertEventSchema = createInsertSchema(events)
     currency: z.enum(["USD", "CAD"]).default("USD"),
     isSocaPassportEnabled: z.boolean().default(false),
     stampPointsDefault: z.number().min(0).default(50),
+    isPremiumPassport: z.boolean().default(false),
     countryCode: z.string().length(2).transform((val) => val.toUpperCase()).optional(),
     carnivalCircuit: z.string().max(120).optional(),
   })
@@ -1889,6 +1892,281 @@ export const insertPassportMembershipSchema = createInsertSchema(passportMembers
   });
 
 // ============================================================
+// ENHANCED PASSPORT LOYALTY - CREDITS & ACHIEVEMENTS SYSTEM
+// ============================================================
+
+// Passport Credit Transactions - Double-entry ledger for all credit earn/spend activity
+export const passportCreditTransactions = pgTable("passport_credit_transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  delta: integer("delta").notNull(), // Positive for earning, negative for spending
+  balanceAfter: integer("balance_after").notNull(), // Running balance snapshot
+  sourceType: text("source_type").notNull(), // CHECK_IN, MISSION, BONUS, REDEMPTION, ADMIN_ADJUSTMENT
+  sourceId: integer("source_id"), // FK to relevant table (stamp_id, mission_id, redemption_id, etc.)
+  memo: text("memo"), // Human-readable description
+  expiresAt: timestamp("expires_at"), // Optional credit expiration
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: integer("created_by").references(() => users.id), // Admin user who created manual adjustment
+}, (table) => {
+  return {
+    userIdIdx: uniqueIndex("passport_credit_transactions_user_id_idx").on(table.userId),
+    createdAtIdx: uniqueIndex("passport_credit_transactions_created_at_idx").on(table.createdAt),
+  };
+});
+
+// Passport Achievement Definitions - Catalog of all possible achievements
+export const passportAchievementDefinitions = pgTable("passport_achievement_definitions", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(), // first_fete, party_animal_10, big_spender_500
+  name: text("name").notNull(), // "First Fête"
+  description: text("description").notNull(), // "Attend your first event"
+  category: text("category").notNull(), // BEGINNER, SOCIAL, ATTENDANCE, TRAVEL, SPENDING
+  criteria: jsonb("criteria").notNull().default(sql`'{}'::jsonb`), // { eventsAttended: 10 } or { totalSpent: 500 }
+  creditBonus: integer("credit_bonus").default(0), // Bonus credits awarded on unlock
+  tierRequirement: text("tier_requirement"), // BRONZE, SILVER, GOLD, ELITE (null if no requirement)
+  isRepeatable: boolean("is_repeatable").default(false), // Can be unlocked multiple times
+  iconUrl: text("icon_url"), // Badge icon image
+  sortOrder: integer("sort_order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => {
+  return {
+    slugIdx: uniqueIndex("passport_achievement_definitions_slug_idx").on(table.slug),
+    categoryIdx: uniqueIndex("passport_achievement_definitions_category_idx").on(table.category),
+  };
+});
+
+// Passport User Achievements - Tracks which achievements each user has unlocked
+export const passportUserAchievements = pgTable("passport_user_achievements", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  achievementId: integer("achievement_id").notNull().references(() => passportAchievementDefinitions.id, { onDelete: "cascade" }),
+  unlockedAt: timestamp("unlocked_at").defaultNow(),
+  progressState: jsonb("progress_state").default(sql`'{}'::jsonb`), // Current progress for repeatable achievements
+  notifiedAt: timestamp("notified_at"), // When user was notified
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => {
+  return {
+    userAchievementIdx: uniqueIndex("passport_user_achievements_user_achievement_idx").on(table.userId, table.achievementId),
+  };
+});
+
+// Passport Redemption Offers - Marketplace catalog of available perks
+export const passportRedemptionOffers = pgTable("passport_redemption_offers", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(), // ticket_discount_5, vip_line_access, free_drink
+  name: text("name").notNull(), // "$5 Off Tickets"
+  description: text("description"),
+  category: text("category").notNull(), // TICKET_BENEFITS, EVENT_PERKS, MERCH_REWARDS, COLLECTOR_EXPERIENCES
+  pointsCost: integer("points_cost").notNull(), // Credits required to claim
+  inventory: integer("inventory"), // null = unlimited, number = limited quantity
+  inventoryRemaining: integer("inventory_remaining"), // Tracks remaining inventory
+  channel: text("channel").default("ALL"), // ALL, MOBILE, WEB, IN_PERSON
+  fulfillmentMetadata: jsonb("fulfillment_metadata").default(sql`'{}'::jsonb`), // Instructions for redemption
+  validFrom: timestamp("valid_from"),
+  validTo: timestamp("valid_to"),
+  tierRequirement: text("tier_requirement"), // BRONZE, SILVER, GOLD, ELITE (null if no requirement)
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  imageUrl: text("image_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => {
+  return {
+    slugIdx: uniqueIndex("passport_redemption_offers_slug_idx").on(table.slug),
+    categoryIdx: uniqueIndex("passport_redemption_offers_category_idx").on(table.category),
+    isActiveIdx: uniqueIndex("passport_redemption_offers_is_active_idx").on(table.isActive),
+  };
+});
+
+// Passport User Redemptions - Tracks user's claimed perks/rewards
+export const passportUserRedemptions = pgTable("passport_user_redemptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  offerId: integer("offer_id").notNull().references(() => passportRedemptionOffers.id, { onDelete: "restrict" }),
+  transactionId: integer("transaction_id").references(() => passportCreditTransactions.id), // FK to credit deduction
+  status: text("status").notNull().default("CLAIMED"), // CLAIMED, REDEEMED, EXPIRED, CANCELLED
+  validationCode: text("validation_code").unique(), // Unique code for promoter validation (e.g., "RDM-ABC123")
+  redeemedAt: timestamp("redeemed_at"), // When promoter validated the code
+  redeemedBy: integer("redeemed_by").references(() => users.id), // Admin/promoter who validated
+  expiresAt: timestamp("expires_at"), // Expiration date for the reward
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`), // Additional redemption data
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => {
+  return {
+    userIdIdx: uniqueIndex("passport_user_redemptions_user_id_idx").on(table.userId),
+    validationCodeIdx: uniqueIndex("passport_user_redemptions_validation_code_idx").on(table.validationCode),
+  };
+});
+
+// Passport Social Shares - Tracks user's social media shares for achievements
+export const passportSocialShares = pgTable("passport_social_shares", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  shareType: text("share_type").notNull(), // ACHIEVEMENT, TIER_UPGRADE, COUNTRY_STAMP, MILESTONE
+  payload: jsonb("payload").notNull().default(sql`'{}'::jsonb`), // Share card data
+  platform: text("platform"), // INSTAGRAM, TIKTOK, WHATSAPP, FACEBOOK, TWITTER
+  resultingAchievementId: integer("resulting_achievement_id").references(() => passportUserAchievements.id), // If share unlocked an achievement
+  bonusCreditsAwarded: integer("bonus_credits_awarded").default(0), // Bonus for tagging event
+  sharedAt: timestamp("shared_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => {
+  return {
+    userIdIdx: uniqueIndex("passport_social_shares_user_id_idx").on(table.userId),
+    sharedAtIdx: uniqueIndex("passport_social_shares_shared_at_idx").on(table.sharedAt),
+  };
+});
+
+// Passport QR Check-ins - Decoupled scanner events for earning credits
+export const passportQrCheckins = pgTable("passport_qr_checkins", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  eventId: integer("event_id").notNull().references(() => events.id, { onDelete: "cascade" }),
+  stampId: integer("stamp_id").references(() => passportStamps.id), // FK to created stamp
+  transactionId: integer("transaction_id").references(() => passportCreditTransactions.id), // FK to credit transaction
+  creditsEarned: integer("credits_earned").notNull(), // 50 for standard, 75 for premium
+  isPremium: boolean("is_premium").default(false), // Premium event gets +75 credits
+  accessCode: text("access_code"), // Event's access code that was scanned
+  checkinMethod: text("checkin_method").default("QR_SCAN"), // QR_SCAN, MANUAL_ENTRY, TICKET_VALIDATION
+  checkedInAt: timestamp("checked_in_at").defaultNow(),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`), // Device info, location, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => {
+  return {
+    userEventIdx: uniqueIndex("passport_qr_checkins_user_event_idx").on(table.userId, table.eventId),
+    eventIdIdx: uniqueIndex("passport_qr_checkins_event_id_idx").on(table.eventId),
+  };
+});
+
+// Insert Schemas for new tables
+export const insertPassportCreditTransactionSchema = createInsertSchema(passportCreditTransactions)
+  .pick({
+    userId: true,
+    delta: true,
+    balanceAfter: true,
+    sourceType: true,
+    sourceId: true,
+    memo: true,
+    expiresAt: true,
+    createdBy: true,
+  })
+  .extend({
+    sourceType: z.enum(['CHECK_IN', 'MISSION', 'BONUS', 'REDEMPTION', 'ADMIN_ADJUSTMENT']),
+    delta: z.number(),
+    balanceAfter: z.number().min(0),
+  });
+
+export const insertPassportAchievementDefinitionSchema = createInsertSchema(passportAchievementDefinitions)
+  .pick({
+    slug: true,
+    name: true,
+    description: true,
+    category: true,
+    criteria: true,
+    creditBonus: true,
+    tierRequirement: true,
+    isRepeatable: true,
+    iconUrl: true,
+    sortOrder: true,
+    isActive: true,
+  })
+  .extend({
+    category: z.enum(['BEGINNER', 'SOCIAL', 'ATTENDANCE', 'TRAVEL', 'SPENDING']),
+    tierRequirement: z.enum(['BRONZE', 'SILVER', 'GOLD', 'ELITE']).optional(),
+    criteria: z.record(z.any()).default({}),
+  });
+
+export const insertPassportUserAchievementSchema = createInsertSchema(passportUserAchievements)
+  .pick({
+    userId: true,
+    achievementId: true,
+    progressState: true,
+    notifiedAt: true,
+  })
+  .extend({
+    progressState: z.record(z.any()).default({}),
+  });
+
+export const insertPassportRedemptionOfferSchema = createInsertSchema(passportRedemptionOffers)
+  .pick({
+    slug: true,
+    name: true,
+    description: true,
+    category: true,
+    pointsCost: true,
+    inventory: true,
+    inventoryRemaining: true,
+    channel: true,
+    fulfillmentMetadata: true,
+    validFrom: true,
+    validTo: true,
+    tierRequirement: true,
+    isActive: true,
+    sortOrder: true,
+    imageUrl: true,
+  })
+  .extend({
+    category: z.enum(['TICKET_BENEFITS', 'EVENT_PERKS', 'MERCH_REWARDS', 'COLLECTOR_EXPERIENCES']),
+    pointsCost: z.number().min(0),
+    channel: z.enum(['ALL', 'MOBILE', 'WEB', 'IN_PERSON']).default('ALL'),
+    tierRequirement: z.enum(['BRONZE', 'SILVER', 'GOLD', 'ELITE']).optional(),
+    fulfillmentMetadata: z.record(z.any()).default({}),
+  });
+
+export const insertPassportUserRedemptionSchema = createInsertSchema(passportUserRedemptions)
+  .pick({
+    userId: true,
+    offerId: true,
+    transactionId: true,
+    status: true,
+    validationCode: true,
+    redeemedAt: true,
+    redeemedBy: true,
+    expiresAt: true,
+    metadata: true,
+  })
+  .extend({
+    status: z.enum(['CLAIMED', 'REDEEMED', 'EXPIRED', 'CANCELLED']).default('CLAIMED'),
+    metadata: z.record(z.any()).default({}),
+  });
+
+export const insertPassportSocialShareSchema = createInsertSchema(passportSocialShares)
+  .pick({
+    userId: true,
+    shareType: true,
+    payload: true,
+    platform: true,
+    resultingAchievementId: true,
+    bonusCreditsAwarded: true,
+  })
+  .extend({
+    shareType: z.enum(['ACHIEVEMENT', 'TIER_UPGRADE', 'COUNTRY_STAMP', 'MILESTONE']),
+    platform: z.enum(['INSTAGRAM', 'TIKTOK', 'WHATSAPP', 'FACEBOOK', 'TWITTER']).optional(),
+    payload: z.record(z.any()).default({}),
+  });
+
+export const insertPassportQrCheckinSchema = createInsertSchema(passportQrCheckins)
+  .pick({
+    userId: true,
+    eventId: true,
+    stampId: true,
+    transactionId: true,
+    creditsEarned: true,
+    isPremium: true,
+    accessCode: true,
+    checkinMethod: true,
+    metadata: true,
+  })
+  .extend({
+    creditsEarned: z.number().min(0),
+    isPremium: z.boolean().default(false),
+    checkinMethod: z.enum(['QR_SCAN', 'MANUAL_ENTRY', 'TICKET_VALIDATION']).default('QR_SCAN'),
+    metadata: z.record(z.any()).default({}),
+  });
+
+// ============================================================
 // PROMOTER SUBSCRIPTION SYSTEM
 // ============================================================
 
@@ -2141,3 +2419,25 @@ export type InsertPromoterSubscription = z.infer<typeof insertPromoterSubscripti
 
 export type PromoterProfile = typeof promoterProfiles.$inferSelect;
 export type InsertPromoterProfile = z.infer<typeof insertPromoterProfileSchema>;
+
+// Passport Credit System types
+export type PassportCreditTransaction = typeof passportCreditTransactions.$inferSelect;
+export type InsertPassportCreditTransaction = z.infer<typeof insertPassportCreditTransactionSchema>;
+
+export type PassportAchievementDefinition = typeof passportAchievementDefinitions.$inferSelect;
+export type InsertPassportAchievementDefinition = z.infer<typeof insertPassportAchievementDefinitionSchema>;
+
+export type PassportUserAchievement = typeof passportUserAchievements.$inferSelect;
+export type InsertPassportUserAchievement = z.infer<typeof insertPassportUserAchievementSchema>;
+
+export type PassportRedemptionOffer = typeof passportRedemptionOffers.$inferSelect;
+export type InsertPassportRedemptionOffer = z.infer<typeof insertPassportRedemptionOfferSchema>;
+
+export type PassportUserRedemption = typeof passportUserRedemptions.$inferSelect;
+export type InsertPassportUserRedemption = z.infer<typeof insertPassportUserRedemptionSchema>;
+
+export type PassportSocialShare = typeof passportSocialShares.$inferSelect;
+export type InsertPassportSocialShare = z.infer<typeof insertPassportSocialShareSchema>;
+
+export type PassportQrCheckin = typeof passportQrCheckins.$inferSelect;
+export type InsertPassportQrCheckin = z.infer<typeof insertPassportQrCheckinSchema>;

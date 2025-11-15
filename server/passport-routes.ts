@@ -359,4 +359,217 @@ router.post(
   })
 );
 
+/**
+ * ===========================================
+ * SOCA PASSPORT CREDIT SYSTEM ROUTES
+ * ===========================================
+ */
+
+/**
+ * GET /api/passport/credits
+ * Get user's credit balance and transaction history
+ * Requires authentication
+ */
+router.get(
+  '/credits',
+  authenticateUser,
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new AuthenticationError('User must be logged in');
+    }
+
+    const balance = await storage.getUserCreditBalance(req.user.id);
+    const transactions = await storage.getCreditTransactionsByUserId(req.user.id, 50);
+    
+    res.json({
+      balance,
+      transactions
+    });
+  })
+);
+
+/**
+ * GET /api/passport/achievements
+ * Get all achievement definitions and user's unlocked achievements
+ * Requires authentication
+ */
+router.get(
+  '/achievements',
+  authenticateUser,
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new AuthenticationError('User must be logged in');
+    }
+
+    const category = req.query.category as string | undefined;
+    
+    const allAchievements = await storage.getAllAchievementDefinitions(category);
+    const userAchievements = await storage.getUserAchievements(req.user.id);
+    
+    // Map achievements with unlock status
+    const achievementsWithStatus = allAchievements.map(achievement => {
+      const unlocked = userAchievements.find(ua => ua.achievementId === achievement.id);
+      return {
+        ...achievement,
+        isUnlocked: !!unlocked,
+        unlockedAt: unlocked?.unlockedAt,
+      };
+    });
+    
+    res.json({
+      achievements: achievementsWithStatus,
+      totalUnlocked: userAchievements.length
+    });
+  })
+);
+
+/**
+ * POST /api/passport/achievements/check
+ * Manually trigger achievement evaluation for current user
+ * Requires authentication
+ */
+router.post(
+  '/achievements/check',
+  authenticateUser,
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new AuthenticationError('User must be logged in');
+    }
+
+    const newlyUnlocked = await storage.checkAndUnlockAchievements(req.user.id);
+    
+    res.json({
+      success: true,
+      newlyUnlocked,
+      count: newlyUnlocked.length
+    });
+  })
+);
+
+/**
+ * GET /api/passport/redemptions/offers
+ * Browse available redemption marketplace offers
+ * Requires authentication to check tier eligibility
+ */
+router.get(
+  '/redemptions/offers',
+  authenticateUser,
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new AuthenticationError('User must be logged in');
+    }
+
+    const category = req.query.category as string | undefined;
+    
+    const profile = await storage.getPassportProfile(req.user.id);
+    const userTier = profile?.currentTier || 'BRONZE';
+    
+    const offers = await storage.getAllRedemptionOffers(category);
+    
+    // Filter offers by tier requirement
+    const availableOffers = offers.filter(offer => {
+      if (!offer.tierRequirement) return true;
+      return canUserAccessTier(userTier, offer.tierRequirement);
+    });
+    
+    res.json({
+      offers: availableOffers,
+      userTier,
+      userCredits: await storage.getUserCreditBalance(req.user.id)
+    });
+  })
+);
+
+/**
+ * POST /api/passport/redemptions/:offerId/claim
+ * Claim a redemption offer
+ * Requires authentication
+ */
+router.post(
+  '/redemptions/:offerId/claim',
+  authenticateUser,
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new AuthenticationError('User must be logged in');
+    }
+
+    const offerId = parseInt(req.params.offerId);
+    if (isNaN(offerId)) {
+      throw new AppError('Invalid offer ID', 400, 'INVALID_OFFER_ID');
+    }
+
+    const redemption = await storage.claimRedemption(req.user.id, offerId);
+    
+    res.json({
+      success: true,
+      redemption,
+      message: `Redemption claimed! Use code ${redemption.validationCode} at the event.`
+    });
+  })
+);
+
+/**
+ * GET /api/passport/redemptions
+ * Get user's claimed redemptions
+ * Requires authentication
+ */
+router.get(
+  '/redemptions',
+  authenticateUser,
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new AuthenticationError('User must be logged in');
+    }
+
+    const status = req.query.status as string | undefined;
+    const redemptions = await storage.getUserRedemptions(req.user.id, status);
+    
+    res.json({ redemptions });
+  })
+);
+
+/**
+ * POST /api/passport/share
+ * Create a social share record
+ * Requires authentication
+ */
+router.post(
+  '/share',
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new AuthenticationError('User must be logged in');
+    }
+
+    const shareSchema = z.object({
+      shareType: z.enum(['ACHIEVEMENT', 'TIER_UPGRADE', 'COUNTRY_STAMP', 'MILESTONE']),
+      payload: z.record(z.any()),
+      platform: z.enum(['INSTAGRAM', 'TIKTOK', 'WHATSAPP', 'FACEBOOK', 'TWITTER']).optional(),
+      bonusCreditsAwarded: z.number().default(0)
+    });
+
+    const shareData = shareSchema.parse(req.body);
+    
+    const share = await storage.createSocialShare({
+      userId: req.user.id,
+      ...shareData
+    });
+    
+    res.json({
+      success: true,
+      share,
+      message: shareData.bonusCreditsAwarded > 0 
+        ? `Share recorded! +${shareData.bonusCreditsAwarded} bonus credits awarded!` 
+        : 'Share recorded!'
+    });
+  })
+);
+
+// Tier comparison helper
+function canUserAccessTier(userTier: string, requiredTier: string): boolean {
+  const tierOrder = ['BRONZE', 'SILVER', 'GOLD', 'ELITE'];
+  const userIndex = tierOrder.indexOf(userTier);
+  const requiredIndex = tierOrder.indexOf(requiredTier);
+  return userIndex >= requiredIndex;
+}
+
 export { router as passportRouter };
