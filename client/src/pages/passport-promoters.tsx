@@ -18,6 +18,8 @@ import { Switch } from "@/components/ui/switch";
 import carnivalVideo from "@assets/Caribbean_Nightlife_Loop_Animation_1763081047699.mp4";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { useAuth } from "@/hooks/use-auth";
+import { auth } from "@/lib/firebase";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
 
@@ -37,6 +39,7 @@ function SubscriptionTiers() {
   const [isAnnual, setIsAnnual] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { currentUser, loading: authLoading } = useAuth();
   
   // Fetch subscription plans
   const { data: plansData, isLoading } = useQuery({
@@ -47,6 +50,13 @@ function SubscriptionTiers() {
   
   const subscribeMutation = useMutation({
     mutationFn: async ({ planSlug, billingInterval }: { planSlug: string, billingInterval: string }) => {
+      // Get fresh Firebase token for authentication
+      const firebaseUser = auth.currentUser;
+      if (firebaseUser) {
+        const idToken = await firebaseUser.getIdToken();
+        localStorage.setItem('firebaseToken', idToken);
+      }
+      
       const response = await apiRequest("POST", "/api/promoter-subscriptions/create", {
         planSlug,
         billingInterval,
@@ -276,12 +286,30 @@ function SubscriptionTiers() {
                 </ul>
                 
                 <Button
-                  onClick={() => slug === 'ENTERPRISE' ? toast({ title: 'Contact sales@sgxmedia.com for Enterprise pricing' }) : handleSubscribe(slug)}
-                  disabled={subscribeMutation.isPending}
+                  onClick={() => {
+                    if (slug === 'FREE') {
+                      if (!currentUser) {
+                        toast({ 
+                          title: 'Login Required', 
+                          description: 'Please sign in or create an account to subscribe to the free plan.',
+                          variant: 'destructive',
+                        });
+                        setLocation('/login');
+                        return;
+                      }
+                      handleSubscribe(slug);
+                    } else {
+                      toast({ 
+                        title: 'Contact Sales', 
+                        description: 'Email sales@sgxmedia.com to set up your subscription. Beta pricing available!'
+                      });
+                    }
+                  }}
+                  disabled={(subscribeMutation.isPending && slug === 'FREE') || (slug === 'FREE' && authLoading)}
                   className={`w-full bg-gradient-to-r ${colors.gradient} hover:opacity-90 text-white font-bold py-6 text-lg ${colors.glow}`}
                   data-testid={`button-subscribe-${slug.toLowerCase()}`}
                 >
-                  {subscribeMutation.isPending ? 'Processing...' : slug === 'FREE' ? 'Get Started Free' : slug === 'ENTERPRISE' ? 'Contact Sales' : 'Subscribe Now'}
+                  {authLoading ? 'Loading...' : subscribeMutation.isPending && slug === 'FREE' ? 'Processing...' : slug === 'FREE' ? (currentUser ? 'Get Started Free' : 'Sign In to Subscribe') : 'Contact Sales'}
                 </Button>
               </CardContent>
             </Card>
@@ -611,9 +639,17 @@ export default function PassportPromoters() {
             <h2 className="text-5xl font-black text-center mb-4 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
               Choose Your Plan
             </h2>
-            <p className="text-xl text-gray-200 text-center mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-200 text-center mb-4 max-w-2xl mx-auto">
               Flexible pricing for promoters of all sizes
             </p>
+            
+            {/* Beta Notice */}
+            <div className="max-w-3xl mx-auto mb-8 bg-gradient-to-r from-blue-900/40 to-indigo-900/40 backdrop-blur-xl border-2 border-blue-400/50 rounded-2xl p-4 text-center">
+              <p className="text-blue-200 text-lg">
+                <span className="font-bold text-blue-400">🎉 Beta Launch Special:</span> Contact sales@sgxmedia.com for exclusive beta pricing on paid tiers!
+              </p>
+            </div>
+            
             <SubscriptionTiers />
           </div>
 
