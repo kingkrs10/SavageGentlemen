@@ -564,6 +564,26 @@ router.post(
   })
 );
 
+/**
+ * GET /api/passport/profile/:username
+ * Get public profile for a user
+ * Public endpoint
+ */
+router.get(
+  '/profile/:username',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { username } = req.params;
+    
+    const profile = await passportService.getPublicProfile(username);
+    
+    if (!profile) {
+      throw new AppError('Profile not found', 404, 'PROFILE_NOT_FOUND');
+    }
+    
+    res.json(profile);
+  })
+);
+
 // Tier comparison helper
 function canUserAccessTier(userTier: string, requiredTier: string): boolean {
   const tierOrder = ['BRONZE', 'SILVER', 'GOLD', 'ELITE'];

@@ -675,6 +675,46 @@ export class PassportService {
       pointsToNextTier
     };
   }
+
+  async getPublicProfile(username: string) {
+    const user = await storage.getUserByUsername(username);
+    if (!user) {
+      return null;
+    }
+
+    const profile = await storage.getPassportProfile(user.id);
+    if (!profile) {
+      return null;
+    }
+
+    const achievements = await storage.getPassportUserAchievements(user.id);
+    const stamps = await storage.getPassportStamps(user.id);
+    
+    const uniqueCountries = new Set(stamps.map(s => s.country));
+    
+    return {
+      username: user.username,
+      displayName: user.displayName || user.username,
+      avatar: user.avatar,
+      tier: profile.currentTier,
+      totalCredits: profile.totalPoints,
+      totalEvents: profile.totalEvents,
+      totalCountries: profile.totalCountries,
+      achievementsUnlocked: achievements.filter(a => a.isUnlocked).length,
+      totalAchievements: achievements.length,
+      achievements: achievements
+        .filter(a => a.isUnlocked)
+        .map(a => ({
+          slug: a.achievement.slug,
+          name: a.achievement.name,
+          description: a.achievement.description,
+          creditBonus: a.achievement.creditBonus,
+          unlockedAt: a.unlockedAt
+        })),
+      countries: Array.from(uniqueCountries),
+      joinedAt: profile.createdAt
+    };
+  }
 }
 
 export const passportService = new PassportService();

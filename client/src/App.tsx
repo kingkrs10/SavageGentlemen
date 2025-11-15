@@ -48,6 +48,7 @@ const PassportCheckIn = lazy(() => import("@/pages/passport-checkin"));
 const PassportDashboard = lazy(() => import("@/pages/passport-dashboard"));
 const PassportScanner = lazy(() => import("@/pages/passport-scanner"));
 const PassportMarketplace = lazy(() => import("@/pages/passport-marketplace"));
+const PassportPublicProfile = lazy(() => import("@/pages/passport-public-profile"));
 
 function Router() {
   const [location] = useLocation();
@@ -92,6 +93,7 @@ function Router() {
         <Route path="/settings" component={Settings} />
         <Route path="/ai-assistant" component={AiAssistant} />
         <Route path="/passport" component={Passport} />
+        <Route path="/passport/:username" component={PassportPublicProfile} />
         <Route path="/socapassport" component={SocaPassport} />
         <Route path="/socapassport/dashboard" component={PassportDashboard} />
         <Route path="/socapassport/scanner" component={PassportScanner} />
