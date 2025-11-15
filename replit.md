@@ -48,7 +48,7 @@ Key architectural decisions and features include:
   - **Early Adopter Program**: First 5 STARTER subscribers get 90-day free trial + lifetime 50% discount
   - **Database Schema**: Separate tables for plans, billing options, and subscriptions with proper FK relationships. Metadata JSONB for flexible tracking.
   - **Security Hardening**: Infinite trial prevention via Stripe subscription verification, early adopter slot protection via metadata tracking (earlyAdopterSlotConfirmed flag), payment-confirmed slot increment only (prevents slot exhaustion attacks), defensive validation for missing Stripe IDs
-  - **MVP Implementation**: Beautiful pricing page at /socapassport/promoters with annual/monthly billing toggle, tier comparison cards, early adopter messaging. All tiers use "Contact Sales" flow (email sales@sgxmedia.com) for manual subscription setup during beta
+  - **MVP Implementation**: Beautiful pricing page at /socapassport/promoters with annual/monthly billing toggle, tier comparison cards, early adopter messaging. All tiers use "Contact Sales" flow (email info@savgent.com) for manual subscription setup during beta
   - **Backend APIs**: GET /api/promoter-subscriptions/plans (public), GET /api/promoter-subscriptions/status (authenticated), POST /api/promoter-subscriptions/create (authenticated, Firebase token required), POST /api/promoter-subscriptions/cancel (authenticated), POST /api/promoter-subscriptions/stripe-webhook (Stripe webhook handler)
   - **Future Automation**: Backend infrastructure ready for full Stripe Checkout automation when manual setup phase completes
 

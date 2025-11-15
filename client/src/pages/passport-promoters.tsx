@@ -235,7 +235,7 @@ function SubscriptionTiers() {
                   onClick={() => {
                     toast({ 
                       title: 'Get Started with Soca Passport', 
-                      description: `Email sales@sgxmedia.com to set up your ${plan.name} subscription. ${slug === 'FREE' ? 'Free tier available!' : 'Beta pricing available!'}`
+                      description: `Email info@savgent.com to set up your ${plan.name} subscription. ${slug === 'FREE' ? 'Free tier available!' : 'Beta pricing available!'}`
                     });
                   }}
                   className={`w-full bg-gradient-to-r ${colors.gradient} hover:opacity-90 text-white font-bold py-6 text-lg ${colors.glow}`}
@@ -578,7 +578,7 @@ export default function PassportPromoters() {
             {/* Beta Notice */}
             <div className="max-w-3xl mx-auto mb-8 bg-gradient-to-r from-blue-900/40 to-indigo-900/40 backdrop-blur-xl border-2 border-blue-400/50 rounded-2xl p-4 text-center">
               <p className="text-blue-200 text-lg">
-                <span className="font-bold text-blue-400">🎉 Beta Launch:</span> Contact <a href="mailto:sales@sgxmedia.com" className="underline hover:text-blue-300">sales@sgxmedia.com</a> to get started. FREE tier available!
+                <span className="font-bold text-blue-400">🎉 Beta Launch:</span> Contact <a href="mailto:info@savgent.com" className="underline hover:text-blue-300">info@savgent.com</a> to get started. FREE tier available!
               </p>
             </div>
             
