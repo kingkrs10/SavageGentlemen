@@ -30,12 +30,36 @@ export async function createPromoterSubscription(req: Request, res: Response) {
 
     // SECURITY: Check if user already has ANY non-cancelled subscription to prevent slot exhaustion
     const existingSubscription = await storage.getPromoterSubscriptionByUserId(user.id);
-    if (existingSubscription && existingSubscription.status !== 'CANCELLED' && existingSubscription.status !== 'EXPIRED') {
-      return res.status(400).json({ 
-        error: 'User already has a subscription', 
-        status: existingSubscription.status,
-        subscription: existingSubscription
-      });
+    if (existingSubscription) {
+      // Double-check with Stripe if there's a Stripe subscription ID
+      if (existingSubscription.stripeSubscriptionId) {
+        try {
+          const stripeSubscription = await stripe.subscriptions.retrieve(existingSubscription.stripeSubscriptionId);
+          // Only allow new subscription if Stripe subscription is truly cancelled/ended
+          if (stripeSubscription.status !== 'canceled' && stripeSubscription.status !== 'incomplete_expired') {
+            return res.status(400).json({ 
+              error: 'User already has an active Stripe subscription', 
+              status: stripeSubscription.status,
+              message: 'Please cancel your existing subscription before creating a new one'
+            });
+          }
+        } catch (error: any) {
+          // If Stripe subscription doesn't exist (404), we can proceed
+          if (error.statusCode !== 404) {
+            console.error('Error checking Stripe subscription:', error);
+            return res.status(500).json({ error: 'Failed to verify existing subscription' });
+          }
+        }
+      }
+      
+      // Also check local status
+      if (existingSubscription.status !== 'CANCELLED' && existingSubscription.status !== 'EXPIRED') {
+        return res.status(400).json({ 
+          error: 'User already has a subscription', 
+          status: existingSubscription.status,
+          subscription: existingSubscription
+        });
+      }
     }
 
     // Get the plan
@@ -84,6 +108,10 @@ export async function createPromoterSubscription(req: Request, res: Response) {
       });
     }
 
+    // SECURITY: Check if user has EVER claimed an early adopter slot (prevents re-subscription abuse)
+    const hasClaimedEarlyAdopter = existingSubscription && 
+      (existingSubscription.metadata as any)?.earlyAdopterSlotConfirmed === true;
+    
     // Check early adopter eligibility for STARTER plan
     let isEarlyAdopter = false;
     let earlyAdopterNumber: number | null = null;
@@ -94,7 +122,8 @@ export async function createPromoterSubscription(req: Request, res: Response) {
     const trialDays = plan.earlyAdopterTrialDays ?? 0;
     const discountPercent = plan.earlyAdopterDiscountPercent ?? 0;
     
-    if (plan.slug === 'STARTER' && slotsFilled < slotsTotal) {
+    // Only grant early adopter benefits if user has NEVER claimed them before
+    if (!hasClaimedEarlyAdopter && plan.slug === 'STARTER' && slotsFilled < slotsTotal) {
       isEarlyAdopter = true;
       earlyAdopterNumber = slotsFilled + 1;
       
@@ -392,9 +421,21 @@ export async function handleStripeWebhook(req: Request, res: Response) {
 }
 
 async function updateSubscriptionFromStripe(stripeSubscription: Stripe.Subscription) {
+  // SECURITY: Defensive check for missing Stripe ID
+  if (!stripeSubscription?.id) {
+    console.error('Invalid Stripe subscription object - missing ID');
+    return;
+  }
+
   const dbSubscription = await storage.getPromoterSubscriptionByStripeId(stripeSubscription.id);
   if (!dbSubscription) {
     console.error('Subscription not found in database:', stripeSubscription.id);
+    return;
+  }
+  
+  // SECURITY: Defensive check - ensure database record has Stripe ID
+  if (!dbSubscription.stripeSubscriptionId) {
+    console.error('Database subscription missing Stripe ID:', dbSubscription.id);
     return;
   }
 
@@ -408,18 +449,20 @@ async function updateSubscriptionFromStripe(stripeSubscription: Stripe.Subscript
   }
 
   // SECURITY: Increment early adopter slots only after first successful payment (ACTIVE status)
-  // This prevents slot exhaustion from abandoned checkouts
+  // This prevents slot exhaustion from abandoned checkouts and double-counting on re-subscriptions
   const metadata = dbSubscription.metadata as any;
   const wasTrialBefore = dbSubscription.status === 'TRIAL';
   const isNowActive = status === 'ACTIVE';
   const isEarlyAdopterSlotPending = metadata?.earlyAdopterSlotPending === true;
+  const isSlotAlreadyClaimed = metadata?.earlyAdopterSlotConfirmed === true;
   
-  if (wasTrialBefore && isNowActive && isEarlyAdopterSlotPending && dbSubscription.isEarlyAdopter) {
+  // Only increment if transitioning from TRIAL to ACTIVE, slot is pending, AND not already claimed
+  if (wasTrialBefore && isNowActive && isEarlyAdopterSlotPending && !isSlotAlreadyClaimed && dbSubscription.isEarlyAdopter) {
     // First payment succeeded - NOW we can safely increment the early adopter counter
     await storage.incrementEarlyAdopterSlots(dbSubscription.planId);
     console.log(`Early adopter slot #${dbSubscription.earlyAdopterNumber} confirmed for plan ${dbSubscription.planId}`);
     
-    // Update metadata to mark slot as confirmed
+    // Update metadata to mark slot as confirmed (prevents double-counting on re-subscriptions)
     await storage.updatePromoterSubscription(dbSubscription.id, {
       status,
       currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
