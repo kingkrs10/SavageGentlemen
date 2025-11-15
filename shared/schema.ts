@@ -15,7 +15,7 @@ export const users = pgTable("users", {
   location: text("location"),
   website: text("website"),
   isGuest: boolean("is_guest").default(false),
-  role: text("role").default("user"), // Add role field: user, admin, moderator
+  role: text("role").default("user"), // Add role field: user, admin, moderator, promoter
   stripeCustomerId: text("stripe_customer_id"),
   paypalCustomerId: text("paypal_customer_id"),
   email: text("email"),
@@ -49,7 +49,7 @@ export const insertUserSchema = createInsertSchema(users)
     password: z.string()
       .min(6, 'Password must be at least 6 characters'),
     email: z.string().email('Invalid email format').optional(),
-    role: z.enum(['user', 'admin', 'moderator']).default('user'),
+    role: z.enum(['user', 'admin', 'moderator', 'promoter']).default('user'),
     displayName: z.string().min(1, 'Display name cannot be empty').nullish(),
   });
 
@@ -1888,6 +1888,177 @@ export const insertPassportMembershipSchema = createInsertSchema(passportMembers
     metadataJson: z.record(z.any()).default({}),
   });
 
+// ============================================================
+// PROMOTER SUBSCRIPTION SYSTEM
+// ============================================================
+
+// Promoter Subscription Plans - Pricing tiers for event promoters
+export const promoterSubscriptionPlans = pgTable("promoter_subscription_plans", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(), // FREE, STARTER, PRO, ENTERPRISE
+  displayName: text("display_name").notNull(), // "Free", "Starter", "Pro", "Enterprise"
+  description: text("description"),
+  isEnterprise: boolean("is_enterprise").default(false), // Custom pricing for enterprise
+  
+  // Feature flags (typed columns for reliability)
+  hasBasicScanner: boolean("has_basic_scanner").default(true),
+  hasBasicDashboard: boolean("has_basic_dashboard").default(true),
+  hasAdvancedAnalytics: boolean("has_advanced_analytics").default(false),
+  hasDataExports: boolean("has_data_exports").default(false),
+  hasCrossEventInsights: boolean("has_cross_event_insights").default(false),
+  hasWhiteLabel: boolean("has_white_label").default(false),
+  hasPrioritySupport: boolean("has_priority_support").default(false),
+  hasCustomIntegrations: boolean("has_custom_integrations").default(false),
+  
+  // Early adopter program configuration
+  earlyAdopterSlotsTotal: integer("early_adopter_slots_total").default(5), // Total early adopter slots (e.g., 5)
+  earlyAdopterSlotsFilled: integer("early_adopter_slots_filled").default(0), // Slots filled so far
+  earlyAdopterTrialDays: integer("early_adopter_trial_days").default(90), // 3 months = 90 days
+  earlyAdopterDiscountPercent: integer("early_adopter_discount_percent").default(50), // 50% lifetime discount
+  
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Promoter Plan Billing Options - Separate table for pricing with FK
+export const promoterPlanBillingOptions = pgTable("promoter_plan_billing_options", {
+  id: serial("id").primaryKey(),
+  planId: integer("plan_id").notNull().references(() => promoterSubscriptionPlans.id),
+  billingInterval: text("billing_interval").notNull(), // 'event' or 'year'
+  priceCents: integer("price_cents").notNull(), // Price in cents (e.g., 3900 for $39)
+  stripePriceId: text("stripe_price_id"), // Stripe price ID for this specific option
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Promoter Subscriptions - Track active subscriptions for promoters
+export const promoterSubscriptions = pgTable("promoter_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  planId: integer("plan_id").notNull().references(() => promoterSubscriptionPlans.id),
+  billingOptionId: integer("billing_option_id").notNull().references(() => promoterPlanBillingOptions.id), // FK to specific billing option
+  status: text("status").notNull().default("ACTIVE"), // ACTIVE, CANCELLED, EXPIRED, TRIAL
+  
+  // Stripe integration
+  stripeSubscriptionId: text("stripe_subscription_id").unique(),
+  stripeCustomerId: text("stripe_customer_id"),
+  
+  // Per-event tracking
+  perEventUsageCount: integer("per_event_usage_count").default(0), // Track events scanned for per-event plans
+  
+  // Billing period
+  currentPeriodStart: timestamp("current_period_start"),
+  currentPeriodEnd: timestamp("current_period_end"),
+  
+  // Trial and early adopter tracking
+  trialEnd: timestamp("trial_end"), // Trial end date (populated from plan early adopter config)
+  isEarlyAdopter: boolean("is_early_adopter").default(false),
+  earlyAdopterNumber: integer("early_adopter_number"), // 1-5 for first 5 promoters (unique per plan)
+  lifetimeDiscountPercent: integer("lifetime_discount_percent").default(0), // Copied from plan config when granted
+  
+  // Metadata
+  metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`), // Notes, custom enterprise pricing, etc
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  cancelledAt: timestamp("cancelled_at"),
+});
+
+// Promoter Profiles - Additional business information for promoters
+export const promoterProfiles = pgTable("promoter_profiles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().unique().references(() => users.id),
+  businessName: text("business_name"),
+  businessEmail: text("business_email"),
+  businessPhone: text("business_phone"),
+  businessWebsite: text("business_website"),
+  taxId: text("tax_id"), // For enterprise billing
+  billingAddress: jsonb("billing_address").default(sql`'{}'::jsonb`),
+  isVerified: boolean("is_verified").default(false),
+  verifiedAt: timestamp("verified_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Insert Schemas
+export const insertPromoterSubscriptionPlanSchema = createInsertSchema(promoterSubscriptionPlans)
+  .pick({
+    slug: true,
+    displayName: true,
+    description: true,
+    isEnterprise: true,
+    hasBasicScanner: true,
+    hasBasicDashboard: true,
+    hasAdvancedAnalytics: true,
+    hasDataExports: true,
+    hasCrossEventInsights: true,
+    hasWhiteLabel: true,
+    hasPrioritySupport: true,
+    hasCustomIntegrations: true,
+    earlyAdopterSlotsTotal: true,
+    earlyAdopterSlotsFilled: true,
+    earlyAdopterTrialDays: true,
+    earlyAdopterDiscountPercent: true,
+    isActive: true,
+    sortOrder: true,
+  })
+  .extend({
+    slug: z.enum(['FREE', 'STARTER', 'PRO', 'ENTERPRISE']),
+  });
+
+export const insertPromoterPlanBillingOptionSchema = createInsertSchema(promoterPlanBillingOptions)
+  .pick({
+    planId: true,
+    billingInterval: true,
+    priceCents: true,
+    stripePriceId: true,
+    isActive: true,
+  })
+  .extend({
+    billingInterval: z.enum(['event', 'year']),
+    priceCents: z.number().min(0),
+  });
+
+export const insertPromoterSubscriptionSchema = createInsertSchema(promoterSubscriptions)
+  .pick({
+    userId: true,
+    planId: true,
+    billingOptionId: true,
+    status: true,
+    stripeSubscriptionId: true,
+    stripeCustomerId: true,
+    currentPeriodStart: true,
+    currentPeriodEnd: true,
+    trialEnd: true,
+    isEarlyAdopter: true,
+    earlyAdopterNumber: true,
+    lifetimeDiscountPercent: true,
+    metadata: true,
+  })
+  .extend({
+    status: z.enum(['ACTIVE', 'CANCELLED', 'EXPIRED', 'TRIAL']).default('ACTIVE'),
+    metadata: z.record(z.any()).default({}),
+  });
+
+export const insertPromoterProfileSchema = createInsertSchema(promoterProfiles)
+  .pick({
+    userId: true,
+    businessName: true,
+    businessEmail: true,
+    businessPhone: true,
+    businessWebsite: true,
+    taxId: true,
+    billingAddress: true,
+    isVerified: true,
+  })
+  .extend({
+    businessEmail: z.string().email().optional(),
+    billingAddress: z.record(z.any()).default({}),
+  });
+
 // Export Passport Types
 export type PassportProfile = typeof passportProfiles.$inferSelect;
 export type InsertPassportProfile = z.infer<typeof insertPassportProfileSchema>;
@@ -1957,3 +2128,16 @@ export type InsertMusicMix = z.infer<typeof insertMusicMixSchema>;
 
 export type MusicMixPurchase = typeof musicMixPurchases.$inferSelect;
 export type InsertMusicMixPurchase = z.infer<typeof insertMusicMixPurchaseSchema>;
+
+// Promoter Subscription types
+export type PromoterSubscriptionPlan = typeof promoterSubscriptionPlans.$inferSelect;
+export type InsertPromoterSubscriptionPlan = z.infer<typeof insertPromoterSubscriptionPlanSchema>;
+
+export type PromoterPlanBillingOption = typeof promoterPlanBillingOptions.$inferSelect;
+export type InsertPromoterPlanBillingOption = z.infer<typeof insertPromoterPlanBillingOptionSchema>;
+
+export type PromoterSubscription = typeof promoterSubscriptions.$inferSelect;
+export type InsertPromoterSubscription = z.infer<typeof insertPromoterSubscriptionSchema>;
+
+export type PromoterProfile = typeof promoterProfiles.$inferSelect;
+export type InsertPromoterProfile = z.infer<typeof insertPromoterProfileSchema>;
