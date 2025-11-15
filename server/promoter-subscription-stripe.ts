@@ -216,21 +216,34 @@ export async function createPromoterSubscription(req: Request, res: Response) {
     // NOTE: Early adopter slot increment moved to webhook after payment confirmation
     // This prevents slot exhaustion attacks where users create subscriptions without paying
 
-    // Extract client secret for frontend
-    const latestInvoice = stripeSubscription.latest_invoice;
-    let clientSecret: string | null = null;
-    
-    if (latestInvoice && typeof latestInvoice === 'object' && 'payment_intent' in latestInvoice) {
-      const paymentIntent = latestInvoice.payment_intent;
-      if (paymentIntent && typeof paymentIntent === 'object' && 'client_secret' in paymentIntent) {
-        clientSecret = paymentIntent.client_secret as string;
-      }
-    }
+    // Create Stripe Checkout Session for payment
+    const checkoutSession = await stripe.checkout.sessions.create({
+      customer: stripeCustomerId,
+      payment_method_types: ['card'],
+      line_items: [{
+        price: selectedBilling.stripePriceId || undefined,
+        quantity: 1,
+      }],
+      mode: 'subscription',
+      success_url: `${process.env.REPLIT_DOMAINS?.split(',')[0] || 'http://localhost:5000'}/socapassport/promoters?subscription=success`,
+      cancel_url: `${process.env.REPLIT_DOMAINS?.split(',')[0] || 'http://localhost:5000'}/socapassport/promoters?subscription=cancelled`,
+      subscription_data: {
+        metadata: {
+          userId: user.id.toString(),
+          planId: plan.id.toString(),
+          billingOptionId: selectedBilling.id.toString(),
+        },
+      },
+      metadata: {
+        subscriptionId: subscription.id.toString(),
+      },
+    });
 
     return res.json({
       success: true,
       subscription,
-      clientSecret,
+      checkoutUrl: checkoutSession.url,
+      sessionId: checkoutSession.id,
       isEarlyAdopter,
       earlyAdopterNumber,
       message: isEarlyAdopter 

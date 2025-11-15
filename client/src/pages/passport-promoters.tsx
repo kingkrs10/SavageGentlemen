@@ -1,20 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Users, BarChart3, Heart, CheckCircle, Sparkles, ScanLine } from "lucide-react";
+import { Users, BarChart3, Heart, CheckCircle, Sparkles, ScanLine, Check, Crown, Zap, Building2 } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Switch } from "@/components/ui/switch";
 import carnivalVideo from "@assets/Caribbean_Nightlife_Loop_Animation_1763081047699.mp4";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
 
 const promoterFormSchema = z.object({
   name: z.string().min(1, "Name is required").max(120),
@@ -27,6 +32,265 @@ const promoterFormSchema = z.object({
 });
 
 type PromoterFormData = z.infer<typeof promoterFormSchema>;
+
+function SubscriptionTiers() {
+  const [isAnnual, setIsAnnual] = useState(false);
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  
+  // Fetch subscription plans
+  const { data: plansData, isLoading } = useQuery({
+    queryKey: ['/api/promoter-subscriptions/plans'],
+  });
+  
+  const plans = plansData?.plans || [];
+  
+  const subscribeMutation = useMutation({
+    mutationFn: async ({ planSlug, billingInterval }: { planSlug: string, billingInterval: string }) => {
+      const response = await apiRequest("POST", "/api/promoter-subscriptions/create", {
+        planSlug,
+        billingInterval,
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.subscription && data.subscription.status === 'ACTIVE') {
+        toast({
+          title: "Subscription Created!",
+          description: data.message || "Your free plan is now active.",
+        });
+        window.location.reload();
+      } else if (data.checkoutUrl) {
+        // Redirect to Stripe checkout
+        window.location.href = data.checkoutUrl;
+      } else {
+        toast({
+          title: "Subscription Processing",
+          description: data.message || "Please complete payment to activate your subscription.",
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Subscription Failed",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const handleSubscribe = (planSlug: string) => {
+    const billingInterval = isAnnual ? 'ANNUAL' : 'MONTHLY';
+    subscribeMutation.mutate({ planSlug, billingInterval });
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-300">Loading plans...</p>
+      </div>
+    );
+  }
+  
+  // Find the STARTER plan to show early adopter info
+  const starterPlan = plans.find((p: any) => p.slug === 'STARTER');
+  const earlyAdopterSlotsRemaining = starterPlan 
+    ? (starterPlan.earlyAdopterSlotsTotal || 0) - (starterPlan.earlyAdopterSlotsFilled || 0)
+    : 0;
+  
+  const tierFeatures = {
+    FREE: [
+      "Basic check-in scanning",
+      "Manual stamp awards",
+      "View attendee passports",
+      "Limited to 1 event at a time",
+    ],
+    STARTER: [
+      "Unlimited events",
+      "Automated stamp tracking",
+      "Basic analytics dashboard",
+      "Email support",
+      "QR code generation",
+    ],
+    PRO: [
+      "Everything in STARTER",
+      "Advanced analytics & insights",
+      "Custom loyalty rewards",
+      "Multi-event carnival circuits",
+      "Priority support",
+      "API access",
+    ],
+    ENTERPRISE: [
+      "Everything in PRO",
+      "Dedicated account manager",
+      "Custom feature development",
+      "White-label options",
+      "SLA guarantees",
+      "Advanced integrations",
+    ],
+  };
+  
+  const tierIcons = {
+    FREE: ScanLine,
+    STARTER: Zap,
+    PRO: Crown,
+    ENTERPRISE: Building2,
+  };
+  
+  const tierColors = {
+    FREE: { border: "border-gray-500/50", gradient: "from-gray-500 to-gray-600", glow: "shadow-gray-500/30" },
+    STARTER: { border: "border-green-500/50", gradient: "from-green-500 to-emerald-600", glow: "shadow-green-500/30" },
+    PRO: { border: "border-purple-500/50", gradient: "from-purple-500 to-pink-600", glow: "shadow-purple-500/30" },
+    ENTERPRISE: { border: "border-orange-500/50", gradient: "from-orange-500 to-yellow-600", glow: "shadow-orange-500/30" },
+  };
+  
+  const getPriceForPlan = (planSlug: string) => {
+    const plan = plans.find((p: any) => p.slug === planSlug);
+    if (!plan) return null;
+    
+    // billingOptions are nested within each plan
+    const billing = plan.billingOptions?.find((opt: any) => 
+      opt.billingInterval === (isAnnual ? 'ANNUAL' : 'MONTHLY')
+    );
+    
+    if (!billing) return null;
+    
+    return {
+      amount: billing.price / 100,
+      interval: billing.billingInterval,
+      eventBased: plan.isEventBased,
+    };
+  };
+  
+  return (
+    <div className="space-y-8">
+      {/* Billing Toggle */}
+      <div className="flex items-center justify-center gap-4">
+        <span className={`text-lg font-semibold ${!isAnnual ? 'text-white' : 'text-gray-400'}`}>
+          Monthly
+        </span>
+        <Switch
+          checked={isAnnual}
+          onCheckedChange={setIsAnnual}
+          className="data-[state=checked]:bg-green-500"
+          data-testid="switch-billing-interval"
+        />
+        <span className={`text-lg font-semibold ${isAnnual ? 'text-white' : 'text-gray-400'}`}>
+          Annual
+        </span>
+        {isAnnual && (
+          <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm font-semibold border border-green-500/50">
+            Save up to 62%
+          </span>
+        )}
+      </div>
+      
+      {/* Early Adopter Alert */}
+      {earlyAdopterSlotsRemaining > 0 && (
+        <div className="max-w-3xl mx-auto bg-gradient-to-r from-green-900/40 to-emerald-900/40 backdrop-blur-xl border-2 border-green-400/50 rounded-2xl p-6 text-center">
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <Sparkles className="h-6 w-6 text-green-400 animate-pulse" />
+            <h3 className="text-2xl font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+              Early Adopter Special
+            </h3>
+            <Sparkles className="h-6 w-6 text-green-400 animate-pulse" />
+          </div>
+          <p className="text-gray-200 text-lg">
+            First {starterPlan?.earlyAdopterSlotsTotal || 5} STARTER subscribers get{' '}
+            <span className="font-bold text-green-400">{starterPlan?.earlyAdopterTrialDays || 90} days free trial</span>
+            {' '}+ <span className="font-bold text-green-400">lifetime 50% discount</span>!
+          </p>
+          <p className="text-green-400 font-semibold mt-2">
+            Only {earlyAdopterSlotsRemaining} {earlyAdopterSlotsRemaining === 1 ? 'spot' : 'spots'} remaining!
+          </p>
+        </div>
+      )}
+      
+      {/* Tier Cards */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {['FREE', 'STARTER', 'PRO', 'ENTERPRISE'].map((slug) => {
+          const plan = plans.find((p: any) => p.slug === slug);
+          if (!plan) return null;
+          
+          const price = getPriceForPlan(slug);
+          const Icon = tierIcons[slug as keyof typeof tierIcons];
+          const colors = tierColors[slug as keyof typeof tierColors];
+          const features = tierFeatures[slug as keyof typeof tierFeatures];
+          
+          const isPopular = slug === 'STARTER';
+          
+          return (
+            <Card
+              key={slug}
+              className={`relative bg-black/60 backdrop-blur-xl border-2 ${colors.border} ${colors.glow} hover:scale-105 transition-transform duration-300 overflow-hidden ${isPopular ? 'ring-2 ring-green-400/50 ring-offset-2 ring-offset-black/50' : ''}`}
+              data-testid={`card-tier-${slug.toLowerCase()}`}
+            >
+              {isPopular && (
+                <div className="absolute top-0 right-0 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-1 text-sm font-bold rounded-bl-lg">
+                  POPULAR
+                </div>
+              )}
+              
+              <CardHeader className="text-center space-y-4 pb-6">
+                <div className={`bg-gradient-to-br ${colors.gradient} p-4 rounded-2xl w-fit mx-auto shadow-lg ${colors.glow}`}>
+                  <Icon className="h-10 w-10 text-white" />
+                </div>
+                <CardTitle className="text-3xl font-black text-white">
+                  {plan.name}
+                </CardTitle>
+                <div className="space-y-2">
+                  {price ? (
+                    <>
+                      <div className="text-4xl font-black text-white">
+                        ${price.amount}
+                        <span className="text-lg font-normal text-gray-400">
+                          {price.eventBased ? '/event' : `/${price.interval.toLowerCase()}`}
+                        </span>
+                      </div>
+                      {isAnnual && slug !== 'FREE' && (
+                        <p className="text-sm text-green-400 font-semibold">
+                          Billed annually
+                        </p>
+                      )}
+                    </>
+                  ) : slug === 'ENTERPRISE' ? (
+                    <div className="text-2xl font-bold text-white">
+                      Custom Pricing
+                    </div>
+                  ) : (
+                    <div className="text-4xl font-black text-white">
+                      Free
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
+              
+              <CardContent className="space-y-6">
+                <ul className="space-y-3">
+                  {features.map((feature, idx) => (
+                    <li key={idx} className="flex items-start gap-3 text-gray-200">
+                      <Check className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                
+                <Button
+                  onClick={() => slug === 'ENTERPRISE' ? toast({ title: 'Contact sales@sgxmedia.com for Enterprise pricing' }) : handleSubscribe(slug)}
+                  disabled={subscribeMutation.isPending}
+                  className={`w-full bg-gradient-to-r ${colors.gradient} hover:opacity-90 text-white font-bold py-6 text-lg ${colors.glow}`}
+                  data-testid={`button-subscribe-${slug.toLowerCase()}`}
+                >
+                  {subscribeMutation.isPending ? 'Processing...' : slug === 'FREE' ? 'Get Started Free' : slug === 'ENTERPRISE' ? 'Contact Sales' : 'Subscribe Now'}
+                </Button>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function PassportPromoters() {
   const [submitted, setSubmitted] = useState(false);
@@ -343,15 +607,15 @@ export default function PassportPromoters() {
           </div>
 
           {/* PRICING SECTION */}
-          <Card className="bg-gradient-to-r from-purple-900/40 to-pink-900/40 backdrop-blur-xl border-2 border-purple-400/30 mb-16 shadow-2xl shadow-purple-500/20 overflow-hidden relative">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.03),transparent)] pointer-events-none" />
-            <CardContent className="relative p-12 text-center space-y-4">
-              <h2 className="text-4xl font-black text-white drop-shadow-lg">Pricing</h2>
-              <p className="text-xl text-gray-200 max-w-2xl mx-auto leading-relaxed">
-                Per-event pricing coming soon. During beta, you can request access to try Soca Passport at your event.
-              </p>
-            </CardContent>
-          </Card>
+          <div className="mb-16">
+            <h2 className="text-5xl font-black text-center mb-4 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
+              Choose Your Plan
+            </h2>
+            <p className="text-xl text-gray-200 text-center mb-8 max-w-2xl mx-auto">
+              Flexible pricing for promoters of all sizes
+            </p>
+            <SubscriptionTiers />
+          </div>
 
           {/* REGISTRATION FORM */}
           <Card className="max-w-3xl mx-auto bg-black/60 backdrop-blur-2xl border-2 border-purple-500/40 shadow-2xl shadow-purple-500/30">
