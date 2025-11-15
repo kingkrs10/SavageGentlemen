@@ -9,6 +9,26 @@ The Savage Gentlemen web application is a mobile-first platform designed to fost
 - Maintain proper email delivery with QR codes
 - Admin tools must be fully functional
 
+## Soca Passport 1.0 - Credit Ledger & Loyalty System (November 2025)
+
+**Backend-Complete MVP ✅ Delivered:**
+- **Transaction-Safe Credit Ledger**: Atomic check-in flow ensures stamps, credits, and profile stats update together or rollback (no orphaned records)
+- **Database Schema**: 7 new tables - credit transactions, achievements, redemptions, QR check-ins, social shares
+- **Credit Calculation**: Standard events award 50 credits, premium events (`isPremiumPassport` flag) award 75 credits
+- **Achievement Engine**: Auto-unlocks 12 seeded achievements based on events attended, countries visited, credits earned
+- **Redemption Marketplace**: 10 offerings including ticket discounts ($5/$10 off), VIP access, merch rewards with tier requirements
+- **Idempotency**: Unique constraint on `passport_qr_checkins (user_id, event_id)` prevents duplicate credits
+- **API Routes Ready**: `/api/passport/credits`, `/achievements`, `/redemptions/offers`, `/redemptions/:id/claim`, `/share`
+- **Tier Progression**: Bronze (0-499), Silver (500-1,499), Gold (1,500-3,499), Elite (3,500+) credits
+
+**Transaction Architecture:**
+- `passportService.awardStamp()` uses `db.transaction()` for atomicity
+- Inside transaction: idempotency check, QR check-in, stamp creation, credit ledger entry, profile update (points + stats)
+- Stats (totalEvents, totalCountries) computed atomically via SQL within transaction
+- Achievement unlocks and tier checks run after transaction with fresh profile data
+
+**Frontend Pending**: Dashboard, QR scanner, marketplace, public profiles, social sharing
+
 ## System Architecture
 The application is built with a **React (TypeScript)** frontend utilizing **Tailwind CSS** for a mobile-first responsive design. The backend is powered by **Express.js** and interacts with a **PostgreSQL** database via **Drizzle ORM**.
 
