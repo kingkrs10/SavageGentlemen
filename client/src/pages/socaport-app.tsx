@@ -52,7 +52,7 @@ export default function SocaportApp() {
         description="Track your events across multiple carnivals, earn Fête Credits, and unlock perks. Keep a digital record of your Caribbean journey."
         ogImage="/og-socapassport.jpg"
       />
-      <div className="min-h-screen bg-gradient-to-br from-[#0B0B0E] via-[#005137] to-[#6B2AFF] relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#2c3e50] to-[#34495e] relative overflow-hidden">
         {/* Video Background */}
         <div className="absolute inset-0 overflow-hidden">
           <video
@@ -64,13 +64,31 @@ export default function SocaportApp() {
           >
             <source src={carnivalVideo} type="video/mp4" />
           </video>
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black/80" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#2c3e50]/90 via-[#34495e]/50 to-[#2c3e50]/95" />
         </div>
 
-        {/* Carnival Bokeh Overlays */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(255,126,57,0.06),transparent_40%)] pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(107,42,255,0.08),transparent_50%)] pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,255,135,0.04),transparent_60%)] pointer-events-none" />
+        {/* Hyper-Realistic Lighting Layers */}
+        {/* Stage Spotlight Effect - Orange */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,rgba(230,126,34,0.15),transparent_50%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,rgba(211,84,0,0.08),transparent_65%)] pointer-events-none" />
+        
+        {/* Stage Spotlight Effect - Blue */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_30%,rgba(52,152,219,0.12),transparent_55%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_30%,rgba(41,128,185,0.06),transparent_70%)] pointer-events-none" />
+        
+        {/* Ambient Floor Glow - Orange */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_80%,rgba(230,126,34,0.1),transparent_40%)] pointer-events-none" />
+        
+        {/* Ambient Side Glow - Blue */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_90%_60%,rgba(52,152,219,0.08),transparent_45%)] pointer-events-none" />
+        
+        {/* Depth Shadow Layers */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_20%,rgba(26,26,46,0.4)_80%)] pointer-events-none" />
+        
+        {/* Subtle Bokeh Particles */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_45%,rgba(230,126,34,0.04),transparent_25%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_75%,rgba(52,152,219,0.04),transparent_30%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_90%,rgba(211,84,0,0.03),transparent_35%)] pointer-events-none" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
           {/* HERO SECTION */}
