@@ -101,6 +101,12 @@ function Router() {
 function AppContent() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user, login, logout } = useUser();
+  const [location] = useLocation();
+
+  const isSocaPassportRoute = () => {
+    return location.startsWith('/socapassport') || 
+           location.startsWith('/passport');
+  };
 
   const guestLoginMutation = useMutation({
     mutationFn: async () => {
@@ -163,17 +169,19 @@ function AppContent() {
       <TooltipProvider>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <div className="min-h-screen bg-background text-foreground">
-            <Header 
-              user={user} 
-              onLogout={logout} 
-              onProfileClick={() => setShowAuthModal(true)} 
-            />
+            {!isSocaPassportRoute() && (
+              <Header 
+                user={user} 
+                onLogout={logout} 
+                onProfileClick={() => setShowAuthModal(true)} 
+              />
+            )}
             
-            <main className="container mx-auto px-4 py-8">
+            <main className={isSocaPassportRoute() ? "" : "container mx-auto px-4 py-8"}>
               <Router />
             </main>
             
-            <BottomNavigation />
+            {!isSocaPassportRoute() && <BottomNavigation />}
             
             {showAuthModal && (
               <AuthModal
