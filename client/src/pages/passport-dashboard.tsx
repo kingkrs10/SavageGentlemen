@@ -77,25 +77,11 @@ export default function PassportDashboard() {
 
   const { data: creditsData, isLoading: creditsLoading, error: creditsError } = useQuery({
     queryKey: ['/api/passport/credits'],
-    queryFn: async () => {
-      const res = await apiRequest('GET', '/api/passport/credits');
-      if (!res.ok) {
-        throw new Error(`Failed to fetch credits: ${res.statusText}`);
-      }
-      return res.json();
-    },
     enabled: !!user
   });
 
   const { data: achievementsData, isLoading: achievementsLoading, error: achievementsError } = useQuery({
     queryKey: ['/api/passport/achievements'],
-    queryFn: async () => {
-      const res = await apiRequest('GET', '/api/passport/achievements');
-      if (!res.ok) {
-        throw new Error(`Failed to fetch achievements: ${res.statusText}`);
-      }
-      return res.json();
-    },
     enabled: !!user
   });
 

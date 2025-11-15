@@ -46,6 +46,8 @@ const SocaPassport = lazy(() => import("@/pages/socaport-app"));
 const PassportPromoters = lazy(() => import("@/pages/passport-promoters"));
 const PassportCheckIn = lazy(() => import("@/pages/passport-checkin"));
 const PassportDashboard = lazy(() => import("@/pages/passport-dashboard"));
+const PassportScanner = lazy(() => import("@/pages/passport-scanner"));
+const PassportMarketplace = lazy(() => import("@/pages/passport-marketplace"));
 
 function Router() {
   const [location] = useLocation();
@@ -92,6 +94,8 @@ function Router() {
         <Route path="/passport" component={Passport} />
         <Route path="/socapassport" component={SocaPassport} />
         <Route path="/socapassport/dashboard" component={PassportDashboard} />
+        <Route path="/socapassport/scanner" component={PassportScanner} />
+        <Route path="/socapassport/marketplace" component={PassportMarketplace} />
         <Route path="/socapassport/checkin/:code" component={PassportCheckIn} />
         <Route path="/passport-promoters" component={PassportPromoters} />
         <Route component={NotFound} />
