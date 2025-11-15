@@ -59,6 +59,13 @@ import { promotersRouter } from "./promoters-routes";
 import { adminPassportRouter } from "./admin-passport-routes";
 import { adminPromotersRouter } from "./admin-promoters-routes";
 import { authenticateUser, generateSecureLoginToken } from "./auth-middleware";
+import { 
+  createPromoterSubscription, 
+  cancelPromoterSubscription, 
+  getPromoterSubscriptionStatus,
+  getAvailablePlans,
+  handleStripeWebhook 
+} from "./promoter-subscription-stripe";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -145,6 +152,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register admin promoters routes
   router.use("/admin/promoters", adminPromotersRouter);
+  
+  // Promoter Subscription Routes
+  router.get("/promoter-subscriptions/plans", getAvailablePlans);
+  router.get("/promoter-subscriptions/status", verifyFirebaseToken, getPromoterSubscriptionStatus);
+  router.post("/promoter-subscriptions/create", verifyFirebaseToken, createPromoterSubscription);
+  router.post("/promoter-subscriptions/cancel", verifyFirebaseToken, cancelPromoterSubscription);
+  router.post("/promoter-subscriptions/stripe-webhook", express.raw({ type: 'application/json' }), handleStripeWebhook);
   
   // Register social and enhanced ticketing routes
   registerSocialRoutes(app);
