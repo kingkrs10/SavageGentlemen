@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Users, BarChart3, Heart, CheckCircle, Sparkles } from "lucide-react";
+import { Users, BarChart3, Heart, CheckCircle, Sparkles, ScanLine } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,6 +30,8 @@ type PromoterFormData = z.infer<typeof promoterFormSchema>;
 
 export default function PassportPromoters() {
   const [submitted, setSubmitted] = useState(false);
+  const [accessCode, setAccessCode] = useState("");
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const form = useForm<PromoterFormData>({
@@ -67,6 +70,19 @@ export default function PassportPromoters() {
 
   const onSubmit = (data: PromoterFormData) => {
     registerMutation.mutate(data);
+  };
+
+  const handleAccessCodeSubmit = () => {
+    const trimmedCode = accessCode.trim();
+    if (!trimmedCode) {
+      toast({
+        title: "Access Code Required",
+        description: "Please enter your event access code.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setLocation(`/socapassport/checkin/${trimmedCode}`);
   };
 
   if (submitted) {
@@ -147,6 +163,48 @@ export default function PassportPromoters() {
               Reward your fête fans, track loyalty across events, and see who keeps coming back.
             </p>
           </div>
+
+          {/* ACCESS CODE ENTRY FOR EXISTING PROMOTERS */}
+          <Card className="max-w-2xl mx-auto mb-16 bg-black/60 backdrop-blur-2xl border-2 border-green-500/50 shadow-2xl shadow-green-500/30" data-testid="card-access-code">
+            <CardHeader className="text-center pb-4">
+              <div className="flex justify-center mb-4">
+                <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-4 rounded-2xl shadow-lg shadow-green-500/50">
+                  <ScanLine className="h-10 w-10 text-white" />
+                </div>
+              </div>
+              <CardTitle className="text-3xl font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+                Already a Promoter?
+              </CardTitle>
+              <CardDescription className="text-lg text-gray-300 mt-2">
+                Enter your event access code to open the check-in scanner
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-3">
+                <Input
+                  placeholder="Enter your access code"
+                  value={accessCode}
+                  onChange={(e) => setAccessCode(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAccessCodeSubmit()}
+                  className="bg-white/5 border-gray-600 text-white placeholder:text-gray-400 focus:border-green-500 focus:ring-green-500/50 text-lg"
+                  data-testid="input-access-code"
+                />
+                <Button
+                  onClick={handleAccessCodeSubmit}
+                  disabled={!accessCode.trim()}
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold px-8 shadow-lg shadow-green-500/30"
+                  size="lg"
+                  data-testid="button-access-scanner"
+                >
+                  <ScanLine className="w-5 h-5 mr-2" />
+                  Open Scanner
+                </Button>
+              </div>
+              <p className="text-sm text-gray-400 text-center">
+                Get your access code from the admin dashboard when you enable Soca Passport on an event
+              </p>
+            </CardContent>
+          </Card>
 
           {/* FEATURE BLOCKS */}
           <div className="grid md:grid-cols-3 gap-8 mb-24">
