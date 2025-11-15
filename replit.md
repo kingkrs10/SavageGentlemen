@@ -11,23 +11,60 @@ The Savage Gentlemen web application is a mobile-first platform designed to fost
 
 ## Soca Passport 1.0 - Credit Ledger & Loyalty System (November 2025)
 
-**Backend-Complete MVP ✅ Delivered:**
+**✅ FULL-STACK MVP DELIVERED (9/11 Tasks Complete):**
+
+### Backend Infrastructure ✅
 - **Transaction-Safe Credit Ledger**: Atomic check-in flow ensures stamps, credits, and profile stats update together or rollback (no orphaned records)
 - **Database Schema**: 7 new tables - credit transactions, achievements, redemptions, QR check-ins, social shares
 - **Credit Calculation**: Standard events award 50 credits, premium events (`isPremiumPassport` flag) award 75 credits
 - **Achievement Engine**: Auto-unlocks 12 seeded achievements based on events attended, countries visited, credits earned
 - **Redemption Marketplace**: 10 offerings including ticket discounts ($5/$10 off), VIP access, merch rewards with tier requirements
 - **Idempotency**: Unique constraint on `passport_qr_checkins (user_id, event_id)` prevents duplicate credits
-- **API Routes Ready**: `/api/passport/credits`, `/achievements`, `/redemptions/offers`, `/redemptions/:id/claim`, `/share`
+- **API Routes**: `/api/passport/credits`, `/achievements`, `/redemptions/offers`, `/redemptions/:id/claim`, `/profile/:username`
 - **Tier Progression**: Bronze (0-499), Silver (500-1,499), Gold (1,500-3,499), Elite (3,500+) credits
 
-**Transaction Architecture:**
+### Frontend Pages ✅
+**Dashboard** (`/socapassport/dashboard`):
+- Credit balance with tier-colored badge
+- Tier progression bar showing points to next level
+- Achievements grid with unlock dates and credit bonuses
+- Recent transaction history (earned/redeemed)
+- Comprehensive loading states and error handling
+- Uses default queryFn from queryClient (no custom overrides)
+
+**QR Scanner** (`/socapassport/scanner`):
+- Live camera QR code scanning with html5-qrcode
+- Manual event code entry as fallback
+- Visual container with `visibility:hidden` instead of `display:none` to preserve dimensions
+- Success/error feedback with haptic responses
+- Proper cleanup on unmount
+
+**Marketplace** (`/socapassport/marketplace`):
+- Browse all redemption offerings with tier badges
+- Filter by tier requirement
+- Real-time credit balance display
+- Claim perks with instant balance updates via query invalidation
+- Type-safe API response handling (no `any` casts)
+- Stock tracking and sold-out states
+
+**Public Profile** (`/passport/@username`):
+- SEO-optimized with meta tags and Open Graph
+- Stats showcase: credits, events, countries, achievements
+- Achievement badges with descriptions
+- Country stamps display
+- Responsive mobile-first design
+- Comprehensive data-testid attributes for testing
+- Privacy-by-design: profiles are intentionally public (like social media)
+
+### Transaction Architecture
 - `passportService.awardStamp()` uses `db.transaction()` for atomicity
 - Inside transaction: idempotency check, QR check-in, stamp creation, credit ledger entry, profile update (points + stats)
 - Stats (totalEvents, totalCountries) computed atomically via SQL within transaction
 - Achievement unlocks and tier checks run after transaction with fresh profile data
 
-**Frontend Pending**: Dashboard, QR scanner, marketplace, public profiles, social sharing
+### Pending Features (Phase 2)
+- **Social Share Cards**: Auto-generated images for Instagram/TikTok/WhatsApp/Facebook
+- **Admin Tools**: Redemption management, code validation, credit economy analytics
 
 ## System Architecture
 The application is built with a **React (TypeScript)** frontend utilizing **Tailwind CSS** for a mobile-first responsive design. The backend is powered by **Express.js** and interacts with a **PostgreSQL** database via **Drizzle ORM**.
