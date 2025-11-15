@@ -123,6 +123,19 @@ import {
   promoters,
   Promoter,
   InsertPromoter,
+  // Promoter Subscription tables
+  promoterSubscriptionPlans,
+  promoterPlanBillingOptions,
+  promoterSubscriptions,
+  promoterProfiles,
+  PromoterSubscriptionPlan,
+  InsertPromoterSubscriptionPlan,
+  PromoterPlanBillingOption,
+  InsertPromoterPlanBillingOption,
+  PromoterSubscription,
+  InsertPromoterSubscription,
+  PromoterProfile,
+  InsertPromoterProfile,
   // Passport Membership tables
   passportMemberships,
   PassportMembership,
@@ -425,6 +438,30 @@ export interface IStorage {
   createPromoter(promoter: InsertPromoter): Promise<Promoter>;
   getPromoterByUserId(userId: number): Promise<Promoter | undefined>;
   getPromoter(id: number): Promise<Promoter | undefined>;
+  
+  // Promoter Subscription Plan operations
+  getAllPromoterPlans(): Promise<PromoterSubscriptionPlan[]>;
+  getPromoterPlan(id: number): Promise<PromoterSubscriptionPlan | undefined>;
+  getPromoterPlanBySlug(slug: string): Promise<PromoterSubscriptionPlan | undefined>;
+  updatePromoterPlan(id: number, data: Partial<InsertPromoterSubscriptionPlan>): Promise<PromoterSubscriptionPlan | undefined>;
+  incrementEarlyAdopterSlots(planId: number): Promise<PromoterSubscriptionPlan | undefined>;
+  
+  // Promoter Plan Billing Option operations
+  getBillingOptionsByPlanId(planId: number): Promise<PromoterPlanBillingOption[]>;
+  getBillingOption(id: number): Promise<PromoterPlanBillingOption | undefined>;
+  
+  // Promoter Subscription operations
+  createPromoterSubscription(subscription: InsertPromoterSubscription): Promise<PromoterSubscription>;
+  getPromoterSubscription(id: number): Promise<PromoterSubscription | undefined>;
+  getPromoterSubscriptionByUserId(userId: number): Promise<PromoterSubscription | undefined>;
+  getPromoterSubscriptionByStripeId(stripeSubscriptionId: string): Promise<PromoterSubscription | undefined>;
+  updatePromoterSubscription(id: number, data: Partial<InsertPromoterSubscription>): Promise<PromoterSubscription | undefined>;
+  cancelPromoterSubscription(id: number): Promise<PromoterSubscription | undefined>;
+  
+  // Promoter Profile operations
+  createPromoterProfile(profile: InsertPromoterProfile): Promise<PromoterProfile>;
+  getPromoterProfile(userId: number): Promise<PromoterProfile | undefined>;
+  updatePromoterProfile(userId: number, data: Partial<InsertPromoterProfile>): Promise<PromoterProfile | undefined>;
   
   // Passport Membership operations
   createPassportMembership(membership: InsertPassportMembership): Promise<PassportMembership>;
@@ -5063,6 +5100,166 @@ export class DatabaseStorage implements IStorage {
       .from(promoters)
       .where(eq(promoters.id, id));
     return promoter;
+  }
+
+  async getAllPromoterPlans(): Promise<PromoterSubscriptionPlan[]> {
+    const plans = await db
+      .select()
+      .from(promoterSubscriptionPlans)
+      .where(eq(promoterSubscriptionPlans.isActive, true))
+      .orderBy(promoterSubscriptionPlans.sortOrder);
+    return plans;
+  }
+
+  async getPromoterPlan(id: number): Promise<PromoterSubscriptionPlan | undefined> {
+    const [plan] = await db
+      .select()
+      .from(promoterSubscriptionPlans)
+      .where(eq(promoterSubscriptionPlans.id, id));
+    return plan;
+  }
+
+  async getPromoterPlanBySlug(slug: string): Promise<PromoterSubscriptionPlan | undefined> {
+    const [plan] = await db
+      .select()
+      .from(promoterSubscriptionPlans)
+      .where(eq(promoterSubscriptionPlans.slug, slug));
+    return plan;
+  }
+
+  async updatePromoterPlan(id: number, data: Partial<InsertPromoterSubscriptionPlan>): Promise<PromoterSubscriptionPlan | undefined> {
+    const [plan] = await db
+      .update(promoterSubscriptionPlans)
+      .set({
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(promoterSubscriptionPlans.id, id))
+      .returning();
+    return plan;
+  }
+
+  async incrementEarlyAdopterSlots(planId: number): Promise<PromoterSubscriptionPlan | undefined> {
+    const [plan] = await db
+      .update(promoterSubscriptionPlans)
+      .set({
+        earlyAdopterSlotsFilled: sql`${promoterSubscriptionPlans.earlyAdopterSlotsFilled} + 1`,
+        updatedAt: new Date()
+      })
+      .where(eq(promoterSubscriptionPlans.id, planId))
+      .returning();
+    return plan;
+  }
+
+  async getBillingOptionsByPlanId(planId: number): Promise<PromoterPlanBillingOption[]> {
+    const options = await db
+      .select()
+      .from(promoterPlanBillingOptions)
+      .where(eq(promoterPlanBillingOptions.planId, planId));
+    return options;
+  }
+
+  async getBillingOption(id: number): Promise<PromoterPlanBillingOption | undefined> {
+    const [option] = await db
+      .select()
+      .from(promoterPlanBillingOptions)
+      .where(eq(promoterPlanBillingOptions.id, id));
+    return option;
+  }
+
+  async createPromoterSubscription(subscriptionData: InsertPromoterSubscription): Promise<PromoterSubscription> {
+    const [subscription] = await db
+      .insert(promoterSubscriptions)
+      .values({
+        ...subscriptionData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return subscription;
+  }
+
+  async getPromoterSubscription(id: number): Promise<PromoterSubscription | undefined> {
+    const [subscription] = await db
+      .select()
+      .from(promoterSubscriptions)
+      .where(eq(promoterSubscriptions.id, id));
+    return subscription;
+  }
+
+  async getPromoterSubscriptionByUserId(userId: number): Promise<PromoterSubscription | undefined> {
+    const [subscription] = await db
+      .select()
+      .from(promoterSubscriptions)
+      .where(eq(promoterSubscriptions.userId, userId))
+      .orderBy(desc(promoterSubscriptions.createdAt))
+      .limit(1);
+    return subscription;
+  }
+
+  async getPromoterSubscriptionByStripeId(stripeSubscriptionId: string): Promise<PromoterSubscription | undefined> {
+    const [subscription] = await db
+      .select()
+      .from(promoterSubscriptions)
+      .where(eq(promoterSubscriptions.stripeSubscriptionId, stripeSubscriptionId));
+    return subscription;
+  }
+
+  async updatePromoterSubscription(id: number, data: Partial<InsertPromoterSubscription>): Promise<PromoterSubscription | undefined> {
+    const [subscription] = await db
+      .update(promoterSubscriptions)
+      .set({
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(promoterSubscriptions.id, id))
+      .returning();
+    return subscription;
+  }
+
+  async cancelPromoterSubscription(id: number): Promise<PromoterSubscription | undefined> {
+    const [subscription] = await db
+      .update(promoterSubscriptions)
+      .set({
+        status: 'CANCELLED',
+        cancelledAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(promoterSubscriptions.id, id))
+      .returning();
+    return subscription;
+  }
+
+  async createPromoterProfile(profileData: InsertPromoterProfile): Promise<PromoterProfile> {
+    const [profile] = await db
+      .insert(promoterProfiles)
+      .values({
+        ...profileData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return profile;
+  }
+
+  async getPromoterProfile(userId: number): Promise<PromoterProfile | undefined> {
+    const [profile] = await db
+      .select()
+      .from(promoterProfiles)
+      .where(eq(promoterProfiles.userId, userId));
+    return profile;
+  }
+
+  async updatePromoterProfile(userId: number, data: Partial<InsertPromoterProfile>): Promise<PromoterProfile | undefined> {
+    const [profile] = await db
+      .update(promoterProfiles)
+      .set({
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(promoterProfiles.userId, userId))
+      .returning();
+    return profile;
   }
 
   async createPassportMembership(membershipData: InsertPassportMembership): Promise<PassportMembership> {
