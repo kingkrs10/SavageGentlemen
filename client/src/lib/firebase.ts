@@ -8,12 +8,12 @@ import { getAuth } from "firebase/auth";
  */
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  // Use savgent.replit.app as it's already in your authorized domains
-  // This is critical for authentication to work
-  authDomain: "savgent.replit.app",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
   // Add these settings to improve network connectivity and timeout handling
   connectTimeoutMS: 20000, // 20 seconds
   retryMaxAttempts: 3,

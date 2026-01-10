@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -13,19 +14,19 @@ app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : 'loopback');
 
 // Configure CORS - In development, we're more permissive
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
+  origin: process.env.NODE_ENV === 'production'
     ? [
-        // Production domains
-        'https://savgent.com',
-        'https://www.savgent.com',
-        'https://sgxmedia.com',
-        'https://www.sgxmedia.com',
-        /\.savgent\.com$/,
-        /\.sgxmedia\.com$/,
-        /\.replit\.app$/,
-        // Allow all during development, even in production mode
-        ...(true ? ['http://localhost:3000', 'http://localhost:5000', /localhost/, /127.0.0.1/] : [])
-      ] 
+      // Production domains
+      'https://savgent.com',
+      'https://www.savgent.com',
+      'https://sgxmedia.com',
+      'https://www.sgxmedia.com',
+      /\.savgent\.com$/,
+      /\.sgxmedia\.com$/,
+      /\.replit\.app$/,
+      // Allow all during development, even in production mode
+      ...(true ? ['http://localhost:3000', 'http://localhost:5000', /localhost/, /127.0.0.1/] : [])
+    ]
     : true, // Allow all origins in development
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -73,12 +74,12 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
     } else if (path.endsWith('.webm')) {
       res.setHeader('Content-Type', 'video/webm');
     }
-    
+
     // Set CORS headers for cross-origin requests
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    
+
     // Set cache headers for optimal performance
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
   }
@@ -108,12 +109,12 @@ app.use('/api/uploads', express.static(path.join(process.cwd(), 'uploads'), {
     } else if (path.endsWith('.webm')) {
       res.setHeader('Content-Type', 'video/webm');
     }
-    
+
     // Set CORS headers for cross-origin requests
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    
+
     // Set cache headers for optimal performance
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
   }
@@ -158,24 +159,24 @@ app.use((req, res, next) => {
 
     // Log the error with request context for troubleshooting
     console.error(`[ERROR] ${new Date().toISOString()} | ${req.method} ${req.originalUrl} | Status: ${status} | ${message}`);
-    
+
     if (err.stack && process.env.NODE_ENV !== 'production') {
       console.error(err.stack);
     }
-    
+
     // Only send detailed error information in development
     if (process.env.NODE_ENV === 'production') {
       // In production, send generic messages for 500 errors to avoid leaking sensitive info
       if (status >= 500) {
-        return res.status(status).json({ 
+        return res.status(status).json({
           status: 'error',
           message: 'Internal server error'
         });
       }
     }
-    
+
     // For 4xx errors, it's safe to send the actual error message
-    return res.status(status).json({ 
+    return res.status(status).json({
       status: 'error',
       message,
       ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
@@ -194,11 +195,10 @@ app.use((req, res, next) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = 5000;
+  const port = 5001;
   server.listen({
     port,
-    host: "0.0.0.0",
-    reusePort: true,
+    host: "127.0.0.1",
   }, () => {
     log(`serving on port ${port}`);
     console.log(`✅ Server is running and accessible on all interfaces at port ${port}`);
