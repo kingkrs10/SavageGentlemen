@@ -22,7 +22,7 @@ import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/queryClient";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { FileUploader } from "@/components/ui/file-uploader";
+import FileUploader from "@/components/ui/file-uploader";
 
 // Infer type from schema but make some fields optional/coerced for form handling
 type EventFormValues = z.infer<typeof insertEventSchema>;
