@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function RegisterPage() {
+function RegisterContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -20,5 +20,17 @@ export default function RegisterPage() {
         <div className="flex items-center justify-center min-h-screen bg-black text-white">
             <div className="animate-pulse">Loading registration...</div>
         </div>
+    );
+}
+
+export default function RegisterPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen bg-black text-white">
+                <div className="animate-pulse">Loading...</div>
+            </div>
+        }>
+            <RegisterContent />
+        </Suspense>
     );
 }
