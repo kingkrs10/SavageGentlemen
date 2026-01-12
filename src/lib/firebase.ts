@@ -1,5 +1,5 @@
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { initializeApp, FirebaseApp } from "firebase/app";
+import { getAuth, Auth } from "firebase/auth";
 
 /**
  * Firebase production configuration with essential settings
@@ -14,23 +14,28 @@ const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-  // Add these settings to improve network connectivity and timeout handling
-  connectTimeoutMS: 20000, // 20 seconds
-  retryMaxAttempts: 3,
 };
 
-// Log configuration for debugging (without sensitive data)
-console.log('Firebase configuration:', {
-  hasApiKey: Boolean(firebaseConfig.apiKey),
-  authDomain: firebaseConfig.authDomain,
-  projectId: firebaseConfig.projectId,
-  hasAppId: Boolean(firebaseConfig.appId)
-});
+// Only log in development or at runtime (not during build)
+if (typeof window !== 'undefined') {
+  console.log('Firebase configuration:', {
+    hasApiKey: Boolean(firebaseConfig.apiKey),
+    authDomain: firebaseConfig.authDomain,
+    projectId: firebaseConfig.projectId,
+    hasAppId: Boolean(firebaseConfig.appId)
+  });
+}
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase only if API key is present (prevents build-time errors)
+let app: FirebaseApp | undefined;
+let auth: Auth | undefined;
 
-// Authentication setup
-export const auth = getAuth(app);
+if (firebaseConfig.apiKey) {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+} else if (typeof window !== 'undefined') {
+  console.warn('Firebase not initialized: missing API key');
+}
 
+export { auth };
 export default app;
