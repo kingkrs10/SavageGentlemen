@@ -363,6 +363,8 @@ export const insertProductSchema = createInsertSchema(products).omit({ id: true 
     lowStockThreshold: z.coerce.number(),
 });
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
+export const insertMediaCollectionSchema = createInsertSchema(mediaCollections).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertMediaAssetSchema = createInsertSchema(mediaAssets).omit({ id: true, createdAt: true });
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
