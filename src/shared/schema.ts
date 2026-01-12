@@ -210,6 +210,9 @@ export const userFollows = pgTable("user_follows", {
 export const ticketScans = pgTable("ticket_scans", {
     id: serial("id").primaryKey(),
     ticketPurchaseId: integer("ticket_purchase_id"),
+    orderId: text("order_id"),
+    status: text("status"),
+    notes: text("notes"),
     scannedAt: timestamp("scanned_at").defaultNow(),
     scannerId: integer("scanner_id"),
 });

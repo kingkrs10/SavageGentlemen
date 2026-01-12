@@ -50,9 +50,9 @@ export async function POST(req: Request) {
             // Already scanned
             // Log the attempt
             await db.insert(ticketScans).values({
-                ticketId: ticket.id,
+                ticketPurchaseId: ticket.id,
                 orderId: ticket.orderId,
-                scannedBy: user.id,
+                scannerId: user.id,
                 status: "already_used",
                 notes: "Duplicate scan attempt"
             });
@@ -82,9 +82,9 @@ export async function POST(req: Request) {
             .where(eq(ticketPurchases.id, ticket.id));
 
         await db.insert(ticketScans).values({
-            ticketId: ticket.id,
+            ticketPurchaseId: ticket.id,
             orderId: ticket.orderId,
-            scannedBy: user.id,
+            scannerId: user.id,
             status: "valid",
             notes: "Entry granted"
         });
