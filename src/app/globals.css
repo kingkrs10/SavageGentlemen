@@ -1,0 +1,252 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Dancing+Script:wght@600&family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Modern Design System */
+:root {
+  /* Modern Nightlife Palette - Deep, Rich, Electric */
+
+  /* Base Colors - The "Canvas" */
+  /* Deepest Void Black/Blue for OLED-like richness */
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+
+  /* Cards & Surfaces - Slightly lighter than background, glass-like */
+  --card: 240 10% 5.9%;
+  --card-foreground: 0 0% 98%;
+
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+
+  /* Primary: "Electric Ember" - A vibrant, glowing orange-red */
+  /* Old: 0 80% 30% */
+  /* New: Bright, energetic for call-to-actions */
+  --primary: 15 90% 55%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Secondary: "Cyber Blue" - Deep but electric */
+  --secondary: 217 91% 60%;
+  --secondary-foreground: 0 0% 100%;
+
+  /* Muted: Sophisticated dark grays */
+  --muted: 240 5% 15%;
+  --muted-foreground: 240 5% 65%;
+
+  /* Accent: "Neon Gold" - Luxury touch */
+  --accent: 45 100% 55%;
+  --accent-foreground: 0 0% 10%;
+
+  /* Destructive */
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+
+  /* Borders & Inputs */
+  --border: 240 5% 15%;
+  --input: 240 5% 15%;
+  --ring: 15 90% 55%;
+  /* Ring matches Primary */
+
+  /* Radius - Modern, slightly rounded but not pill-shaped everywhere */
+  --radius: 0.75rem;
+
+  /* Custom Gradients */
+  --primary-gradient: linear-gradient(135deg, hsl(15, 90%, 55%) 0%, hsl(340, 85%, 55%) 100%);
+  --secondary-gradient: linear-gradient(135deg, hsl(217, 91%, 60%) 0%, hsl(260, 90%, 65%) 100%);
+  --dark-gradient: linear-gradient(to bottom, hsl(240, 10%, 3.9%), hsl(240, 10%, 2%));
+
+  /* Glassmorphism Variables */
+  --glass-bg: rgba(10, 10, 12, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: 20px;
+
+  /* Shadows - Deep, multi-layered for spatial depth */
+  --shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 12px 24px -6px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.7);
+  --shadow-neon: 0 0 20px -5px hsl(15, 90%, 55%, 0.5);
+
+  /* Chart colors */
+  --chart-1: 15 90% 55%;
+  --chart-2: 217 91% 60%;
+  --chart-3: 45 100% 55%;
+  --chart-4: 280 85% 60%;
+  --chart-5: 340 85% 55%;
+}
+
+:root.light {
+  /* We want to maintain some "edge" even in light mode, but standard high contrast */
+  --background: 0 0% 98%;
+  --foreground: 240 10% 4%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 4%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 4%;
+
+  /* Retain the vibrant identity */
+  --primary: 15 90% 50%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 217 91% 55%;
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 240 5% 90%;
+  --muted-foreground: 240 5% 45%;
+
+  --accent: 45 100% 50%;
+  --accent-foreground: 0 0% 10%;
+
+  --destructive: 0 84% 50%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 240 5% 85%;
+  --input: 240 5% 85%;
+  --ring: 15 90% 50%;
+
+  --shadow-sm: 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 6px 16px -4px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 12px 32px -8px rgba(0, 0, 0, 0.15);
+  --shadow-neon: 0 0 15px -3px rgba(15, 90%, 50%, 0.3);
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading tracking-wider;
+  }
+
+  .font-accent {
+    font-family: 'Dancing Script', cursive;
+  }
+}
+
+@layer components {
+  .event-card {
+    @apply bg-gradient-to-br from-gray-900 to-gray-950 transition-transform hover:translate-y-[-5px] hover:shadow-xl;
+  }
+
+  :root.light .event-card {
+    @apply bg-gradient-to-br from-white to-gray-50;
+  }
+
+  .bottom-nav-item.active {
+    @apply text-primary border-t-2 border-primary;
+  }
+
+  .user-message {
+    @apply bg-primary rounded-[18px] rounded-br-none self-end;
+  }
+
+  .other-message {
+    @apply bg-gray-800 rounded-[18px] rounded-bl-none self-start;
+  }
+
+  :root.light .other-message {
+    @apply bg-gray-200;
+  }
+
+  .chat-message {
+    @apply max-w-[80%] break-words;
+  }
+
+  /* Savage Gentlemen specific styles */
+  .sg-btn {
+    @apply bg-primary hover:bg-primary/90 text-white px-6 py-3 uppercase tracking-widest text-sm font-semibold transition-all duration-300 shadow-md hover:shadow-xl flex items-center justify-center;
+  }
+
+  .sg-btn-outline {
+    @apply border-2 border-white/80 hover:border-primary/90 text-white hover:text-primary px-6 py-[10px] uppercase tracking-widest text-sm font-semibold transition-all duration-300 backdrop-blur-sm;
+  }
+
+  :root.light .sg-btn-outline {
+    @apply border-foreground/80 text-foreground;
+  }
+
+  .sg-section-title {
+    @apply relative text-3xl md:text-4xl font-heading uppercase tracking-wider pb-4 inline-block;
+  }
+
+  .sg-section-title::after {
+    @apply content-[''] absolute bottom-0 left-0 w-2/3 h-1 bg-primary;
+  }
+
+  .sg-card {
+    @apply bg-card border shadow-md hover:shadow-lg transition-all duration-300;
+    border-color: hsl(var(--border));
+  }
+
+  .sg-gradient-overlay {
+    @apply absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black z-10;
+  }
+
+  :root.light .sg-gradient-overlay {
+    @apply from-white/30 via-transparent to-gray-200;
+  }
+
+  .sg-text-shadow {
+    @apply [text-shadow:_0_2px_4px_rgba(0, 0, 0, 0.7)];
+  }
+}
+
+@layer utilities {
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 1s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+
+    100% {
+      opacity: 1;
+    }
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+
+  @keyframes slideUp {
+    0% {
+      transform: translateY(50px);
+      opacity: 0;
+    }
+
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}

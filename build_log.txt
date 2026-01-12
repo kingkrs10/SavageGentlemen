@@ -1,0 +1,336 @@
+
+> savgent-next@0.1.0 build
+> next build
+
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /Users/sg/package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * /Users/sg/.gemini/antigravity/scratch/savgent-next/package-lock.json
+
+▲ Next.js 16.1.1 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+Error: Cannot apply unknown utility class `border-border`. Are you using CSS modules or similar and missing `@reference`? https://tailwindcss.com/docs/functions-and-directives#reference-directive
+    [2m[at onInvalidCandidate (/Users/sg/.gemini/antigravity/scratch/savgent-next/node_modules/tailwindcss/dist/lib.js:21:1314)][0m
+    [2m[at Te (/Users/sg/.gemini/antigravity/scratch/savgent-next/node_modules/tailwindcss/dist/lib.js:16:36652)][0m
+    [2m[at /Users/sg/.gemini/antigravity/scratch/savgent-next/node_modules/tailwindcss/dist/lib.js:21:355][0m
+    [2m[at Rr (/Users/sg/.gemini/antigravity/scratch/savgent-next/node_modules/tailwindcss/dist/lib.js:3:1718)][0m
+    [2m[at _ (/Users/sg/.gemini/antigravity/scratch/savgent-next/node_modules/tailwindcss/dist/lib.js:3:1377)][0m
+    [2m[at $e (/Users/sg/.gemini/antigravity/scratch/savgent-next/node_modules/tailwindcss/dist/lib.js:21:172)][0m
+    [2m[at un (/Users/sg/.gemini/antigravity/scratch/savgent-next/node_modules/tailwindcss/dist/lib.js:38:294)][0m
+    [2m[at process.processTicksAndRejections (node:internal/process/task_queues:105:5)][0m
+    [2m[at async cn (/Users/sg/.gemini/antigravity/scratch/savgent-next/node_modules/tailwindcss/dist/lib.js:38:631)][0m
+    [2m[at async Xr (/Users/sg/.gemini/antigravity/scratch/savgent-next/node_modules/@tailwindcss/node/dist/index.js:10:3417)][0m
+Turbopack build encountered 1 warnings:
+./.gemini/antigravity/scratch/savgent-next/tailwind.config.ts:121:13
+Module not found: Can't resolve 'tailwindcss-animate'
+[0m [90m 119 |[39m     }[33m,[39m
+ [90m 120 |[39m   }[33m,[39m
+[31m[1m>[22m[39m[90m 121 |[39m   plugins[33m:[39m [require([32m"tailwindcss-animate"[39m)[33m,[39m require([32m"@tailwindcss/typography"[39m)][33m,[39m
+ [90m     |[39m             [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 122 |[39m } satisfies [33mConfig[39m[33m;[39m
+ [90m 123 |[39m[0m
+
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+
+> Build error occurred
+Error: Turbopack build failed with 13 errors:
+./.gemini/antigravity/scratch/savgent-next/src/app/globals.css
+Error evaluating Node.js code
+CssSyntaxError: tailwindcss: /Users/sg/.gemini/antigravity/scratch/savgent-next/src/app/globals.css:1:1: Cannot apply unknown utility class `border-border`. Are you using CSS modules or similar and missing `@reference`? https://tailwindcss.com/docs/functions-and-directives#reference-directive
+    at Input.error (.gemini/antigravity/scratch/savgent-next/node_modules/postcss/lib/input.js:135:16) [/Users/sg/.gemini/antigravity/scratch/savgent-next/.next/build/chunks/a148e_3a07baae._.js:4651:22]
+    at Root.error (.gemini/antigravity/scratch/savgent-next/node_modules/postcss/lib/node.js:146:32) [/Users/sg/.gemini/antigravity/scratch/savgent-next/.next/build/chunks/a148e_3a07baae._.js:928:38]
+    [at Object.Once (/Users/sg/.gemini/antigravity/scratch/savgent-next/node_modules/@tailwindcss/postcss/dist/index.js:10:6911)]
+    [at process.processTicksAndRejections (node:internal/process/task_queues:105:5)]
+    at async LazyResult.runAsync (.gemini/antigravity/scratch/savgent-next/node_modules/postcss/lib/lazy-result.js:293:11) [/Users/sg/.gemini/antigravity/scratch/savgent-next/.next/build/chunks/a148e_3a07baae._.js:6206:21]
+    at async transform (turbopack:///[turbopack-node]/transforms/postcss.ts:70:34) [/Users/sg/.gemini/antigravity/scratch/savgent-next/.next/build/chunks/[root-of-the-server]__6cf44a14._.js:146:36]
+    at async run (turbopack:///[turbopack-node]/ipc/evaluate.ts:92:23) [/Users/sg/.gemini/antigravity/scratch/savgent-next/.next/build/chunks/[root-of-the-server]__2cc1c7e9._.js:443:31]
+
+Import trace:
+  Client Component Browser:
+    ./.gemini/antigravity/scratch/savgent-next/src/app/globals.css [Client Component Browser]
+    ./.gemini/antigravity/scratch/savgent-next/src/app/layout.tsx [Server Component]
+
+
+./.gemini/antigravity/scratch/savgent-next/src/components/events/AddToCalendarButton.tsx:1:17
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                 [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mCalendar[39m[33m,[39m [33mCalendarPlus[39m[33m,[39m [33mChevronDown[39m[33m,[39m [33mApple[39m[33m,[39m [33mSmartphone[39m[33m,[39m [33mClock[39m } [36mfrom[39m [32m'lucide-react'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { [33mFaGoogle[39m[33m,[39m [33mFaMicrosoft[39m[33m,[39m [33mFaYahoo[39m } [36mfrom[39m [32m'react-icons/fa'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { [33mButton[39m } [36mfrom[39m [32m'@/components/ui/button'[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import trace:
+  Server Component:
+    ./.gemini/antigravity/scratch/savgent-next/src/components/events/AddToCalendarButton.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/EventCard.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/HomeClient.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/app/page.tsx
+
+
+./.gemini/antigravity/scratch/savgent-next/src/components/home/AdSpace.tsx:1:10
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { useState } [36mfrom[39m [32m"react"[39m[33m;[39m
+ [90m   |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m [33mLink[39m [36mfrom[39m [32m"next/link"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { [33mExternalLink[39m[33m,[39m [33mX[39m } [36mfrom[39m [32m"lucide-react"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { [33mButton[39m } [36mfrom[39m [32m"@/components/ui/button"[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import trace:
+  Server Component:
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/AdSpace.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/HomeClient.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/app/page.tsx
+
+
+./.gemini/antigravity/scratch/savgent-next/src/components/home/HeroEventCarousel.tsx:1:20
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { useState[33m,[39m useEffect[33m,[39m useCallback } [36mfrom[39m [32m"react"[39m[33m;[39m
+ [90m   |[39m                    [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mChevronLeft[39m[33m,[39m [33mChevronRight[39m[33m,[39m [33mCalendar[39m[33m,[39m [33mMapPin[39m[33m,[39m [33mUsers[39m[33m,[39m [33mClock[39m } [36mfrom[39m [32m"lucide-react"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { [33mButton[39m } [36mfrom[39m [32m"@/components/ui/button"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { [33mBadge[39m } [36mfrom[39m [32m"@/components/ui/badge"[39m[33m;[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import trace:
+  Server Component:
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/HeroEventCarousel.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/HomeClient.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/app/page.tsx
+
+
+./.gemini/antigravity/scratch/savgent-next/src/components/home/HeroEventCarousel.tsx:1:10
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { useState[33m,[39m useEffect[33m,[39m useCallback } [36mfrom[39m [32m"react"[39m[33m;[39m
+ [90m   |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mChevronLeft[39m[33m,[39m [33mChevronRight[39m[33m,[39m [33mCalendar[39m[33m,[39m [33mMapPin[39m[33m,[39m [33mUsers[39m[33m,[39m [33mClock[39m } [36mfrom[39m [32m"lucide-react"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { [33mButton[39m } [36mfrom[39m [32m"@/components/ui/button"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { [33mBadge[39m } [36mfrom[39m [32m"@/components/ui/badge"[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import trace:
+  Server Component:
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/HeroEventCarousel.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/HomeClient.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/app/page.tsx
+
+
+./.gemini/antigravity/scratch/savgent-next/src/components/home/HomeClient.tsx:5:10
+Ecmascript file had an error
+[0m [90m 3 |[39m [36mimport[39m { useState } [36mfrom[39m [32m"react"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { [33mLink[39m } [36mfrom[39m [32m"next/link"[39m[33m;[39m [90m// Changed from wouter[39m
+[31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m { useRouter } [36mfrom[39m [32m"next/navigation"[39m[33m;[39m [90m// Changed from wouter[39m
+ [90m   |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 6 |[39m [36mimport[39m { [33mChevronRight[39m[33m,[39m [33mPlay[39m } [36mfrom[39m [32m"lucide-react"[39m[33m;[39m
+ [90m 7 |[39m [36mimport[39m { [33mButton[39m } [36mfrom[39m [32m"@/components/ui/button"[39m[33m;[39m
+ [90m 8 |[39m [36mimport[39m { [33mSkeleton[39m } [36mfrom[39m [32m"@/components/ui/skeleton"[39m[33m;[39m[0m
+
+You're importing a component that needs `useRouter`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import trace:
+  Server Component:
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/HomeClient.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/app/page.tsx
+
+
+./.gemini/antigravity/scratch/savgent-next/src/components/home/HomeClient.tsx:3:10
+Ecmascript file had an error
+[0m [90m 1 |[39m [32m"use use client"[39m[33m;[39m
+ [90m 2 |[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { useState } [36mfrom[39m [32m"react"[39m[33m;[39m
+ [90m   |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m [36mimport[39m { [33mLink[39m } [36mfrom[39m [32m"next/link"[39m[33m;[39m [90m// Changed from wouter[39m
+ [90m 5 |[39m [36mimport[39m { useRouter } [36mfrom[39m [32m"next/navigation"[39m[33m;[39m [90m// Changed from wouter[39m
+ [90m 6 |[39m [36mimport[39m { [33mChevronRight[39m[33m,[39m [33mPlay[39m } [36mfrom[39m [32m"lucide-react"[39m[33m;[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import trace:
+  Server Component:
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/HomeClient.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/app/page.tsx
+
+
+./.gemini/antigravity/scratch/savgent-next/src/components/ui/LazyImage.tsx:1:20
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { useState[33m,[39m useEffect[33m,[39m useRef } [36mfrom[39m [32m"react"[39m[33m;[39m
+ [90m   |[39m                    [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mSkeleton[39m } [36mfrom[39m [32m"@/components/ui/skeleton"[39m[33m;[39m
+ [90m 3 |[39m
+ [90m 4 |[39m [36minterface[39m [33mLazyImageProps[39m {[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import trace:
+  Server Component:
+    ./.gemini/antigravity/scratch/savgent-next/src/components/ui/LazyImage.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/EventsBanner.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/HomeClient.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/app/page.tsx
+
+
+./.gemini/antigravity/scratch/savgent-next/src/components/ui/LazyImage.tsx:1:31
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { useState[33m,[39m useEffect[33m,[39m useRef } [36mfrom[39m [32m"react"[39m[33m;[39m
+ [90m   |[39m                               [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mSkeleton[39m } [36mfrom[39m [32m"@/components/ui/skeleton"[39m[33m;[39m
+ [90m 3 |[39m
+ [90m 4 |[39m [36minterface[39m [33mLazyImageProps[39m {[0m
+
+You're importing a component that needs `useRef`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import trace:
+  Server Component:
+    ./.gemini/antigravity/scratch/savgent-next/src/components/ui/LazyImage.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/EventsBanner.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/HomeClient.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/app/page.tsx
+
+
+./.gemini/antigravity/scratch/savgent-next/src/components/ui/LazyImage.tsx:1:10
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { useState[33m,[39m useEffect[33m,[39m useRef } [36mfrom[39m [32m"react"[39m[33m;[39m
+ [90m   |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mSkeleton[39m } [36mfrom[39m [32m"@/components/ui/skeleton"[39m[33m;[39m
+ [90m 3 |[39m
+ [90m 4 |[39m [36minterface[39m [33mLazyImageProps[39m {[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import trace:
+  Server Component:
+    ./.gemini/antigravity/scratch/savgent-next/src/components/ui/LazyImage.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/EventsBanner.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/HomeClient.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/app/page.tsx
+
+
+./.gemini/antigravity/scratch/savgent-next/src/context/UserContext.tsx:1:10
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { createContext[33m,[39m useState[33m,[39m useContext[33m,[39m useEffect[33m,[39m [33mReactNode[39m } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m          [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mUser[39m } [36mfrom[39m [32m'@/lib/types'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { apiRequest } [36mfrom[39m [32m'@/lib/queryClient'[39m[33m;[39m
+ [90m 4 |[39m[0m
+
+You're importing a component that needs `createContext`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import trace:
+  Server Component:
+    ./.gemini/antigravity/scratch/savgent-next/src/context/UserContext.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/EventCard.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/HomeClient.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/app/page.tsx
+
+
+./.gemini/antigravity/scratch/savgent-next/src/context/UserContext.tsx:1:47
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { createContext[33m,[39m useState[33m,[39m useContext[33m,[39m useEffect[33m,[39m [33mReactNode[39m } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                                               [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mUser[39m } [36mfrom[39m [32m'@/lib/types'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { apiRequest } [36mfrom[39m [32m'@/lib/queryClient'[39m[33m;[39m
+ [90m 4 |[39m[0m
+
+You're importing a component that needs `useEffect`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import trace:
+  Server Component:
+    ./.gemini/antigravity/scratch/savgent-next/src/context/UserContext.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/EventCard.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/HomeClient.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/app/page.tsx
+
+
+./.gemini/antigravity/scratch/savgent-next/src/context/UserContext.tsx:1:25
+Ecmascript file had an error
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { createContext[33m,[39m useState[33m,[39m useContext[33m,[39m useEffect[33m,[39m [33mReactNode[39m } [36mfrom[39m [32m'react'[39m[33m;[39m
+ [90m   |[39m                         [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { [33mUser[39m } [36mfrom[39m [32m'@/lib/types'[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { apiRequest } [36mfrom[39m [32m'@/lib/queryClient'[39m[33m;[39m
+ [90m 4 |[39m[0m
+
+You're importing a component that needs `useState`. This React Hook only works in a Client Component. To fix, mark the file (or its parent) with the `"use client"` directive.
+
+ Learn more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import trace:
+  Server Component:
+    ./.gemini/antigravity/scratch/savgent-next/src/context/UserContext.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/EventCard.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/components/home/HomeClient.tsx
+    ./.gemini/antigravity/scratch/savgent-next/src/app/page.tsx
+
+
+    at async transform (turbopack:///[turbopack-node]/transforms/postcss.ts:70:34) [/Users/sg/.gemini/antigravity/scratch/savgent-next/.next/build/chunks/[root-of-the-server]__6cf44a14._.js:146:36])
+    at async run (turbopack:///[turbopack-node]/ipc/evaluate.ts:92:23) [/Users/sg/.gemini/antigravity/scratch/savgent-next/.next/build/chunks/[root-of-the-server]__2cc1c7e9._.js:443:31])
+    at <unknown> (./.gemini/antigravity/scratch/savgent-next/src/components/events/AddToCalendarButton.tsx:1:17)
+    at <unknown> (./.gemini/antigravity/scratch/savgent-next/src/components/home/AdSpace.tsx:1:10)
+    at <unknown> (./.gemini/antigravity/scratch/savgent-next/src/components/home/HeroEventCarousel.tsx:1:20)
+    at <unknown> (./.gemini/antigravity/scratch/savgent-next/src/components/home/HeroEventCarousel.tsx:1:10)
+    at <unknown> (./.gemini/antigravity/scratch/savgent-next/src/components/home/HomeClient.tsx:5:10)
+    at <unknown> (./.gemini/antigravity/scratch/savgent-next/src/components/home/HomeClient.tsx:3:10)
+    at <unknown> (./.gemini/antigravity/scratch/savgent-next/src/components/ui/LazyImage.tsx:1:20)
+    at <unknown> (./.gemini/antigravity/scratch/savgent-next/src/components/ui/LazyImage.tsx:1:31)
+    at <unknown> (./.gemini/antigravity/scratch/savgent-next/src/components/ui/LazyImage.tsx:1:10)
+    at <unknown> (./.gemini/antigravity/scratch/savgent-next/src/context/UserContext.tsx:1:10)
+    at <unknown> (./.gemini/antigravity/scratch/savgent-next/src/context/UserContext.tsx:1:47)
+    at <unknown> (./.gemini/antigravity/scratch/savgent-next/src/context/UserContext.tsx:1:25)
