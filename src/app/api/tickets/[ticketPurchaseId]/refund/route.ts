@@ -60,7 +60,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
             ticketPurchaseId,
             userId: user.id,
             refundType: validated.data.refundType,
-            refundAmount: validated.data.refundAmount || 0,
+            amount: validated.data.refundAmount || 0,
             reason: validated.data.reason || "",
         });
 

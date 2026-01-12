@@ -90,6 +90,8 @@ export const ticketTransfers = pgTable("ticket_transfers", {
 export const ticketRefunds = pgTable("ticket_refunds", {
     id: serial("id").primaryKey(),
     ticketPurchaseId: integer("ticket_purchase_id"),
+    userId: integer("user_id"),
+    refundType: text("refund_type"),
     reason: text("reason"),
     status: text("status").default("pending"),
     amount: integer("amount"),
