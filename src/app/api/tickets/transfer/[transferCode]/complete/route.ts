@@ -21,12 +21,18 @@ export const POST = withAuth(async (req: NextRequest, user) => {
             return NextResponse.json({ message: "Transfer not found or already completed" }, { status: 404 });
         }
 
+        if (!transfer.ticketPurchaseId) {
+            return NextResponse.json({ message: "Invalid transfer record: missing ticket purchase ID" }, { status: 400 });
+        }
+
+        const transferTicketPurchaseId = transfer.ticketPurchaseId;
+
         // Atomic update of ownership and transfer status
         await db.transaction(async (tx) => {
             // 1. Update ticket purchase ownership
             await tx.update(ticketPurchases)
                 .set({ userId: user.id })
-                .where(eq(ticketPurchases.id, transfer.ticketPurchaseId));
+                .where(eq(ticketPurchases.id, transferTicketPurchaseId));
 
             // 2. Update transfer status
             await tx.update(ticketTransfers)
@@ -40,7 +46,7 @@ export const POST = withAuth(async (req: NextRequest, user) => {
             // 3. Increment transfer count in enhanced_tickets
             const [purchase] = await tx.select()
                 .from(ticketPurchases)
-                .where(eq(ticketPurchases.id, transfer.ticketPurchaseId))
+                .where(eq(ticketPurchases.id, transferTicketPurchaseId))
                 .limit(1);
 
             if (purchase && purchase.ticketId) {
