@@ -313,8 +313,17 @@ export const passportUserRedemptions = pgTable("passport_user_redemptions", {
 });
 
 // Schemas & Types
-export const insertEventSchema = createInsertSchema(events).omit({ id: true, createdAt: true });
-export const insertProductSchema = createInsertSchema(products).omit({ id: true });
+export const insertEventSchema = createInsertSchema(events).omit({ id: true, createdAt: true }).extend({
+    date: z.coerce.date(),
+    price: z.coerce.number(),
+    isSocaPassportEnabled: z.boolean().default(false).optional(),
+    featured: z.boolean().default(false).optional(),
+});
+export const insertProductSchema = createInsertSchema(products).omit({ id: true }).extend({
+    price: z.coerce.number(),
+    stockLevel: z.coerce.number(),
+    lowStockThreshold: z.coerce.number(),
+});
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 
 export type User = typeof users.$inferSelect;
