@@ -276,6 +276,10 @@ export const passportStamps = pgTable("passport_stamps", {
     id: serial("id").primaryKey(),
     userId: integer("user_id"),
     eventId: integer("event_id"),
+    countryCode: text("country_code"),
+    carnivalCircuit: text("carnival_circuit"),
+    pointsEarned: integer("points_earned").default(0),
+    source: text("source"),
     createdAt: timestamp("created_at").defaultNow(),
 });
 
