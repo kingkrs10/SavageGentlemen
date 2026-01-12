@@ -36,6 +36,7 @@ export const events = pgTable("events", {
     isSocaPassportEnabled: boolean("is_soca_passport_enabled").default(false),
     accessCode: text("access_code"), // inferred from passport-api.ts
     createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const tickets = pgTable("tickets", {
@@ -126,6 +127,8 @@ export const products = pgTable("products", {
     trackInventory: boolean("track_inventory").default(true),
     lowStockThreshold: integer("low_stock_threshold").default(5),
     sku: text("sku"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const livestreams = pgTable("livestreams", {
