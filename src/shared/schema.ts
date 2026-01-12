@@ -227,9 +227,10 @@ export const passportProfiles = pgTable("passport_profiles", {
     id: serial("id").primaryKey(),
     userId: integer("user_id"),
     handle: text("handle"),
-    points: integer("points").default(0),
-    level: integer("level").default(1),
-    createdAt: timestamp("created_at").defaultNow(),
+    totalPoints: integer("total_points").default(0),
+    currentTier: text("current_tier").default("BRONZE"),
+    totalEvents: integer("total_events").default(0),
+    totalCountries: integer("total_countries").default(0),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
 });
