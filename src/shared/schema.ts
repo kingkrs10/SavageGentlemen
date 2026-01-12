@@ -239,6 +239,32 @@ export const passportQrCheckins = pgTable("passport_qr_checkins", {
     checkedInAt: timestamp("checked_in_at").defaultNow(),
 });
 
+export const mediaCollections = pgTable("media_collections", {
+    id: serial("id").primaryKey(),
+    title: text("title").notNull(),
+    slug: text("slug").unique().notNull(),
+    description: text("description"),
+    coverImageUrl: text("cover_image_url"),
+    displayOrder: integer("display_order").default(0),
+    isActive: boolean("is_active").default(true),
+    visibility: text("visibility").default("public"), // public, unlisted, private
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const mediaAssets = pgTable("media_assets", {
+    id: serial("id").primaryKey(),
+    collectionId: integer("collection_id").notNull(),
+    title: text("title"),
+    url: text("url").notNull(),
+    thumbnailUrl: text("thumbnail_url"),
+    type: text("type").notNull(), // image, video
+    displayOrder: integer("display_order").default(0),
+    isPublished: boolean("is_published").default(true),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const passportStamps = pgTable("passport_stamps", {
     id: serial("id").primaryKey(),
     userId: integer("user_id"),
@@ -370,3 +396,7 @@ export type PassportMembership = typeof passportMemberships.$inferSelect;
 export type InsertPassportMembership = typeof passportMemberships.$inferInsert;
 export type PassportRedemptionOffer = typeof passportRedemptionOffers.$inferSelect;
 export type PassportUserRedemption = typeof passportUserRedemptions.$inferSelect;
+export type MediaCollection = typeof mediaCollections.$inferSelect;
+export type InsertMediaCollection = typeof mediaCollections.$inferInsert;
+export type MediaAsset = typeof mediaAssets.$inferSelect;
+export type InsertMediaAsset = typeof mediaAssets.$inferInsert;
