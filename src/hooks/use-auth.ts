@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { 
-  signOut as firebaseSignOut, 
+import {
+  signOut as firebaseSignOut,
   onAuthStateChanged,
   AuthError
 } from 'firebase/auth';
@@ -15,14 +15,20 @@ export function useAuth() {
 
   // Listen for auth state changes
   useEffect(() => {
+    if (!auth) {
+      console.warn("Firebase Auth not initialized. Check environment variables.");
+      setLoading(false);
+      return () => { };
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
-      
+
       if (firebaseUser) {
         try {
           // Get the ID token
           const idToken = await firebaseUser.getIdToken();
-          
+
           // Verify with our backend and get user info
           const response = await fetch('/api/auth/firebase', {
             method: 'POST',
@@ -31,7 +37,7 @@ export function useAuth() {
             },
             body: JSON.stringify({ idToken }),
           });
-          
+
           if (response.ok) {
             const userData = await response.json();
             setCurrentUser(userData);
@@ -49,7 +55,7 @@ export function useAuth() {
       } else {
         setCurrentUser(null);
       }
-      
+
       setLoading(false);
     });
 
@@ -60,6 +66,7 @@ export function useAuth() {
 
   // Sign out
   const signOut = async () => {
+    if (!auth) return;
     setLoading(true);
     try {
       await firebaseSignOut(auth);
