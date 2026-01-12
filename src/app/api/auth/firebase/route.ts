@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
                 isGuest: false,
                 email: email,
                 role: 'user',
-                firebaseId: firebaseUid
+                firebaseUid: firebaseUid
             }).returning();
             user = newUser;
         }
