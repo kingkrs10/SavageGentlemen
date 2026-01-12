@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { getAllProducts } from "@/lib/api";
 import { db } from "@/lib/db";
-import { products, insertProductSchema } from "@shared/schema";
+import { products, insertProductSchema, InsertProduct } from "@shared/schema";
 import { getAuthenticatedUser } from "@/lib/auth-server";
 
 export async function GET() {
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
         // Validate input
         const validatedData = insertProductSchema.parse(body);
 
-        const newProduct = await db.insert(products).values(validatedData).returning();
+        const newProduct = await db.insert(products).values(validatedData as InsertProduct).returning();
 
         return NextResponse.json(newProduct[0], { status: 201 });
     } catch (error) {

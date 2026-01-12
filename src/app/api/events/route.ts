@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { getAllEvents } from "@/lib/api";
 import { db } from "@/lib/db";
-import { events, insertEventSchema } from "@shared/schema";
+import { events, insertEventSchema, InsertEvent } from "@shared/schema";
 import { getAuthenticatedUser } from "@/lib/auth-server";
 
 export async function GET() {
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
         // Validate input
         const validatedData = insertEventSchema.parse(body);
 
-        const newEvent = await db.insert(events).values(validatedData).returning();
+        const newEvent = await db.insert(events).values(validatedData as InsertEvent).returning();
 
         return NextResponse.json(newEvent[0], { status: 201 });
     } catch (error) {
