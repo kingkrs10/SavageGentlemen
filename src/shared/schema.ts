@@ -73,6 +73,9 @@ export const enhancedTickets = pgTable("enhanced_tickets", {
     ticketId: integer("ticket_id"),
     qrCode: text("qr_code"),
     metadata: jsonb("metadata"),
+    isTransferable: boolean("is_transferable").default(true),
+    transferCount: integer("transfer_count").default(0),
+    maxTransfers: integer("max_transfers").default(1),
     createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -81,6 +84,7 @@ export const ticketTransfers = pgTable("ticket_transfers", {
     ticketPurchaseId: integer("ticket_purchase_id"),
     fromUserId: integer("from_user_id"),
     toUserId: integer("to_user_id"),
+    toEmail: text("to_email"),
     transferCode: text("transfer_code"),
     status: text("status").default("pending"),
     createdAt: timestamp("created_at").defaultNow(),
