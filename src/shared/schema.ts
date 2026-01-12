@@ -223,7 +223,20 @@ export const passportProfiles = pgTable("passport_profiles", {
     points: integer("points").default(0),
     level: integer("level").default(1),
     createdAt: timestamp("created_at").defaultNow(),
+    createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const passportQrCheckins = pgTable("passport_qr_checkins", {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id"),
+    eventId: integer("event_id"),
+    creditsEarned: integer("credits_earned").default(0),
+    isPremium: boolean("is_premium").default(false),
+    accessCode: text("access_code"),
+    checkinMethod: text("checkin_method"),
+    metadata: jsonb("metadata"),
+    checkedInAt: timestamp("checked_in_at").defaultNow(),
 });
 
 export const passportStamps = pgTable("passport_stamps", {
