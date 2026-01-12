@@ -16,6 +16,7 @@ export const users = pgTable("users", {
     isGuest: boolean("is_guest").default(false),
     firebaseUid: text("firebase_uid"),
     createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const events = pgTable("events", {
