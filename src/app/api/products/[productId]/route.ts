@@ -4,10 +4,10 @@ import { products, insertProductSchema } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { getAuthenticatedUser } from "@/lib/auth-server";
 
-export async function GET(req: Request, { params }: { params: { productId: string } }) {
+export async function GET(req: Request, props: { params: Promise<{ productId: string }> }) {
     try {
-        const resolvedParams = await Promise.resolve(params);
-        const productId = parseInt(resolvedParams.productId);
+        const params = await props.params;
+        const productId = parseInt(params.productId);
         if (isNaN(productId)) {
             return NextResponse.json({ error: "Invalid Product ID" }, { status: 400 });
         }
@@ -25,15 +25,15 @@ export async function GET(req: Request, { params }: { params: { productId: strin
     }
 }
 
-export async function PUT(req: Request, { params }: { params: { productId: string } }) {
+export async function PUT(req: Request, props: { params: Promise<{ productId: string }> }) {
     try {
+        const params = await props.params;
         const user = await getAuthenticatedUser(req as any);
         if (!user || user.role !== 'admin') {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const resolvedParams = await Promise.resolve(params);
-        const productId = parseInt(resolvedParams.productId);
+        const productId = parseInt(params.productId);
         if (isNaN(productId)) {
             return NextResponse.json({ error: "Invalid Product ID" }, { status: 400 });
         }
@@ -57,15 +57,15 @@ export async function PUT(req: Request, { params }: { params: { productId: strin
     }
 }
 
-export async function DELETE(req: Request, { params }: { params: { productId: string } }) {
+export async function DELETE(req: Request, props: { params: Promise<{ productId: string }> }) {
     try {
+        const params = await props.params;
         const user = await getAuthenticatedUser(req as any);
         if (!user || user.role !== 'admin') {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const resolvedParams = await Promise.resolve(params);
-        const productId = parseInt(resolvedParams.productId);
+        const productId = parseInt(params.productId);
         if (isNaN(productId)) {
             return NextResponse.json({ error: "Invalid Product ID" }, { status: 400 });
         }

@@ -4,16 +4,15 @@ import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { getAuthenticatedUser } from "@/lib/auth-server";
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, props: { params: Promise<{ id: string }> }) {
     try {
+        const params = await props.params;
         const adminUser = await getAuthenticatedUser(req as any);
         if (!adminUser || adminUser.role !== 'admin') {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        // Handle params safely for Next 15+ (in case it is a Promise at runtime despite type)
-        const resolvedParams = await Promise.resolve(params);
-        const targetUserId = parseInt(resolvedParams.id);
+        const targetUserId = parseInt(params.id);
         const body = await req.json();
         const { role } = body;
 

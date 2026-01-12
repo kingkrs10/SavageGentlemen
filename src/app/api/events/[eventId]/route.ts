@@ -4,10 +4,10 @@ import { events, insertEventSchema } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { getAuthenticatedUser } from "@/lib/auth-server";
 
-export async function GET(req: Request, { params }: { params: { eventId: string } }) {
+export async function GET(req: Request, props: { params: Promise<{ eventId: string }> }) {
     try {
-        const resolvedParams = await Promise.resolve(params);
-        const eventId = parseInt(resolvedParams.eventId);
+        const params = await props.params;
+        const eventId = parseInt(params.eventId);
         if (isNaN(eventId)) {
             return NextResponse.json({ error: "Invalid Event ID" }, { status: 400 });
         }
@@ -25,15 +25,15 @@ export async function GET(req: Request, { params }: { params: { eventId: string 
     }
 }
 
-export async function PUT(req: Request, { params }: { params: { eventId: string } }) {
+export async function PUT(req: Request, props: { params: Promise<{ eventId: string }> }) {
     try {
+        const params = await props.params;
         const user = await getAuthenticatedUser(req as any);
         if (!user || user.role !== 'admin') {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const resolvedParams = await Promise.resolve(params);
-        const eventId = parseInt(resolvedParams.eventId);
+        const eventId = parseInt(params.eventId);
         if (isNaN(eventId)) {
             return NextResponse.json({ error: "Invalid Event ID" }, { status: 400 });
         }
@@ -65,15 +65,15 @@ export async function PUT(req: Request, { params }: { params: { eventId: string 
     }
 }
 
-export async function DELETE(req: Request, { params }: { params: { eventId: string } }) {
+export async function DELETE(req: Request, props: { params: Promise<{ eventId: string }> }) {
     try {
+        const params = await props.params;
         const user = await getAuthenticatedUser(req as any);
         if (!user || user.role !== 'admin') {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const resolvedParams = await Promise.resolve(params);
-        const eventId = parseInt(resolvedParams.eventId);
+        const eventId = parseInt(params.eventId);
         if (isNaN(eventId)) {
             return NextResponse.json({ error: "Invalid Event ID" }, { status: 400 });
         }
