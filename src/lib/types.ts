@@ -46,9 +46,9 @@ export interface Product {
   price: number;
   imageUrl: string | null;
   category: string | null;
-  sizes: string[] | null;
+  sizes?: string[] | null;
   featured: boolean | null;
-  etsyUrl: string | null;
+  etsyUrl?: string | null;
 }
 
 // Livestream types
