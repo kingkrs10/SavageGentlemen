@@ -11,7 +11,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const targetUserId = parseInt(params.id);
+        // Handle params safely for Next 15+ (in case it is a Promise at runtime despite type)
+        const resolvedParams = await Promise.resolve(params);
+        const targetUserId = parseInt(resolvedParams.id);
         const body = await req.json();
         const { role } = body;
 

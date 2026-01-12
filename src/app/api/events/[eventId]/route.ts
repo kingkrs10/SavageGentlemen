@@ -6,7 +6,8 @@ import { getAuthenticatedUser } from "@/lib/auth-server";
 
 export async function GET(req: Request, { params }: { params: { eventId: string } }) {
     try {
-        const eventId = parseInt(params.eventId);
+        const resolvedParams = await Promise.resolve(params);
+        const eventId = parseInt(resolvedParams.eventId);
         if (isNaN(eventId)) {
             return NextResponse.json({ error: "Invalid Event ID" }, { status: 400 });
         }
@@ -31,7 +32,8 @@ export async function PUT(req: Request, { params }: { params: { eventId: string 
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const eventId = parseInt(params.eventId);
+        const resolvedParams = await Promise.resolve(params);
+        const eventId = parseInt(resolvedParams.eventId);
         if (isNaN(eventId)) {
             return NextResponse.json({ error: "Invalid Event ID" }, { status: 400 });
         }
@@ -70,7 +72,8 @@ export async function DELETE(req: Request, { params }: { params: { eventId: stri
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const eventId = parseInt(params.eventId);
+        const resolvedParams = await Promise.resolve(params);
+        const eventId = parseInt(resolvedParams.eventId);
         if (isNaN(eventId)) {
             return NextResponse.json({ error: "Invalid Event ID" }, { status: 400 });
         }

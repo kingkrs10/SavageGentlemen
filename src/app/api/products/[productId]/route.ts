@@ -6,7 +6,8 @@ import { getAuthenticatedUser } from "@/lib/auth-server";
 
 export async function GET(req: Request, { params }: { params: { productId: string } }) {
     try {
-        const productId = parseInt(params.productId);
+        const resolvedParams = await Promise.resolve(params);
+        const productId = parseInt(resolvedParams.productId);
         if (isNaN(productId)) {
             return NextResponse.json({ error: "Invalid Product ID" }, { status: 400 });
         }
@@ -31,7 +32,8 @@ export async function PUT(req: Request, { params }: { params: { productId: strin
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const productId = parseInt(params.productId);
+        const resolvedParams = await Promise.resolve(params);
+        const productId = parseInt(resolvedParams.productId);
         if (isNaN(productId)) {
             return NextResponse.json({ error: "Invalid Product ID" }, { status: 400 });
         }
@@ -62,7 +64,8 @@ export async function DELETE(req: Request, { params }: { params: { productId: st
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const productId = parseInt(params.productId);
+        const resolvedParams = await Promise.resolve(params);
+        const productId = parseInt(resolvedParams.productId);
         if (isNaN(productId)) {
             return NextResponse.json({ error: "Invalid Product ID" }, { status: 400 });
         }
