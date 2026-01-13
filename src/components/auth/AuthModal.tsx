@@ -106,7 +106,21 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess, onGuestLogin }: AuthModalPr
   const loginMutation = useMutation({
     mutationFn: async (data: LoginFormValues) => {
       const res = await apiRequest("POST", "/api/auth/login", data);
-      return res.json();
+      const responseData = await res.json();
+
+      if (!res.ok) {
+        throw new Error(responseData.message || "Login failed");
+      }
+
+      // If the response is wrapped in { data: ... }, unwrap it for the mutation result, 
+      // OR keep it consistent with what the app expects.
+      // UserContext expects the user object or { data: user }. 
+      // Let's pass the whole responseData, but validate it has success status if applicable.
+      if (responseData.status === 'error') {
+        throw new Error(responseData.message || "Login failed");
+      }
+
+      return responseData;
     },
     onSuccess: (data) => {
       toast({
