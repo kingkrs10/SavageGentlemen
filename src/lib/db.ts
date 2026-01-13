@@ -16,9 +16,8 @@ export const pool = new Pool({
   max: 10,
   connectionTimeoutMillis: 10000,
   idleTimeoutMillis: 30000,
-  // Render internal network usually requires SSL to be disabled.
-  // We've tried multiple configs; reverting to false as it's the standard internal setting.
-  ssl: false,
+  // Successful test config
+  ssl: { rejectUnauthorized: false },
 });
 
 export const db = drizzle(pool, { schema });
