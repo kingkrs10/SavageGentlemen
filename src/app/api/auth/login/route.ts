@@ -45,10 +45,14 @@ export async function POST(request: NextRequest) {
             }
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Login component error:", error);
         return NextResponse.json(
-            { status: 'error', message: "Internal server error" },
+            {
+                status: 'error',
+                message: `Login failed: ${error.message || "Unknown error"}`,
+                details: process.env.NODE_ENV === 'development' ? JSON.stringify(error) : undefined
+            },
             { status: 500 }
         );
     }

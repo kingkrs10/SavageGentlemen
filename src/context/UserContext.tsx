@@ -92,6 +92,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Login function - set user in state and localStorage
   const login = (userData: User) => {
+    // Validate that the object actually looks like a user
+    if (!userData || !userData.token || !userData.id) {
+      console.error("Login called with invalid user data:", userData);
+      return;
+    }
+
     // Ensure we don't lose any token data from the user
     console.log("Login called with userData:", userData);
 
