@@ -13,11 +13,12 @@ if (!process.env.DATABASE_URL) {
 }
 
 // Create pool with connection options for better error handling
-export const pool = new Pool({ 
+export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   max: 10,
   connectionTimeoutMillis: 10000,
   idleTimeoutMillis: 30000,
+  ssl: false, // Disable SSL for internal Render network or add rejectUnauthorized: false if SSL is required
 });
 
 export const db = drizzle({ client: pool, schema });
