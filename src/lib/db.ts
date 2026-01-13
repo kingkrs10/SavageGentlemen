@@ -16,9 +16,9 @@ export const pool = new Pool({
   max: 10,
   connectionTimeoutMillis: 10000,
   idleTimeoutMillis: 30000,
-  // Standard configuration for Render/Neon Postgres
-  // This allows SSL connections but accepts self-signed certificates
-  ssl: { rejectUnauthorized: false },
+  // Render internal network usually requires SSL to be disabled.
+  // We've tried multiple configs; reverting to false as it's the standard internal setting.
+  ssl: false,
 });
 
 export const db = drizzle(pool, { schema });

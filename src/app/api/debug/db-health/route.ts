@@ -1,49 +1,43 @@
 
-import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { users } from "@shared/schema";
+import { NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { sql } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        const dbUrl = process.env.DATABASE_URL;
-        console.log("Debug DB: Checking URL...");
-
-        if (!dbUrl) {
-            return NextResponse.json({
-                status: "error",
-                message: "DATABASE_URL is missing from environment variables."
-            }, { status: 500 });
-        }
-
-        console.log("Debug DB: URL found (starts with):", dbUrl.substring(0, 10));
-
-        // Set a timeout for the query
-        const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Query timed out after 3s")), 3000)
-        );
-
-        const result: any = await Promise.race([
-            db.select().from(users).limit(1),
-            timeoutPromise
-        ]);
+        const start = Date.now();
+        // Use raw SQL to test connection
+        await db.execute(sql`SELECT 1`);
+        const duration = Date.now() - start;
 
         return NextResponse.json({
-            status: "ok",
-            message: "Database connected successfully",
-            userCount: result.length,
-            sample: result
+            status: 'healthy',
+            message: 'Database connection successful',
+            duration: `${duration}ms`,
+            env: {
+                node_env: process.env.NODE_ENV,
+                has_db_url: !!process.env.DATABASE_URL
+            }
         });
     } catch (error: any) {
-        console.error("Debug DB Error:", error);
+        console.error('Database health check failed:', error);
+
+        // Extract nested cause if it exists (common in Drizzle)
+        const cause = error.cause || undefined;
+
         return NextResponse.json({
-            status: "error",
+            status: 'unhealthy',
             message: error.message,
-            stack: error.stack,
-            envCheck: {
-                hasDbUrl: !!process.env.DATABASE_URL
-            }
+            code: error.code,
+            cause: cause ? {
+                message: cause.message,
+                code: cause.code,
+                detail: cause.detail,
+                hint: cause.hint
+            } : undefined,
+            full_error: process.env.NODE_ENV === 'development' ? JSON.stringify(error, Object.getOwnPropertyNames(error)) : undefined
         }, { status: 500 });
     }
 }
