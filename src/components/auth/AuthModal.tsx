@@ -120,7 +120,7 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess, onGuestLogin }: AuthModalPr
         throw new Error(responseData.message || "Login failed");
       }
 
-      return responseData;
+      return responseData.data;
     },
     onSuccess: (data) => {
       toast({
@@ -240,6 +240,11 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess, onGuestLogin }: AuthModalPr
           // Create a clone before reading
           const clonedSuccessResponse = res.clone();
           const userData = await clonedSuccessResponse.json();
+
+          // Check if response is wrapped in { data: ... }
+          if (userData && userData.data) {
+            return userData.data;
+          }
 
           // Ensure we got valid user data
           if (!userData || !userData.id) {
