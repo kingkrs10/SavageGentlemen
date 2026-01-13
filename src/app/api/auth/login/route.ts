@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
         });
 
     } catch (error: any) {
-        console.error("Login component error:", error);
+        console.error("Login component error structure:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
         // Extract Postgres specific error fields if available
         const pgError = {
             message: error.message,
