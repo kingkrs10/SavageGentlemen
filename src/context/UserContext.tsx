@@ -45,6 +45,16 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           // Temporarily set the user from localStorage
           // Handle both formats: { data: { ... } } and direct { ... }
           const userData = parsedUser.data || parsedUser;
+
+          // Validate that the object actually looks like a user
+          if (!userData || !userData.token || !userData.id) {
+            console.warn("Stored user data is invalid (missing token or id), clearing session");
+            localStorage.removeItem("user");
+            setUser(null);
+            setIsLoading(false);
+            return;
+          }
+
           setUser(userData);
 
           // Validate the session with the server
