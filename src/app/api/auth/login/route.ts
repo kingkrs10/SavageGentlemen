@@ -47,11 +47,19 @@ export async function POST(request: NextRequest) {
 
     } catch (error: any) {
         console.error("Login component error:", error);
+        // Extract Postgres specific error fields if available
+        const pgError = {
+            message: error.message,
+            code: error.code, // e.g. 28P01 (auth), 3D000 (db missing), 42P01 (table missing)
+            detail: error.detail,
+            hint: error.hint,
+        };
+
         return NextResponse.json(
             {
                 status: 'error',
-                message: `Login failed: ${error.message || "Unknown error"}`,
-                details: process.env.NODE_ENV === 'development' ? JSON.stringify(error) : undefined
+                message: `Login failed: ${error.message || "Unknown error"} (Code: ${error.code || 'N/A'})`,
+                details: process.env.NODE_ENV === 'development' || true ? pgError : undefined
             },
             { status: 500 }
         );
