@@ -6,36 +6,36 @@
 
 /* Modern Design System */
 :root {
-  /* Modern Nightlife Palette - Deep, Rich, Electric */
+  /* Modern Immersive Lifestyle Palette - Cinematic, Deep, Premium */
 
-  /* Base Colors - The "Canvas" */
-  /* Deepest Void Black/Blue for OLED-like richness */
-  --background: 240 10% 3.9%;
+  /* Base Colors - "OLED Deep Void" */
+  /* Extremely dark for maximum contrast and pop */
+  --background: 0 0% 2%;
+  /* #050505 */
   --foreground: 0 0% 98%;
 
-  /* Cards & Surfaces - Slightly lighter than background, glass-like */
-  --card: 240 10% 5.9%;
+  /* Cards & Surfaces - Glass-like, subtle separation */
+  --card: 0 0% 3%;
   --card-foreground: 0 0% 98%;
 
-  --popover: 240 10% 3.9%;
+  --popover: 0 0% 3%;
   --popover-foreground: 0 0% 98%;
 
-  /* Primary: "Electric Ember" - A vibrant, glowing orange-red */
-  /* Old: 0 80% 30% */
-  /* New: Bright, energetic for call-to-actions */
+  /* Primary: "Electric Ember" - The soul of the brand */
+  /* Vibrant orange-red that glows against the dark background */
   --primary: 15 90% 55%;
   --primary-foreground: 0 0% 100%;
 
-  /* Secondary: "Cyber Blue" - Deep but electric */
-  --secondary: 217 91% 60%;
-  --secondary-foreground: 0 0% 100%;
+  /* Secondary: "Platinum" - Metallic, high-end */
+  --secondary: 0 0% 90%;
+  --secondary-foreground: 0 0% 10%;
 
-  /* Muted: Sophisticated dark grays */
-  --muted: 240 5% 15%;
-  --muted-foreground: 240 5% 65%;
+  /* Muted: "Shadow" */
+  --muted: 0 0% 12%;
+  --muted-foreground: 0 0% 60%;
 
-  /* Accent: "Neon Gold" - Luxury touch */
-  --accent: 45 100% 55%;
+  /* Accent: "Champagne Gold" - Luxury highlights */
+  --accent: 45 60% 60%;
   --accent-foreground: 0 0% 10%;
 
   /* Destructive */
@@ -43,34 +43,29 @@
   --destructive-foreground: 0 0% 98%;
 
   /* Borders & Inputs */
-  --border: 240 5% 15%;
-  --input: 240 5% 15%;
+  --border: 0 0% 12%;
+  --input: 0 0% 12%;
   --ring: 15 90% 55%;
-  /* Ring matches Primary */
 
-  /* Radius - Modern, slightly rounded but not pill-shaped everywhere */
-  --radius: 0.75rem;
+  /* Radius - Sleek, defined */
+  --radius: 0.5rem;
 
-  /* Custom Gradients */
-  --primary-gradient: linear-gradient(135deg, hsl(15, 90%, 55%) 0%, hsl(340, 85%, 55%) 100%);
-  --secondary-gradient: linear-gradient(135deg, hsl(217, 91%, 60%) 0%, hsl(260, 90%, 65%) 100%);
-  --dark-gradient: linear-gradient(to bottom, hsl(240, 10%, 3.9%), hsl(240, 10%, 2%));
+  /* Custom Gradients - Cinematic Lighting */
+  --primary-gradient: linear-gradient(135deg, hsl(15, 90%, 55%) 0%, hsl(350, 80%, 50%) 100%);
+  --metallic-gradient: linear-gradient(135deg, hsl(0, 0%, 20%) 0%, hsl(0, 0%, 40%) 50%, hsl(0, 0%, 20%) 100%);
+  --gold-gradient: linear-gradient(135deg, hsl(40, 60%, 50%) 0%, hsl(45, 80%, 70%) 50%, hsl(40, 60%, 50%) 100%);
+  --void-gradient: linear-gradient(to bottom, hsl(0, 0%, 2%), hsl(0, 0%, 0%));
 
-  /* Glassmorphism Variables */
-  --glass-bg: rgba(10, 10, 12, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-blur: 20px;
+  /* Cinematic Shadows */
+  --shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, 0.8);
+  --shadow-md: 0 12px 24px -6px rgba(0, 0, 0, 0.9);
+  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 1);
+  --shadow-neon: 0 0 30px -5px hsla(15, 90%, 55%, 0.4);
 
-  /* Shadows - Deep, multi-layered for spatial depth */
-  --shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 12px 24px -6px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.7);
-  --shadow-neon: 0 0 20px -5px hsl(15, 90%, 55%, 0.5);
-
-  /* Chart colors */
+  /* Chart colors (kept for reference) */
   --chart-1: 15 90% 55%;
-  --chart-2: 217 91% 60%;
-  --chart-3: 45 100% 55%;
+  --chart-2: 0 0% 90%;
+  --chart-3: 45 60% 60%;
   --chart-4: 280 85% 60%;
   --chart-5: 340 85% 55%;
 }
