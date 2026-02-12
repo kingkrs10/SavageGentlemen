@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, Link } from "wouter";
-import { Home, CalendarDays, ShoppingBag, Images, Video, LayoutDashboard, Ticket } from "lucide-react";
+import { Home, CalendarDays, ShoppingBag, Blocks, Images, Video, LayoutDashboard, Ticket } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { User } from "@/lib/types";
 import { useUser } from "@/context/UserContext";
@@ -21,17 +21,18 @@ const BottomNavigation = ({ user: propUser }: BottomNavigationProps) => {
     { path: "/", label: "Home", icon: Home },
     { path: "/events", label: "Events", icon: CalendarDays },
     { path: "/shop", label: "Shop", icon: ShoppingBag },
+    { path: "/apps", label: "Apps", icon: Blocks },
     { path: "/media", label: "Media", icon: Images },
     { path: "/live", label: "Live", icon: Video, hasNotification: true },
   ];
-  
+
   // Add My Tickets if user is authenticated
   const authenticatedItems = user && !user.isGuest
     ? [...standardNavItems, { path: "/my-tickets", label: "My Tickets", icon: Ticket }]
     : standardNavItems;
-  
+
   // Add admin item if user is admin
-  const navItems = user?.role === "admin" 
+  const navItems = user?.role === "admin"
     ? [...authenticatedItems, { path: "/admin", label: "Admin", icon: LayoutDashboard }]
     : authenticatedItems;
 
@@ -39,9 +40,9 @@ const BottomNavigation = ({ user: propUser }: BottomNavigationProps) => {
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-black border-t border-white/10 z-40">
       <div className="w-full flex justify-between items-center">
         {navItems.map((item) => (
-          <Link 
-            key={item.path} 
-            href={item.path} 
+          <Link
+            key={item.path}
+            href={item.path}
             className={cn(
               "bottom-nav-item flex-1 py-3 flex flex-col items-center text-xs",
               location === item.path

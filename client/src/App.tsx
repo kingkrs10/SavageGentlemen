@@ -23,6 +23,8 @@ const Home = lazy(() => import("@/pages/home"));
 const Events = lazy(() => import("@/pages/events"));
 const EventDetail = lazy(() => import("@/pages/event-detail"));
 const Shop = lazy(() => import("@/pages/shop"));
+const Apps = lazy(() => import("@/pages/apps"));
+const AppsLanguageSensei = lazy(() => import("@/pages/apps-language-sensei"));
 const Media = lazy(() => import("@/pages/media"));
 const Live = lazy(() => import("@/pages/live"));
 const Checkout = lazy(() => import("@/pages/checkout"));
@@ -44,21 +46,23 @@ const AiAssistant = lazy(() => import("@/pages/ai-assistant"));
 const Passport = lazy(() => import("@/pages/passport"));
 const SocaPassport = lazy(() => import("@/pages/socaport-app"));
 const PassportPromoters = lazy(() => import("@/pages/passport-promoters"));
+const PromoterDashboard = lazy(() => import("@/pages/promoter-dashboard"));
 const PassportCheckIn = lazy(() => import("@/pages/passport-checkin"));
 const PassportDashboard = lazy(() => import("@/pages/passport-dashboard"));
 const PassportScanner = lazy(() => import("@/pages/passport-scanner"));
 const PassportMarketplace = lazy(() => import("@/pages/passport-marketplace"));
 const PassportPublicProfile = lazy(() => import("@/pages/passport-public-profile"));
+const PassportAuth = lazy(() => import("@/pages/passport-auth"));
 
 function Router() {
   const [location] = useLocation();
   const { user } = useUser();
-  
+
   useEffect(() => {
     trackPageView(location, user?.id);
     console.log('Page view tracked:', location);
   }, [location, user?.id]);
-  
+
   return (
     <Suspense fallback={
       <div className="w-full h-[70vh] flex items-center justify-center">
@@ -74,6 +78,8 @@ function Router() {
         <Route path="/events/:id" component={EventDetail} />
         <Route path="/events/:id/:slug" component={EventDetail} />
         <Route path="/shop" component={Shop} />
+        <Route path="/apps" component={Apps} />
+        <Route path="/apps/language-sensei" component={AppsLanguageSensei} />
         <Route path="/media" component={Media} />
         <Route path="/live" component={Live} />
         <Route path="/checkout" component={Checkout} />
@@ -95,10 +101,12 @@ function Router() {
         <Route path="/passport" component={Passport} />
         <Route path="/passport/:username" component={PassportPublicProfile} />
         <Route path="/socapassport" component={SocaPassport} />
+        <Route path="/socapassport/auth" component={PassportAuth} />
         <Route path="/socapassport/dashboard" component={PassportDashboard} />
         <Route path="/socapassport/scanner" component={PassportScanner} />
         <Route path="/socapassport/marketplace" component={PassportMarketplace} />
         <Route path="/socapassport/checkin/:code" component={PassportCheckIn} />
+        <Route path="/socapassport/promoter/:code" component={PromoterDashboard} />
         <Route path="/passport-promoters" component={PassportPromoters} />
         <Route component={NotFound} />
       </Switch>
@@ -112,8 +120,8 @@ function AppContent() {
   const [location] = useLocation();
 
   const isSocaPassportRoute = () => {
-    return location.startsWith('/socapassport') || 
-           location.startsWith('/passport');
+    return location.startsWith('/socapassport') ||
+      location.startsWith('/passport');
   };
 
   const guestLoginMutation = useMutation({
@@ -129,18 +137,34 @@ function AppContent() {
   useEffect(() => {
     const handleOpenAuthModal = (event: CustomEvent) => {
       setShowAuthModal(true);
-      
+
       if (event.detail && event.detail.tab) {
         localStorage.setItem("authModalSelectedTab", event.detail.tab);
       }
-      
+
       if (event.detail && event.detail.redirectPath) {
         localStorage.setItem("redirectAfterAuth", event.detail.redirectPath);
       }
     };
 
     window.addEventListener("sg:open-auth-modal", handleOpenAuthModal as EventListener);
-    
+
+    // Check for URL query params (e.g. ?action=login&redirect=/passport)
+    // This enables deep linking to login/signup modal from any page
+    const searchParams = new URLSearchParams(window.location.search);
+    const action = searchParams.get('action');
+    const redirect = searchParams.get('redirect');
+
+    if (action === 'login' || action === 'signup') {
+      setShowAuthModal(true);
+      if (action === 'signup') {
+        localStorage.setItem("authModalSelectedTab", "register");
+      }
+      if (redirect) {
+        localStorage.setItem("redirectAfterAuth", redirect);
+      }
+    }
+
     return () => {
       window.removeEventListener("sg:open-auth-modal", handleOpenAuthModal as EventListener);
     };
@@ -160,7 +184,7 @@ function AppContent() {
   const handleAuthSuccess = (userData: User) => {
     login(userData);
     setShowAuthModal(false);
-    
+
     const redirectPath = localStorage.getItem("redirectAfterAuth");
     if (redirectPath) {
       localStorage.removeItem("redirectAfterAuth");
@@ -170,7 +194,7 @@ function AppContent() {
 
   return (
     <>
-      <SEOHead 
+      <SEOHead
         title="Home"
         description="Caribbean-American event and lifestyle brand. Explore events, shop for merchandise, watch live streams, and connect with the community."
       />
@@ -178,19 +202,19 @@ function AppContent() {
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <div className="min-h-screen bg-background text-foreground">
             {!isSocaPassportRoute() && (
-              <Header 
-                user={user} 
-                onLogout={logout} 
-                onProfileClick={() => setShowAuthModal(true)} 
+              <Header
+                user={user}
+                onLogout={logout}
+                onProfileClick={() => setShowAuthModal(true)}
               />
             )}
-            
+
             <main className={isSocaPassportRoute() ? "" : "container mx-auto px-4 py-8"}>
               <Router />
             </main>
-            
+
             {!isSocaPassportRoute() && <BottomNavigation />}
-            
+
             {showAuthModal && (
               <AuthModal
                 isOpen={showAuthModal}
@@ -199,7 +223,7 @@ function AppContent() {
                 onGuestLogin={() => guestLoginMutation.mutate()}
               />
             )}
-            
+
             <Toaster />
           </div>
         </ThemeProvider>

@@ -25,7 +25,7 @@ const Header = ({ user: propUser, onProfileClick, onLogout }: HeaderProps) => {
   const { user: contextUser, logout } = useUser();
   // Use prop user if available, otherwise use context user
   const user = propUser || contextUser;
-  
+
   // Use context logout if no handler provided
   const handleLogout = () => {
     if (onLogout) {
@@ -43,6 +43,7 @@ const Header = ({ user: propUser, onProfileClick, onLogout }: HeaderProps) => {
             <a href="/" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Home</a>
             <a href="/events" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Events</a>
             <a href="/shop" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Shop</a>
+            <a href="/apps" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Apps</a>
             <a href="/media" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Media</a>
             <a href="/live" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Live</a>
             {user && !user.isGuest && (
@@ -50,7 +51,7 @@ const Header = ({ user: propUser, onProfileClick, onLogout }: HeaderProps) => {
             )}
           </nav>
         </div>
-        
+
         {/* Logo and User Controls */}
         <div className="py-3 flex justify-between items-center border-t dark:border-white/10 light:border-black/10">
           <div className="flex items-center">
@@ -61,7 +62,7 @@ const Header = ({ user: propUser, onProfileClick, onLogout }: HeaderProps) => {
           </div>
           <div className="flex items-center space-x-4">
             <ThemeToggle variant="ghost" size="icon" />
-            
+
             <Button
               variant="ghost"
               size="icon"
@@ -83,7 +84,7 @@ const Header = ({ user: propUser, onProfileClick, onLogout }: HeaderProps) => {
                         <AvatarImage src={user.avatar} alt={user.displayName || user.username || "Logged In"} />
                       ) : null}
                       <AvatarFallback>
-                        {user.displayName 
+                        {user.displayName
                           ? user.displayName.charAt(0).toUpperCase()
                           : user.username
                             ? user.username.charAt(0).toUpperCase()
@@ -99,37 +100,37 @@ const Header = ({ user: propUser, onProfileClick, onLogout }: HeaderProps) => {
                     {user.role === "admin" && " (Admin)"}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="dark:bg-white/10 light:bg-black/10" />
-                  <DropdownMenuItem 
-                      className="dark:hover:bg-white/5 dark:focus:bg-white/5 light:hover:bg-black/5 light:focus:bg-black/5"
-                      asChild
-                    >
-                      <a href="/my-tickets">
-                        <Ticket className="mr-2 h-4 w-4" />
-                        <span className="uppercase text-xs tracking-widest">My Tickets</span>
-                      </a>
-                    </DropdownMenuItem>
-                  <DropdownMenuItem 
-                      className="dark:hover:bg-white/5 dark:focus:bg-white/5 light:hover:bg-black/5 light:focus:bg-black/5"
-                      asChild
-                    >
-                      <a href="/profile">
-                        <User className="mr-2 h-4 w-4" />
-                        <span className="uppercase text-xs tracking-widest">My Profile</span>
-                      </a>
-                    </DropdownMenuItem>
-                  <DropdownMenuItem 
-                      className="dark:hover:bg-white/5 dark:focus:bg-white/5 light:hover:bg-black/5 light:focus:bg-black/5"
-                      asChild
-                    >
-                      <a href="/ai-assistant">
-                        <Bot className="mr-2 h-4 w-4" />
-                        <span className="uppercase text-xs tracking-widest">AI Assistant</span>
-                      </a>
-                    </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="dark:hover:bg-white/5 dark:focus:bg-white/5 light:hover:bg-black/5 light:focus:bg-black/5"
+                    asChild
+                  >
+                    <a href="/my-tickets">
+                      <Ticket className="mr-2 h-4 w-4" />
+                      <span className="uppercase text-xs tracking-widest">My Tickets</span>
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="dark:hover:bg-white/5 dark:focus:bg-white/5 light:hover:bg-black/5 light:focus:bg-black/5"
+                    asChild
+                  >
+                    <a href="/profile">
+                      <User className="mr-2 h-4 w-4" />
+                      <span className="uppercase text-xs tracking-widest">My Profile</span>
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="dark:hover:bg-white/5 dark:focus:bg-white/5 light:hover:bg-black/5 light:focus:bg-black/5"
+                    asChild
+                  >
+                    <a href="/ai-assistant">
+                      <Bot className="mr-2 h-4 w-4" />
+                      <span className="uppercase text-xs tracking-widest">AI Assistant</span>
+                    </a>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator className="dark:bg-white/10 light:bg-black/10" />
-                  
+
                   {/* Always show admin link for testing */}
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     className="dark:hover:bg-white/5 dark:focus:bg-white/5 light:hover:bg-black/5 light:focus:bg-black/5"
                     asChild
                   >
@@ -139,7 +140,7 @@ const Header = ({ user: propUser, onProfileClick, onLogout }: HeaderProps) => {
                     </a>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="dark:bg-white/10 light:bg-black/10" />
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={handleLogout}
                     className="dark:hover:bg-white/5 dark:focus:bg-white/5 light:hover:bg-black/5 light:focus:bg-black/5"
                   >
