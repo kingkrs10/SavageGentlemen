@@ -98,6 +98,11 @@ export const events = pgTable("events", {
   countryCode: text("country_code"), // ISO country code (e.g., "TT", "US", "CA")
   carnivalCircuit: text("carnival_circuit"), // e.g., "Trinidad Carnival", "Miami Carnival"
   accessCode: text("access_code"), // Unique code for promoter check-in (e.g., "EVT-123-ABC456")
+  // Geo-fencing for scanner-free check-in
+  venueLatitude: numeric("venue_latitude"), // Venue latitude for geo-fencing
+  venueLongitude: numeric("venue_longitude"), // Venue longitude for geo-fencing
+  checkinRadiusMeters: integer("checkin_radius_meters").default(200), // Allowed check-in radius in meters
+  stampImageUrl: text("stamp_image_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -134,6 +139,10 @@ export const insertEventSchema = createInsertSchema(events)
     isPremiumPassport: true,
     countryCode: true,
     carnivalCircuit: true,
+    accessCode: true,
+    venueLatitude: true,
+    venueLongitude: true,
+    checkinRadiusMeters: true,
   })
   .extend({
     price: z.number().nullable().optional(),
@@ -143,6 +152,11 @@ export const insertEventSchema = createInsertSchema(events)
     isPremiumPassport: z.boolean().default(false),
     countryCode: z.string().length(2).transform((val) => val.toUpperCase()).optional(),
     carnivalCircuit: z.string().max(120).optional(),
+    stampImageUrl: z.string().optional(),
+    accessCode: z.string().max(20).optional(),
+    venueLatitude: z.number().min(-90).max(90).optional(),
+    venueLongitude: z.number().min(-180).max(180).optional(),
+    checkinRadiusMeters: z.number().min(50).max(1000).default(200),
   })
   .transform((data) => {
     // If date is provided as a string, convert it to a Date object
@@ -743,7 +757,7 @@ export const ticketPurchases = pgTable("ticket_purchases", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const insertTicketPurchaseSchema = createInsertSchema(ticketPurchases).omit({ 
+export const insertTicketPurchaseSchema = createInsertSchema(ticketPurchases).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -800,7 +814,7 @@ export const ticketScans = pgTable("ticket_scans", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const insertTicketScanSchema = createInsertSchema(ticketScans).omit({ 
+export const insertTicketScanSchema = createInsertSchema(ticketScans).omit({
   id: true,
   createdAt: true,
   updatedAt: true
@@ -1638,6 +1652,8 @@ export const passportProfiles = pgTable("passport_profiles", {
   currentTier: text("current_tier").notNull().default("BRONZE"), // BRONZE, SILVER, GOLD, ELITE
   totalEvents: integer("total_events").notNull().default(0),
   totalCountries: integer("total_countries").notNull().default(0),
+  profileTheme: text("profile_theme").default("standard"),
+  equippedBadgeId: integer("equipped_badge_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => {
@@ -1920,7 +1936,7 @@ export const passportAchievementDefinitions = pgTable("passport_achievement_defi
   slug: text("slug").notNull().unique(), // first_fete, party_animal_10, big_spender_500
   name: text("name").notNull(), // "First Fête"
   description: text("description").notNull(), // "Attend your first event"
-  category: text("category").notNull(), // BEGINNER, SOCIAL, ATTENDANCE, TRAVEL, SPENDING
+  category: text("category").notNull(), // BEGINNER, SOCIAL, ATTENDANCE, TRAVEL, SPENDING (non-unique)
   criteria: jsonb("criteria").notNull().default(sql`'{}'::jsonb`), // { eventsAttended: 10 } or { totalSpent: 500 }
   creditBonus: integer("credit_bonus").default(0), // Bonus credits awarded on unlock
   tierRequirement: text("tier_requirement"), // BRONZE, SILVER, GOLD, ELITE (null if no requirement)
@@ -1933,7 +1949,7 @@ export const passportAchievementDefinitions = pgTable("passport_achievement_defi
 }, (table) => {
   return {
     slugIdx: uniqueIndex("passport_achievement_definitions_slug_idx").on(table.slug),
-    categoryIdx: uniqueIndex("passport_achievement_definitions_category_idx").on(table.category),
+    // categoryIdx removed to allow duplicates
   };
 });
 
@@ -1975,8 +1991,7 @@ export const passportRedemptionOffers = pgTable("passport_redemption_offers", {
 }, (table) => {
   return {
     slugIdx: uniqueIndex("passport_redemption_offers_slug_idx").on(table.slug),
-    categoryIdx: uniqueIndex("passport_redemption_offers_category_idx").on(table.category),
-    isActiveIdx: uniqueIndex("passport_redemption_offers_is_active_idx").on(table.isActive),
+    // Removed incorrect unique indexes on category and isActive
   };
 });
 
@@ -2177,7 +2192,7 @@ export const promoterSubscriptionPlans = pgTable("promoter_subscription_plans", 
   displayName: text("display_name").notNull(), // "Free", "Starter", "Pro", "Enterprise"
   description: text("description"),
   isEnterprise: boolean("is_enterprise").default(false), // Custom pricing for enterprise
-  
+
   // Feature flags (typed columns for reliability)
   hasBasicScanner: boolean("has_basic_scanner").default(true),
   hasBasicDashboard: boolean("has_basic_dashboard").default(true),
@@ -2187,13 +2202,13 @@ export const promoterSubscriptionPlans = pgTable("promoter_subscription_plans", 
   hasWhiteLabel: boolean("has_white_label").default(false),
   hasPrioritySupport: boolean("has_priority_support").default(false),
   hasCustomIntegrations: boolean("has_custom_integrations").default(false),
-  
+
   // Early adopter program configuration
   earlyAdopterSlotsTotal: integer("early_adopter_slots_total").default(5), // Total early adopter slots (e.g., 5)
   earlyAdopterSlotsFilled: integer("early_adopter_slots_filled").default(0), // Slots filled so far
   earlyAdopterTrialDays: integer("early_adopter_trial_days").default(90), // 3 months = 90 days
   earlyAdopterDiscountPercent: integer("early_adopter_discount_percent").default(50), // 50% lifetime discount
-  
+
   isActive: boolean("is_active").default(true),
   sortOrder: integer("sort_order").default(0),
   createdAt: timestamp("created_at").defaultNow(),
@@ -2219,27 +2234,27 @@ export const promoterSubscriptions = pgTable("promoter_subscriptions", {
   planId: integer("plan_id").notNull().references(() => promoterSubscriptionPlans.id),
   billingOptionId: integer("billing_option_id").notNull().references(() => promoterPlanBillingOptions.id), // FK to specific billing option
   status: text("status").notNull().default("ACTIVE"), // ACTIVE, CANCELLED, EXPIRED, TRIAL
-  
+
   // Stripe integration
   stripeSubscriptionId: text("stripe_subscription_id").unique(),
   stripeCustomerId: text("stripe_customer_id"),
-  
+
   // Per-event tracking
   perEventUsageCount: integer("per_event_usage_count").default(0), // Track events scanned for per-event plans
-  
+
   // Billing period
   currentPeriodStart: timestamp("current_period_start"),
   currentPeriodEnd: timestamp("current_period_end"),
-  
+
   // Trial and early adopter tracking
   trialEnd: timestamp("trial_end"), // Trial end date (populated from plan early adopter config)
   isEarlyAdopter: boolean("is_early_adopter").default(false),
   earlyAdopterNumber: integer("early_adopter_number"), // 1-5 for first 5 promoters (unique per plan)
   lifetimeDiscountPercent: integer("lifetime_discount_percent").default(0), // Copied from plan config when granted
-  
+
   // Metadata
   metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`), // Notes, custom enterprise pricing, etc
-  
+
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   cancelledAt: timestamp("cancelled_at"),

@@ -1,15 +1,15 @@
 import { storage } from './storage';
 import { db } from './db';
-import { 
+import {
   passportQrCheckins,
   passportStamps,
   passportCreditTransactions,
   passportProfiles
 } from '@shared/schema';
-import type { 
-  PassportProfile, 
-  InsertPassportProfile, 
-  PassportStamp, 
+import type {
+  PassportProfile,
+  InsertPassportProfile,
+  PassportStamp,
   InsertPassportStamp,
   PassportTier,
   PassportReward,
@@ -47,11 +47,11 @@ export class PassportService {
    */
   async getOrCreateProfile(userId: number, handle?: string): Promise<PassportProfile> {
     let profile = await storage.getPassportProfile(userId);
-    
+
     if (!profile) {
       // Generate unique handle if not provided
       const finalHandle = handle || await this.generateUniqueHandle(userId);
-      
+
       const profileData: InsertPassportProfile = {
         userId,
         handle: finalHandle,
@@ -60,9 +60,9 @@ export class PassportService {
         totalEvents: 0,
         totalCountries: 0
       };
-      
+
       profile = await storage.createPassportProfile(profileData);
-      
+
       await storage.createPassportMembership({
         userId,
         tier: 'FREE',
@@ -70,7 +70,7 @@ export class PassportService {
         metadataJson: {}
       });
     }
-    
+
     return profile;
   }
 
@@ -81,23 +81,25 @@ export class PassportService {
     const baseHandle = `carnival_${userId}`;
     let handle = baseHandle;
     let counter = 1;
-    
+
     while (await storage.getPassportProfileByHandle(handle)) {
       handle = `${baseHandle}_${counter}`;
       counter++;
     }
-    
+
     return handle;
   }
 
   /**
    * Award a stamp to a user for attending an event
    * Uses database transaction for atomicity across checkin/stamp/credits
+   * @param checkinMethod - QR_SCAN, CODE_ENTRY, GEO_CHECKIN, MANUAL_ENTRY, TICKET_VALIDATION
    */
   async awardStamp(
-    userId: number, 
-    eventId: number, 
-    event: Event
+    userId: number,
+    eventId: number,
+    event: Event,
+    checkinMethod: 'QR_SCAN' | 'CODE_ENTRY' | 'GEO_CHECKIN' | 'MANUAL_ENTRY' | 'TICKET_VALIDATION' = 'QR_SCAN'
   ): Promise<StampAwardResult> {
     // Ensure user has a passport profile
     let profile = await this.getOrCreateProfile(userId);
@@ -105,6 +107,16 @@ export class PassportService {
 
     // Calculate credits to award based on event type
     const creditsToAward = this.computeStampCredits(event);
+
+    // Map check-in method to stamp source
+    const sourceMap: Record<string, string> = {
+      'QR_SCAN': 'TICKET_SCAN',
+      'CODE_ENTRY': 'CODE_ENTRY',
+      'GEO_CHECKIN': 'GEO_CHECKIN',
+      'MANUAL_ENTRY': 'MANUAL_ENTRY',
+      'TICKET_VALIDATION': 'TICKET_SCAN'
+    };
+    const stampSource = sourceMap[checkinMethod] || 'TICKET_SCAN';
 
     // === ATOMIC TRANSACTION: checkin + stamp + credit + profile update ===
     const { stamp, checkin, creditTransaction } = await db.transaction(async (tx) => {
@@ -120,14 +132,14 @@ export class PassportService {
         throw new Error('User already checked in for this event');
       }
 
-      // 2. Create QR check-in record
+      // 2. Create check-in record
       const [checkin] = await tx.insert(passportQrCheckins).values({
         userId,
         eventId,
         creditsEarned: creditsToAward,
         isPremium: event.isPremiumPassport || false,
         accessCode: event.accessCode || undefined,
-        checkinMethod: 'QR_SCAN',
+        checkinMethod: checkinMethod,
         metadata: {}
       }).returning();
 
@@ -138,7 +150,7 @@ export class PassportService {
         countryCode: event.countryCode || 'US',
         carnivalCircuit: event.carnivalCircuit || undefined,
         pointsEarned: creditsToAward,
-        source: 'TICKET_SCAN'
+        source: stampSource
       }).returning();
 
       // 4. Create credit transaction ledger entry
@@ -155,18 +167,18 @@ export class PassportService {
       // 5. Compute stats atomically within transaction
       const { eq, count, countDistinct } = await import('drizzle-orm');
       const { sql } = await import('drizzle-orm');
-      
+
       // Count total stamps for this user (including the one we just created)
       const [stampStats] = await tx.select({
         totalEvents: count(),
         totalCountries: countDistinct(passportStamps.countryCode)
       })
-      .from(passportStamps)
-      .where(eq(passportStamps.userId, userId));
+        .from(passportStamps)
+        .where(eq(passportStamps.userId, userId));
 
       // 6. Update profile atomically (points + stats)
       await tx.update(passportProfiles)
-        .set({ 
+        .set({
           totalPoints: sql`total_points + ${creditsToAward}`,
           totalEvents: stampStats.totalEvents,
           totalCountries: stampStats.totalCountries
@@ -219,12 +231,12 @@ export class PassportService {
     if (event.stampPointsDefault && event.stampPointsDefault > 0) {
       return event.stampPointsDefault;
     }
-    
+
     // Priority 2: Premium event (75 credits)
     if (event.isPremiumPassport) {
       return 75;
     }
-    
+
     // Default: Standard event (50 credits)
     return 50;
   }
@@ -233,15 +245,15 @@ export class PassportService {
    * Check if user qualifies for tier upgrade and apply it
    */
   private async checkAndUpdateTier(
-    userId: number, 
+    userId: number,
     totalPoints: number,
     currentTier: string
   ): Promise<{ upgraded: boolean; previousTier: string; newTier: string }> {
     const tiers = await storage.getAllPassportTiers();
-    
+
     // Sort tiers by points (ascending)
     const sortedTiers = tiers.sort((a, b) => a.minPoints - b.minPoints);
-    
+
     // Find the highest tier user qualifies for
     let qualifiedTier = currentTier;
     for (const tier of sortedTiers) {
@@ -255,7 +267,7 @@ export class PassportService {
       await storage.updatePassportProfile(userId, {
         currentTier: qualifiedTier as 'BRONZE' | 'SILVER' | 'GOLD' | 'ELITE'
       });
-      
+
       return {
         upgraded: true,
         previousTier: currentTier,
@@ -298,15 +310,15 @@ export class PassportService {
 
     // Get existing rewards to check what milestones were already awarded
     const existingRewards = await storage.getPassportRewardsByUserId(userId);
-    
+
     for (const milestone of milestones) {
       // Check if user meets or exceeds this milestone
       if (profile.totalEvents >= milestone.stamps) {
         // Check if this milestone reward was already awarded
         const alreadyHasMilestone = existingRewards.some(r => {
           const metadata = r.metadata as any;
-          return metadata?.rewardCategory === 'MILESTONE' && 
-                 metadata?.discountCode === milestone.code;
+          return metadata?.rewardCategory === 'MILESTONE' &&
+            metadata?.discountCode === milestone.code;
         });
 
         if (!alreadyHasMilestone) {
@@ -362,8 +374,8 @@ export class PassportService {
     const existingRewards = await storage.getPassportRewardsByUserId(userId);
     const alreadyHasTierReward = existingRewards.some(r => {
       const metadata = r.metadata as any;
-      return metadata?.rewardCategory === 'TIER_UPGRADE' && 
-             metadata?.discountCode === `${tierName}_WELCOME`;
+      return metadata?.rewardCategory === 'TIER_UPGRADE' &&
+        metadata?.discountCode === `${tierName}_WELCOME`;
     });
 
     if (alreadyHasTierReward) {
@@ -428,14 +440,14 @@ export class PassportService {
 
     const tiers = await storage.getAllPassportTiers();
     const currentTier = tiers.find(t => t.name === profile.currentTier);
-    
+
     if (!currentTier) {
       throw new Error('Current tier not found');
     }
 
     // Find next tier
     const nextTier = tiers.find(t => t.minPoints > profile.totalPoints);
-    
+
     let pointsToNextTier = 0;
     let progressPercentage = 100;
 
@@ -501,7 +513,7 @@ export class PassportService {
    */
   async redeemReward(userId: number, rewardId: number): Promise<PassportReward> {
     const reward = await storage.getPassportReward(rewardId);
-    
+
     if (!reward) {
       throw new Error('Reward not found');
     }
@@ -521,7 +533,7 @@ export class PassportService {
     }
 
     const redeemedReward = await storage.redeemPassportReward(rewardId);
-    
+
     if (!redeemedReward) {
       throw new Error('Failed to redeem reward');
     }
@@ -591,12 +603,12 @@ export class PassportService {
     rank: number;
   }>> {
     const allProfiles = await storage.getAllPassportProfiles();
-    
+
     // Sort by totalPoints descending
     const sorted = allProfiles
       .sort((a, b) => b.totalPoints - a.totalPoints)
       .slice(0, limit);
-    
+
     // Return only public-safe fields
     return sorted.map((profile, index) => ({
       handle: profile.handle,
@@ -689,9 +701,9 @@ export class PassportService {
 
     const achievements = await storage.getPassportUserAchievements(user.id);
     const stamps = await storage.getPassportStamps(user.id);
-    
+
     const uniqueCountries = new Set(stamps.map(s => s.country));
-    
+
     return {
       username: user.username,
       displayName: user.displayName || user.username,

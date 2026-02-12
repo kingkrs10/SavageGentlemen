@@ -23,10 +23,10 @@ router.get(
     }
 
     const profile = await passportService.getOrCreateProfile(req.user.id, req.user.username || 'User');
-    
+
     // Generate secure QR code for check-in
     const qrData = generatePassportQR(req.user.id);
-    
+
     res.json({
       ...profile,
       qrData // Add QR code to response
@@ -326,8 +326,8 @@ router.post(
     // Step 5: Check for duplicate stamps
     const existingStamp = await storage.getPassportStampByUserAndEvent(userId, event.id);
     if (existingStamp) {
-      return res.status(409).json({ 
-        success: false, 
+      return res.status(409).json({
+        success: false,
         message: 'User already checked in for this event',
         alreadyStamped: true,
         stamp: existingStamp
@@ -361,6 +361,322 @@ router.post(
 
 /**
  * ===========================================
+ * SCANNER-FREE CHECK-IN ROUTES
+ * ===========================================
+ */
+
+/**
+ * POST /api/passport/checkin/code
+ * Check in by entering event code (displayed at venue)
+ * Requires authentication
+ */
+router.post(
+  '/checkin/code',
+  authenticateUser,
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new AuthenticationError('You must be logged in to check in');
+    }
+
+    const codeSchema = z.object({
+      code: z.string().min(3).max(20),
+    });
+
+    const { code } = codeSchema.parse(req.body);
+
+    // Find event by access code
+    const event = await storage.getEventByAccessCode(code.toUpperCase());
+    if (!event) {
+      throw new AppError('Invalid event code', 404, 'INVALID_CODE');
+    }
+
+    // Check if passport is enabled
+    if (!event.isSocaPassportEnabled) {
+      throw new AppError('Soca Passport not enabled for this event', 403, 'PASSPORT_NOT_ENABLED');
+    }
+
+    // Check if event is happening now (allow check-in from 2 hours before to 6 hours after)
+    const now = new Date();
+    const eventDate = new Date(event.date);
+    const twoHoursBefore = new Date(eventDate.getTime() - 2 * 60 * 60 * 1000);
+    const sixHoursAfter = new Date(eventDate.getTime() + 6 * 60 * 60 * 1000);
+
+    if (now < twoHoursBefore || now > sixHoursAfter) {
+      throw new AppError('Check-in is only available during the event', 400, 'EVENT_NOT_ACTIVE');
+    }
+
+    // Get or create passport profile
+    const profile = await passportService.getOrCreateProfile(req.user.id, req.user.username || 'User');
+    if (!profile) {
+      throw new AppError('Could not create passport profile', 500, 'PROFILE_ERROR');
+    }
+
+    // Check for duplicate stamps
+    const existingStamp = await storage.getPassportStampByUserAndEvent(req.user.id, event.id);
+    if (existingStamp) {
+      return res.status(409).json({
+        success: false,
+        message: 'You have already checked in for this event',
+        alreadyStamped: true,
+        stamp: existingStamp
+      });
+    }
+
+    // Award stamp
+    const result = await passportService.awardStamp(req.user.id, event.id, event, 'CODE_ENTRY');
+
+    res.json({
+      success: true,
+      message: `✓ Checked in! ${result.stamp.pointsEarned} points earned`,
+      stamp: result.stamp,
+      event: {
+        title: event.title,
+        date: event.date,
+        location: event.location,
+      },
+      pointsAwarded: result.stamp.pointsEarned,
+      newTotal: result.profile.totalPoints,
+      currentTier: result.profile.currentTier,
+    });
+  })
+);
+
+/**
+ * POST /api/passport/checkin/location
+ * Self check-in using GPS location (geo-fenced)
+ * Requires authentication
+ */
+router.post(
+  '/checkin/location',
+  authenticateUser,
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new AuthenticationError('You must be logged in to check in');
+    }
+
+    const locationSchema = z.object({
+      eventId: z.number(),
+      latitude: z.number().min(-90).max(90),
+      longitude: z.number().min(-180).max(180),
+    });
+
+    const { eventId, latitude, longitude } = locationSchema.parse(req.body);
+
+    // Get event
+    const event = await storage.getEvent(eventId);
+    if (!event) {
+      throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
+    }
+
+    // Check if passport is enabled
+    if (!event.isSocaPassportEnabled) {
+      throw new AppError('Soca Passport not enabled for this event', 403, 'PASSPORT_NOT_ENABLED');
+    }
+
+    // Check if venue coordinates are set
+    if (!event.venueLatitude || !event.venueLongitude) {
+      throw new AppError('Geo check-in not available for this event', 400, 'NO_VENUE_COORDINATES');
+    }
+
+    // Check if event is happening now
+    const now = new Date();
+    const eventDate = new Date(event.date);
+    const twoHoursBefore = new Date(eventDate.getTime() - 2 * 60 * 60 * 1000);
+    const sixHoursAfter = new Date(eventDate.getTime() + 6 * 60 * 60 * 1000);
+
+    if (now < twoHoursBefore || now > sixHoursAfter) {
+      throw new AppError('Check-in is only available during the event', 400, 'EVENT_NOT_ACTIVE');
+    }
+
+    // Calculate distance using Haversine formula
+    const venueLatNum = parseFloat(event.venueLatitude as string);
+    const venueLngNum = parseFloat(event.venueLongitude as string);
+    const distance = calculateDistance(latitude, longitude, venueLatNum, venueLngNum);
+    const radiusMeters = event.checkinRadiusMeters || 200;
+
+    if (distance > radiusMeters) {
+      throw new AppError(
+        `You are ${Math.round(distance)}m away. Please be within ${radiusMeters}m of the venue.`,
+        400,
+        'TOO_FAR_FROM_VENUE'
+      );
+    }
+
+    // Get or create passport profile
+    const profile = await passportService.getOrCreateProfile(req.user.id, req.user.username || 'User');
+    if (!profile) {
+      throw new AppError('Could not create passport profile', 500, 'PROFILE_ERROR');
+    }
+
+    // Check for duplicate stamps
+    const existingStamp = await storage.getPassportStampByUserAndEvent(req.user.id, event.id);
+    if (existingStamp) {
+      return res.status(409).json({
+        success: false,
+        message: 'You have already checked in for this event',
+        alreadyStamped: true,
+        stamp: existingStamp
+      });
+    }
+
+    // Award stamp
+    const result = await passportService.awardStamp(req.user.id, event.id, event, 'GEO_CHECKIN');
+
+    res.json({
+      success: true,
+      message: `✓ Location verified! ${result.stamp.pointsEarned} points earned`,
+      stamp: result.stamp,
+      event: {
+        title: event.title,
+        date: event.date,
+        location: event.location,
+      },
+      distanceFromVenue: Math.round(distance),
+      pointsAwarded: result.stamp.pointsEarned,
+      newTotal: result.profile.totalPoints,
+      currentTier: result.profile.currentTier,
+    });
+  })
+);
+
+/**
+ * GET /api/passport/active-events
+ * Get events that are currently active for check-in
+ * Requires authentication
+ */
+router.get(
+  '/active-events',
+  authenticateUser,
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new AuthenticationError('You must be logged in');
+    }
+
+    // Get events with passport enabled that are happening today
+    const events = await storage.getActivePassportEvents();
+
+    // Get user's existing stamps for these events
+    const userStamps = await storage.getPassportStampsByUserId(req.user.id);
+    const stampedEventIds = new Set(userStamps.map(s => s.eventId));
+
+    const eventsWithStatus = events.map(event => ({
+      id: event.id,
+      title: event.title,
+      date: event.date,
+      location: event.location,
+      imageUrl: event.imageUrl,
+      stampPoints: event.stampPointsDefault,
+      isPremium: event.isPremiumPassport,
+      hasVenueCoordinates: !!(event.venueLatitude && event.venueLongitude),
+      alreadyCheckedIn: stampedEventIds.has(event.id),
+    }));
+
+    res.json({ events: eventsWithStatus });
+  })
+);
+
+/**
+ * ===========================================
+ * PROMOTER DASHBOARD ROUTES
+ * ===========================================
+ */
+
+/**
+ * GET /api/passport/promoter/dashboard/:accessCode
+ * Get promoter dashboard data for an event
+ * Public endpoint - authenticated by access code
+ */
+router.get(
+  '/promoter/dashboard/:accessCode',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { accessCode } = req.params;
+
+    // Validate access code and get event
+    const event = await storage.getEventByAccessCode(accessCode.toUpperCase());
+    if (!event) {
+      throw new AppError('Invalid access code', 404, 'INVALID_ACCESS_CODE');
+    }
+
+    if (!event.isSocaPassportEnabled) {
+      throw new AppError('Soca Passport not enabled for this event', 403, 'PASSPORT_NOT_ENABLED');
+    }
+
+    // Get all check-ins for this event
+    const checkins = await storage.getEventCheckins(event.id);
+
+    // Get today's date at midnight for comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Calculate stats
+    const todayCheckins = checkins.filter(c => {
+      const checkinDate = new Date(c.checkedInAt || c.createdAt);
+      checkinDate.setHours(0, 0, 0, 0);
+      return checkinDate.getTime() === today.getTime();
+    });
+
+    const totalCreditsAwarded = checkins.reduce((sum, c) => sum + (c.creditsEarned || 0), 0);
+
+    // Get user details for each check-in
+    const checkinsWithUsers = await Promise.all(
+      checkins.map(async (checkin) => {
+        const user = await storage.getUser(checkin.userId);
+        return {
+          id: checkin.id,
+          displayName: user?.displayName || user?.username || 'Anonymous',
+          checkedInAt: checkin.checkedInAt || checkin.createdAt,
+          creditsEarned: checkin.creditsEarned,
+          checkinMethod: checkin.checkinMethod || 'QR_SCAN',
+        };
+      })
+    );
+
+    // Sort by check-in time (most recent first)
+    checkinsWithUsers.sort((a, b) =>
+      new Date(b.checkedInAt).getTime() - new Date(a.checkedInAt).getTime()
+    );
+
+    res.json({
+      event: {
+        id: event.id,
+        title: event.title,
+        date: event.date,
+        location: event.location,
+        accessCode: event.accessCode,
+        stampPointsDefault: event.stampPointsDefault,
+        countryCode: event.countryCode,
+        carnivalCircuit: event.carnivalCircuit,
+        imageUrl: event.imageUrl,
+      },
+      stats: {
+        totalCheckins: checkins.length,
+        todayCheckins: todayCheckins.length,
+        totalCreditsAwarded,
+      },
+      checkins: checkinsWithUsers,
+    });
+  })
+);
+
+// Haversine formula to calculate distance between two points
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371000; // Earth's radius in meters
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function toRad(deg: number): number {
+  return deg * (Math.PI / 180);
+}
+
+/**
+ * ===========================================
  * SOCA PASSPORT CREDIT SYSTEM ROUTES
  * ===========================================
  */
@@ -380,7 +696,7 @@ router.get(
 
     const balance = await storage.getUserCreditBalance(req.user.id);
     const transactions = await storage.getCreditTransactionsByUserId(req.user.id, 50);
-    
+
     res.json({
       balance,
       transactions
@@ -402,10 +718,10 @@ router.get(
     }
 
     const category = req.query.category as string | undefined;
-    
+
     const allAchievements = await storage.getAllAchievementDefinitions(category);
     const userAchievements = await storage.getUserAchievements(req.user.id);
-    
+
     // Map achievements with unlock status
     const achievementsWithStatus = allAchievements.map(achievement => {
       const unlocked = userAchievements.find(ua => ua.achievementId === achievement.id);
@@ -415,7 +731,7 @@ router.get(
         unlockedAt: unlocked?.unlockedAt,
       };
     });
-    
+
     res.json({
       achievements: achievementsWithStatus,
       totalUnlocked: userAchievements.length
@@ -437,7 +753,7 @@ router.post(
     }
 
     const newlyUnlocked = await storage.checkAndUnlockAchievements(req.user.id);
-    
+
     res.json({
       success: true,
       newlyUnlocked,
@@ -460,18 +776,18 @@ router.get(
     }
 
     const category = req.query.category as string | undefined;
-    
+
     const profile = await storage.getPassportProfile(req.user.id);
     const userTier = profile?.currentTier || 'BRONZE';
-    
+
     const offers = await storage.getAllRedemptionOffers(category);
-    
+
     // Filter offers by tier requirement
     const availableOffers = offers.filter(offer => {
       if (!offer.tierRequirement) return true;
       return canUserAccessTier(userTier, offer.tierRequirement);
     });
-    
+
     res.json({
       offers: availableOffers,
       userTier,
@@ -499,7 +815,7 @@ router.post(
     }
 
     const redemption = await storage.claimRedemption(req.user.id, offerId);
-    
+
     res.json({
       success: true,
       redemption,
@@ -523,7 +839,7 @@ router.get(
 
     const status = req.query.status as string | undefined;
     const redemptions = await storage.getUserRedemptions(req.user.id, status);
-    
+
     res.json({ redemptions });
   })
 );
@@ -548,17 +864,17 @@ router.post(
     });
 
     const shareData = shareSchema.parse(req.body);
-    
+
     const share = await storage.createSocialShare({
       userId: req.user.id,
       ...shareData
     });
-    
+
     res.json({
       success: true,
       share,
-      message: shareData.bonusCreditsAwarded > 0 
-        ? `Share recorded! +${shareData.bonusCreditsAwarded} bonus credits awarded!` 
+      message: shareData.bonusCreditsAwarded > 0
+        ? `Share recorded! +${shareData.bonusCreditsAwarded} bonus credits awarded!`
         : 'Share recorded!'
     });
   })
@@ -573,13 +889,13 @@ router.get(
   '/profile/:username',
   asyncHandler(async (req: Request, res: Response) => {
     const { username } = req.params;
-    
+
     const profile = await passportService.getPublicProfile(username);
-    
+
     if (!profile) {
       throw new AppError('Profile not found', 404, 'PROFILE_NOT_FOUND');
     }
-    
+
     res.json(profile);
   })
 );

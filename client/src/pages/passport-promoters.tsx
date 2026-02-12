@@ -3,18 +3,15 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Users, BarChart3, Heart, CheckCircle, Sparkles, ScanLine, Check, Crown, Zap, Building2 } from "lucide-react";
+import { Users, BarChart3, Heart, CheckCircle, Sparkles, Zap } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Switch } from "@/components/ui/switch";
 import carnivalVideo from "@assets/Caribbean_Nightlife_Loop_Animation_1763081047699.mp4";
 
 const promoterFormSchema = z.object({
@@ -29,228 +26,7 @@ const promoterFormSchema = z.object({
 
 type PromoterFormData = z.infer<typeof promoterFormSchema>;
 
-function SubscriptionTiers() {
-  const [isAnnual, setIsAnnual] = useState(false);
-  const { toast } = useToast();
-  
-  // Fetch subscription plans
-  const { data: plansData, isLoading } = useQuery({
-    queryKey: ['/api/promoter-subscriptions/plans'],
-  });
-  
-  const plans = plansData?.plans || [];
-  
-  if (isLoading) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-300">Loading plans...</p>
-      </div>
-    );
-  }
-  
-  // Find the STARTER plan to show early adopter info
-  const starterPlan = plans.find((p: any) => p.slug === 'STARTER');
-  const earlyAdopterSlotsRemaining = starterPlan 
-    ? (starterPlan.earlyAdopterSlotsTotal || 0) - (starterPlan.earlyAdopterSlotsFilled || 0)
-    : 0;
-  
-  const tierFeatures = {
-    FREE: [
-      "Basic check-in scanning",
-      "Manual stamp awards",
-      "View attendee passports",
-      "Limited to 1 event at a time",
-    ],
-    STARTER: [
-      "Unlimited events",
-      "Automated stamp tracking",
-      "Basic analytics dashboard",
-      "Email support",
-      "QR code generation",
-    ],
-    PRO: [
-      "Everything in STARTER",
-      "Advanced analytics & insights",
-      "Custom loyalty rewards",
-      "Multi-event carnival circuits",
-      "Priority support",
-      "API access",
-    ],
-    ENTERPRISE: [
-      "Everything in PRO",
-      "Dedicated account manager",
-      "Custom feature development",
-      "White-label options",
-      "SLA guarantees",
-      "Advanced integrations",
-    ],
-  };
-  
-  const tierIcons = {
-    FREE: ScanLine,
-    STARTER: Zap,
-    PRO: Crown,
-    ENTERPRISE: Building2,
-  };
-  
-  const tierColors = {
-    FREE: { border: "border-gray-500/50", gradient: "from-gray-500 to-gray-600", glow: "shadow-gray-500/30" },
-    STARTER: { border: "border-green-500/50", gradient: "from-green-500 to-emerald-600", glow: "shadow-green-500/30" },
-    PRO: { border: "border-purple-500/50", gradient: "from-purple-500 to-pink-600", glow: "shadow-purple-500/30" },
-    ENTERPRISE: { border: "border-orange-500/50", gradient: "from-orange-500 to-yellow-600", glow: "shadow-orange-500/30" },
-  };
-  
-  const getPriceForPlan = (planSlug: string) => {
-    const plan = plans.find((p: any) => p.slug === planSlug);
-    if (!plan) return null;
-    
-    // billingOptions are nested within each plan
-    const billing = plan.billingOptions?.find((opt: any) => 
-      opt.billingInterval === (isAnnual ? 'ANNUAL' : 'MONTHLY')
-    );
-    
-    if (!billing) return null;
-    
-    return {
-      amount: billing.price / 100,
-      interval: billing.billingInterval,
-      eventBased: plan.isEventBased,
-    };
-  };
-  
-  return (
-    <div className="space-y-8">
-      {/* Billing Toggle */}
-      <div className="flex items-center justify-center gap-4">
-        <span className={`text-lg font-semibold ${!isAnnual ? 'text-white' : 'text-gray-400'}`}>
-          Monthly
-        </span>
-        <Switch
-          checked={isAnnual}
-          onCheckedChange={setIsAnnual}
-          className="data-[state=checked]:bg-green-500"
-          data-testid="switch-billing-interval"
-        />
-        <span className={`text-lg font-semibold ${isAnnual ? 'text-white' : 'text-gray-400'}`}>
-          Annual
-        </span>
-        {isAnnual && (
-          <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm font-semibold border border-green-500/50">
-            Save up to 62%
-          </span>
-        )}
-      </div>
-      
-      {/* Early Adopter Alert */}
-      {earlyAdopterSlotsRemaining > 0 && (
-        <div className="max-w-3xl mx-auto bg-gradient-to-r from-green-900/40 to-emerald-900/40 backdrop-blur-xl border-2 border-green-400/50 rounded-2xl p-6 text-center">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <Sparkles className="h-6 w-6 text-green-400 animate-pulse" />
-            <h3 className="text-2xl font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
-              Early Adopter Special
-            </h3>
-            <Sparkles className="h-6 w-6 text-green-400 animate-pulse" />
-          </div>
-          <p className="text-gray-200 text-lg">
-            First {starterPlan?.earlyAdopterSlotsTotal || 5} STARTER subscribers get{' '}
-            <span className="font-bold text-green-400">{starterPlan?.earlyAdopterTrialDays || 90} days free trial</span>
-            {' '}+ <span className="font-bold text-green-400">lifetime 50% discount</span>!
-          </p>
-          <p className="text-green-400 font-semibold mt-2">
-            Only {earlyAdopterSlotsRemaining} {earlyAdopterSlotsRemaining === 1 ? 'spot' : 'spots'} remaining!
-          </p>
-        </div>
-      )}
-      
-      {/* Tier Cards */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-        {['FREE', 'STARTER', 'PRO', 'ENTERPRISE'].map((slug) => {
-          const plan = plans.find((p: any) => p.slug === slug);
-          if (!plan) return null;
-          
-          const price = getPriceForPlan(slug);
-          const Icon = tierIcons[slug as keyof typeof tierIcons];
-          const colors = tierColors[slug as keyof typeof tierColors];
-          const features = tierFeatures[slug as keyof typeof tierFeatures];
-          
-          const isPopular = slug === 'STARTER';
-          
-          return (
-            <Card
-              key={slug}
-              className={`relative bg-black/60 backdrop-blur-xl border-2 ${colors.border} ${colors.glow} hover:scale-105 transition-transform duration-300 overflow-hidden ${isPopular ? 'ring-2 ring-green-400/50 ring-offset-2 ring-offset-black/50' : ''}`}
-              data-testid={`card-tier-${slug.toLowerCase()}`}
-            >
-              {isPopular && (
-                <div className="absolute top-0 right-0 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-1 text-sm font-bold rounded-bl-lg">
-                  POPULAR
-                </div>
-              )}
-              
-              <CardHeader className="text-center space-y-4 pb-6">
-                <div className={`bg-gradient-to-br ${colors.gradient} p-4 rounded-2xl w-fit mx-auto shadow-lg ${colors.glow}`}>
-                  <Icon className="h-10 w-10 text-white" />
-                </div>
-                <CardTitle className="text-3xl font-black text-white">
-                  {plan.name}
-                </CardTitle>
-                <div className="space-y-2">
-                  {price ? (
-                    <>
-                      <div className="text-4xl font-black text-white">
-                        ${price.amount}
-                        <span className="text-lg font-normal text-gray-400">
-                          {price.eventBased ? '/event' : `/${price.interval.toLowerCase()}`}
-                        </span>
-                      </div>
-                      {isAnnual && slug !== 'FREE' && (
-                        <p className="text-sm text-green-400 font-semibold">
-                          Billed annually
-                        </p>
-                      )}
-                    </>
-                  ) : slug === 'ENTERPRISE' ? (
-                    <div className="text-2xl font-bold text-white">
-                      Custom Pricing
-                    </div>
-                  ) : (
-                    <div className="text-4xl font-black text-white">
-                      Free
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-6">
-                <ul className="space-y-3">
-                  {features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-3 text-gray-200">
-                      <Check className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                
-                <Button
-                  onClick={() => {
-                    toast({ 
-                      title: 'Get Started with Soca Passport', 
-                      description: `Email info@savgent.com to set up your ${plan.name} subscription. ${slug === 'FREE' ? 'Free tier available!' : 'Beta pricing available!'}`
-                    });
-                  }}
-                  className={`w-full bg-gradient-to-r ${colors.gradient} hover:opacity-90 text-white font-bold py-6 text-lg ${colors.glow}`}
-                  data-testid={`button-subscribe-${slug.toLowerCase()}`}
-                >
-                  Contact Sales
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+
 
 export default function PassportPromoters() {
   const [submitted, setSubmitted] = useState(false);
@@ -306,7 +82,8 @@ export default function PassportPromoters() {
       });
       return;
     }
-    setLocation(`/socapassport/checkin/${trimmedCode}`);
+    // Redirect to the new promoter dashboard
+    setLocation(`/socapassport/promoter/${trimmedCode.toUpperCase()}`);
   };
 
   if (submitted) {
@@ -319,7 +96,7 @@ export default function PassportPromoters() {
         <div className="min-h-screen bg-gradient-to-br from-[#0B0B0E] via-[#005137] to-[#6B2AFF] flex items-center justify-center px-4 relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(107,42,255,0.1),transparent_50%)] pointer-events-none" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,126,57,0.08),transparent_40%)] pointer-events-none" />
-          
+
           <Card className="max-w-2xl w-full bg-black/40 backdrop-blur-xl border-2 border-purple-500/30 shadow-2xl shadow-purple-500/20" data-testid="card-thank-you">
             <CardContent className="pt-12 pb-12 text-center space-y-6">
               <div className="flex justify-center">
@@ -353,7 +130,7 @@ export default function PassportPromoters() {
         description="Track loyalty across events, see who keeps coming back, and reward your superfans with Soca Passport."
         ogImage="/og-socapassport-promoters.jpg"
       />
-      <div className="min-h-screen bg-gradient-to-br from-[#0B0B0E] via-[#005137] to-[#6B2AFF] relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#2c3e50] to-[#34495e] relative overflow-hidden">
         {/* Video Background */}
         <div className="absolute inset-0 overflow-hidden">
           <video
@@ -365,19 +142,29 @@ export default function PassportPromoters() {
           >
             <source src={carnivalVideo} type="video/mp4" />
           </video>
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#2c3e50]/90 via-[#34495e]/50 to-[#2c3e50]/95" />
         </div>
 
-        {/* Carnival Bokeh Overlays */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(255,126,57,0.06),transparent_40%)] pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,rgba(107,42,255,0.08),transparent_50%)] pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,255,135,0.04),transparent_60%)] pointer-events-none" />
+        {/* Hyper-Realistic Lighting Layers */}
+        {/* Stage Spotlight Effect - Orange */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,rgba(230,126,34,0.15),transparent_50%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,rgba(211,84,0,0.08),transparent_65%)] pointer-events-none" />
+
+        {/* Stage Spotlight Effect - Blue */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_30%,rgba(52,152,219,0.12),transparent_55%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_30%,rgba(41,128,185,0.06),transparent_70%)] pointer-events-none" />
+
+        {/* Ambient Floor Glow - Orange */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_80%,rgba(230,126,34,0.1),transparent_40%)] pointer-events-none" />
+
+        {/* Ambient Side Glow - Blue */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_90%_60%,rgba(52,152,219,0.08),transparent_45%)] pointer-events-none" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
           {/* HERO SECTION */}
           <div className="text-center space-y-8 mb-20 relative">
             <div className="absolute inset-0 blur-3xl opacity-30 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 -z-10" />
-            
+
             <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black tracking-tight bg-gradient-to-r from-orange-400 via-pink-500 to-purple-600 bg-clip-text text-transparent drop-shadow-2xl animate-pulse" style={{ animationDuration: '3s' }}>
               SOCA PASSPORT
               <br />
@@ -386,6 +173,11 @@ export default function PassportPromoters() {
             <p className="text-2xl sm:text-3xl text-gray-100 max-w-4xl mx-auto font-light leading-relaxed drop-shadow-lg">
               Reward your fête fans, track loyalty across events, and see who keeps coming back.
             </p>
+            <div className="flex items-center justify-center gap-3 mt-6">
+              <span className="px-6 py-3 bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-xl rounded-full border-2 border-green-400/60 text-green-300 font-bold text-xl animate-pulse shadow-lg shadow-green-500/30">
+                ✨ No Scanners Required — Fans Check In Themselves!
+              </span>
+            </div>
           </div>
 
           {/* ACCESS CODE ENTRY FOR EXISTING PROMOTERS */}
@@ -393,14 +185,14 @@ export default function PassportPromoters() {
             <CardHeader className="text-center pb-4">
               <div className="flex justify-center mb-4">
                 <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-4 rounded-2xl shadow-lg shadow-green-500/50">
-                  <ScanLine className="h-10 w-10 text-white" />
+                  <Zap className="h-10 w-10 text-white" />
                 </div>
               </div>
               <CardTitle className="text-3xl font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
                 Already a Promoter?
               </CardTitle>
               <CardDescription className="text-lg text-gray-300 mt-2">
-                Enter your event access code to open the check-in scanner
+                Enter your event access code to manage check-ins and view attendee stats
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -420,12 +212,12 @@ export default function PassportPromoters() {
                   size="lg"
                   data-testid="button-access-scanner"
                 >
-                  <ScanLine className="w-5 h-5 mr-2" />
-                  Open Scanner
+                  <Zap className="w-5 h-5 mr-2" />
+                  Manage Event
                 </Button>
               </div>
               <p className="text-sm text-gray-400 text-center">
-                Get your access code from the admin dashboard when you enable Soca Passport on an event
+                Your event code is auto-generated when you enable Soca Passport. Share it with attendees for easy check-in!
               </p>
             </CardContent>
           </Card>
@@ -436,7 +228,7 @@ export default function PassportPromoters() {
             <Card className="relative group bg-black/40 backdrop-blur-xl border-2 border-purple-500/50 hover:border-purple-400 transition-all duration-500 overflow-hidden shadow-xl hover:shadow-purple-500/50 hover:scale-105">
               <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-500" />
-              
+
               <CardContent className="relative pt-8 space-y-4">
                 <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-4 rounded-2xl w-fit shadow-lg shadow-purple-500/50">
                   <Users className="h-10 w-10 text-white" />
@@ -452,7 +244,7 @@ export default function PassportPromoters() {
             <Card className="relative group bg-black/40 backdrop-blur-xl border-2 border-orange-500/50 hover:border-orange-400 transition-all duration-500 overflow-hidden shadow-xl hover:shadow-orange-500/50 hover:scale-105">
               <div className="absolute inset-0 bg-gradient-to-br from-orange-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="absolute -inset-1 bg-gradient-to-r from-orange-600 to-yellow-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-500" />
-              
+
               <CardContent className="relative pt-8 space-y-4">
                 <div className="bg-gradient-to-br from-orange-500 to-yellow-600 p-4 rounded-2xl w-fit shadow-lg shadow-orange-500/50">
                   <Heart className="h-10 w-10 text-white" />
@@ -468,7 +260,7 @@ export default function PassportPromoters() {
             <Card className="relative group bg-black/40 backdrop-blur-xl border-2 border-green-500/50 hover:border-green-400 transition-all duration-500 overflow-hidden shadow-xl hover:shadow-green-500/50 hover:scale-105">
               <div className="absolute inset-0 bg-gradient-to-br from-green-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="absolute -inset-1 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-500" />
-              
+
               <CardContent className="relative pt-8 space-y-4">
                 <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-4 rounded-2xl w-fit shadow-lg shadow-green-500/50">
                   <BarChart3 className="h-10 w-10 text-white" />
@@ -484,7 +276,7 @@ export default function PassportPromoters() {
           {/* HOW IT WORKS */}
           <div className="bg-black/50 backdrop-blur-2xl rounded-3xl p-12 mb-20 border-2 border-purple-500/30 shadow-2xl relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-600/5 via-pink-600/5 to-orange-600/5 pointer-events-none" />
-            
+
             <h2 className="text-5xl font-black text-center mb-16 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
               How It Works
             </h2>
@@ -525,9 +317,9 @@ export default function PassportPromoters() {
                     3
                   </div>
                 </div>
-                <h3 className="text-xl font-bold text-white">Scan & Reward</h3>
+                <h3 className="text-xl font-bold text-white">Easy Check-In</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  Scan attendees at the door to give stamps and Fête Credits instantly.
+                  Attendees check in with your event code or auto-verify via GPS location. No scanning required!
                 </p>
               </div>
 
@@ -566,23 +358,16 @@ export default function PassportPromoters() {
             </div>
           </div>
 
-          {/* PRICING SECTION */}
-          <div className="mb-16">
-            <h2 className="text-5xl font-black text-center mb-4 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
-              Choose Your Plan
-            </h2>
-            <p className="text-xl text-gray-200 text-center mb-4 max-w-2xl mx-auto">
-              Flexible pricing for promoters of all sizes
+          {/* BETA NOTICE - Contact to get started */}
+          <div className="max-w-3xl mx-auto mb-16 bg-gradient-to-r from-green-900/40 to-emerald-900/40 backdrop-blur-xl border-2 border-green-400/50 rounded-2xl p-8 text-center">
+            <Sparkles className="h-10 w-10 text-green-400 mx-auto mb-4" />
+            <h2 className="text-3xl font-black text-white mb-4">Ready to Reward Your Fête Fans?</h2>
+            <p className="text-xl text-gray-200 mb-6">
+              Soca Passport is currently in <span className="font-bold text-green-400">Beta</span> with FREE access for early promoters!
             </p>
-            
-            {/* Beta Notice */}
-            <div className="max-w-3xl mx-auto mb-8 bg-gradient-to-r from-blue-900/40 to-indigo-900/40 backdrop-blur-xl border-2 border-blue-400/50 rounded-2xl p-4 text-center">
-              <p className="text-blue-200 text-lg">
-                <span className="font-bold text-blue-400">🎉 Beta Launch:</span> Contact <a href="mailto:info@savgent.com" className="underline hover:text-blue-300">info@savgent.com</a> to get started. FREE tier available!
-              </p>
-            </div>
-            
-            <SubscriptionTiers />
+            <p className="text-lg text-gray-300">
+              Contact <a href="mailto:info@savgent.com" className="text-green-400 underline hover:text-green-300 font-semibold">info@savgent.com</a> or fill out the form below to get started.
+            </p>
           </div>
 
           {/* REGISTRATION FORM */}
@@ -605,9 +390,9 @@ export default function PassportPromoters() {
                       <FormItem>
                         <FormLabel className="text-gray-200 text-base">Name *</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Your full name" 
-                            {...field} 
+                          <Input
+                            placeholder="Your full name"
+                            {...field}
                             data-testid="input-name"
                             className="bg-white/5 border-gray-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500/50"
                           />
@@ -624,10 +409,10 @@ export default function PassportPromoters() {
                       <FormItem>
                         <FormLabel className="text-gray-200 text-base">Email *</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="email" 
-                            placeholder="your@email.com" 
-                            {...field} 
+                          <Input
+                            type="email"
+                            placeholder="your@email.com"
+                            {...field}
                             data-testid="input-email"
                             className="bg-white/5 border-gray-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500/50"
                           />
@@ -644,9 +429,9 @@ export default function PassportPromoters() {
                       <FormItem>
                         <FormLabel className="text-gray-200 text-base">Organization / Brand</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Your event company or brand" 
-                            {...field} 
+                          <Input
+                            placeholder="Your event company or brand"
+                            {...field}
                             data-testid="input-organization"
                             className="bg-white/5 border-gray-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500/50"
                           />
@@ -664,9 +449,9 @@ export default function PassportPromoters() {
                         <FormItem>
                           <FormLabel className="text-gray-200 text-base">City</FormLabel>
                           <FormControl>
-                            <Input 
-                              placeholder="Miami" 
-                              {...field} 
+                            <Input
+                              placeholder="Miami"
+                              {...field}
                               data-testid="input-city"
                               className="bg-white/5 border-gray-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500/50"
                             />
@@ -683,10 +468,10 @@ export default function PassportPromoters() {
                         <FormItem>
                           <FormLabel className="text-gray-200 text-base">Country Code</FormLabel>
                           <FormControl>
-                            <Input 
-                              placeholder="US" 
-                              {...field} 
-                              data-testid="input-country" 
+                            <Input
+                              placeholder="US"
+                              {...field}
+                              data-testid="input-country"
                               maxLength={2}
                               className="bg-white/5 border-gray-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500/50"
                             />
@@ -704,9 +489,9 @@ export default function PassportPromoters() {
                       <FormItem>
                         <FormLabel className="text-gray-200 text-base">Website or Instagram Handle</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="@yourhandle or https://yourwebsite.com" 
-                            {...field} 
+                          <Input
+                            placeholder="@yourhandle or https://yourwebsite.com"
+                            {...field}
                             data-testid="input-website"
                             className="bg-white/5 border-gray-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500/50"
                           />
@@ -723,9 +508,9 @@ export default function PassportPromoters() {
                       <FormItem>
                         <FormLabel className="text-gray-200 text-base">Type of Events</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="fêtes, brunches, carnivals, etc." 
-                            {...field} 
+                          <Input
+                            placeholder="fêtes, brunches, carnivals, etc."
+                            {...field}
                             data-testid="input-event-types"
                             className="bg-white/5 border-gray-600 text-white placeholder:text-gray-400 focus:border-purple-500 focus:ring-purple-500/50"
                           />

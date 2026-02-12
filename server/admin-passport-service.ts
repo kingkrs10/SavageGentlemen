@@ -1,6 +1,6 @@
 import { storage } from './storage';
 import { db } from './db';
-import { passportProfiles, passportStamps, passportRewards, passportMemberships, promoters, users } from '@shared/schema';
+import { passportProfiles, passportStamps, passportRewards, passportMemberships, promoters, users, events } from '@shared/schema';
 import { eq, desc, sql, and, gte, count } from 'drizzle-orm';
 import { PassportProfile, PassportStamp, PassportReward, PassportMembership, Promoter } from '@shared/schema';
 
@@ -104,11 +104,11 @@ export class AdminPassportService {
         .select({ count: sql<number>`count(*)::int` })
         .from(passportProfiles)
         .innerJoin(users, eq(passportProfiles.userId, users.id));
-      
+
       if (conditions.length > 0) {
         countQuery = countQuery.where(and(...conditions)) as any;
       }
-      
+
       const [{ count: total }] = await countQuery;
 
       return {
@@ -349,6 +349,38 @@ export class AdminPassportService {
         .set({ status, updatedAt: new Date() })
         .where(eq(promoters.id, id))
         .returning();
+
+      if (promoter && status === 'APPROVED') {
+        // Check if promoter already has an event (by email)
+        const existingEvent = await db.query.events.findFirst({
+          where: eq(events.organizerEmail, promoter.email)
+        });
+
+        if (!existingEvent) {
+          // Generate access code: PRO-{promoterId}-{random 4 digits}
+          const accessCode = `PRO-${id}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+          console.log(`Creating welcome event for approved promoter ${id}`);
+
+          await db.insert(events).values({
+            title: `${promoter.organization || promoter.name}'s First Event`,
+            description: "Welcome to Soca Passport! This is your first event. You can edit the details, add an image, and start checking in attendees using your Access Code.",
+            date: new Date(), // Set to today
+            location: `${promoter.locationCity || 'Main Stage'}, ${promoter.locationCountry || 'Global'}`,
+            organizerName: promoter.organization || promoter.name,
+            organizerEmail: promoter.email,
+            accessCode: accessCode,
+            isSocaPassportEnabled: true,
+            stampPointsDefault: 50,
+            checkinRadiusMeters: 200,
+            // Defaults for required fields
+            currency: 'USD',
+            category: 'Party',
+          });
+
+          console.log(`Created event with access code: ${accessCode}`);
+        }
+      }
 
       return promoter || null;
     } catch (error) {

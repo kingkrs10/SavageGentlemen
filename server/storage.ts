@@ -175,14 +175,14 @@ const deletedEventsStore: Map<number, { event: Event, deletedAt: Date }> = new M
 // Function to store a deleted event
 const storeDeletedEvent = (event: Event) => {
   console.log(`Storing deleted event: ${event.title} (ID: ${event.id})`);
-  deletedEventsStore.set(event.id, { 
-    event, 
-    deletedAt: new Date() 
+  deletedEventsStore.set(event.id, {
+    event,
+    deletedAt: new Date()
   });
-  
+
   // Clean up older deleted events (keep for 24 hours max)
   cleanupOldDeletedEvents();
-  
+
   // Log what's in the store after storing
   console.log(`Current deleted event store has ${deletedEventsStore.size} items`);
   deletedEventsStore.forEach((value, key) => {
@@ -194,7 +194,7 @@ const storeDeletedEvent = (event: Event) => {
 const cleanupOldDeletedEvents = () => {
   const twentyFourHoursAgo = new Date();
   twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
-  
+
   deletedEventsStore.forEach((value, key) => {
     if (value.deletedAt < twentyFourHoursAgo) {
       console.log(`Cleaning up old deleted event: ${value.event.title} (ID: ${key})`);
@@ -217,15 +217,16 @@ export interface IStorage {
   updateUserPassword(id: number, newPassword: string): Promise<User | undefined>;
   verifyPassword(userId: number, password: string): Promise<boolean>;
   deleteUser(id: number): Promise<boolean>;
-  
+
   // Password reset operations
   storePasswordResetToken(userId: number, token: string, expiresAt: Date): Promise<void>;
   getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
   deletePasswordResetToken(token: string): Promise<boolean>;
-  
+
   // Event operations
   getEvent(id: number): Promise<Event | undefined>;
   getEventByAccessCode(accessCode: string): Promise<Event | undefined>;
+  getActivePassportEvents(): Promise<Event[]>;
   getAllEvents(): Promise<Event[]>;
   getUpcomingEvents(): Promise<Event[]>;
   getPastEvents(): Promise<Event[]>;
@@ -235,7 +236,7 @@ export interface IStorage {
   deleteEvent(id: number): Promise<boolean>;
   getLastDeletedEvent(): Promise<{ event: Event, deletedAt: Date } | null>;
   restoreDeletedEvent(id: number): Promise<Event | null>;
-  
+
   // Product operations
   getProduct(id: number): Promise<Product | undefined>;
   getAllProducts(): Promise<Product[]>;
@@ -243,7 +244,7 @@ export interface IStorage {
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: number, productData: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: number): Promise<boolean>;
-  
+
   // Livestream operations
   getLivestream(id: number): Promise<Livestream | undefined>;
   getAllLivestreams(): Promise<Livestream[]>;
@@ -252,12 +253,12 @@ export interface IStorage {
   createLivestream(livestream: InsertLivestream): Promise<Livestream>;
   updateLivestream(id: number, livestreamData: Partial<Livestream>): Promise<Livestream | undefined>;
   deleteLivestream(id: number): Promise<boolean>;
-  
+
   // Post operations
   getPost(id: number): Promise<Post | undefined>;
   getAllPosts(): Promise<Post[]>;
   createPost(post: InsertPost): Promise<Post>;
-  
+
   // Comment operations
   getComment(id: number): Promise<Comment | undefined>;
   getCommentById(id: number): Promise<Comment | undefined>;
@@ -265,11 +266,11 @@ export interface IStorage {
   createComment(comment: InsertComment): Promise<Comment>;
   deleteComment(id: number): Promise<boolean>;
   decrementPostCommentCount(postId: number): Promise<void>;
-  
+
   // Chat operations
   getChatMessagesByLivestreamId(livestreamId: number): Promise<ChatMessage[]>;
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
-  
+
   // Ticket operations
   getTicket(id: number): Promise<Ticket | undefined>;
   createTicket(ticket: InsertTicket): Promise<Ticket>;
@@ -277,7 +278,7 @@ export interface IStorage {
   getTicketsByEventId(eventId: number): Promise<Ticket[]>;
   getPublicTicketsByEventId(eventId: number): Promise<Ticket[]>;
   updateTicket(id: number, ticketData: Partial<InsertTicket>): Promise<Ticket | undefined>;
-  
+
   // Ticket purchase operations
   createTicketPurchase(ticketPurchase: InsertTicketPurchase): Promise<TicketPurchase>;
   getTicketPurchasesByUserId(userId: number): Promise<TicketPurchase[]>;
@@ -285,98 +286,98 @@ export interface IStorage {
   getTicketPurchase(id: number): Promise<TicketPurchase | undefined>;
   getTicketPurchaseByQrCodeData(qrCodeData: string): Promise<TicketPurchase | undefined>;
   getFreeTicketPurchases(): Promise<any[]>;
-  
+
   // Ticket scan operations
   createTicketScan(ticketScan: InsertTicketScan): Promise<TicketScan>;
   getTicketScansByTicketId(ticketId: number): Promise<TicketScan[]>;
   getTicketScansByOrderId(orderId: number): Promise<TicketScan[]>;
-  
+
   // Discount code operations
   createDiscountCode(discountCode: InsertDiscountCode): Promise<DiscountCode>;
   getDiscountCodeByCode(code: string): Promise<DiscountCode | undefined>;
-  
+
   // Order operations
   createOrder(order: InsertOrder): Promise<Order>;
   getAllOrders(): Promise<Order[]>;
   getOrderById(id: number): Promise<Order | undefined>;
-  
+
   // Media upload operations
   createMediaUpload(mediaUpload: InsertMediaUpload): Promise<MediaUpload>;
   getMediaUploadsByRelatedEntity(relatedEntityType: string, relatedEntityId: number): Promise<MediaUpload[]>;
-  
+
   // Stripe & PayPal customer operations
   updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User>;
   updatePaypalCustomerId(userId: number, paypalCustomerId: string): Promise<User>;
-  
+
   // Analytics operations
   createPageView(pageView: InsertPageView): Promise<PageView>;
   getPageViewsByPath(path: string): Promise<PageView[]>;
   getPageViewsByUserId(userId: number): Promise<PageView[]>;
-  
+
   // Event analytics operations
   createEventAnalytic(eventAnalytic: InsertEventAnalytic): Promise<EventAnalytic>;
   getEventAnalyticsByEventId(eventId: number): Promise<EventAnalytic | undefined>;
   incrementEventViews(eventId: number): Promise<EventAnalytic | undefined>;
   incrementEventTicketClicks(eventId: number): Promise<EventAnalytic | undefined>;
   incrementEventTicketSales(eventId: number): Promise<EventAnalytic | undefined>;
-  
+
   // Product analytics operations
   createProductAnalytic(productAnalytic: InsertProductAnalytic): Promise<ProductAnalytic>;
   getProductAnalyticsByProductId(productId: number): Promise<ProductAnalytic | undefined>;
   incrementProductViews(productId: number): Promise<ProductAnalytic | undefined>;
   incrementProductDetailClicks(productId: number): Promise<ProductAnalytic | undefined>;
   incrementProductPurchaseClicks(productId: number): Promise<ProductAnalytic | undefined>;
-  
+
   // User events operations
   createUserEvent(userEvent: InsertUserEvent): Promise<UserEvent>;
   getUserEventsByUserId(userId: number): Promise<UserEvent[]>;
-  
+
   // Daily stats operations
   createDailyStat(dailyStat: InsertDailyStat): Promise<DailyStat>;
   getDailyStatByDate(date: Date): Promise<DailyStat | undefined>;
   updateDailyStat(date: Date, updates: Partial<InsertDailyStat>): Promise<DailyStat | undefined>;
   getDailyStatsByDateRange(startDate: Date, endDate: Date): Promise<DailyStat[]>;
-  
+
   // Inventory management operations
   getProductVariantsByProductId(productId: number): Promise<ProductVariant[]>;
   getProductVariant(id: number): Promise<ProductVariant | undefined>;
   createProductVariant(variant: InsertProductVariant): Promise<ProductVariant>;
   updateProductVariant(id: number, variantData: Partial<InsertProductVariant>): Promise<ProductVariant | undefined>;
   deleteProductVariant(id: number): Promise<boolean>;
-  
+
   // Inventory history operations
   recordInventoryChange(change: InsertInventoryHistory): Promise<InventoryHistory>;
   getInventoryHistoryByProduct(productId: number): Promise<InventoryHistory[]>;
   getInventoryHistoryByVariant(variantId: number): Promise<InventoryHistory[]>;
   getRecentInventoryChanges(limit?: number): Promise<InventoryHistory[]>;
-  
+
   // Inventory management operations
   updateProductStock(productId: number, newStockLevel: number, changeType: string, userId: number, reason?: string): Promise<Product>;
   updateVariantStock(variantId: number, newStockLevel: number, changeType: string, userId: number, reason?: string): Promise<ProductVariant>;
   checkProductAvailability(productId: number, quantity: number): Promise<boolean>;
   checkVariantAvailability(variantId: number, quantity: number): Promise<boolean>;
   getLowStockProducts(threshold?: number): Promise<Product[]>;
-  
+
   // AI Assistant operations
   createAiAssistantConfig(config: InsertAiAssistantConfig): Promise<AiAssistantConfig>;
   getAiAssistantConfigsByUserId(userId: number): Promise<AiAssistantConfig[]>;
   getAiAssistantConfig(id: number): Promise<AiAssistantConfig | undefined>;
   updateAiAssistantConfig(id: number, configData: Partial<InsertAiAssistantConfig>): Promise<AiAssistantConfig | undefined>;
   deleteAiAssistantConfig(id: number): Promise<boolean>;
-  
+
   // AI Chat Session operations
   createAiChatSession(session: InsertAiChatSession): Promise<AiChatSession>;
   getAiChatSessionsByUserId(userId: number): Promise<AiChatSession[]>;
   getAiChatSession(id: number): Promise<AiChatSession | undefined>;
   updateAiChatSession(id: number, sessionData: Partial<InsertAiChatSession>): Promise<AiChatSession | undefined>;
   deleteAiChatSession(id: number): Promise<boolean>;
-  
+
   // AI Chat Message operations
   createAiChatMessage(message: InsertAiChatMessage): Promise<AiChatMessage>;
   getAiChatMessagesBySessionId(sessionId: number): Promise<AiChatMessage[]>;
   getAiChatMessage(id: number): Promise<AiChatMessage | undefined>;
   deleteAiChatMessage(id: number): Promise<boolean>;
-  
+
   // Media Collection operations
   createMediaCollection(collection: InsertMediaCollection): Promise<MediaCollection>;
   getMediaCollection(id: number): Promise<MediaCollection | undefined>;
@@ -384,7 +385,7 @@ export interface IStorage {
   getAllMediaCollections(options?: { visibility?: string; isActive?: boolean }): Promise<MediaCollection[]>;
   updateMediaCollection(id: number, collectionData: Partial<InsertMediaCollection>): Promise<MediaCollection | undefined>;
   deleteMediaCollection(id: number): Promise<boolean>;
-  
+
   // Media Asset operations
   createMediaAsset(asset: InsertMediaAsset): Promise<MediaAsset>;
   getMediaAsset(id: number): Promise<MediaAsset | undefined>;
@@ -392,12 +393,12 @@ export interface IStorage {
   updateMediaAsset(id: number, assetData: Partial<InsertMediaAsset>): Promise<MediaAsset | undefined>;
   deleteMediaAsset(id: number): Promise<boolean>;
   incrementAssetViewCount(id: number): Promise<boolean>;
-  
+
   // Media Access Log operations
   createMediaAccessLog(log: InsertMediaAccessLog): Promise<MediaAccessLog>;
   getMediaAccessLogsByAssetId(assetId: number, limit?: number): Promise<MediaAccessLog[]>;
   getMediaAccessLogsByUserId(userId: number, limit?: number): Promise<MediaAccessLog[]>;
-  
+
   // Music Mix operations
   getMusicMix(id: number): Promise<any | undefined>;
   getAllMusicMixes(): Promise<any[]>;
@@ -408,7 +409,7 @@ export interface IStorage {
   getMusicMixPurchase(userId: number, mixId: number): Promise<any | undefined>;
   createMusicMixPurchase(purchase: any): Promise<any>;
   incrementMusicMixDownloadCount(purchaseId: number): Promise<void>;
-  
+
   // Sponsored Content operations
   getAllSponsoredContent(): Promise<SponsoredContent[]>;
   getActiveSponsoredContent(): Promise<SponsoredContent[]>;
@@ -417,14 +418,14 @@ export interface IStorage {
   deleteSponsoredContent(id: number): Promise<void>;
   incrementSponsoredContentClicks(id: number): Promise<void>;
   incrementSponsoredContentViews(id: number): Promise<void>;
-  
+
   // Passport Profile operations
   getPassportProfile(userId: number): Promise<PassportProfile | undefined>;
   getPassportProfileByHandle(handle: string): Promise<PassportProfile | undefined>;
   createPassportProfile(profile: InsertPassportProfile): Promise<PassportProfile>;
   updatePassportProfile(userId: number, data: Partial<InsertPassportProfile>): Promise<PassportProfile | undefined>;
   addPointsToProfile(userId: number, points: number): Promise<PassportProfile | undefined>;
-  
+
   // Passport Stamp operations
   getPassportStamp(id: number): Promise<PassportStamp | undefined>;
   getPassportStampsByUserId(userId: number, limit?: number): Promise<PassportStamp[]>;
@@ -433,45 +434,45 @@ export interface IStorage {
   createPassportStamp(stamp: InsertPassportStamp): Promise<PassportStamp>;
   getStampCountByCountry(userId: number, countryCode: string): Promise<number>;
   getStampCountByCarnival(userId: number, carnivalCircuit: string): Promise<number>;
-  
+
   // Passport Tier operations
   getPassportTier(name: string): Promise<PassportTier | undefined>;
   getAllPassportTiers(): Promise<PassportTier[]>;
   createPassportTier(tier: InsertPassportTier): Promise<PassportTier>;
   updatePassportTier(name: string, data: Partial<InsertPassportTier>): Promise<PassportTier | undefined>;
-  
+
   // Passport Reward operations
   getPassportReward(id: number): Promise<PassportReward | undefined>;
   getPassportRewardsByUserId(userId: number, status?: string): Promise<PassportReward[]>;
   createPassportReward(reward: InsertPassportReward): Promise<PassportReward>;
   updatePassportReward(id: number, data: Partial<InsertPassportReward>): Promise<PassportReward | undefined>;
   redeemPassportReward(id: number): Promise<PassportReward | undefined>;
-  
+
   // Passport Mission operations
   getPassportMission(id: number): Promise<PassportMission | undefined>;
   getAllPassportMissions(isActive?: boolean): Promise<PassportMission[]>;
   createPassportMission(mission: InsertPassportMission): Promise<PassportMission>;
   updatePassportMission(id: number, data: Partial<InsertPassportMission>): Promise<PassportMission | undefined>;
-  
+
   // Passport Landing Page operations
   getPassportLandingStats(): Promise<{ totalPassportUsers: number; totalStampsIssued: number }>;
-  
+
   // Promoter operations
   createPromoter(promoter: InsertPromoter): Promise<Promoter>;
   getPromoterByUserId(userId: number): Promise<Promoter | undefined>;
   getPromoter(id: number): Promise<Promoter | undefined>;
-  
+
   // Promoter Subscription Plan operations
   getAllPromoterPlans(): Promise<PromoterSubscriptionPlan[]>;
   getPromoterPlan(id: number): Promise<PromoterSubscriptionPlan | undefined>;
   getPromoterPlanBySlug(slug: string): Promise<PromoterSubscriptionPlan | undefined>;
   updatePromoterPlan(id: number, data: Partial<InsertPromoterSubscriptionPlan>): Promise<PromoterSubscriptionPlan | undefined>;
   incrementEarlyAdopterSlots(planId: number): Promise<PromoterSubscriptionPlan | undefined>;
-  
+
   // Promoter Plan Billing Option operations
   getBillingOptionsByPlanId(planId: number): Promise<PromoterPlanBillingOption[]>;
   getBillingOption(id: number): Promise<PromoterPlanBillingOption | undefined>;
-  
+
   // Promoter Subscription operations
   createPromoterSubscription(subscription: InsertPromoterSubscription): Promise<PromoterSubscription>;
   getPromoterSubscription(id: number): Promise<PromoterSubscription | undefined>;
@@ -479,23 +480,23 @@ export interface IStorage {
   getPromoterSubscriptionByStripeId(stripeSubscriptionId: string): Promise<PromoterSubscription | undefined>;
   updatePromoterSubscription(id: number, data: Partial<InsertPromoterSubscription>): Promise<PromoterSubscription | undefined>;
   cancelPromoterSubscription(id: number): Promise<PromoterSubscription | undefined>;
-  
+
   // Promoter Profile operations
   createPromoterProfile(profile: InsertPromoterProfile): Promise<PromoterProfile>;
   getPromoterProfile(userId: number): Promise<PromoterProfile | undefined>;
   updatePromoterProfile(userId: number, data: Partial<InsertPromoterProfile>): Promise<PromoterProfile | undefined>;
-  
+
   // Passport Membership operations
   createPassportMembership(membership: InsertPassportMembership): Promise<PassportMembership>;
   getPassportMembershipByUserId(userId: number): Promise<PassportMembership | undefined>;
-  
+
   // Passport Credit Transaction operations
   createCreditTransaction(transaction: InsertPassportCreditTransaction): Promise<PassportCreditTransaction>;
   getCreditTransactionsByUserId(userId: number, limit?: number): Promise<PassportCreditTransaction[]>;
   getUserCreditBalance(userId: number): Promise<number>;
   awardCredits(userId: number, amount: number, sourceType: string, sourceId?: number, memo?: string): Promise<{ transaction: PassportCreditTransaction; newBalance: number }>;
   deductCredits(userId: number, amount: number, sourceType: string, sourceId?: number, memo?: string): Promise<{ transaction: PassportCreditTransaction; newBalance: number }>;
-  
+
   // Passport Achievement operations
   createAchievementDefinition(achievement: InsertPassportAchievementDefinition): Promise<PassportAchievementDefinition>;
   getAllAchievementDefinitions(category?: string): Promise<PassportAchievementDefinition[]>;
@@ -504,7 +505,7 @@ export interface IStorage {
   unlockUserAchievement(userId: number, achievementId: number): Promise<PassportUserAchievement>;
   getUserAchievements(userId: number): Promise<PassportUserAchievement[]>;
   checkAndUnlockAchievements(userId: number): Promise<PassportUserAchievement[]>;
-  
+
   // Passport Redemption Offer operations
   createRedemptionOffer(offer: InsertPassportRedemptionOffer): Promise<PassportRedemptionOffer>;
   getAllRedemptionOffers(category?: string, tierRequirement?: string): Promise<PassportRedemptionOffer[]>;
@@ -514,13 +515,13 @@ export interface IStorage {
   getUserRedemptions(userId: number, status?: string): Promise<PassportUserRedemption[]>;
   validateRedemptionCode(validationCode: string): Promise<PassportUserRedemption | undefined>;
   markRedemptionAsRedeemed(id: number, redeemedBy: number): Promise<PassportUserRedemption | undefined>;
-  
+
   // Passport QR Check-in operations
   createQrCheckin(checkin: InsertPassportQrCheckin): Promise<PassportQrCheckin>;
   getUserCheckins(userId: number, limit?: number): Promise<PassportQrCheckin[]>;
   getEventCheckins(eventId: number): Promise<PassportQrCheckin[]>;
   getCheckinByUserAndEvent(userId: number, eventId: number): Promise<PassportQrCheckin | undefined>;
-  
+
   // Passport Social Share operations
   createSocialShare(share: InsertPassportSocialShare): Promise<PassportSocialShare>;
   getUserSocialShares(userId: number, limit?: number): Promise<PassportSocialShare[]>;
@@ -545,7 +546,7 @@ export class MemStorage implements IStorage {
   private mediaAssets: Map<number, MediaAsset>;
   private mediaAccessLogs: Map<number, MediaAccessLog>;
   private sponsoredContent: Map<number, SponsoredContent>;
-  
+
   private userCurrentId: number;
   private eventCurrentId: number;
   private productCurrentId: number;
@@ -582,7 +583,7 @@ export class MemStorage implements IStorage {
     this.mediaAssets = new Map();
     this.mediaAccessLogs = new Map();
     this.sponsoredContent = new Map();
-    
+
     this.userCurrentId = 1;
     this.eventCurrentId = 1;
     this.productCurrentId = 1;
@@ -600,7 +601,7 @@ export class MemStorage implements IStorage {
     this.mediaAssetCurrentId = 1;
     this.mediaAccessLogCurrentId = 1;
     this.sponsoredContentCurrentId = 1;
-    
+
     // Initialize with sample data
     this.initializeSampleData();
   }
@@ -631,7 +632,7 @@ export class MemStorage implements IStorage {
 
   async createUser(userData: InsertUser): Promise<User> {
     const id = this.userCurrentId++;
-    const user: User = { 
+    const user: User = {
       id,
       username: userData.username,
       password: userData.password,
@@ -652,7 +653,7 @@ export class MemStorage implements IStorage {
     this.users.set(id, user);
     return user;
   }
-  
+
   async getAllUsers(): Promise<User[]> {
     return Array.from(this.users.values());
   }
@@ -666,68 +667,68 @@ export class MemStorage implements IStorage {
     if (!user) {
       return undefined;
     }
-    
+
     // Update user fields
     Object.assign(user, userData);
     user.updatedAt = new Date();
     this.users.set(id, user);
     return user;
   }
-  
+
   async updateUserRole(id: number, role: string): Promise<User | undefined> {
     const user = await this.getUser(id);
     if (!user) {
       return undefined;
     }
-    
+
     user.role = role;
     this.users.set(id, user);
     return user;
   }
-  
+
   async deleteUser(id: number): Promise<boolean> {
     const user = await this.getUser(id);
     if (!user) {
       return false;
     }
-    
+
     return this.users.delete(id);
   }
-  
+
   async updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User> {
     const user = await this.getUser(userId);
     if (!user) {
       throw new Error(`User with ID ${userId} not found`);
     }
-    
+
     user.stripeCustomerId = stripeCustomerId;
     this.users.set(userId, user);
     return user;
   }
-  
+
   async updatePaypalCustomerId(userId: number, paypalCustomerId: string): Promise<User> {
     const user = await this.getUser(userId);
     if (!user) {
       throw new Error(`User with ID ${userId} not found`);
     }
-    
+
     user.paypalCustomerId = paypalCustomerId;
     this.users.set(userId, user);
     return user;
   }
-  
+
   async getUserByEmail(email: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
       (user) => user.email === email
     );
   }
-  
+
   async updateUserPassword(id: number, newPassword: string): Promise<User | undefined> {
     const user = await this.getUser(id);
     if (!user) {
       return undefined;
     }
-    
+
     user.password = newPassword;
     this.users.set(id, user);
     return user;
@@ -738,24 +739,24 @@ export class MemStorage implements IStorage {
     if (!user) {
       return false;
     }
-    
+
     // For in-memory storage, we do a simple string comparison
     // In production, this would use bcrypt or similar hashing
     return user.password === password;
   }
-  
+
   // Password reset operations
   async storePasswordResetToken(userId: number, token: string, expiresAt: Date): Promise<void> {
     console.log(`[MemStorage] Storing password reset token: ${token} for user ${userId}`);
     // In-memory implementation just logs the token (no need to store)
   }
-  
+
   async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
     console.log(`[MemStorage] Getting password reset token: ${token}`);
     // In-memory implementation doesn't actually store tokens
     return undefined;
   }
-  
+
   async deletePasswordResetToken(token: string): Promise<boolean> {
     console.log(`[MemStorage] Deleting password reset token: ${token}`);
     // In-memory implementation doesn't actually store tokens
@@ -779,15 +780,15 @@ export class MemStorage implements IStorage {
         console.log("Storage: Events map is undefined, returning empty array");
         return [];
       }
-      
+
       const eventsList = Array.from(this.events.values());
       console.log(`Storage: Retrieved ${eventsList.length} events`);
-      
+
       // Log first event for debugging if available
       if (eventsList.length > 0) {
         console.log("Storage: First event sample:", JSON.stringify(eventsList[0]));
       }
-      
+
       return eventsList;
     } catch (error) {
       console.error("Storage: Error in getAllEvents:", error);
@@ -803,16 +804,16 @@ export class MemStorage implements IStorage {
         console.log("Storage: Events map is undefined, returning empty array");
         return [];
       }
-      
+
       const allEvents = Array.from(this.events.values());
       const now = new Date();
-      
+
       const featuredEvents = allEvents.filter(event => {
         if (!event.featured) return false;
-        
+
         try {
           const eventDate = new Date(event.date);
-          
+
           // If we have an end time, use that for comparison
           if (event.endTime) {
             const [hours, minutes] = event.endTime.split(':').map(Number);
@@ -820,7 +821,7 @@ export class MemStorage implements IStorage {
             eventEndDateTime.setHours(hours, minutes, 0, 0);
             return eventEndDateTime >= now; // Event is still ongoing or in the future
           }
-          
+
           // If we have a duration and start time, calculate end time
           if (event.duration && event.time) {
             const [hours, minutes] = event.time.split(':').map(Number);
@@ -829,7 +830,7 @@ export class MemStorage implements IStorage {
             const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
             return eventEndDateTime >= now;
           }
-          
+
           // If we have a start time but no end time/duration
           if (event.time) {
             const [hours, minutes] = event.time.split(':').map(Number);
@@ -839,7 +840,7 @@ export class MemStorage implements IStorage {
             const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
             return eventEndDateTime >= now;
           }
-          
+
           // If no time specified, compare just the date
           const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
           const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -849,14 +850,14 @@ export class MemStorage implements IStorage {
           return true; // Default to showing if there's an error
         }
       });
-      
+
       console.log(`Storage: Retrieved ${featuredEvents.length} upcoming featured events out of ${allEvents.length} total events`);
-      
+
       // Log first featured event for debugging if available
       if (featuredEvents.length > 0) {
         console.log("Storage: First upcoming featured event sample:", JSON.stringify(featuredEvents[0]));
       }
-      
+
       return featuredEvents;
     } catch (error) {
       console.error("Storage: Error in getFeaturedEvents:", error);
@@ -864,17 +865,17 @@ export class MemStorage implements IStorage {
       return [];
     }
   }
-  
+
   async getUpcomingEvents(): Promise<Event[]> {
     try {
       console.log("Storage: Getting upcoming events");
       const allEvents = await this.getAllEvents();
       const now = new Date();
-      
+
       const upcomingEvents = allEvents.filter(event => {
         try {
           const eventDate = new Date(event.date);
-          
+
           // If we have an end time, use that for comparison
           if (event.endTime) {
             const [hours, minutes] = event.endTime.split(':').map(Number);
@@ -882,7 +883,7 @@ export class MemStorage implements IStorage {
             eventEndDateTime.setHours(hours, minutes, 0, 0);
             return eventEndDateTime >= now;
           }
-          
+
           // If we have a duration and start time, calculate end time
           if (event.duration && event.time) {
             const [hours, minutes] = event.time.split(':').map(Number);
@@ -891,7 +892,7 @@ export class MemStorage implements IStorage {
             const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
             return eventEndDateTime >= now;
           }
-          
+
           // If we have a start time but no end time/duration
           if (event.time) {
             const [hours, minutes] = event.time.split(':').map(Number);
@@ -901,7 +902,7 @@ export class MemStorage implements IStorage {
             const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
             return eventEndDateTime >= now;
           }
-          
+
           // If no time specified, compare just the date
           const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
           const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -911,7 +912,7 @@ export class MemStorage implements IStorage {
           return true; // Default to upcoming if there's an error
         }
       });
-      
+
       console.log(`Storage: Retrieved ${upcomingEvents.length} upcoming events`);
       return upcomingEvents;
     } catch (error) {
@@ -925,11 +926,11 @@ export class MemStorage implements IStorage {
       console.log("Storage: Getting past events");
       const allEvents = await this.getAllEvents();
       const now = new Date();
-      
+
       const pastEvents = allEvents.filter(event => {
         try {
           const eventDate = new Date(event.date);
-          
+
           // If we have an end time, use that for comparison
           if (event.endTime) {
             const [hours, minutes] = event.endTime.split(':').map(Number);
@@ -937,7 +938,7 @@ export class MemStorage implements IStorage {
             eventEndDateTime.setHours(hours, minutes, 0, 0);
             return eventEndDateTime < now;
           }
-          
+
           // If we have a duration and start time, calculate end time
           if (event.duration && event.time) {
             const [hours, minutes] = event.time.split(':').map(Number);
@@ -946,7 +947,7 @@ export class MemStorage implements IStorage {
             const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
             return eventEndDateTime < now;
           }
-          
+
           // If we have a start time but no end time/duration
           if (event.time) {
             const [hours, minutes] = event.time.split(':').map(Number);
@@ -956,7 +957,7 @@ export class MemStorage implements IStorage {
             const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
             return eventEndDateTime < now;
           }
-          
+
           // If no time specified, compare just the date
           const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
           const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -966,7 +967,7 @@ export class MemStorage implements IStorage {
           return false; // Default to not past if there's an error
         }
       });
-      
+
       console.log(`Storage: Retrieved ${pastEvents.length} past events`);
       return pastEvents;
     } catch (error) {
@@ -977,11 +978,11 @@ export class MemStorage implements IStorage {
 
   async createEvent(eventData: InsertEvent): Promise<Event> {
     const id = this.eventCurrentId++;
-    
-    const accessCode = eventData.isSocaPassportEnabled 
+
+    const accessCode = eventData.isSocaPassportEnabled
       ? crypto.randomBytes(16).toString('hex')
       : null;
-    
+
     const event: Event = {
       id,
       title: eventData.title,
@@ -1001,31 +1002,31 @@ export class MemStorage implements IStorage {
     this.events.set(id, event);
     return event;
   }
-  
+
   async updateEvent(id: number, eventData: Partial<InsertEvent>): Promise<Event | undefined> {
     const event = await this.getEvent(id);
     if (!event) {
       return undefined;
     }
-    
+
     let accessCode = event.accessCode;
     if (eventData.isSocaPassportEnabled && !accessCode) {
       accessCode = crypto.randomBytes(16).toString('hex');
     }
-    
+
     const updateData = { ...eventData };
     delete updateData.accessCode;
-    
+
     const updatedEvent: Event = {
       ...event,
       ...updateData,
       accessCode: accessCode
     };
-    
+
     this.events.set(id, updatedEvent);
     return updatedEvent;
   }
-  
+
   async deleteEvent(id: number): Promise<boolean> {
     try {
       // Check if event exists
@@ -1034,12 +1035,12 @@ export class MemStorage implements IStorage {
         console.log(`Event with ID ${id} not found for deletion`);
         return false;
       }
-      
+
       console.log(`Deleting event with ID: ${id}`);
-      
+
       // Store the event in memory before deleting (for undo functionality)
       storeDeletedEvent(event);
-      
+
       // Using db directly since this is a PostgreSQL implementation
       await db.delete(events).where(eq(events.id, id));
       console.log(`Event with ID ${id} deleted successfully`);
@@ -1049,25 +1050,25 @@ export class MemStorage implements IStorage {
       return false;
     }
   }
-  
+
   async getLastDeletedEvent(): Promise<{ event: Event, deletedAt: Date } | null> {
     try {
       // Find the most recently deleted event
       let mostRecentDeletedEvent: { event: Event, deletedAt: Date } | null = null;
-      
+
       deletedEventsStore.forEach((entry) => {
         if (!mostRecentDeletedEvent || entry.deletedAt > mostRecentDeletedEvent.deletedAt) {
           mostRecentDeletedEvent = entry;
         }
       });
-      
+
       return mostRecentDeletedEvent;
     } catch (error) {
       console.error("Error getting last deleted event:", error);
       return null;
     }
   }
-  
+
   async restoreDeletedEvent(id: number): Promise<Event | null> {
     try {
       // Get the deleted event data
@@ -1076,10 +1077,10 @@ export class MemStorage implements IStorage {
         console.log(`No deleted event found with ID ${id} for restoration`);
         return null;
       }
-      
+
       const eventToRestore = deletedEventData.event;
       console.log(`Restoring deleted event: ${eventToRestore.title} (ID: ${id})`);
-      
+
       // Insert the event back into the database with all its original data
       const result = await db.insert(events).values({
         title: eventToRestore.title,
@@ -1100,10 +1101,10 @@ export class MemStorage implements IStorage {
         createdAt: eventToRestore.createdAt,
         updatedAt: new Date()
       }).returning();
-      
+
       // Remove from deleted events store
       deletedEventsStore.delete(id);
-      
+
       console.log(`Event successfully restored: ${eventToRestore.title} (ID: ${id})`);
       return result[0];
     } catch (error) {
@@ -1141,28 +1142,28 @@ export class MemStorage implements IStorage {
     this.products.set(id, product);
     return product;
   }
-  
+
   async updateProduct(id: number, productData: Partial<InsertProduct>): Promise<Product | undefined> {
     const product = await this.getProduct(id);
     if (!product) {
       return undefined;
     }
-    
+
     const updatedProduct: Product = {
       ...product,
       ...productData
     };
-    
+
     this.products.set(id, updatedProduct);
     return updatedProduct;
   }
-  
+
   async deleteProduct(id: number): Promise<boolean> {
     const product = await this.getProduct(id);
     if (!product) {
       return false;
     }
-    
+
     return this.products.delete(id);
   }
 
@@ -1212,24 +1213,24 @@ export class MemStorage implements IStorage {
     this.livestreams.set(id, livestream);
     return livestream;
   }
-  
+
   async updateLivestream(id: number, updates: Partial<Livestream>): Promise<Livestream | null> {
     const existingLivestream = await this.getLivestream(id);
-    
+
     if (!existingLivestream) {
       return null;
     }
-    
+
     const updatedLivestream: Livestream = {
       ...existingLivestream,
       ...updates,
       updatedAt: new Date()
     };
-    
+
     this.livestreams.set(id, updatedLivestream);
     return updatedLivestream;
   }
-  
+
   async deleteLivestream(id: number): Promise<boolean> {
     return this.livestreams.delete(id);
   }
@@ -1247,14 +1248,14 @@ export class MemStorage implements IStorage {
   async createPost(postData: InsertPost): Promise<Post> {
     const id = this.postCurrentId++;
     const createdAt = new Date();
-    const post: Post = { 
-      id, 
+    const post: Post = {
+      id,
       userId: postData.userId,
       content: postData.content || null,
       mediaUrl: postData.mediaUrl || null,
       createdAt,
       likes: 0,
-      comments: 0 
+      comments: 0
     };
     this.posts.set(id, post);
     return post;
@@ -1276,14 +1277,14 @@ export class MemStorage implements IStorage {
     const createdAt = new Date();
     const comment: Comment = { ...commentData, id, createdAt };
     this.comments.set(id, comment);
-    
+
     // Update comment count on post
     const post = await this.getPost(commentData.postId);
     if (post) {
       post.comments = (post.comments || 0) + 1;
       this.posts.set(post.id, post);
     }
-    
+
     return comment;
   }
 
@@ -1297,14 +1298,14 @@ export class MemStorage implements IStorage {
   async createChatMessage(messageData: InsertChatMessage): Promise<ChatMessage> {
     const id = this.chatMessageCurrentId++;
     const createdAt = new Date();
-    
+
     // Find the user to include user details in the chat message
     const user = await this.getUser(messageData.userId);
-    
+
     if (!user) {
       throw new Error(`User with ID ${messageData.userId} not found`);
     }
-    
+
     const chatMessage: ChatMessage = {
       id,
       userId: messageData.userId,
@@ -1317,30 +1318,30 @@ export class MemStorage implements IStorage {
         avatar: user.avatar || null
       }
     };
-    
+
     this.chatMessages.set(id, chatMessage);
     return chatMessage;
   }
-  
+
   // Ticket operations
   async getTicket(id: number): Promise<Ticket | undefined> {
     return this.tickets.get(id);
   }
-  
+
   async getAllTickets(): Promise<Ticket[]> {
     return Array.from(this.tickets.values());
   }
-  
+
   async updateTicket(id: number, ticketData: Partial<InsertTicket>): Promise<Ticket | undefined> {
     const ticket = await this.getTicket(id);
     if (!ticket) {
       return undefined;
     }
-    
+
     // Handle date fields
     const dateFields = ['salesStartDate', 'salesEndDate', 'sales_start_date', 'sales_end_date', 'createdAt', 'updatedAt'];
     const cleanedData = { ...ticketData };
-    
+
     // Clean date fields
     for (const field of dateFields) {
       if (field in cleanedData) {
@@ -1359,30 +1360,30 @@ export class MemStorage implements IStorage {
         }
       }
     }
-    
+
     // Force updatedAt to be a valid Date
     cleanedData.updatedAt = new Date();
-    
+
     const updatedTicket: Ticket = {
       ...ticket,
       ...cleanedData
     };
-    
+
     this.tickets.set(id, updatedTicket);
     return updatedTicket;
   }
-  
+
   async createTicket(ticketData: InsertTicket): Promise<Ticket> {
     const id = this.ticketCurrentId++;
     const createdAt = new Date();
     const updatedAt = new Date();
-    
+
     // Ensure remainingQuantity is set if not provided
     if (ticketData.remainingQuantity === undefined) {
       ticketData.remainingQuantity = ticketData.quantity;
     }
-    
-    const ticket: Ticket = { 
+
+    const ticket: Ticket = {
       ...ticketData,
       id,
       createdAt,
@@ -1391,18 +1392,18 @@ export class MemStorage implements IStorage {
     this.tickets.set(id, ticket);
     return ticket;
   }
-  
+
   async getTicketsByEventId(eventId: number): Promise<Ticket[]> {
     return Array.from(this.tickets.values())
       .filter(ticket => ticket.eventId === eventId);
   }
-  
+
   // Ticket scan operations
   async createTicketScan(ticketScanData: InsertTicketScan): Promise<TicketScan> {
     const id = this.ticketScanCurrentId++;
     const createdAt = new Date();
     const updatedAt = createdAt;
-    
+
     const ticketScan: TicketScan = {
       id,
       ticketId: ticketScanData.ticketId,
@@ -1414,28 +1415,28 @@ export class MemStorage implements IStorage {
       createdAt,
       updatedAt
     };
-    
+
     this.ticketScans.set(id, ticketScan);
     return ticketScan;
   }
-  
+
   async getTicketScansByTicketId(ticketId: number): Promise<TicketScan[]> {
     return Array.from(this.ticketScans.values())
       .filter(scan => scan.ticketId === ticketId)
       .sort((a, b) => new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime());
   }
-  
+
   async getTicketScansByOrderId(orderId: number): Promise<TicketScan[]> {
     return Array.from(this.ticketScans.values())
       .filter(scan => scan.orderId === orderId)
       .sort((a, b) => new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime());
   }
-  
+
   // Discount code operations
   async createDiscountCode(discountCodeData: InsertDiscountCode): Promise<DiscountCode> {
     const id = this.discountCodeCurrentId++;
     const createdAt = new Date();
-    const discountCode: DiscountCode = { 
+    const discountCode: DiscountCode = {
       ...discountCodeData,
       id,
       createdAt,
@@ -1445,17 +1446,17 @@ export class MemStorage implements IStorage {
     this.discountCodes.set(id, discountCode);
     return discountCode;
   }
-  
+
   async getDiscountCodeByCode(code: string): Promise<DiscountCode | undefined> {
     return Array.from(this.discountCodes.values())
       .find(discount => discount.code === code && discount.isActive);
   }
-  
+
   // Order operations
   async createOrder(orderData: InsertOrder): Promise<Order> {
     const id = this.orderCurrentId++;
     const createdAt = new Date();
-    const order: Order = { 
+    const order: Order = {
       ...orderData,
       id,
       createdAt,
@@ -1464,20 +1465,20 @@ export class MemStorage implements IStorage {
     this.orders.set(id, order);
     return order;
   }
-  
+
   async getAllOrders(): Promise<Order[]> {
     return Array.from(this.orders.values());
   }
-  
+
   async getOrderById(id: number): Promise<Order | undefined> {
     return this.orders.get(id);
   }
-  
+
   // Media upload operations
   async createMediaUpload(mediaUploadData: InsertMediaUpload): Promise<MediaUpload> {
     const id = this.mediaUploadCurrentId++;
     const createdAt = new Date();
-    const mediaUpload: MediaUpload = { 
+    const mediaUpload: MediaUpload = {
       ...mediaUploadData,
       id,
       createdAt
@@ -1485,7 +1486,7 @@ export class MemStorage implements IStorage {
     this.mediaUploads.set(id, mediaUpload);
     return mediaUpload;
   }
-  
+
   async getMediaUploadsByRelatedEntity(relatedEntityType: string, relatedEntityId: number): Promise<MediaUpload[]> {
     return Array.from(this.mediaUploads.values())
       .filter(upload => upload.relatedEntityType === relatedEntityType && upload.relatedEntityId === relatedEntityId);
@@ -1497,13 +1498,13 @@ export class MemStorage implements IStorage {
   private productAnalytics: Map<number, ProductAnalytic>;
   private userEvents: Map<number, UserEvent>;
   private dailyStats: Map<number, DailyStat>;
-  
+
   private pageViewCurrentId: number;
   private eventAnalyticCurrentId: number;
   private productAnalyticCurrentId: number;
   private userEventCurrentId: number;
   private dailyStatCurrentId: number;
-  
+
   // Page Views
   async createPageView(pageViewData: InsertPageView): Promise<PageView> {
     const id = this.pageViewCurrentId++;
@@ -1515,19 +1516,19 @@ export class MemStorage implements IStorage {
     this.pageViews.set(id, pageView);
     return pageView;
   }
-  
+
   async getPageViewsByPath(path: string): Promise<PageView[]> {
     return Array.from(this.pageViews.values())
       .filter(view => view.path === path)
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }
-  
+
   async getPageViewsByUserId(userId: number): Promise<PageView[]> {
     return Array.from(this.pageViews.values())
       .filter(view => view.userId === userId)
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }
-  
+
   // Event Analytics
   async createEventAnalytic(eventAnalyticData: InsertEventAnalytic): Promise<EventAnalytic> {
     const id = this.eventAnalyticCurrentId++;
@@ -1540,15 +1541,15 @@ export class MemStorage implements IStorage {
     this.eventAnalytics.set(id, eventAnalytic);
     return eventAnalytic;
   }
-  
+
   async getEventAnalyticsByEventId(eventId: number): Promise<EventAnalytic | undefined> {
     return Array.from(this.eventAnalytics.values())
       .find(analytic => analytic.eventId === eventId);
   }
-  
+
   async incrementEventViews(eventId: number): Promise<EventAnalytic | undefined> {
     const existing = await this.getEventAnalyticsByEventId(eventId);
-    
+
     if (existing) {
       existing.views += 1;
       existing.updatedAt = new Date();
@@ -1563,10 +1564,10 @@ export class MemStorage implements IStorage {
       });
     }
   }
-  
+
   async incrementEventTicketClicks(eventId: number): Promise<EventAnalytic | undefined> {
     const existing = await this.getEventAnalyticsByEventId(eventId);
-    
+
     if (existing) {
       existing.ticketClicks += 1;
       existing.updatedAt = new Date();
@@ -1581,10 +1582,10 @@ export class MemStorage implements IStorage {
       });
     }
   }
-  
+
   async incrementEventTicketSales(eventId: number): Promise<EventAnalytic | undefined> {
     const existing = await this.getEventAnalyticsByEventId(eventId);
-    
+
     if (existing) {
       existing.ticketSales += 1;
       existing.updatedAt = new Date();
@@ -1599,7 +1600,7 @@ export class MemStorage implements IStorage {
       });
     }
   }
-  
+
   // Product Analytics
   async createProductAnalytic(productAnalyticData: InsertProductAnalytic): Promise<ProductAnalytic> {
     const id = this.productAnalyticCurrentId++;
@@ -1612,15 +1613,15 @@ export class MemStorage implements IStorage {
     this.productAnalytics.set(id, productAnalytic);
     return productAnalytic;
   }
-  
+
   async getProductAnalyticsByProductId(productId: number): Promise<ProductAnalytic | undefined> {
     return Array.from(this.productAnalytics.values())
       .find(analytic => analytic.productId === productId);
   }
-  
+
   async incrementProductViews(productId: number): Promise<ProductAnalytic | undefined> {
     const existing = await this.getProductAnalyticsByProductId(productId);
-    
+
     if (existing) {
       existing.views += 1;
       existing.updatedAt = new Date();
@@ -1635,10 +1636,10 @@ export class MemStorage implements IStorage {
       });
     }
   }
-  
+
   async incrementProductDetailClicks(productId: number): Promise<ProductAnalytic | undefined> {
     const existing = await this.getProductAnalyticsByProductId(productId);
-    
+
     if (existing) {
       existing.detailClicks += 1;
       existing.updatedAt = new Date();
@@ -1653,10 +1654,10 @@ export class MemStorage implements IStorage {
       });
     }
   }
-  
+
   async incrementProductPurchaseClicks(productId: number): Promise<ProductAnalytic | undefined> {
     const existing = await this.getProductAnalyticsByProductId(productId);
-    
+
     if (existing) {
       existing.purchaseClicks += 1;
       existing.updatedAt = new Date();
@@ -1671,7 +1672,7 @@ export class MemStorage implements IStorage {
       });
     }
   }
-  
+
   // User Events
   async createUserEvent(userEventData: InsertUserEvent): Promise<UserEvent> {
     const id = this.userEventCurrentId++;
@@ -1683,13 +1684,13 @@ export class MemStorage implements IStorage {
     this.userEvents.set(id, userEvent);
     return userEvent;
   }
-  
+
   async getUserEventsByUserId(userId: number): Promise<UserEvent[]> {
     return Array.from(this.userEvents.values())
       .filter(event => event.userId === userId)
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }
-  
+
   // Daily Stats
   async createDailyStat(dailyStatData: InsertDailyStat): Promise<DailyStat> {
     const id = this.dailyStatCurrentId++;
@@ -1700,33 +1701,33 @@ export class MemStorage implements IStorage {
     this.dailyStats.set(id, dailyStat);
     return dailyStat;
   }
-  
+
   async getDailyStatByDate(date: Date): Promise<DailyStat | undefined> {
     const dateStr = date.toISOString().split('T')[0];
     return Array.from(this.dailyStats.values())
       .find(stat => stat.date.toISOString().split('T')[0] === dateStr);
   }
-  
+
   async updateDailyStat(date: Date, updates: Partial<InsertDailyStat>): Promise<DailyStat | undefined> {
     const stat = await this.getDailyStatByDate(date);
-    
+
     if (!stat) {
       return undefined;
     }
-    
+
     const updatedStat: DailyStat = {
       ...stat,
       ...updates
     };
-    
+
     this.dailyStats.set(stat.id, updatedStat);
     return updatedStat;
   }
-  
+
   async getDailyStatsByDateRange(startDate: Date, endDate: Date): Promise<DailyStat[]> {
     const startTime = startDate.getTime();
     const endTime = endDate.getTime();
-    
+
     return Array.from(this.dailyStats.values())
       .filter(stat => {
         const statTime = stat.date.getTime();
@@ -1734,7 +1735,7 @@ export class MemStorage implements IStorage {
       })
       .sort((a, b) => a.date.getTime() - b.date.getTime());
   }
-  
+
   // Initialize with sample data
   private initializeSampleData(): void {
     // Initialize analytics maps
@@ -1743,13 +1744,13 @@ export class MemStorage implements IStorage {
     this.productAnalytics = new Map();
     this.userEvents = new Map();
     this.dailyStats = new Map();
-    
+
     this.pageViewCurrentId = 1;
     this.eventAnalyticCurrentId = 1;
     this.productAnalyticCurrentId = 1;
     this.userEventCurrentId = 1;
     this.dailyStatCurrentId = 1;
-    
+
     // Create admin user
     this.createUser({
       username: "admin",
@@ -1980,22 +1981,22 @@ export class MemStorage implements IStorage {
 
   async getAllMediaCollections(options?: { visibility?: string; isActive?: boolean }): Promise<MediaCollection[]> {
     let collections = Array.from(this.mediaCollections.values());
-    
+
     if (options?.visibility) {
       collections = collections.filter(c => c.visibility === options.visibility);
     }
-    
+
     if (options?.isActive !== undefined) {
       collections = collections.filter(c => c.isActive === options.isActive);
     }
-    
+
     return collections.sort((a, b) => a.displayOrder - b.displayOrder);
   }
 
   async updateMediaCollection(id: number, collectionData: Partial<InsertMediaCollection>): Promise<MediaCollection | undefined> {
     const collection = this.mediaCollections.get(id);
     if (!collection) return undefined;
-    
+
     Object.assign(collection, collectionData, { updatedAt: new Date() });
     this.mediaCollections.set(id, collection);
     return collection;
@@ -2006,7 +2007,7 @@ export class MemStorage implements IStorage {
     const assetsToDelete = Array.from(this.mediaAssets.values()).filter(
       asset => asset.collectionId === id
     );
-    
+
     // Delete all access logs for assets in this collection
     for (const asset of assetsToDelete) {
       const logsToDelete = Array.from(this.mediaAccessLogs.entries()).filter(
@@ -2014,13 +2015,13 @@ export class MemStorage implements IStorage {
       );
       logsToDelete.forEach(([logId]) => this.mediaAccessLogs.delete(logId));
     }
-    
+
     // Delete all assets in this collection
     const assetEntries = Array.from(this.mediaAssets.entries()).filter(
       ([, asset]) => asset.collectionId === id
     );
     assetEntries.forEach(([assetId]) => this.mediaAssets.delete(assetId));
-    
+
     // Finally, delete the collection
     return this.mediaCollections.delete(id);
   }
@@ -2058,7 +2059,7 @@ export class MemStorage implements IStorage {
   async getMediaAsset(id: number): Promise<MediaAsset | undefined> {
     const asset = this.mediaAssets.get(id);
     if (!asset) return undefined;
-    
+
     // Add URL fields for frontend display
     return {
       ...asset,
@@ -2071,21 +2072,21 @@ export class MemStorage implements IStorage {
     let assets = Array.from(this.mediaAssets.values()).filter(
       asset => asset.collectionId === collectionId
     );
-    
+
     if (options?.isPublished !== undefined) {
       assets = assets.filter(asset => asset.isPublished === options.isPublished);
     }
-    
+
     assets.sort((a, b) => a.displayOrder - b.displayOrder);
-    
+
     if (options?.offset) {
       assets = assets.slice(options.offset);
     }
-    
+
     if (options?.limit) {
       assets = assets.slice(0, options.limit);
     }
-    
+
     // Add URL fields for frontend display
     return assets.map(asset => ({
       ...asset,
@@ -2097,7 +2098,7 @@ export class MemStorage implements IStorage {
   async updateMediaAsset(id: number, assetData: Partial<InsertMediaAsset>): Promise<MediaAsset | undefined> {
     const asset = this.mediaAssets.get(id);
     if (!asset) return undefined;
-    
+
     Object.assign(asset, assetData, { updatedAt: new Date() });
     this.mediaAssets.set(id, asset);
     return asset;
@@ -2109,7 +2110,7 @@ export class MemStorage implements IStorage {
       ([, log]) => log.assetId === id
     );
     logsToDelete.forEach(([logId]) => this.mediaAccessLogs.delete(logId));
-    
+
     // Delete the asset
     return this.mediaAssets.delete(id);
   }
@@ -2117,7 +2118,7 @@ export class MemStorage implements IStorage {
   async incrementAssetViewCount(id: number): Promise<boolean> {
     const asset = this.mediaAssets.get(id);
     if (!asset) return false;
-    
+
     asset.viewCount = (asset.viewCount || 0) + 1;
     asset.lastViewedAt = new Date();
     this.mediaAssets.set(id, asset);
@@ -2147,11 +2148,11 @@ export class MemStorage implements IStorage {
       log => log.assetId === assetId
     );
     logs.sort((a, b) => b.accessedAt.getTime() - a.accessedAt.getTime());
-    
+
     if (limit) {
       logs = logs.slice(0, limit);
     }
-    
+
     return logs;
   }
 
@@ -2160,11 +2161,11 @@ export class MemStorage implements IStorage {
       log => log.userId === userId
     );
     logs.sort((a, b) => b.accessedAt.getTime() - a.accessedAt.getTime());
-    
+
     if (limit) {
       logs = logs.slice(0, limit);
     }
-    
+
     return logs;
   }
 
@@ -2213,7 +2214,7 @@ export class MemStorage implements IStorage {
     if (!content) {
       throw new Error(`Sponsored content with id ${id} not found`);
     }
-    
+
     Object.assign(content, data, { updatedAt: new Date() });
     this.sponsoredContent.set(id, content);
     return content;
@@ -2276,26 +2277,26 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return user;
   }
-  
+
   async getUserByEmail(email: string): Promise<User | undefined> {
     if (!email) return undefined;
-    
+
     const [user] = await db
       .select()
       .from(users)
       .where(eq(users.email, email));
     return user;
   }
-  
+
   async getUserByFirebaseId(firebaseId: string): Promise<User | undefined> {
     if (!firebaseId) return undefined;
-    
+
     try {
       const [user] = await db
         .select()
         .from(users)
         .where(eq(users.firebaseId, firebaseId));
-      
+
       console.log("Found user by Firebase ID:", firebaseId, user?.id || "none");
       return user;
     } catch (error) {
@@ -2303,13 +2304,13 @@ export class DatabaseStorage implements IStorage {
       return undefined;
     }
   }
-  
+
 
 
   async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
     const [user] = await db
       .update(users)
-      .set({ 
+      .set({
         ...userData,
         updatedAt: new Date()
       })
@@ -2321,7 +2322,7 @@ export class DatabaseStorage implements IStorage {
   async updateUserPassword(id: number, newPassword: string): Promise<User | undefined> {
     const [user] = await db
       .update(users)
-      .set({ 
+      .set({
         password: newPassword,
         updatedAt: new Date()
       })
@@ -2336,11 +2337,11 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(users)
         .where(eq(users.id, userId));
-      
+
       if (!user) {
         return false;
       }
-      
+
       // For now, we do a simple string comparison
       // In production, this would use bcrypt to compare hashed passwords
       return user.password === password;
@@ -2349,7 +2350,7 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
-  
+
   // Password reset operations
   async storePasswordResetToken(userId: number, token: string, expiresAt: Date): Promise<void> {
     await db
@@ -2361,28 +2362,28 @@ export class DatabaseStorage implements IStorage {
         createdAt: new Date()
       });
   }
-  
+
   async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
     const [resetToken] = await db
       .select()
       .from(passwordResetTokens)
       .where(eq(passwordResetTokens.token, token));
-      
+
     return resetToken;
   }
-  
+
   async deletePasswordResetToken(token: string): Promise<boolean> {
     const result = await db
       .delete(passwordResetTokens)
       .where(eq(passwordResetTokens.token, token));
-      
+
     return result.rowCount ? result.rowCount > 0 : false;
   }
-  
+
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users);
   }
-  
+
   async updateUserRole(id: number, role: string): Promise<User | undefined> {
     const [user] = await db
       .update(users)
@@ -2391,34 +2392,34 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return user;
   }
-  
+
   // Verify and scan a ticket
-  async scanTicket(ticketIdentifier: string, scannedBy: number = 1): Promise<{ 
-    valid: boolean; 
-    ticketInfo?: any; 
+  async scanTicket(ticketIdentifier: string, scannedBy: number = 1): Promise<{
+    valid: boolean;
+    ticketInfo?: any;
     error?: string;
     alreadyScanned?: boolean;
     scannedAt?: Date;
   }> {
     try {
       console.log(`Processing ticket scan for code: ${ticketIdentifier}`);
-      
+
       // Parse the ticket identifier
       // Support multiple formats:
       // 1. New format: EVENT-{eventId}-ORDER-{orderId}-{timestamp}
       // 2. Manual format: EVENT-{eventId}-ORDER-MANUAL-{timestamp}
       // 3. Legacy format: SGX-TIX-{ticketId}-{orderId}
       const parts = ticketIdentifier.split('-');
-      
+
       let isValidFormat = false;
       let ticketPurchase = null;
-      
+
       if (parts.length >= 4) {
         // Check for EVENT-X-ORDER format
         if (parts[0] === 'EVENT' && parts[2] === 'ORDER') {
           isValidFormat = true;
           console.log(`Processing EVENT format QR code: ${ticketIdentifier}`);
-          
+
           // Look up ticket by QR code data directly
           ticketPurchase = await this.getTicketPurchaseByQrCodeData(ticketIdentifier);
           if (!ticketPurchase) {
@@ -2433,10 +2434,10 @@ export class DatabaseStorage implements IStorage {
         else if (parts.length === 4 && parts[0] === 'SGX' && parts[1] === 'TIX') {
           isValidFormat = true;
           console.log(`Processing legacy SGX format QR code: ${ticketIdentifier}`);
-          
+
           const ticketId = parseInt(parts[2]);
           const orderId = parseInt(parts[3]);
-          
+
           if (isNaN(ticketId) || isNaN(orderId)) {
             console.log(`Invalid ticket or order ID: ticketId=${parts[2]}, orderId=${parts[3]}`);
             return {
@@ -2444,7 +2445,7 @@ export class DatabaseStorage implements IStorage {
               error: 'Invalid ticket identifier. Ticket ID and Order ID must be numbers.'
             };
           }
-          
+
           // For legacy format, look up by ticket/order IDs
           ticketPurchase = await this.getTicketPurchaseByIds(ticketId, orderId);
           if (!ticketPurchase) {
@@ -2456,7 +2457,7 @@ export class DatabaseStorage implements IStorage {
           }
         }
       }
-      
+
       if (!isValidFormat) {
         console.log(`Invalid ticket format: ${ticketIdentifier}`);
         return {
@@ -2464,7 +2465,7 @@ export class DatabaseStorage implements IStorage {
           error: 'Invalid ticket format. Expected: EVENT-{eventId}-ORDER-{orderId}-{timestamp} or SGX-TIX-{ticketId}-{orderId}'
         };
       }
-      
+
       if (!ticketPurchase) {
         console.log(`Ticket purchase not found for code: ${ticketIdentifier}`);
         return {
@@ -2472,7 +2473,7 @@ export class DatabaseStorage implements IStorage {
           error: 'Ticket not found in our system.'
         };
       }
-      
+
       // Get event information
       const event = await this.getEvent(ticketPurchase.eventId);
       if (!event) {
@@ -2482,18 +2483,18 @@ export class DatabaseStorage implements IStorage {
           error: 'Event information not found'
         };
       }
-      
+
       // Get ticket information
       const ticket = ticketPurchase.ticketId ? await this.getTicket(ticketPurchase.ticketId) : null;
-      
+
       // Check if this ticket has already been scanned
       const alreadyScanned = ticketPurchase.firstScanAt !== null && ticketPurchase.firstScanAt !== undefined;
       let scannedAt = ticketPurchase.lastScanAt;
-      
+
       // Mark the ticket as scanned if it hasn't been scanned yet
       if (!alreadyScanned) {
         console.log(`Marking ticket as scanned: ticketPurchase ID=${ticketPurchase.id}`);
-        
+
         // Update the ticket purchase with scan date
         const nowTime = new Date();
         await this.updateTicketPurchase(ticketPurchase.id, {
@@ -2501,7 +2502,7 @@ export class DatabaseStorage implements IStorage {
           firstScanAt: ticketPurchase.firstScanAt || nowTime,
           lastScanAt: nowTime
         });
-        
+
         // Create a scan record in the ticket_scans table
         try {
           await db.execute(sql`
@@ -2513,14 +2514,14 @@ export class DatabaseStorage implements IStorage {
           console.error('Error creating scan record:', scanRecordError);
           // Don't fail the scan if we can't create the record
         }
-        
+
         scannedAt = nowTime;
-        
+
         console.log(`Successfully marked ticket as scanned at: ${scannedAt}`);
       } else {
         console.log(`Ticket already scanned at: ${scannedAt}`);
       }
-      
+
       // Format and return ticket info
       const ticketInfo = {
         ticketId: ticketPurchase.ticketId || 0,
@@ -2532,7 +2533,7 @@ export class DatabaseStorage implements IStorage {
         purchaseDate: ticketPurchase.purchaseDate || ticketPurchase.createdAt,
         scannedAt: scannedAt
       };
-      
+
       return {
         valid: true,
         alreadyScanned,
@@ -2547,41 +2548,41 @@ export class DatabaseStorage implements IStorage {
       };
     }
   }
-  
+
   async updateStripeCustomerId(userId: number, stripeCustomerId: string): Promise<User> {
     const [user] = await db
       .update(users)
       .set({ stripeCustomerId, updatedAt: new Date() })
       .where(eq(users.id, userId))
       .returning();
-    
+
     if (!user) {
       throw new Error(`User with ID ${userId} not found`);
     }
-    
+
     return user;
   }
-  
+
   async updatePaypalCustomerId(userId: number, paypalCustomerId: string): Promise<User> {
     const [user] = await db
       .update(users)
       .set({ paypalCustomerId, updatedAt: new Date() })
       .where(eq(users.id, userId))
       .returning();
-    
+
     if (!user) {
       throw new Error(`User with ID ${userId} not found`);
     }
-    
+
     return user;
   }
-  
+
   async deleteUser(id: number): Promise<boolean> {
     try {
       const result = await db
         .delete(users)
         .where(eq(users.id, id));
-      
+
       return result.rowCount > 0;
     } catch (error) {
       console.error(`Error deleting user with ID ${id}:`, error);
@@ -2606,11 +2607,32 @@ export class DatabaseStorage implements IStorage {
     return event;
   }
 
+  async getActivePassportEvents(): Promise<Event[]> {
+    // Get events with passport enabled that are happening today
+    // Allow check-in from 2 hours before to 6 hours after event start
+    const now = new Date();
+    const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+    const sixHoursFromNow = new Date(now.getTime() + 6 * 60 * 60 * 1000);
+
+    const activeEvents = await db
+      .select()
+      .from(events)
+      .where(
+        and(
+          eq(events.isSocaPassportEnabled, true),
+          gt(events.date, twoHoursAgo),
+          lt(events.date, sixHoursFromNow)
+        )
+      );
+
+    return activeEvents;
+  }
+
   async getAllEvents(): Promise<Event[]> {
     const allEvents = await db
       .select()
       .from(events);
-      
+
     // For each event, get the lowest active ticket price
     const eventsWithLowestPrice = await Promise.all(
       allEvents.map(async (event) => {
@@ -2619,16 +2641,16 @@ export class DatabaseStorage implements IStorage {
           .select()
           .from(tickets)
           .where(eq(tickets.eventId, event.id));
-          
+
         // Filter tickets that are active, within their sales period and have remaining quantity
         const now = new Date();
         const activeTickets = eventTickets.filter(ticket => {
           // Check if ticket is active
           if (ticket.status !== 'active') return false;
-          
+
           // Check remaining quantity
           if (ticket.remainingQuantity <= 0) return false;
-          
+
           // Check if sales have ended
           if (ticket.salesEndDate) {
             const endDate = new Date(ticket.salesEndDate);
@@ -2638,7 +2660,7 @@ export class DatabaseStorage implements IStorage {
             }
             if (now > endDate) return false;
           }
-          
+
           // Check if sales have started
           if (ticket.salesStartDate) {
             const startDate = new Date(ticket.salesStartDate);
@@ -2648,40 +2670,40 @@ export class DatabaseStorage implements IStorage {
             }
             if (now < startDate) return false;
           }
-          
+
           return true;
         });
-        
+
         // Find the lowest price among active tickets
         let lowestActivePrice = null;
         if (activeTickets.length > 0) {
           lowestActivePrice = Math.min(...activeTickets.map(t => t.price || 0));
         }
-        
+
         return {
           ...event,
           lowestActivePrice
         };
       })
     );
-    
+
     return eventsWithLowestPrice;
   }
 
   async getFeaturedEvents(): Promise<Event[]> {
     // Get featured events that are not past events (upcoming only)
     const now = new Date();
-    
+
     const featuredEvents = await db
       .select()
       .from(events)
       .where(eq(events.featured, true));
-      
+
     // Filter out past events before processing tickets
     const upcomingFeaturedEvents = featuredEvents.filter(event => {
       try {
         const eventDate = new Date(event.date);
-        
+
         // If we have an end time, use that for comparison
         if (event.endTime) {
           const [hours, minutes] = event.endTime.split(':').map(Number);
@@ -2689,7 +2711,7 @@ export class DatabaseStorage implements IStorage {
           eventEndDateTime.setHours(hours, minutes, 0, 0);
           return eventEndDateTime >= now; // Event is still ongoing or in the future
         }
-        
+
         // If we have a duration and start time, calculate end time
         if (event.duration && event.time) {
           const [hours, minutes] = event.time.split(':').map(Number);
@@ -2698,7 +2720,7 @@ export class DatabaseStorage implements IStorage {
           const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
           return eventEndDateTime >= now;
         }
-        
+
         // If we have a start time but no end time/duration
         if (event.time) {
           const [hours, minutes] = event.time.split(':').map(Number);
@@ -2708,7 +2730,7 @@ export class DatabaseStorage implements IStorage {
           const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
           return eventEndDateTime >= now;
         }
-        
+
         // If no time specified, compare just the date
         const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
         const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -2718,7 +2740,7 @@ export class DatabaseStorage implements IStorage {
         return true; // Default to showing if there's an error
       }
     });
-    
+
     // For each upcoming featured event, get the lowest active ticket price
     const eventsWithLowestPrice = await Promise.all(
       upcomingFeaturedEvents.map(async (event) => {
@@ -2727,15 +2749,15 @@ export class DatabaseStorage implements IStorage {
           .select()
           .from(tickets)
           .where(eq(tickets.eventId, event.id));
-          
+
         // Filter tickets that are active, within their sales period and have remaining quantity
         const activeTickets = eventTickets.filter(ticket => {
           // Check if ticket is active
           if (ticket.status !== 'active') return false;
-          
+
           // Check remaining quantity
           if (ticket.remainingQuantity <= 0) return false;
-          
+
           // Check if sales have ended
           if (ticket.salesEndDate) {
             const endDate = new Date(ticket.salesEndDate);
@@ -2745,7 +2767,7 @@ export class DatabaseStorage implements IStorage {
             }
             if (now > endDate) return false;
           }
-          
+
           // Check if sales have started
           if (ticket.salesStartDate) {
             const startDate = new Date(ticket.salesStartDate);
@@ -2755,34 +2777,34 @@ export class DatabaseStorage implements IStorage {
             }
             if (now < startDate) return false;
           }
-          
+
           return true;
         });
-        
+
         // Find the lowest price among active tickets
         let lowestActivePrice = null;
         if (activeTickets.length > 0) {
           lowestActivePrice = Math.min(...activeTickets.map(t => t.price || 0));
         }
-        
+
         return {
           ...event,
           lowestActivePrice
         };
       })
     );
-    
+
     return eventsWithLowestPrice;
   }
-  
+
   async getUpcomingEvents(): Promise<Event[]> {
     const allEvents = await this.getAllEvents();
     const now = new Date();
-    
+
     return allEvents.filter(event => {
       try {
         const eventDate = new Date(event.date);
-        
+
         // If we have an end time, use that for comparison
         if (event.endTime) {
           const [hours, minutes] = event.endTime.split(':').map(Number);
@@ -2790,7 +2812,7 @@ export class DatabaseStorage implements IStorage {
           eventEndDateTime.setHours(hours, minutes, 0, 0);
           return eventEndDateTime >= now;
         }
-        
+
         // If we have a duration and start time, calculate end time
         if (event.duration && event.time) {
           const [hours, minutes] = event.time.split(':').map(Number);
@@ -2799,7 +2821,7 @@ export class DatabaseStorage implements IStorage {
           const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
           return eventEndDateTime >= now;
         }
-        
+
         // If we have a start time but no end time/duration
         if (event.time) {
           const [hours, minutes] = event.time.split(':').map(Number);
@@ -2809,7 +2831,7 @@ export class DatabaseStorage implements IStorage {
           const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
           return eventEndDateTime >= now;
         }
-        
+
         // If no time specified, compare just the date
         const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
         const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -2824,11 +2846,11 @@ export class DatabaseStorage implements IStorage {
   async getPastEvents(): Promise<Event[]> {
     const allEvents = await this.getAllEvents();
     const now = new Date();
-    
+
     return allEvents.filter(event => {
       try {
         const eventDate = new Date(event.date);
-        
+
         // If we have an end time, use that for comparison
         if (event.endTime) {
           const [hours, minutes] = event.endTime.split(':').map(Number);
@@ -2836,7 +2858,7 @@ export class DatabaseStorage implements IStorage {
           eventEndDateTime.setHours(hours, minutes, 0, 0);
           return eventEndDateTime < now;
         }
-        
+
         // If we have a duration and start time, calculate end time
         if (event.duration && event.time) {
           const [hours, minutes] = event.time.split(':').map(Number);
@@ -2845,7 +2867,7 @@ export class DatabaseStorage implements IStorage {
           const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
           return eventEndDateTime < now;
         }
-        
+
         // If we have a start time but no end time/duration
         if (event.time) {
           const [hours, minutes] = event.time.split(':').map(Number);
@@ -2855,7 +2877,7 @@ export class DatabaseStorage implements IStorage {
           const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
           return eventEndDateTime < now;
         }
-        
+
         // If no time specified, compare just the date
         const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
         const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -2868,10 +2890,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createEvent(eventData: InsertEvent): Promise<Event> {
-    const accessCode = eventData.isSocaPassportEnabled 
+    const accessCode = eventData.isSocaPassportEnabled
       ? crypto.randomBytes(16).toString('hex')
       : null;
-    
+
     const [event] = await db
       .insert(events)
       .values({
@@ -2883,21 +2905,21 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return event;
   }
-  
+
   async updateEvent(id: number, eventData: Partial<InsertEvent>): Promise<Event | undefined> {
     const existingEvent = await this.getEvent(id);
     if (!existingEvent) {
       return undefined;
     }
-    
+
     let accessCode = existingEvent.accessCode;
     if (eventData.isSocaPassportEnabled && !accessCode) {
       accessCode = crypto.randomBytes(16).toString('hex');
     }
-    
+
     const updateData = { ...eventData };
     delete updateData.accessCode;
-    
+
     const [event] = await db
       .update(events)
       .set({
@@ -2909,7 +2931,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return event;
   }
-  
+
   async deleteEvent(id: number): Promise<boolean> {
     const result = await db
       .delete(events)
@@ -2926,11 +2948,11 @@ export class DatabaseStorage implements IStorage {
             category, sizes, featured, etsy_url as "etsyUrl", created_at as "createdAt", 
             updated_at as "updatedAt" FROM products WHERE id = ${id}`
       );
-      
+
       if (result.rows.length === 0) {
         return undefined;
       }
-      
+
       // Add default inventory fields
       return {
         ...(result.rows[0] as Product),
@@ -2954,7 +2976,7 @@ export class DatabaseStorage implements IStorage {
             category, sizes, featured, etsy_url as "etsyUrl", created_at as "createdAt", 
             updated_at as "updatedAt" FROM products`
       );
-      
+
       // Add default inventory fields that may not exist in the database
       return (result.rows as Product[]).map(product => ({
         ...product,
@@ -2978,7 +3000,7 @@ export class DatabaseStorage implements IStorage {
             category, sizes, featured, etsy_url as "etsyUrl", created_at as "createdAt", 
             updated_at as "updatedAt" FROM products WHERE featured = true`
       );
-      
+
       // Add default inventory fields that may not exist in the database
       return (result.rows as Product[]).map(product => ({
         ...product,
@@ -2989,7 +3011,7 @@ export class DatabaseStorage implements IStorage {
       }));
     } catch (error) {
       console.error('Error in getFeaturedProducts:', error);
-      
+
       // Ultimate fallback - try to get all products and filter in memory
       try {
         const result = await db.execute(
@@ -2997,7 +3019,7 @@ export class DatabaseStorage implements IStorage {
               category, sizes, featured, etsy_url as "etsyUrl", created_at as "createdAt", 
               updated_at as "updatedAt" FROM products`
         );
-        
+
         return (result.rows as Product[])
           .filter(product => product.featured === true)
           .map(product => ({
@@ -3025,7 +3047,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return product;
   }
-  
+
   async updateProduct(id: number, productData: Partial<InsertProduct>): Promise<Product | undefined> {
     const [product] = await db
       .update(products)
@@ -3037,7 +3059,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return product;
   }
-  
+
   async deleteProduct(id: number): Promise<boolean> {
     const result = await db
       .delete(products)
@@ -3093,13 +3115,13 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return livestream;
   }
-  
+
   async updateLivestream(id: number, livestreamData: Partial<Livestream>): Promise<Livestream | undefined> {
     const livestream = await this.getLivestream(id);
     if (!livestream) {
       return undefined;
     }
-    
+
     const [updatedLivestream] = await db
       .update(livestreams)
       .set({
@@ -3108,15 +3130,15 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(livestreams.id, id))
       .returning();
-    
+
     return updatedLivestream;
   }
-  
+
   async deleteLivestream(id: number): Promise<boolean> {
     const result = await db
       .delete(livestreams)
       .where(eq(livestreams.id, id));
-    
+
     return result.rowCount ? result.rowCount > 0 : false;
   }
 
@@ -3235,7 +3257,7 @@ export class DatabaseStorage implements IStorage {
         comments: sql`${posts.comments} + 1`
       })
       .where(eq(posts.id, comment.postId));
-      
+
     // Return comment with user data
     return {
       ...comment,
@@ -3246,25 +3268,25 @@ export class DatabaseStorage implements IStorage {
       }
     };
   }
-  
+
   async getCommentById(id: number): Promise<Comment | undefined> {
     return await this.getComment(id);
   }
-  
+
   async deleteComment(id: number): Promise<boolean> {
     try {
       const result = await db
         .delete(comments)
         .where(eq(comments.id, id))
         .returning();
-        
+
       return result.length > 0;
     } catch (error) {
       console.error("Error deleting comment:", error);
       return false;
     }
   }
-  
+
   async decrementPostCommentCount(postId: number): Promise<void> {
     await db
       .update(posts)
@@ -3368,32 +3390,32 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
-  
+
   // Ticket operations
   async getTicket(id: number): Promise<Ticket | undefined> {
     const [ticket] = await db
       .select()
       .from(tickets)
       .where(eq(tickets.id, id));
-    
+
     return ticket || undefined;
   }
-  
+
   async getAllTickets(): Promise<Ticket[]> {
     return await db
       .select()
       .from(tickets);
   }
-  
+
   async updateTicket(id: number, ticketData: Partial<InsertTicket>): Promise<Ticket | undefined> {
     try {
       console.log("Updating ticket with ID:", id, "Data:", JSON.stringify(ticketData, null, 2));
-      
+
       // Handle dates appropriately
       let dataToUpdate: any = {
         updatedAt: new Date()
       };
-      
+
       // Only include fields that are actually present to avoid null overrides
       Object.keys(ticketData).forEach(key => {
         if (ticketData[key] !== undefined) {
@@ -3420,7 +3442,7 @@ export class DatabaseStorage implements IStorage {
           }
         }
       });
-      
+
       // Safely process dates - convert string dates to Date objects, but only if they're valid
       if (typeof dataToUpdate.salesStartDate === 'string' && dataToUpdate.salesStartDate) {
         const startDate = new Date(dataToUpdate.salesStartDate);
@@ -3430,7 +3452,7 @@ export class DatabaseStorage implements IStorage {
           delete dataToUpdate.salesStartDate; // Remove invalid date
         }
       }
-      
+
       if (typeof dataToUpdate.salesEndDate === 'string' && dataToUpdate.salesEndDate) {
         const endDate = new Date(dataToUpdate.salesEndDate);
         if (!isNaN(endDate.getTime())) {
@@ -3439,19 +3461,19 @@ export class DatabaseStorage implements IStorage {
           delete dataToUpdate.salesEndDate; // Remove invalid date
         }
       }
-      
+
       // If dates are null/undefined in the input, keep them that way without trying to convert
       if (ticketData.salesStartDate === null) dataToUpdate.salesStartDate = null;
       if (ticketData.salesEndDate === null) dataToUpdate.salesEndDate = null;
-      
+
       console.log("Processed update data:", JSON.stringify(dataToUpdate, null, 2));
-      
+
       const [updatedTicket] = await db
         .update(tickets)
         .set(dataToUpdate)
         .where(eq(tickets.id, id))
         .returning();
-      
+
       console.log("Updated ticket result:", updatedTicket ? "Success" : "No ticket returned");
       return updatedTicket || undefined;
     } catch (error) {
@@ -3459,27 +3481,27 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async deleteTicket(id: number): Promise<boolean> {
     try {
       await db
         .delete(tickets)
         .where(eq(tickets.id, id));
-      
+
       return true;
     } catch (error) {
       console.error("Error deleting ticket:", error);
       return false;
     }
   }
-  
+
   async getTicketPurchasesByTicketId(ticketId: number): Promise<TicketPurchase[]> {
     return await db
       .select()
       .from(ticketPurchases)
       .where(eq(ticketPurchases.ticketId, ticketId));
   }
-  
+
   async createTicket(ticketData: InsertTicket): Promise<Ticket> {
     const [ticket] = await db
       .insert(tickets)
@@ -3491,7 +3513,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return ticket;
   }
-  
+
   async getTicketsByEventId(eventId: number): Promise<Ticket[]> {
     return await db
       .select()
@@ -3511,22 +3533,22 @@ export class DatabaseStorage implements IStorage {
         )
       );
   }
-  
+
   // Ticket purchase operations
   async createTicketPurchase(ticketPurchaseData: InsertTicketPurchase): Promise<TicketPurchase> {
     try {
       console.log("Creating ticket purchase with data:", ticketPurchaseData);
-      
+
       // Make sure we have the ticketPurchases table defined
       if (!ticketPurchases) {
         throw new Error('ticketPurchases table is not defined');
       }
-      
+
       // Make sure the data has the required fields for insertion
       if (!ticketPurchaseData.userId || !ticketPurchaseData.eventId || !ticketPurchaseData.orderId || !ticketPurchaseData.qrCodeData) {
         throw new Error(`Missing required fields for ticket purchase: ${JSON.stringify(ticketPurchaseData)}`);
       }
-      
+
       const [ticketPurchase] = await db
         .insert(ticketPurchases)
         .values({
@@ -3535,7 +3557,7 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date(),
         })
         .returning();
-      
+
       console.log("Successfully created ticket purchase:", ticketPurchase);
       return ticketPurchase;
     } catch (error) {
@@ -3543,7 +3565,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getTicketPurchasesByUserId(userId: number): Promise<TicketPurchase[]> {
     return await db
       .select()
@@ -3551,7 +3573,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(ticketPurchases.userId, userId))
       .orderBy(desc(ticketPurchases.purchaseDate));
   }
-  
+
   async getTicketPurchasesByEventId(eventId: number): Promise<TicketPurchase[]> {
     return await db
       .select()
@@ -3559,25 +3581,25 @@ export class DatabaseStorage implements IStorage {
       .where(eq(ticketPurchases.eventId, eventId))
       .orderBy(desc(ticketPurchases.purchaseDate));
   }
-  
+
   async getTicketPurchase(id: number): Promise<TicketPurchase | undefined> {
     const [ticketPurchase] = await db
       .select()
       .from(ticketPurchases)
       .where(eq(ticketPurchases.id, id));
-      
+
     return ticketPurchase;
   }
-  
+
   async getTicketPurchaseByQrCodeData(qrCodeData: string): Promise<TicketPurchase | undefined> {
     const [ticketPurchase] = await db
       .select()
       .from(ticketPurchases)
       .where(eq(ticketPurchases.qrCodeData, qrCodeData));
-      
+
     return ticketPurchase;
   }
-  
+
   async getTicketPurchaseByIds(ticketId: number, orderId: number): Promise<TicketPurchase | undefined> {
     const [ticketPurchase] = await db
       .select()
@@ -3588,10 +3610,10 @@ export class DatabaseStorage implements IStorage {
           eq(ticketPurchases.orderId, orderId)
         )
       );
-      
+
     return ticketPurchase;
   }
-  
+
   async updateTicketPurchase(id: number, updates: Partial<InsertTicketPurchase>): Promise<TicketPurchase | undefined> {
     const [ticketPurchase] = await db
       .update(ticketPurchases)
@@ -3601,7 +3623,7 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(ticketPurchases.id, id))
       .returning();
-      
+
     return ticketPurchase;
   }
 
@@ -3638,7 +3660,7 @@ export class DatabaseStorage implements IStorage {
           ORDER BY tp.purchase_date DESC
         `
       );
-      
+
       return result.rows.map(row => ({
         id: row.id,
         attendeeEmail: row.attendeeEmail,
@@ -3656,7 +3678,7 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
-  
+
   // Discount code operations
   async createDiscountCode(discountCodeData: InsertDiscountCode): Promise<DiscountCode> {
     const [discountCode] = await db
@@ -3669,7 +3691,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return discountCode;
   }
-  
+
   async getDiscountCodeByCode(code: string): Promise<DiscountCode | undefined> {
     const [discountCode] = await db
       .select()
@@ -3677,7 +3699,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(discountCodes.code, code));
     return discountCode;
   }
-  
+
   // Order operations
   async createOrder(orderData: InsertOrder): Promise<Order> {
     const [order] = await db
@@ -3690,13 +3712,13 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return order;
   }
-  
+
   async getAllOrders(): Promise<Order[]> {
     return await db
       .select()
       .from(orders);
   }
-  
+
   async getOrderById(id: number): Promise<Order | undefined> {
     const [order] = await db
       .select()
@@ -3704,7 +3726,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(orders.id, id));
     return order;
   }
-  
+
   // Media upload operations
   async createMediaUpload(mediaUploadData: InsertMediaUpload): Promise<MediaUpload> {
     const [mediaUpload] = await db
@@ -3717,7 +3739,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return mediaUpload;
   }
-  
+
   async getMediaUploadsByRelatedEntity(relatedEntityType: string, relatedEntityId: number): Promise<MediaUpload[]> {
     return await db
       .select()
@@ -3729,7 +3751,7 @@ export class DatabaseStorage implements IStorage {
         )
       );
   }
-  
+
   // Inventory management - Product Variants
   async getProductVariantsByProductId(productId: number): Promise<ProductVariant[]> {
     return await db
@@ -3737,7 +3759,7 @@ export class DatabaseStorage implements IStorage {
       .from(productVariants)
       .where(eq(productVariants.productId, productId));
   }
-  
+
   async getProductVariant(id: number): Promise<ProductVariant | undefined> {
     const [variant] = await db
       .select()
@@ -3745,7 +3767,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(productVariants.id, id));
     return variant;
   }
-  
+
   async createProductVariant(variantData: InsertProductVariant): Promise<ProductVariant> {
     const [variant] = await db
       .insert(productVariants)
@@ -3755,16 +3777,16 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date()
       })
       .returning();
-    
+
     // Update product to mark that it has variants
     await db
       .update(products)
       .set({ hasVariants: true })
       .where(eq(products.id, variant.productId));
-      
+
     return variant;
   }
-  
+
   async updateProductVariant(id: number, variantData: Partial<InsertProductVariant>): Promise<ProductVariant | undefined> {
     const [variant] = await db
       .update(productVariants)
@@ -3774,21 +3796,21 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(productVariants.id, id))
       .returning();
-      
+
     return variant;
   }
-  
+
   async deleteProductVariant(id: number): Promise<boolean> {
     const variant = await this.getProductVariant(id);
     if (!variant) return false;
-    
+
     const result = await db
       .delete(productVariants)
       .where(eq(productVariants.id, id));
-      
+
     // Check if there are any remaining variants for this product
     const remainingVariants = await this.getProductVariantsByProductId(variant.productId);
-    
+
     // If no variants left, update the product to show it no longer has variants
     if (remainingVariants.length === 0) {
       await db
@@ -3796,10 +3818,10 @@ export class DatabaseStorage implements IStorage {
         .set({ hasVariants: false })
         .where(eq(products.id, variant.productId));
     }
-    
+
     return result.rowCount > 0;
   }
-  
+
   // Ticket scan operations
   async createTicketScan(ticketScanData: InsertTicketScan): Promise<TicketScan> {
     const [ticketScan] = await db
@@ -3815,10 +3837,10 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date()
       })
       .returning();
-    
+
     return ticketScan;
   }
-  
+
   async getTicketScansByTicketId(ticketId: number): Promise<TicketScan[]> {
     return await db
       .select()
@@ -3826,7 +3848,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(ticketScans.ticketId, ticketId))
       .orderBy(desc(ticketScans.scannedAt));
   }
-  
+
   async getTicketScansByOrderId(orderId: number): Promise<TicketScan[]> {
     return await db
       .select()
@@ -3864,19 +3886,19 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   // Analytics operations
-  
+
   // Page Views
   async createPageView(pageViewData: InsertPageView): Promise<PageView> {
     try {
       console.log('Creating page view with data:', JSON.stringify(pageViewData));
-      
+
       // Make sure we have required fields
       if (!pageViewData.path || !pageViewData.sessionId) {
         throw new Error('Missing required fields for page view');
       }
-      
+
       const [pageView] = await db
         .insert(pageViews)
         .values({
@@ -3884,7 +3906,7 @@ export class DatabaseStorage implements IStorage {
           timestamp: new Date()
         })
         .returning();
-        
+
       console.log('Page view created successfully');
       return pageView;
     } catch (error) {
@@ -3892,7 +3914,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getPageViewsByPath(path: string): Promise<PageView[]> {
     return await db
       .select()
@@ -3900,7 +3922,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(pageViews.path, path))
       .orderBy(desc(pageViews.timestamp));
   }
-  
+
   async getPageViewsByUserId(userId: number): Promise<PageView[]> {
     return await db
       .select()
@@ -3915,7 +3937,7 @@ export class DatabaseStorage implements IStorage {
       .from(pageViews)
       .orderBy(desc(pageViews.timestamp));
   }
-  
+
   // Event Analytics
   async createEventAnalytic(eventAnalyticData: InsertEventAnalytic): Promise<EventAnalytic> {
     const [eventAnalytic] = await db
@@ -3928,7 +3950,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return eventAnalytic;
   }
-  
+
   async getEventAnalyticsByEventId(eventId: number): Promise<EventAnalytic | undefined> {
     const [eventAnalytic] = await db
       .select()
@@ -3936,14 +3958,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(eventAnalytics.eventId, eventId));
     return eventAnalytic;
   }
-  
+
   async incrementEventViews(eventId: number): Promise<EventAnalytic | undefined> {
     const existing = await this.getEventAnalyticsByEventId(eventId);
-    
+
     if (existing) {
       const [updated] = await db
         .update(eventAnalytics)
-        .set({ 
+        .set({
           views: existing.views + 1,
           updatedAt: new Date()
         })
@@ -3959,14 +3981,14 @@ export class DatabaseStorage implements IStorage {
       });
     }
   }
-  
+
   async incrementEventTicketClicks(eventId: number): Promise<EventAnalytic | undefined> {
     const existing = await this.getEventAnalyticsByEventId(eventId);
-    
+
     if (existing) {
       const [updated] = await db
         .update(eventAnalytics)
-        .set({ 
+        .set({
           ticketClicks: existing.ticketClicks + 1,
           updatedAt: new Date()
         })
@@ -3982,14 +4004,14 @@ export class DatabaseStorage implements IStorage {
       });
     }
   }
-  
+
   async incrementEventTicketSales(eventId: number): Promise<EventAnalytic | undefined> {
     const existing = await this.getEventAnalyticsByEventId(eventId);
-    
+
     if (existing) {
       const [updated] = await db
         .update(eventAnalytics)
-        .set({ 
+        .set({
           ticketSales: existing.ticketSales + 1,
           updatedAt: new Date()
         })
@@ -4005,7 +4027,7 @@ export class DatabaseStorage implements IStorage {
       });
     }
   }
-  
+
   // Product Analytics
   async createProductAnalytic(productAnalyticData: InsertProductAnalytic): Promise<ProductAnalytic> {
     const [productAnalytic] = await db
@@ -4018,7 +4040,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return productAnalytic;
   }
-  
+
   async getProductAnalyticsByProductId(productId: number): Promise<ProductAnalytic | undefined> {
     const [productAnalytic] = await db
       .select()
@@ -4026,14 +4048,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(productAnalytics.productId, productId));
     return productAnalytic;
   }
-  
+
   async incrementProductViews(productId: number): Promise<ProductAnalytic | undefined> {
     const existing = await this.getProductAnalyticsByProductId(productId);
-    
+
     if (existing) {
       const [updated] = await db
         .update(productAnalytics)
-        .set({ 
+        .set({
           views: existing.views + 1,
           updatedAt: new Date()
         })
@@ -4049,14 +4071,14 @@ export class DatabaseStorage implements IStorage {
       });
     }
   }
-  
+
   async incrementProductDetailClicks(productId: number): Promise<ProductAnalytic | undefined> {
     const existing = await this.getProductAnalyticsByProductId(productId);
-    
+
     if (existing) {
       const [updated] = await db
         .update(productAnalytics)
-        .set({ 
+        .set({
           detailClicks: existing.detailClicks + 1,
           updatedAt: new Date()
         })
@@ -4072,14 +4094,14 @@ export class DatabaseStorage implements IStorage {
       });
     }
   }
-  
+
   async incrementProductPurchaseClicks(productId: number): Promise<ProductAnalytic | undefined> {
     const existing = await this.getProductAnalyticsByProductId(productId);
-    
+
     if (existing) {
       const [updated] = await db
         .update(productAnalytics)
-        .set({ 
+        .set({
           purchaseClicks: existing.purchaseClicks + 1,
           updatedAt: new Date()
         })
@@ -4095,7 +4117,7 @@ export class DatabaseStorage implements IStorage {
       });
     }
   }
-  
+
   // User Events
   async createUserEvent(userEventData: InsertUserEvent): Promise<UserEvent> {
     const [userEvent] = await db
@@ -4107,7 +4129,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return userEvent;
   }
-  
+
   async getUserEventsByUserId(userId: number): Promise<UserEvent[]> {
     return await db
       .select()
@@ -4115,7 +4137,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(userEvents.userId, userId))
       .orderBy(desc(userEvents.timestamp));
   }
-  
+
   // Daily Stats
   async createDailyStat(dailyStatData: InsertDailyStat): Promise<DailyStat> {
     const [dailyStat] = await db
@@ -4124,34 +4146,34 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return dailyStat;
   }
-  
+
   async getDailyStatByDate(date: Date): Promise<DailyStat | undefined> {
     const dateStr = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-    
+
     const [dailyStat] = await db
       .select()
       .from(dailyStats)
       .where(sql`${dailyStats.date}::text = ${dateStr}`);
-    
+
     return dailyStat;
   }
-  
+
   async updateDailyStat(date: Date, updates: Partial<InsertDailyStat>): Promise<DailyStat | undefined> {
     const dateStr = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-    
+
     const [updated] = await db
       .update(dailyStats)
       .set(updates)
       .where(sql`${dailyStats.date}::text = ${dateStr}`)
       .returning();
-    
+
     return updated;
   }
-  
+
   async getDailyStatsByDateRange(startDate: Date, endDate: Date): Promise<DailyStat[]> {
     const startDateStr = startDate.toISOString().split('T')[0];
     const endDateStr = endDate.toISOString().split('T')[0];
-    
+
     return await db
       .select()
       .from(dailyStats)
@@ -4163,11 +4185,11 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(dailyStats.date);
   }
-  
+
   // Inventory management - Inventory History
   // Note: These methods are safely stubbed to avoid schema migration issues
   // Will be properly implemented after database migration is complete
-  
+
   async recordInventoryChange(change: InsertInventoryHistory): Promise<InventoryHistory> {
     try {
       const [history] = await db
@@ -4184,7 +4206,7 @@ export class DatabaseStorage implements IStorage {
           timestamp: new Date()
         })
         .returning();
-        
+
       return history;
     } catch (error) {
       console.error('Error recording inventory change:', error);
@@ -4205,7 +4227,7 @@ export class DatabaseStorage implements IStorage {
       };
     }
   }
-  
+
   async getInventoryHistoryByProduct(productId: number): Promise<InventoryHistory[]> {
     try {
       return await db
@@ -4218,7 +4240,7 @@ export class DatabaseStorage implements IStorage {
       return []; // Return empty array on error
     }
   }
-  
+
   async getInventoryHistoryByVariant(variantId: number): Promise<InventoryHistory[]> {
     try {
       return await db
@@ -4231,7 +4253,7 @@ export class DatabaseStorage implements IStorage {
       return []; // Return empty array on error
     }
   }
-  
+
   async getRecentInventoryChanges(limit: number = 20): Promise<InventoryHistory[]> {
     try {
       return await db
@@ -4244,7 +4266,7 @@ export class DatabaseStorage implements IStorage {
       return []; // Return empty array on error
     }
   }
-  
+
   // Inventory management - Stock operations
   async updateProductStock(productId: number, newStockLevel: number, changeType: string, userId: number, reason?: string): Promise<Product> {
     try {
@@ -4253,10 +4275,10 @@ export class DatabaseStorage implements IStorage {
       if (!product) {
         throw new Error(`Product with ID ${productId} not found`);
       }
-      
+
       // Get old stock level
       const oldStockLevel = product.stockLevel || 0;
-      
+
       // Update the product with stockLevel if possible
       try {
         const [updatedProduct] = await db
@@ -4268,7 +4290,7 @@ export class DatabaseStorage implements IStorage {
           })
           .where(eq(products.id, productId))
           .returning();
-          
+
         // Try to record the inventory change
         try {
           await this.recordInventoryChange({
@@ -4283,7 +4305,7 @@ export class DatabaseStorage implements IStorage {
         } catch (err) {
           console.error('Failed to record inventory change:', err);
         }
-        
+
         return updatedProduct;
       } catch (updateError) {
         console.error('Error updating product stock, likely schema mismatch:', updateError);
@@ -4295,7 +4317,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async updateVariantStock(variantId: number, newStockLevel: number, changeType: string, userId: number, reason?: string): Promise<ProductVariant> {
     try {
       // First get current variant
@@ -4303,10 +4325,10 @@ export class DatabaseStorage implements IStorage {
       if (!variant) {
         throw new Error(`Product variant with ID ${variantId} not found`);
       }
-      
+
       // Get old stock level
       const oldStockLevel = variant.stockLevel || 0;
-      
+
       // Update the variant
       const [updatedVariant] = await db
         .update(productVariants)
@@ -4317,7 +4339,7 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(productVariants.id, variantId))
         .returning();
-        
+
       // Try to record the inventory change
       try {
         await this.recordInventoryChange({
@@ -4332,22 +4354,22 @@ export class DatabaseStorage implements IStorage {
       } catch (err) {
         console.error('Failed to record variant inventory change:', err);
       }
-      
+
       return updatedVariant;
     } catch (error) {
       console.error('Error in updateVariantStock:', error);
       throw error;
     }
   }
-  
+
   async checkProductAvailability(productId: number, quantity: number = 1): Promise<boolean> {
     try {
       const product = await this.getProduct(productId);
       if (!product) return false;
-      
+
       // If we can't determine hasVariants, check both options
-      const hasVariants = product.hasVariants === true; 
-      
+      const hasVariants = product.hasVariants === true;
+
       if (hasVariants) {
         try {
           const variants = await this.getProductVariantsByProductId(productId);
@@ -4357,7 +4379,7 @@ export class DatabaseStorage implements IStorage {
           return false;
         }
       }
-      
+
       // Otherwise check the product stock directly if stockLevel exists
       return product.stockLevel !== undefined ? product.stockLevel >= quantity : true;
     } catch (error) {
@@ -4365,19 +4387,19 @@ export class DatabaseStorage implements IStorage {
       return false; // Assume not available on error
     }
   }
-  
+
   async checkVariantAvailability(variantId: number, quantity: number = 1): Promise<boolean> {
     try {
       const variant = await this.getProductVariant(variantId);
       if (!variant) return false;
-      
+
       return variant.stockLevel !== undefined ? variant.stockLevel >= quantity : true;
     } catch (error) {
       console.error('Error in checkVariantAvailability:', error);
       return false; // Assume not available on error
     }
   }
-  
+
   async getLowStockProducts(threshold: number = 5): Promise<Product[]> {
     try {
       // Try with new schema properties
@@ -4485,7 +4507,7 @@ export class DatabaseStorage implements IStorage {
         .leftJoin(tickets, eq(ticketPurchases.ticketId, tickets.id))
         .where(eq(ticketPurchases.price, '0'))
         .orderBy(desc(ticketPurchases.purchaseDate));
-      
+
       return result;
     } catch (error) {
       console.error('Error fetching free ticket purchases:', error);
@@ -4519,7 +4541,7 @@ export class DatabaseStorage implements IStorage {
           )
         )
         .orderBy(desc(ticketPurchases.purchaseDate));
-      
+
       return result;
     } catch (error) {
       console.error('Error fetching recent ticket purchases:', error);
@@ -4659,14 +4681,14 @@ export class DatabaseStorage implements IStorage {
 
   async getAllMediaCollections(options?: { visibility?: string; isActive?: boolean }): Promise<MediaCollection[]> {
     let query = db.select().from(mediaCollections);
-    
+
     if (options?.visibility) {
       query = query.where(eq(mediaCollections.visibility, options.visibility));
     }
     if (options?.isActive !== undefined) {
       query = query.where(eq(mediaCollections.isActive, options.isActive));
     }
-    
+
     return await query;
   }
 
@@ -4690,7 +4712,7 @@ export class DatabaseStorage implements IStorage {
   async createMediaAsset(assetData: InsertMediaAsset): Promise<MediaAsset> {
     const result = await db.insert(mediaAssets).values(assetData).returning();
     const asset = result[0];
-    
+
     // Add URL fields for frontend display
     return {
       ...asset,
@@ -4704,9 +4726,9 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(mediaAssets)
       .where(eq(mediaAssets.id, id));
-      
+
     if (!asset) return undefined;
-    
+
     // Add URL fields for frontend display
     return {
       ...asset,
@@ -4720,21 +4742,21 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(mediaAssets)
       .where(eq(mediaAssets.collectionId, collectionId));
-    
+
     if (options?.isPublished !== undefined) {
       query = query.where(eq(mediaAssets.isPublished, options.isPublished));
     }
-    
+
     if (options?.limit) {
       query = query.limit(options.limit);
     }
-    
+
     if (options?.offset) {
       query = query.offset(options.offset);
     }
-    
+
     const assets = await query;
-    
+
     // Add URL fields for frontend display
     return assets.map(asset => ({
       ...asset,
@@ -4762,7 +4784,7 @@ export class DatabaseStorage implements IStorage {
   async incrementAssetViewCount(id: number): Promise<boolean> {
     const result = await db
       .update(mediaAssets)
-      .set({ 
+      .set({
         viewCount: sql`${mediaAssets.viewCount} + 1`,
         lastViewedAt: new Date()
       })
@@ -4894,7 +4916,7 @@ export class DatabaseStorage implements IStorage {
   async updatePassportProfile(userId: number, data: Partial<InsertPassportProfile>): Promise<PassportProfile | undefined> {
     const [profile] = await db
       .update(passportProfiles)
-      .set({ 
+      .set({
         ...data,
         updatedAt: new Date()
       })
@@ -4906,7 +4928,7 @@ export class DatabaseStorage implements IStorage {
   async addPointsToProfile(userId: number, points: number): Promise<PassportProfile | undefined> {
     const [profile] = await db
       .update(passportProfiles)
-      .set({ 
+      .set({
         totalPoints: sql`${passportProfiles.totalPoints} + ${points}`,
         updatedAt: new Date()
       })
@@ -4925,17 +4947,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPassportStampsByUserId(userId: number, limit?: number): Promise<PassportStamp[]> {
-    let query = db
-      .select()
+    const query = db
+      .select({
+        stamp: passportStamps,
+        event: events
+      })
       .from(passportStamps)
+      .leftJoin(events, eq(passportStamps.eventId, events.id))
       .where(eq(passportStamps.userId, userId))
       .orderBy(desc(passportStamps.createdAt));
-    
-    if (limit) {
-      query = query.limit(limit) as any;
-    }
-    
-    return await query;
+
+    const rows = limit ? await query.limit(limit) : await query;
+
+    return rows.map((r: any) => ({
+      ...r.stamp,
+      eventTitle: r.event?.title,
+      eventImage: r.event?.imageUrl,
+      stampImageUrl: r.event?.stampImageUrl
+    })) as any;
   }
 
   async getPassportStampsByEventId(eventId: number): Promise<PassportStamp[]> {
@@ -5034,11 +5063,11 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(passportRewards)
       .where(eq(passportRewards.userId, userId));
-    
+
     if (status) {
       query = query.where(eq(passportRewards.status, status)) as any;
     }
-    
+
     return await query.orderBy(desc(passportRewards.createdAt));
   }
 
@@ -5062,7 +5091,7 @@ export class DatabaseStorage implements IStorage {
   async redeemPassportReward(id: number): Promise<PassportReward | undefined> {
     const [reward] = await db
       .update(passportRewards)
-      .set({ 
+      .set({
         status: 'REDEEMED',
         redeemedAt: new Date()
       })
@@ -5084,11 +5113,11 @@ export class DatabaseStorage implements IStorage {
     let query = db
       .select()
       .from(passportMissions);
-    
+
     if (isActive !== undefined) {
       query = query.where(eq(passportMissions.isActive, isActive)) as any;
     }
-    
+
     return await query.orderBy(desc(passportMissions.createdAt));
   }
 
@@ -5107,7 +5136,7 @@ export class DatabaseStorage implements IStorage {
   async updatePassportMission(id: number, data: Partial<InsertPassportMission>): Promise<PassportMission | undefined> {
     const [mission] = await db
       .update(passportMissions)
-      .set({ 
+      .set({
         ...data,
         updatedAt: new Date()
       })
@@ -5121,11 +5150,11 @@ export class DatabaseStorage implements IStorage {
       .select({ count: sql<number>`count(*)::int` })
       .from(passportProfiles)
       .where(gt(passportProfiles.totalPoints, 0));
-    
+
     const [stampCount] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(passportStamps);
-    
+
     return {
       totalPassportUsers: userCount?.count || 0,
       totalStampsIssued: stampCount?.count || 0
@@ -5362,18 +5391,18 @@ export class DatabaseStorage implements IStorage {
       .from(passportCreditTransactions)
       .where(eq(passportCreditTransactions.userId, userId))
       .orderBy(desc(passportCreditTransactions.createdAt));
-    
+
     if (limit) {
       query.limit(limit);
     }
-    
+
     return await query;
   }
 
   async getUserCreditBalance(userId: number): Promise<number> {
     const profile = await this.getPassportProfile(userId);
     if (!profile) return 0;
-    
+
     // Get latest transaction balance or use profile totalPoints
     const [latestTransaction] = await db
       .select()
@@ -5381,20 +5410,20 @@ export class DatabaseStorage implements IStorage {
       .where(eq(passportCreditTransactions.userId, userId))
       .orderBy(desc(passportCreditTransactions.createdAt))
       .limit(1);
-    
+
     return latestTransaction?.balanceAfter ?? profile.totalPoints;
   }
 
   async awardCredits(
-    userId: number, 
-    amount: number, 
-    sourceType: string, 
-    sourceId?: number, 
+    userId: number,
+    amount: number,
+    sourceType: string,
+    sourceId?: number,
     memo?: string
   ): Promise<{ transaction: PassportCreditTransaction; newBalance: number }> {
     const currentBalance = await this.getUserCreditBalance(userId);
     const newBalance = currentBalance + amount;
-    
+
     const transaction = await this.createCreditTransaction({
       userId,
       delta: amount,
@@ -5403,28 +5432,28 @@ export class DatabaseStorage implements IStorage {
       sourceId,
       memo
     });
-    
+
     // Update profile totalPoints
     await this.updatePassportProfile(userId, { totalPoints: newBalance });
-    
+
     return { transaction, newBalance };
   }
 
   async deductCredits(
-    userId: number, 
-    amount: number, 
-    sourceType: string, 
-    sourceId?: number, 
+    userId: number,
+    amount: number,
+    sourceType: string,
+    sourceId?: number,
     memo?: string
   ): Promise<{ transaction: PassportCreditTransaction; newBalance: number }> {
     const currentBalance = await this.getUserCreditBalance(userId);
-    
+
     if (currentBalance < amount) {
       throw new Error('Insufficient credits');
     }
-    
+
     const newBalance = currentBalance - amount;
-    
+
     const transaction = await this.createCreditTransaction({
       userId,
       delta: -amount,
@@ -5433,10 +5462,10 @@ export class DatabaseStorage implements IStorage {
       sourceId,
       memo
     });
-    
+
     // Update profile totalPoints
     await this.updatePassportProfile(userId, { totalPoints: newBalance });
-    
+
     return { transaction, newBalance };
   }
 
@@ -5459,7 +5488,7 @@ export class DatabaseStorage implements IStorage {
       .from(passportAchievementDefinitions)
       .where(eq(passportAchievementDefinitions.isActive, true))
       .orderBy(passportAchievementDefinitions.sortOrder, passportAchievementDefinitions.name);
-    
+
     if (category) {
       return await db
         .select()
@@ -5472,7 +5501,7 @@ export class DatabaseStorage implements IStorage {
         )
         .orderBy(passportAchievementDefinitions.sortOrder, passportAchievementDefinitions.name);
     }
-    
+
     return await query;
   }
 
@@ -5521,23 +5550,23 @@ export class DatabaseStorage implements IStorage {
     // Get user profile and stats
     const profile = await this.getPassportProfile(userId);
     if (!profile) return [];
-    
+
     const allAchievements = await this.getAllAchievementDefinitions();
     const userAchievements = await this.getUserAchievements(userId);
     const unlockedAchievementIds = new Set(userAchievements.map(a => a.achievementId));
-    
+
     const newlyUnlocked: PassportUserAchievement[] = [];
-    
+
     for (const achievement of allAchievements) {
       // Skip if already unlocked and not repeatable
       if (unlockedAchievementIds.has(achievement.id) && !achievement.isRepeatable) {
         continue;
       }
-      
+
       // Check criteria
       const criteria = achievement.criteria as any;
       let shouldUnlock = false;
-      
+
       if (criteria.eventsAttended && profile.totalEvents >= criteria.eventsAttended) {
         shouldUnlock = true;
       }
@@ -5547,11 +5576,11 @@ export class DatabaseStorage implements IStorage {
       if (criteria.creditsEarned && profile.totalPoints >= criteria.creditsEarned) {
         shouldUnlock = true;
       }
-      
+
       if (shouldUnlock) {
         try {
           const unlocked = await this.unlockUserAchievement(userId, achievement.id);
-          
+
           // Award bonus credits if applicable
           if (achievement.creditBonus && achievement.creditBonus > 0) {
             await this.awardCredits(
@@ -5562,7 +5591,7 @@ export class DatabaseStorage implements IStorage {
               `Achievement unlocked: ${achievement.name}`
             );
           }
-          
+
           newlyUnlocked.push(unlocked);
         } catch (error) {
           // Ignore duplicate unlock errors
@@ -5570,7 +5599,7 @@ export class DatabaseStorage implements IStorage {
         }
       }
     }
-    
+
     return newlyUnlocked;
   }
 
@@ -5590,14 +5619,14 @@ export class DatabaseStorage implements IStorage {
 
   async getAllRedemptionOffers(category?: string, tierRequirement?: string): Promise<PassportRedemptionOffer[]> {
     let conditions = [eq(passportRedemptionOffers.isActive, true)];
-    
+
     if (category) {
       conditions.push(eq(passportRedemptionOffers.category, category));
     }
     if (tierRequirement) {
       conditions.push(eq(passportRedemptionOffers.tierRequirement, tierRequirement));
     }
-    
+
     return await db
       .select()
       .from(passportRedemptionOffers)
@@ -5631,26 +5660,26 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(passportRedemptionOffers)
       .where(eq(passportRedemptionOffers.id, offerId));
-    
+
     if (!offer) {
       throw new Error('Redemption offer not found');
     }
-    
+
     if (!offer.isActive) {
       throw new Error('Redemption offer is not active');
     }
-    
+
     // Check inventory
     if (offer.inventory !== null && (offer.inventoryRemaining ?? 0) <= 0) {
       throw new Error('Redemption offer is out of stock');
     }
-    
+
     // Check user credits
     const userBalance = await this.getUserCreditBalance(userId);
     if (userBalance < offer.pointsCost) {
       throw new Error('Insufficient credits');
     }
-    
+
     // Deduct credits
     const { transaction } = await this.deductCredits(
       userId,
@@ -5659,10 +5688,10 @@ export class DatabaseStorage implements IStorage {
       offerId,
       `Redeemed: ${offer.name}`
     );
-    
+
     // Generate validation code
     const validationCode = `RDM-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
-    
+
     // Create redemption record
     const [redemption] = await db
       .insert(passportUserRedemptions)
@@ -5677,7 +5706,7 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date()
       })
       .returning();
-    
+
     // Update inventory
     if (offer.inventory !== null) {
       await db
@@ -5688,7 +5717,7 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(passportRedemptionOffers.id, offerId));
     }
-    
+
     return redemption;
   }
 
@@ -5698,7 +5727,7 @@ export class DatabaseStorage implements IStorage {
       .from(passportUserRedemptions)
       .where(eq(passportUserRedemptions.userId, userId))
       .orderBy(desc(passportUserRedemptions.createdAt));
-    
+
     if (status) {
       return await db
         .select()
@@ -5711,7 +5740,7 @@ export class DatabaseStorage implements IStorage {
         )
         .orderBy(desc(passportUserRedemptions.createdAt));
     }
-    
+
     return await query;
   }
 
@@ -5756,11 +5785,11 @@ export class DatabaseStorage implements IStorage {
       .from(passportQrCheckins)
       .where(eq(passportQrCheckins.userId, userId))
       .orderBy(desc(passportQrCheckins.checkedInAt));
-    
+
     if (limit) {
       query.limit(limit);
     }
-    
+
     return await query;
   }
 
@@ -5804,11 +5833,11 @@ export class DatabaseStorage implements IStorage {
       .from(passportSocialShares)
       .where(eq(passportSocialShares.userId, userId))
       .orderBy(desc(passportSocialShares.sharedAt));
-    
+
     if (limit) {
       query.limit(limit);
     }
-    
+
     return await query;
   }
 }
@@ -5821,7 +5850,7 @@ export class TicketDatabaseSync {
   static async syncTicketDatabases(): Promise<void> {
     try {
       console.log('Starting comprehensive ticket database synchronization...');
-      
+
       // 1. Verify all ticket-event relationships and fix remaining quantities
       await db.execute(sql`
         UPDATE tickets 
@@ -5831,7 +5860,7 @@ export class TicketDatabaseSync {
         END 
         WHERE remaining_quantity IS NULL AND quantity IS NOT NULL
       `);
-      
+
       // 2. Sync ticket purchase counts with actual inventory
       await db.execute(sql`
         UPDATE tickets 
@@ -5845,7 +5874,7 @@ export class TicketDatabaseSync {
         )
         WHERE quantity IS NOT NULL
       `);
-      
+
       // 3. Ensure all ticket purchases have valid QR codes
       await db.execute(sql`
         UPDATE ticket_purchases 
@@ -5857,7 +5886,7 @@ export class TicketDatabaseSync {
           '-', EXTRACT(EPOCH FROM NOW())::bigint)
         WHERE qr_code_data IS NULL OR qr_code_data = ''
       `);
-      
+
       // 4. Update ticket status based on inventory (preserve hidden status)
       await db.execute(sql`
         UPDATE tickets 
@@ -5868,7 +5897,7 @@ export class TicketDatabaseSync {
         END
         WHERE remaining_quantity IS NOT NULL
       `);
-      
+
       console.log('Ticket database synchronization completed successfully');
     } catch (error) {
       console.error('Error during ticket database synchronization:', error);
@@ -5886,7 +5915,7 @@ export class TicketDatabaseSync {
           updatedAt: new Date()
         })
         .where(eq(tickets.id, ticketId));
-        
+
       // Update status based on new inventory
       await db
         .update(tickets)
@@ -5908,7 +5937,7 @@ export class TicketDatabaseSync {
   static async validateTicketSystemIntegrity(): Promise<{ valid: boolean; issues: string[] }> {
     try {
       const issues: string[] = [];
-      
+
       // Check for orphaned records
       const orphanedPurchases = await db.execute(sql`
         SELECT COUNT(*) as count
@@ -5916,22 +5945,22 @@ export class TicketDatabaseSync {
         LEFT JOIN events e ON tp.event_id = e.id
         WHERE e.id IS NULL
       `);
-      
+
       if (Number(orphanedPurchases.rows[0]?.count) > 0) {
         issues.push(`${orphanedPurchases.rows[0]?.count} ticket purchases with invalid events`);
       }
-      
+
       // Check for negative inventory
       const negativeInventory = await db.execute(sql`
         SELECT COUNT(*) as count
         FROM tickets
         WHERE remaining_quantity < 0
       `);
-      
+
       if (Number(negativeInventory.rows[0]?.count) > 0) {
         issues.push(`${negativeInventory.rows[0]?.count} tickets with negative inventory`);
       }
-      
+
       // Check for duplicate QR codes
       const duplicateQRCodes = await db.execute(sql`
         SELECT COUNT(*) as count
@@ -5942,11 +5971,11 @@ export class TicketDatabaseSync {
           HAVING COUNT(*) > 1
         ) duplicates
       `);
-      
+
       if (Number(duplicateQRCodes.rows[0]?.count) > 0) {
         issues.push(`${duplicateQRCodes.rows[0]?.count} duplicate QR codes found`);
       }
-      
+
       return {
         valid: issues.length === 0,
         issues
@@ -5976,7 +6005,7 @@ export class TicketDatabaseSync {
           ), 0)
         WHERE ticket_id IS NOT NULL
       `);
-      
+
       // Update first and last scan timestamps
       await db.execute(sql`
         UPDATE ticket_purchases 
@@ -6000,7 +6029,7 @@ export class TicketDatabaseSync {
           AND ts.order_id = ticket_purchases.order_id
         )
       `);
-      
+
       console.log('Ticket data reconciliation completed');
     } catch (error) {
       console.error('Error reconciling ticket data:', error);
