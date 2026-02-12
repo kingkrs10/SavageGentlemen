@@ -29,18 +29,16 @@ function stripSenseiNote(text: string | null): string | null {
     return text.slice(0, idx).trim();
 }
 
+const DEFAULT_GEMINI_KEY = 'AIzaSyBxSi3pk_X6-vWDeeXQE-DG7F6mFG5qVaE';
+
 export default function AppsLanguageSensei() {
     const [messages, setMessages] = useState<SenseiMessage[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [settingsOpen, setSettingsOpen] = useState(false);
-    const [apiKey, setApiKey] = useState(() => localStorage.getItem(STORAGE_KEY) || '');
+    const [apiKey, setApiKey] = useState(() => localStorage.getItem(STORAGE_KEY) || DEFAULT_GEMINI_KEY);
 
     const handleSend = useCallback(async (text: string) => {
-        if (!apiKey) {
-            setSettingsOpen(true);
-            return;
-        }
 
         setError('');
 
