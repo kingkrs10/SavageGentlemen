@@ -116,10 +116,7 @@ export async function getProStatus(req: Request, res: Response) {
 }
 
 export async function handleChat(req: Request, res: Response) {
-    // Basic auth check
-    if (!req.user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
+    // Public endpoint - no auth required for free chat
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {

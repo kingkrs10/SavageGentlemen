@@ -174,7 +174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   router.post("/language-sensei/create-checkout", authenticateUser, createCheckoutSession);
   router.post("/language-sensei/stripe-webhook", express.raw({ type: 'application/json' }), handleLanguageSenseiWebhook);
   router.get("/language-sensei/pro-status", getProStatus);
-  router.post("/language-sensei/chat", authenticateUser, handleChat);
+  router.post("/language-sensei/chat", handleChat);
 
   // Register social and enhanced ticketing routes
   registerSocialRoutes(app);
