@@ -12,7 +12,7 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [theme, setTheme] = useState<Theme>('tactical');
+    const [theme, setTheme] = useState<Theme>('luxury');
     const [isTransitioning, setIsTransitioning] = useState(false);
 
     const toggleTheme = () => {
@@ -45,15 +45,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         // Also toggle dark mode class for Tailwind
         if (theme === 'tactical') {
             document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
         } else {
             document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
         }
     }, [theme]);
 
     // Initial setup
     useEffect(() => {
-        document.body.classList.add('theme-tactical');
-        document.documentElement.classList.add('dark');
+        document.body.classList.add('theme-luxury');
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
     }, []);
 
     return (

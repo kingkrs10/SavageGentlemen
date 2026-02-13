@@ -8,23 +8,23 @@ export const RealityToggle = () => {
     return (
         <button
             onClick={toggleTheme}
-            className={`fixed bottom-24 right-6 md:bottom-10 md:right-10 z-[100] p-3 rounded-full transition-all duration-500 shadow-2xl group ${theme === 'luxury'
-                    ? 'bg-white text-black hover:bg-gray-100 border border-gray-200 hover:rotate-180'
-                    : 'bg-black text-terminal-green border border-terminal-green hover:shadow-[0_0_20px_rgba(0,255,153,0.5)] hover:bg-terminal-green/10'
+            className={`fixed bottom-24 right-6 md:bottom-12 md:right-12 z-[9999] px-6 py-4 rounded-full transition-all duration-500 shadow-2xl group flex items-center gap-3 font-bold border-2 ${theme === 'luxury'
+                    ? 'bg-black text-white hover:bg-gray-900 border-black'
+                    : 'bg-black text-terminal-green border-terminal-green hover:shadow-[0_0_30px_rgba(0,255,153,0.6)]'
                 }`}
             aria-label="Toggle Reality"
-            title="Press ESC to Toggle Reality"
         >
             {theme === 'luxury' ? (
-                <Eye size={20} className="group-hover:scale-110 transition-transform" />
+                <>
+                    <Eye size={24} className="group-hover:scale-110 transition-transform" />
+                    <span>ENTER THE VOID</span>
+                </>
             ) : (
-                <EyeOff size={20} className="animate-pulse" />
+                <>
+                    <EyeOff size={24} className="animate-pulse" />
+                    <span>EXIT SIMULATION</span>
+                </>
             )}
-
-            {/* Tooltip hint */}
-            <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 px-2 py-1 text-[10px] font-mono bg-black text-white rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                {theme === 'luxury' ? 'REVEAL TRUTH (ESC)' : 'CLOAK MODE (ESC)'}
-            </span>
         </button>
     );
 };
