@@ -396,7 +396,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ errors: errorMessages });
     }
     console.error(err);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      message: "Internal server error",
+      details: err instanceof Error ? err.message : String(err)
+    });
   };
 
   // Auth routes with rate limiting and validation
