@@ -4,6 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
 import Header from "@/components/layout/Header";
+import { TacticalLayout } from "@/components/layout/TacticalLayout";
+import { HeroSection } from "@/components/home/HeroSection";
 import BottomNavigation from "@/components/layout/BottomNavigation";
 import AuthModal from "@/components/auth/AuthModal";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -201,19 +203,53 @@ function AppContent() {
       <TooltipProvider>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <div className="min-h-screen bg-background text-foreground">
-            {!isSocaPassportRoute() && (
-              <Header
-                user={user}
-                onLogout={logout}
-                onProfileClick={() => setShowAuthModal(true)}
-              />
-            )}
-
-            <main className={isSocaPassportRoute() ? "" : "container mx-auto px-4 py-8"}>
+            {isSocaPassportRoute() ? (
               <Router />
-            </main>
+            ) : (
+              <TacticalLayout>
+                <Switch>
+                  {/* Redesign Landing */}
+                  <Route path="/" component={HeroSection} />
 
-            {!isSocaPassportRoute() && <BottomNavigation />}
+                  {/* Existing Routes */}
+                  <Route path="/events" component={Events} />
+                  <Route path="/events/:id" component={EventDetail} />
+                  <Route path="/events/:id/:slug" component={EventDetail} />
+                  <Route path="/shop" component={Shop} />
+                  <Route path="/apps" component={Apps} />
+                  <Route path="/apps/language-sensei" component={AppsLanguageSensei} />
+                  <Route path="/media" component={Media} />
+                  <Route path="/live" component={Live} />
+                  <Route path="/checkout" component={Checkout} />
+                  <Route path="/payment-success" component={PaymentSuccess} />
+                  <Route path="/admin" component={Admin} />
+                  <Route path="/admin/media" component={AdminMedia} />
+                  <Route path="/password-reset" component={PasswordReset} />
+                  <Route path="/analytics" component={AnalyticsDashboard} />
+                  <Route path="/my-tickets" component={MyTickets} />
+                  <Route path="/ticket-scanner" component={TicketScanner} />
+                  <Route path="/scan-data" component={ScanDataPage} />
+                  <Route path="/user-management" component={UserManagement} />
+                  <Route path="/ticket-management" component={TicketManagement} />
+                  <Route path="/free-tickets" component={FreeTicketsDashboard} />
+                  <Route path="/email-management" component={EmailManagement} />
+                  <Route path="/profile" component={Profile} />
+                  <Route path="/settings" component={Settings} />
+                  <Route path="/ai-assistant" component={AiAssistant} />
+                  <Route path="/passport" component={Passport} />
+                  <Route path="/passport/:username" component={PassportPublicProfile} />
+                  <Route path="/socapassport" component={SocaPassport} />
+                  <Route path="/socapassport/auth" component={PassportAuth} />
+                  <Route path="/socapassport/dashboard" component={PassportDashboard} />
+                  <Route path="/socapassport/scanner" component={PassportScanner} />
+                  <Route path="/socapassport/marketplace" component={PassportMarketplace} />
+                  <Route path="/socapassport/checkin/:code" component={PassportCheckIn} />
+                  <Route path="/socapassport/promoter/:code" component={PromoterDashboard} />
+                  <Route path="/passport-promoters" component={PassportPromoters} />
+                  <Route component={NotFound} />
+                </Switch>
+              </TacticalLayout>
+            )}
 
             {showAuthModal && (
               <AuthModal

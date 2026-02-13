@@ -6,8 +6,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ["Poppins", "sans-serif"],
-        heading: ["Bebas Neue", "sans-serif"],
+        body: ["Inter", "sans-serif"],
+        heading: ["Space Grotesk", "sans-serif"],
+        mono: ["JetBrains Mono", "monospace"],
         accent: ["Dancing Script", "cursive"],
       },
       borderRadius: {
@@ -16,6 +17,10 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       colors: {
+        "void-black": "#050505",
+        "terminal-green": "#00FF99",
+        "neon-amber": "#FFB000",
+        "hologram-blue": "#00F0FF",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {
