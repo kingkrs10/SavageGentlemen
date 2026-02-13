@@ -217,6 +217,8 @@ export interface IStorage {
   updateUserPassword(id: number, newPassword: string): Promise<User | undefined>;
   verifyPassword(userId: number, password: string): Promise<boolean>;
   deleteUser(id: number): Promise<boolean>;
+  setUserPro(userId: number): Promise<void>;
+  getUserProStatus(userId: number): Promise<boolean>;
 
   // Password reset operations
   storePasswordResetToken(userId: number, token: string, expiresAt: Date): Promise<void>;
@@ -2588,6 +2590,21 @@ export class DatabaseStorage implements IStorage {
       console.error(`Error deleting user with ID ${id}:`, error);
       return false;
     }
+  }
+
+  async setUserPro(userId: number): Promise<void> {
+    await db
+      .update(users)
+      .set({ isPro: true, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+
+  async getUserProStatus(userId: number): Promise<boolean> {
+    const [user] = await db
+      .select({ isPro: users.isPro })
+      .from(users)
+      .where(eq(users.id, userId));
+    return user?.isPro || false;
   }
 
   // Event operations

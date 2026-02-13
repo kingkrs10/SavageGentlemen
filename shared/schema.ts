@@ -15,6 +15,7 @@ export const users = pgTable("users", {
   location: text("location"),
   website: text("website"),
   isGuest: boolean("is_guest").default(false),
+  isPro: boolean("is_pro").default(false), // Language Sensei Pro status
   role: text("role").default("user"), // Add role field: user, admin, moderator, promoter
   stripeCustomerId: text("stripe_customer_id"),
   paypalCustomerId: text("paypal_customer_id"),
@@ -35,6 +36,7 @@ export const insertUserSchema = createInsertSchema(users)
     location: true,
     website: true,
     isGuest: true,
+    isPro: true,
     role: true,
     email: true,
     firebaseId: true,

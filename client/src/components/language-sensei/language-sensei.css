@@ -119,6 +119,38 @@
     background: var(--ls-accent-gold-dim);
 }
 
+/* Pro Badge */
+.ls-pro-badge {
+    padding: 0.2rem 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #fff;
+    border: 1px solid var(--ls-accent-red);
+    border-radius: var(--ls-radius-full);
+    background: var(--ls-accent-red);
+    box-shadow: 0 0 10px rgba(230, 57, 70, 0.4);
+    animation: lsPulse 2s infinite;
+}
+
+.ls-header-btn-text {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ls-text-primary);
+    background: transparent;
+    border: 1px solid var(--ls-border-subtle);
+    border-radius: var(--ls-radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ls-header-btn-text:hover {
+    background: var(--ls-bg-surface-hover);
+    border-color: var(--ls-text-muted);
+}
+
 /* --- Main (Chat Area) --- */
 .ls-app-main {
     flex: 1;

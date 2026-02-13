@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'wouter';
 import { ArrowLeft } from 'lucide-react';
 import SEOHead from '@/components/SEOHead';
@@ -8,6 +8,8 @@ import ChatWindow from '@/components/language-sensei/ChatWindow';
 import ChatInput from '@/components/language-sensei/ChatInput';
 import SettingsModal, { STORAGE_KEY } from '@/components/language-sensei/SettingsModal';
 import { SenseiMessage } from '@/components/language-sensei/MessageBubble';
+import { exportToAnkiCSV } from '@/lib/language-sensei/ankiExport';
+import { useLocation } from 'wouter';
 import '@/components/language-sensei/language-sensei.css';
 
 /**
@@ -37,6 +39,62 @@ export default function AppsLanguageSensei() {
     const [error, setError] = useState('');
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [apiKey, setApiKey] = useState(() => localStorage.getItem(STORAGE_KEY) || DEFAULT_GEMINI_KEY);
+    const [isPro, setIsPro] = useState(false);
+    const [location, setLocation] = useLocation();
+
+    // Check Pro status on mount
+    useEffect(() => {
+        // Check for success param first
+        const params = new URLSearchParams(window.location.search);
+        const isUpgradeSuccess = params.get('upgrade') === 'success';
+
+        if (isUpgradeSuccess) {
+            // Remove the param from URL without reload
+            window.history.replaceState({}, '', '/apps/language-sensei');
+            // Optimistically set pro
+            setIsPro(true);
+            alert('Welcome to Pro! You now have access to Anki export.');
+        }
+
+        // Fetch verification
+        fetch('/api/language-sensei/pro-status')
+            .then(res => {
+                if (!res.ok) throw new Error('Status check failed');
+                return res.json();
+            })
+            .then(data => {
+                // Only overwrite if true (to confirm) or if we DIDN'T just upgrade (to reset)
+                // This prevents a slow webhook/DB update from reverting the optimistic UI immediately
+                if (data.isPro) {
+                    setIsPro(true);
+                } else if (!isUpgradeSuccess) {
+                    setIsPro(false);
+                }
+            })
+            .catch(err => console.error('Failed to check pro status:', err));
+    }, []);
+
+    const handleUpgrade = async () => {
+        try {
+            const res = await fetch('/api/language-sensei/create-checkout', { method: 'POST' });
+            if (!res.ok) {
+                if (res.status === 401) {
+                    alert('Please log in to upgrade.');
+                    return;
+                }
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to start upgrade');
+            }
+            const { url } = await res.json();
+            window.location.href = url;
+        } catch (err: any) {
+            alert(err.message);
+        }
+    };
+
+    const handleExport = () => {
+        exportToAnkiCSV(messages);
+    };
 
     const handleSend = useCallback(async (text: string) => {
 
@@ -115,7 +173,31 @@ export default function AppsLanguageSensei() {
                             <h1 className="ls-app-title">Language Sensei</h1>
                         </div>
                         <div className="ls-app-header-right">
-                            <span className="ls-demo-badge">Demo</span>
+                            {isPro ? (
+                                <span className="ls-pro-badge">PRO</span>
+                            ) : (
+                                <span className="ls-demo-badge">Free</span>
+                            )}
+
+                            {!isPro && (
+                                <button
+                                    className="ls-header-btn-text"
+                                    onClick={handleUpgrade}
+                                >
+                                    Upgrade to Pro
+                                </button>
+                            )}
+
+                            {isPro && (
+                                <button
+                                    className="ls-header-btn-text"
+                                    onClick={handleExport}
+                                    title="Export last 24h to Anki CSV"
+                                >
+                                    Export Anki
+                                </button>
+                            )}
+
                             <button
                                 className="ls-header-btn"
                                 onClick={() => setSettingsOpen(true)}
