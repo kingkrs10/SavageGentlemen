@@ -5,6 +5,7 @@ type Theme = 'tactical' | 'luxury';
 interface ThemeContextType {
     theme: Theme;
     toggleTheme: () => void;
+    setTheme: (theme: Theme) => void;
     isTransitioning: boolean;
     setIsTransitioning: (value: boolean) => void;
 }
@@ -12,7 +13,11 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [theme, setTheme] = useState<Theme>('luxury');
+    // Initialize from localStorage or default to 'luxury'
+    const [theme, setTheme] = useState<Theme>(() => {
+        const saved = localStorage.getItem('theme');
+        return (saved === 'tactical' || saved === 'luxury') ? saved : 'luxury';
+    });
     const [isTransitioning, setIsTransitioning] = useState(false);
 
     const toggleTheme = () => {
@@ -38,6 +43,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, [isTransitioning]);
 
     useEffect(() => {
+        // Persist theme choice
+        localStorage.setItem('theme', theme);
+
         // Apply theme class to body
         document.body.classList.remove('theme-luxury', 'theme-tactical');
         document.body.classList.add(`theme-${theme}`);
@@ -60,7 +68,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, []);
 
     return (
-        <ThemeContext.Provider value={{ theme, toggleTheme, isTransitioning, setIsTransitioning }}>
+        <ThemeContext.Provider value={{ theme, toggleTheme, setTheme, isTransitioning, setIsTransitioning }}>
             {children}
         </ThemeContext.Provider>
     );
