@@ -71,9 +71,10 @@
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
+  /* Use variable instead of hardcoded */
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--glass-border);
   border-radius: 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 }

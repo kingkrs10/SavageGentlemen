@@ -6,9 +6,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ["Poppins", "sans-serif"],
-        heading: ["Bebas Neue", "sans-serif"],
+        body: ["var(--font-body)", "sans-serif"],
+        heading: ["var(--font-heading)", "sans-serif"],
         accent: ["Dancing Script", "cursive"],
+        mono: ["var(--font-mono)", "monospace"],
       },
       borderRadius: {
         lg: "var(--radius)",
