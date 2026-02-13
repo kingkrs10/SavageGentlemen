@@ -99,9 +99,9 @@ const LandingPage = () => {
                                     <Button
                                         variant="outline"
                                         className="btn-modern glass-effect border-foreground/20 text-foreground hover:bg-foreground/10 px-8 py-6 uppercase tracking-widest text-lg font-semibold backdrop-blur-sm w-full"
-                                        onClick={() => window.open(EXTERNAL_URLS.ETSY_SHOP, '_blank', 'noopener,noreferrer')}
+                                        onClick={() => enterTheVoid('/apps')}
                                     >
-                                        SHOP COLLECTION
+                                        APPS
                                     </Button>
                                 </div>
                             </div>
