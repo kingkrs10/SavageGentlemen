@@ -11,6 +11,7 @@ import { SenseiMessage } from '@/components/language-sensei/MessageBubble';
 import { exportToAnkiCSV } from '@/lib/language-sensei/ankiExport';
 import { useLocation } from 'wouter';
 import '@/components/language-sensei/language-sensei.css';
+import { getAuthHeaders } from '@/lib/auth-utils';
 
 /**
  * Extract [Sensei Note] from english text
@@ -76,7 +77,10 @@ export default function AppsLanguageSensei() {
 
     const handleUpgrade = async () => {
         try {
-            const res = await fetch('/api/language-sensei/create-checkout', { method: 'POST' });
+            const res = await fetch('/api/language-sensei/create-checkout', {
+                method: 'POST',
+                headers: getAuthHeaders()
+            });
             if (!res.ok) {
                 if (res.status === 401) {
                     alert('Please log in to upgrade.');
