@@ -2,7 +2,6 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "next-themes";
 import Header from "@/components/layout/Header";
 import BottomNavigation from "@/components/layout/BottomNavigation";
 import AuthModal from "@/components/auth/AuthModal";
@@ -17,6 +16,11 @@ import { UserProvider, useUser } from "@/context/UserContext";
 import { initGA } from "@/lib/ga-analytics";
 import { trackPageView } from "@/lib/analytics";
 import { useToast } from "@/hooks/use-toast";
+
+import { ThemeProvider, useTheme } from "@/context/ThemeContext";
+import { GlitchTransition } from "@/components/effects/GlitchTransition";
+import { RealityToggle } from "@/components/layout/RealityToggle";
+import LandingPage from "@/pages/LandingPage";
 
 // Lazily load pages for code splitting
 const Home = lazy(() => import("@/pages/home"));
@@ -192,6 +196,26 @@ function AppContent() {
     }
   };
 
+  const { theme } = useTheme();
+
+  // SPLASH SCREEN MODE (Luxury)
+  // If the user is in Luxury mode, we ONLY show the Landing Page (Splash Screen).
+  // The "Enter the Void" button (Reality Toggle) is the only way out.
+  if (theme === 'luxury') {
+    return (
+      <>
+        <SEOHead
+          title="Savage Gentlemen | Experience"
+          description="We're more than events. We're a movement."
+        />
+        <LandingPage />
+        <Toaster />
+      </>
+    );
+  }
+
+  // THE VOID MODE (Tactical/App)
+  // Full application with Navigation, Header, Auth, etc.
   return (
     <>
       <SEOHead
@@ -199,42 +223,36 @@ function AppContent() {
         description="Caribbean-American event and lifestyle brand. Explore events, shop for merchandise, watch live streams, and connect with the community."
       />
       <TooltipProvider>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          <div className="min-h-screen bg-background text-foreground">
-            {!isSocaPassportRoute() && (
-              <Header
-                user={user}
-                onLogout={logout}
-                onProfileClick={() => setShowAuthModal(true)}
-              />
-            )}
+        <div className="min-h-screen bg-background text-foreground">
+          {!isSocaPassportRoute() && (
+            <Header
+              user={user}
+              onLogout={logout}
+              onProfileClick={() => setShowAuthModal(true)}
+            />
+          )}
 
-            <main className={isSocaPassportRoute() ? "" : "container mx-auto px-4 py-8"}>
-              <Router />
-            </main>
+          <main className={isSocaPassportRoute() ? "" : "container mx-auto px-4 py-8"}>
+            <Router />
+          </main>
 
-            {!isSocaPassportRoute() && <BottomNavigation />}
+          {!isSocaPassportRoute() && <BottomNavigation />}
 
-            {showAuthModal && (
-              <AuthModal
-                isOpen={showAuthModal}
-                onClose={() => setShowAuthModal(false)}
-                onAuthSuccess={handleAuthSuccess}
-                onGuestLogin={() => guestLoginMutation.mutate()}
-              />
-            )}
+          {showAuthModal && (
+            <AuthModal
+              isOpen={showAuthModal}
+              onClose={() => setShowAuthModal(false)}
+              onAuthSuccess={handleAuthSuccess}
+              onGuestLogin={() => guestLoginMutation.mutate()}
+            />
+          )}
 
-            <Toaster />
-          </div>
-        </ThemeProvider>
+          <Toaster />
+        </div>
       </TooltipProvider>
     </>
   );
 }
-
-import { ThemeProvider } from "@/context/ThemeContext";
-import { GlitchTransition } from "@/components/effects/GlitchTransition";
-import { RealityToggle } from "@/components/layout/RealityToggle";
 
 export default function App() {
   return (
