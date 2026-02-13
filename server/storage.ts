@@ -2273,6 +2273,9 @@ export class DatabaseStorage implements IStorage {
       .insert(users)
       .values({
         ...userData,
+        role: userData.role || "user",
+        isGuest: userData.isGuest || false,
+        isPro: userData.isPro || false,
         createdAt: new Date(),
         updatedAt: new Date()
       })
