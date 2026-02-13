@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Dancing+Script:wght@600&family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Dancing+Script:wght@600&family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+
 
 @tailwind base;
 @tailwind components;
@@ -12,14 +13,14 @@
   --dark-gradient: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
   --glass-bg: rgba(255, 255, 255, 0.1);
   --glass-border: rgba(255, 255, 255, 0.2);
-  
+
   /* Modern Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  
+
   /* Modern Spacing */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
@@ -28,6 +29,37 @@
   --spacing-xl: 2rem;
   --spacing-2xl: 3rem;
   --spacing-3xl: 4rem;
+}
+
+/* Luxury Theme Override */
+.theme-luxury {
+  --background: 0 0% 98%;
+  /* Off-white */
+  --foreground: 0 0% 10%;
+  /* Dark charcoal */
+
+  /* Gold/Bronze Palette */
+  --primary: 43 74% 49%;
+  /* #D4AF37 Gold */
+  --primary-foreground: 0 0% 100%;
+
+  --void-black: #FAFAFA;
+  /* Map void-black to light for layout background */
+  --terminal-green: #D4AF37;
+  /* Map terminal-green to Gold */
+  --neon-amber: #8B4513;
+  /* Bronze */
+  --hologram-blue: #A9A9A9;
+  /* Silver */
+
+  /* Typography Overrides */
+  --font-heading: 'Playfair Display', serif;
+  --font-mono: 'Inter', sans-serif;
+  /* Cleaner look for data in luxury mode */
+
+  /* Glass Override */
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(212, 175, 55, 0.3);
 }
 
 /* Modern Glassmorphism Effects */
@@ -133,6 +165,7 @@
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -144,6 +177,7 @@
     opacity: 0;
     transform: translateX(30px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -155,6 +189,7 @@
     opacity: 0;
     transform: scale(0.9);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -174,11 +209,25 @@
 }
 
 /* Staggered Animation Delays */
-.animate-delay-100 { animation-delay: 100ms; }
-.animate-delay-200 { animation-delay: 200ms; }
-.animate-delay-300 { animation-delay: 300ms; }
-.animate-delay-400 { animation-delay: 400ms; }
-.animate-delay-500 { animation-delay: 500ms; }
+.animate-delay-100 {
+  animation-delay: 100ms;
+}
+
+.animate-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animate-delay-300 {
+  animation-delay: 300ms;
+}
+
+.animate-delay-400 {
+  animation-delay: 400ms;
+}
+
+.animate-delay-500 {
+  animation-delay: 500ms;
+}
 
 /* Modern Loading States */
 .shimmer {
@@ -188,8 +237,13 @@
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 /* Enhanced Mobile Interactions */
@@ -197,7 +251,7 @@
   .modern-card:hover {
     transform: translateY(-4px);
   }
-  
+
   .btn-modern:hover {
     transform: translateY(-1px);
   }
@@ -262,7 +316,9 @@ body {
 }
 
 /* Mobile button enhancements */
-button, [role="button"], .clickable {
+button,
+[role="button"],
+.clickable {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   min-height: 44px;
@@ -270,7 +326,9 @@ button, [role="button"], .clickable {
   transition: transform 0.1s ease-out, opacity 0.1s ease-out;
 }
 
-button:active, [role="button"]:active, .clickable:active {
+button:active,
+[role="button"]:active,
+.clickable:active {
   transform: scale(0.98);
   opacity: 0.8;
 }
@@ -286,15 +344,15 @@ button:active, [role="button"]:active, .clickable:active {
   .safe-area-top {
     padding-top: max(1rem, var(--safe-area-inset-top));
   }
-  
+
   .safe-area-bottom {
     padding-bottom: max(1rem, var(--safe-area-inset-bottom));
   }
-  
+
   .safe-area-left {
     padding-left: max(1rem, var(--safe-area-inset-left));
   }
-  
+
   .safe-area-right {
     padding-right: max(1rem, var(--safe-area-inset-right));
   }
@@ -338,7 +396,9 @@ body {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Mobile card optimizations */
@@ -368,8 +428,11 @@ body {
 }
 
 /* Mobile input optimizations */
-input, textarea, select {
-  font-size: 16px; /* Prevents zoom on iOS */
+input,
+textarea,
+select {
+  font-size: 16px;
+  /* Prevents zoom on iOS */
   border-radius: 8px;
   transition: border-color 0.2s ease-out;
 }
@@ -380,9 +443,17 @@ input, textarea, select {
 }
 
 @keyframes haptic-light {
-  0% { transform: scale(1); }
-  50% { transform: scale(0.99); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(0.99);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Mobile navigation gestures */
@@ -512,23 +583,23 @@ input, textarea, select {
   --card-foreground: 220 10% 4%;
   --popover: 0 0% 100%;
   --popover-foreground: 220 10% 4%;
-  
+
   /* Primary: Rich Red from logo - preserved in light theme */
   --primary: 0 80% 30%;
   --primary-foreground: 0 0% 100%;
-  
+
   /* Secondary: Lighter navy blue for light theme */
   --secondary: 220 60% 30%;
   --secondary-foreground: 0 0% 98%;
-  
+
   /* Muted: Lighter blue-gray tones */
   --muted: 220 10% 90%;
   --muted-foreground: 220 5% 40%;
-  
+
   /* Accent: Gold/amber color from logo - preserved */
   --accent: 36 100% 50%;
   --accent-foreground: 0 0% 10%;
-  
+
   /* Utility colors */
   --destructive: 0 70% 50%;
   --destructive-foreground: 0 0% 100%;
@@ -539,29 +610,30 @@ input, textarea, select {
 
 :root.dark {
   /* Base colors - dark theme inspired by video aesthetic */
-  --background: 220 10% 4%; /* Slightly blue-tinted black background */
+  --background: 220 10% 4%;
+  /* Slightly blue-tinted black background */
   --foreground: 0 0% 98%;
   --card: 220 10% 6%;
   --card-foreground: 0 0% 98%;
   --popover: 220 10% 4%;
   --popover-foreground: 0 0% 98%;
-  
+
   /* Primary: Rich Red from logo */
   --primary: 0 80% 30%;
   --primary-foreground: 0 0% 100%;
-  
+
   /* Secondary: Deep navy blue for contrast */
   --secondary: 220 70% 16%;
   --secondary-foreground: 0 0% 98%;
-  
+
   /* Muted: Subtle blue-gray tones */
   --muted: 220 10% 16%;
   --muted-foreground: 220 5% 65%;
-  
+
   /* Accent: Gold/amber color from logo */
   --accent: 36 100% 50%;
   --accent-foreground: 0 0% 10%;
-  
+
   /* Utility colors */
   --destructive: 0 70% 30%;
   --destructive-foreground: 0 0% 98%;
@@ -574,14 +646,20 @@ input, textarea, select {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground font-body;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-heading tracking-wider;
   }
-  
+
   .font-accent {
     font-family: 'Dancing Script', cursive;
   }
@@ -591,23 +669,23 @@ input, textarea, select {
   .event-card {
     @apply bg-gradient-to-br from-gray-900 to-gray-950 transition-transform hover:translate-y-[-5px] hover:shadow-xl;
   }
-  
+
   :root.light .event-card {
     @apply bg-gradient-to-br from-white to-gray-50;
   }
-  
+
   .bottom-nav-item.active {
     @apply text-primary border-t-2 border-primary;
   }
-  
+
   .user-message {
     @apply bg-primary rounded-[18px] rounded-br-none self-end;
   }
-  
+
   .other-message {
     @apply bg-gray-800 rounded-[18px] rounded-bl-none self-start;
   }
-  
+
   :root.light .other-message {
     @apply bg-gray-200;
   }
@@ -615,42 +693,42 @@ input, textarea, select {
   .chat-message {
     @apply max-w-[80%] break-words;
   }
-  
+
   /* Savage Gentlemen specific styles */
   .sg-btn {
     @apply bg-primary hover:bg-primary/90 text-white px-6 py-3 uppercase tracking-widest text-sm font-semibold transition-all duration-300 shadow-md hover:shadow-xl flex items-center justify-center;
   }
-  
+
   .sg-btn-outline {
     @apply border-2 border-white/80 hover:border-primary/90 text-white hover:text-primary px-6 py-[10px] uppercase tracking-widest text-sm font-semibold transition-all duration-300 backdrop-blur-sm;
   }
-  
+
   :root.light .sg-btn-outline {
     @apply border-foreground/80 text-foreground;
   }
-  
+
   .sg-section-title {
     @apply relative text-3xl md:text-4xl font-heading uppercase tracking-wider pb-4 inline-block;
   }
-  
+
   .sg-section-title::after {
     @apply content-[''] absolute bottom-0 left-0 w-2/3 h-1 bg-primary;
   }
-  
+
   .sg-card {
     @apply bg-card border border-border/50 shadow-md hover:shadow-lg transition-all duration-300;
   }
-  
+
   .sg-gradient-overlay {
     @apply absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black z-10;
   }
-  
+
   :root.light .sg-gradient-overlay {
     @apply from-white/30 via-transparent to-gray-200;
   }
-  
+
   .sg-text-shadow {
-    @apply [text-shadow:_0_2px_4px_rgba(0,0,0,0.7)];
+    @apply [text-shadow:_0_2px_4px_rgba(0, 0, 0, 0.7)];
   }
 }
 
@@ -658,38 +736,43 @@ input, textarea, select {
   .animate-pulse {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
-  
+
   @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
       opacity: 1;
     }
+
     50% {
       opacity: 0.5;
     }
   }
-  
+
   .animate-fade-in {
     animation: fadeIn 1s ease-in-out;
   }
-  
+
   @keyframes fadeIn {
     0% {
       opacity: 0;
     }
+
     100% {
       opacity: 1;
     }
   }
-  
+
   .animate-slide-up {
     animation: slideUp 0.5s ease-out;
   }
-  
+
   @keyframes slideUp {
     0% {
       transform: translateY(50px);
       opacity: 0;
     }
+
     100% {
       transform: translateY(0);
       opacity: 1;

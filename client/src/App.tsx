@@ -232,11 +232,19 @@ function AppContent() {
   );
 }
 
+import { ThemeProvider } from "@/context/ThemeContext";
+import { GlitchTransition } from "@/components/effects/GlitchTransition";
+import { RealityToggle } from "@/components/layout/RealityToggle";
+
 export default function App() {
   return (
     <ErrorBoundary>
       <UserProvider>
-        <AppContent />
+        <ThemeProvider>
+          <GlitchTransition />
+          <RealityToggle />
+          <AppContent />
+        </ThemeProvider>
       </UserProvider>
     </ErrorBoundary>
   );
