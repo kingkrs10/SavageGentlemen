@@ -2601,10 +2601,19 @@ export class DatabaseStorage implements IStorage {
 
   async getUserProStatus(userId: number): Promise<boolean> {
     const [user] = await db
-      .select({ isPro: users.isPro })
+      .select({
+        isPro: users.isPro,
+        role: users.role,
+        username: users.username
+      })
       .from(users)
       .where(eq(users.id, userId));
-    return user?.isPro || false;
+
+    if (!user) return false;
+
+    // Check for explicit Pro status OR admin privileges
+    // 'savagegentlemen' is the hardcoded superadmin username requested
+    return !!(user.isPro || user.role === 'admin' || user.username === 'savagegentlemen');
   }
 
   // Event operations

@@ -13,6 +13,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 });
 
 const LANGUAGE_SENSEI_PRO_PRICE_ID = 'price_1T09xZJR9xpdRiXih5303Ywh';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 export async function createCheckoutSession(req: Request, res: Response) {
     try {
@@ -111,5 +112,41 @@ export async function getProStatus(req: Request, res: Response) {
     } catch (error) {
         console.error('Error getting pro status:', error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+}
+
+export async function handleChat(req: Request, res: Response) {
+    // Basic auth check
+    if (!req.user) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+        console.error('GEMINI_API_KEY not found in environment variables');
+        return res.status(500).json({ error: 'Server misconfigured: Missing AI key' });
+    }
+
+    try {
+        // Proxy the request to Gemini API
+        const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(req.body)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Gemini API Error (Proxy):', response.status, errorData);
+            return res.status(response.status).json(errorData);
+        }
+
+        const data = await response.json();
+        res.json(data);
+    } catch (error: any) {
+        console.error('Chat Proxy Error:', error);
+        res.status(500).json({ error: 'Failed to communicate with AI service' });
     }
 }

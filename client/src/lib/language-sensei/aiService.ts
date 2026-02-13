@@ -43,12 +43,8 @@ export interface ChatMessage {
 export async function sendMessage(
     history: ChatMessage[],
     userMessage: string,
-    apiKey: string,
+    _apiKey?: string, // Deprecated, using server-side key
 ): Promise<string> {
-    if (!apiKey) {
-        throw new Error('Gemini API key is not configured. Open Settings to add it.');
-    }
-
     // Build Gemini contents array from chat history
     // Gemini uses "user" and "model" roles (no "system" role in contents)
     const contents = history.slice(-20).map((msg) => ({
@@ -62,28 +58,28 @@ export async function sendMessage(
         parts: [{ text: userMessage }],
     });
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+    const body = {
+        systemInstruction: {
+            parts: [{ text: SENSEI_SYSTEM_PROMPT }],
+        },
+        contents,
+        generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 1024,
+        },
+    };
 
-    const response = await fetch(url, {
+    const response = await fetch('/api/language-sensei/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            systemInstruction: {
-                parts: [{ text: SENSEI_SYSTEM_PROMPT }],
-            },
-            contents,
-            generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 1024,
-            },
-        }),
+        body: JSON.stringify(body),
     });
 
     if (!response.ok) {
         const error = await response.json().catch(() => ({}));
         const msg =
             (error as any)?.error?.message ||
-            `Gemini API error: ${response.status}`;
+            `Chat error: ${response.status}`;
         throw new Error(msg);
     }
 
