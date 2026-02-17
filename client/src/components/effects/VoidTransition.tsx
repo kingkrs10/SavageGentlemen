@@ -73,7 +73,7 @@ export const VoidTransition = ({ onComplete }: VoidTransitionProps) => {
                 stopVoidSound();
                 setTheme('tactical');
                 setTimeout(() => {
-                    navigate('/');
+                    navigate('/apps');
                     onComplete?.();
                 }, 300);
             },
