@@ -2532,6 +2532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Event management
   router.post("/admin/events", authenticateUser, authorizeAdmin, upload.fields([
     { name: 'image', maxCount: 1 },
+    { name: 'video', maxCount: 1 },
     { name: 'additionalImages', maxCount: 10 }
   ]), async (req: Request, res: Response) => {
     try {
@@ -2555,6 +2556,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             file => `/uploads/${file.filename}`
           );
           requestData.additionalImages = additionalImagePaths;
+        }
+
+        // Process video
+        if (files['video'] && files['video'][0]) {
+          const videoFile = files['video'][0];
+          requestData.videoUrl = `/uploads/${videoFile.filename}`;
         }
       }
 
@@ -2655,6 +2662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   router.put("/admin/events/:id", eventUpdateHandler, upload.fields([
     { name: 'image', maxCount: 1 },
+    { name: 'video', maxCount: 1 },
     { name: 'additionalImages', maxCount: 10 }
   ]), async (req: Request, res: Response) => {
     try {
@@ -2701,6 +2709,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (typeof requestData.additionalImages === 'string') {
             requestData.additionalImages = [requestData.additionalImages];
           }
+        }
+
+        // Process video
+        if (files['video'] && files['video'][0]) {
+          const videoFile = files['video'][0];
+          requestData.videoUrl = `/uploads/${videoFile.filename}`;
         }
       }
 
@@ -2751,6 +2765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Also support PATCH method for event updates (for client compatibility)
   router.patch("/admin/events/:id", eventUpdateHandler, upload.fields([
     { name: 'image', maxCount: 1 },
+    { name: 'video', maxCount: 1 },
     { name: 'additionalImages', maxCount: 10 }
   ]), async (req: Request, res: Response) => {
     try {
@@ -2797,6 +2812,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (typeof requestData.additionalImages === 'string') {
             requestData.additionalImages = [requestData.additionalImages];
           }
+        }
+
+        // Process video
+        if (files['video'] && files['video'][0]) {
+          const videoFile = files['video'][0];
+          requestData.videoUrl = `/uploads/${videoFile.filename}`;
         }
       }
 

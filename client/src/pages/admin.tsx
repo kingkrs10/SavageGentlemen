@@ -169,7 +169,11 @@ import {
   Video,
   Music,
   ScanLine,
-  Stamp
+  Stamp,
+  Upload,
+  X,
+  Image as ImageIcon,
+  FileVideo
 } from "lucide-react";
 import LivestreamManager from "@/components/admin/LivestreamManager";
 import TicketScanner from "@/components/admin/TicketScanner";
@@ -271,6 +275,10 @@ export default function AdminPage() {
     countryCode: '',
     carnivalCircuit: ''
   });
+  const [eventImageFile, setEventImageFile] = useState<File | null>(null);
+  const [eventVideoFile, setEventVideoFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
   React.useEffect(() => {
@@ -696,6 +704,10 @@ export default function AdminPage() {
       countryCode: event.countryCode || '',
       carnivalCircuit: event.carnivalCircuit || ''
     });
+    setEventImageFile(null);
+    setEventVideoFile(null);
+    setImagePreview(null);
+    setVideoPreview(null);
     setEventDialogOpen(true);
   };
 
@@ -705,156 +717,124 @@ export default function AdminPage() {
 
     try {
       if (!eventForm.title || !eventForm.date || !eventForm.location) {
-        toast({
-          title: "Missing fields",
-          description: "Title, date, and location are required",
-          variant: "destructive"
-        });
+        toast({ title: "Missing fields", description: "Title, date, and location are required", variant: "destructive" });
         return;
       }
 
-      const priceInCents = Math.round(eventForm.price * 100);
-      const dateTimeString = `${eventForm.date}T${eventForm.time || '00:00:00'}`;
-      const eventDate = new Date(dateTimeString);
+      const formData = buildEventFormData();
 
-      const eventData = {
-        title: eventForm.title,
-        date: eventDate,
-        location: eventForm.location,
-        price: priceInCents,
-        description: eventForm.description || null,
-        imageUrl: eventForm.imageUrl || null,
-        category: eventForm.category || 'party',
-        featured: eventForm.featured,
-        isSocaPassportEnabled: eventForm.isSocaPassportEnabled,
-        stampPointsDefault: eventForm.stampPointsDefault,
-        countryCode: eventForm.countryCode || null,
-        carnivalCircuit: eventForm.carnivalCircuit || null
-      };
-
-      const response = await apiRequest('PATCH', `/api/admin/events/${editingEvent.id}`, eventData);
-
-      if (!response.ok) {
-        throw new Error('Failed to update event');
-      }
-
-      toast({
-        title: "Event Updated",
-        description: `Event "${eventForm.title}" updated successfully`,
+      const response = await fetch(`/api/admin/events/${editingEvent.id}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: formData,
+        credentials: 'include',
       });
 
+      if (!response.ok) throw new Error('Failed to update event');
+
+      toast({ title: "Event Updated", description: `Event "${eventForm.title}" updated successfully` });
       setEventDialogOpen(false);
       setEditingEvent(null);
-      setEventForm({
-        title: '',
-        date: '',
-        time: '',
-        location: '',
-        price: 0,
-        description: '',
-        imageUrl: '',
-        category: 'party',
-        featured: false,
-        isSocaPassportEnabled: false,
-        stampPointsDefault: 50,
-        countryCode: '',
-        carnivalCircuit: ''
-      });
-
+      resetEventFormState();
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
     } catch (error) {
       console.error("Failed to update event:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update event. Please try again.",
-        variant: "destructive"
-      });
+      toast({ title: "Error", description: "Failed to update event. Please try again.", variant: "destructive" });
     }
+  };
+
+  // Helper to build FormData for event create/update
+  const buildEventFormData = (): FormData => {
+    const formData = new FormData();
+    const priceInCents = Math.round(eventForm.price * 100);
+    const dateTimeString = `${eventForm.date}T${eventForm.time || '00:00:00'}`;
+    const eventDate = new Date(dateTimeString);
+
+    formData.append('title', eventForm.title);
+    formData.append('date', eventDate.toISOString());
+    formData.append('location', eventForm.location);
+    formData.append('price', priceInCents.toString());
+    if (eventForm.description) formData.append('description', eventForm.description);
+    formData.append('category', eventForm.category || 'party');
+    formData.append('featured', String(eventForm.featured));
+    formData.append('isSocaPassportEnabled', String(eventForm.isSocaPassportEnabled));
+    formData.append('stampPointsDefault', String(eventForm.stampPointsDefault));
+    if (eventForm.countryCode) formData.append('countryCode', eventForm.countryCode);
+    if (eventForm.carnivalCircuit) formData.append('carnivalCircuit', eventForm.carnivalCircuit);
+
+    // If a file was chosen, upload it; otherwise keep the URL
+    if (eventImageFile) {
+      formData.append('image', eventImageFile);
+    } else if (eventForm.imageUrl) {
+      formData.append('imageUrl', eventForm.imageUrl);
+    }
+
+    if (eventVideoFile) {
+      formData.append('video', eventVideoFile);
+    }
+
+    return formData;
+  };
+
+  const resetEventFormState = () => {
+    setEventForm({
+      title: '', date: '', time: '', location: '', price: 0,
+      description: '', imageUrl: '', category: 'party', featured: false,
+      isSocaPassportEnabled: false, stampPointsDefault: 50,
+      countryCode: '', carnivalCircuit: ''
+    });
+    setEventImageFile(null);
+    setEventVideoFile(null);
+    setImagePreview(null);
+    setVideoPreview(null);
+  };
+
+  // Helper to get auth headers for FormData requests (no Content-Type — browser sets multipart boundary)
+  const getAuthHeaders = (): Record<string, string> => {
+    const headers: Record<string, string> = {};
+    const firebaseToken = localStorage.getItem('firebaseToken');
+    if (firebaseToken) {
+      headers['Authorization'] = `Bearer ${firebaseToken}`;
+    }
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        const userData = user?.data?.data || user?.data || user;
+        if (userData?.token) headers['Authorization'] = `Bearer ${userData.token}`;
+        if (userData?.id) headers['user-id'] = userData.id.toString();
+      } catch { }
+    }
+    return headers;
   };
 
   // Event creation handler
   const handleCreateEvent = async () => {
     try {
-      // Validation
       if (!eventForm.title || !eventForm.date || !eventForm.location) {
-        toast({
-          title: "Missing fields",
-          description: "Title, date, and location are required",
-          variant: "destructive"
-        });
+        toast({ title: "Missing fields", description: "Title, date, and location are required", variant: "destructive" });
         return;
       }
 
-      // Convert form data to the format expected by the API
-      // Convert the price from dollars to cents for storage
-      const priceInCents = Math.round(eventForm.price * 100);
+      const formData = buildEventFormData();
 
-      // Combine date and time into a single Date object
-      const dateTimeString = `${eventForm.date}T${eventForm.time || '00:00:00'}`;
-      const eventDate = new Date(dateTimeString);
-
-      // Log image URL for debugging
-      console.log("Original image URL:", eventForm.imageUrl);
-
-      // Prepare data for API
-      const eventData = {
-        title: eventForm.title,
-        date: eventDate,
-        location: eventForm.location,
-        price: priceInCents,
-        description: eventForm.description || null,
-        imageUrl: eventForm.imageUrl || null, // Original URL is stored in the database
-        category: eventForm.category || 'party',
-        featured: eventForm.featured,
-        isSocaPassportEnabled: eventForm.isSocaPassportEnabled,
-        stampPointsDefault: eventForm.stampPointsDefault,
-        countryCode: eventForm.countryCode || null,
-        carnivalCircuit: eventForm.carnivalCircuit || null
-      };
-
-      // Make API call to create event
-      const response = await apiRequest('POST', '/api/admin/events', eventData);
-
-      if (!response.ok) {
-        throw new Error('Failed to create event');
-      }
-
-      const result = await response.json();
-
-      toast({
-        title: "Event Created",
-        description: `Event "${eventForm.title}" created successfully`,
+      const response = await fetch('/api/admin/events', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: formData,
+        credentials: 'include',
       });
 
-      // Close the dialog
+      if (!response.ok) throw new Error('Failed to create event');
+      await response.json();
+
+      toast({ title: "Event Created", description: `Event "${eventForm.title}" created successfully` });
       setEventDialogOpen(false);
-
-      // Reset the form
-      setEventForm({
-        title: '',
-        date: '',
-        time: '',
-        location: '',
-        price: 0,
-        description: '',
-        imageUrl: '',
-        category: 'party',
-        featured: false,
-        isSocaPassportEnabled: false,
-        stampPointsDefault: 50,
-        countryCode: '',
-        carnivalCircuit: ''
-      });
-
-      // Invalidate the events query to refetch events and update the UI
+      resetEventFormState();
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
     } catch (error) {
       console.error("Failed to create event:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create event. Please try again.",
-        variant: "destructive"
-      });
+      toast({ title: "Error", description: "Failed to create event. Please try again.", variant: "destructive" });
     }
   };
 
@@ -1460,7 +1440,7 @@ export default function AdminPage() {
                   <CardTitle>Events</CardTitle>
                   <CardDescription>Manage events and performances</CardDescription>
                 </div>
-                <Button className="sg-btn" onClick={() => setEventDialogOpen(true)}>
+                <Button className="sg-btn" onClick={() => { setEditingEvent(null); resetEventFormState(); setEventDialogOpen(true); }}>
                   <Calendar className="h-4 w-4 mr-2" /> Add Event
                 </Button>
               </CardHeader>
@@ -1708,15 +1688,85 @@ export default function AdminPage() {
                     />
                   </div>
 
+                  {/* Image Upload */}
                   <div className="space-y-2">
-                    <Label htmlFor="imageUrl" className="text-white">Image URL</Label>
+                    <Label className="text-white flex items-center gap-2"><ImageIcon className="h-4 w-4" /> Event Image</Label>
+                    {(imagePreview || eventForm.imageUrl) ? (
+                      <div className="relative rounded-lg overflow-hidden border border-slate-600">
+                        <img
+                          src={imagePreview || getNormalizedImageUrl(eventForm.imageUrl)}
+                          alt="Event preview"
+                          className="w-full h-40 object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => { setEventImageFile(null); setImagePreview(null); setEventForm({ ...eventForm, imageUrl: '' }); }}
+                          className="absolute top-2 right-2 bg-black/70 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-500 rounded-lg cursor-pointer bg-slate-700/50 hover:bg-slate-700 transition-colors">
+                        <Upload className="h-8 w-8 text-slate-400 mb-2" />
+                        <span className="text-sm text-slate-400">Click to upload image</span>
+                        <span className="text-xs text-slate-500 mt-1">JPG, PNG, GIF, WebP</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setEventImageFile(file);
+                              setImagePreview(URL.createObjectURL(file));
+                            }
+                          }}
+                        />
+                      </label>
+                    )}
+                    <p className="text-xs text-slate-500">Or paste a URL:</p>
                     <Input
-                      id="imageUrl"
-                      placeholder="Enter image URL for the event"
-                      className="bg-slate-700 border border-slate-600 text-white"
+                      placeholder="https://example.com/image.jpg"
+                      className="bg-slate-700 border border-slate-600 text-white text-sm"
                       value={eventForm.imageUrl}
-                      onChange={(e) => setEventForm({ ...eventForm, imageUrl: e.target.value })}
+                      onChange={(e) => { setEventForm({ ...eventForm, imageUrl: e.target.value }); setEventImageFile(null); setImagePreview(null); }}
                     />
+                  </div>
+
+                  {/* Video Upload */}
+                  <div className="space-y-2">
+                    <Label className="text-white flex items-center gap-2"><FileVideo className="h-4 w-4" /> Event Video (optional)</Label>
+                    {videoPreview ? (
+                      <div className="relative rounded-lg overflow-hidden border border-slate-600">
+                        <video src={videoPreview} className="w-full h-40 object-cover" muted />
+                        <button
+                          type="button"
+                          onClick={() => { setEventVideoFile(null); setVideoPreview(null); }}
+                          className="absolute top-2 right-2 bg-black/70 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-500 rounded-lg cursor-pointer bg-slate-700/50 hover:bg-slate-700 transition-colors">
+                        <FileVideo className="h-8 w-8 text-slate-400 mb-2" />
+                        <span className="text-sm text-slate-400">Click to upload video</span>
+                        <span className="text-xs text-slate-500 mt-1">MP4, WebM, MOV (max 100MB)</span>
+                        <input
+                          type="file"
+                          accept="video/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setEventVideoFile(file);
+                              setVideoPreview(URL.createObjectURL(file));
+                            }
+                          }}
+                        />
+                      </label>
+                    )}
                   </div>
 
                   <div className="flex items-center space-x-2">
