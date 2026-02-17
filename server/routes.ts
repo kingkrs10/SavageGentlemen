@@ -2591,6 +2591,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         requestData.price = null;
       }
 
+      // Coerce FormData string values to proper types before Zod validation
+      if (typeof requestData.price === 'string') requestData.price = requestData.price === '' ? null : Number(requestData.price);
+      if (typeof requestData.featured === 'string') requestData.featured = requestData.featured === 'true';
+      if (typeof requestData.isSocaPassportEnabled === 'string') requestData.isSocaPassportEnabled = requestData.isSocaPassportEnabled === 'true';
+      if (typeof requestData.isPremiumPassport === 'string') requestData.isPremiumPassport = requestData.isPremiumPassport === 'true';
+      if (typeof requestData.stampPointsDefault === 'string') requestData.stampPointsDefault = Number(requestData.stampPointsDefault);
+      if (typeof requestData.checkinRadiusMeters === 'string') requestData.checkinRadiusMeters = Number(requestData.checkinRadiusMeters);
+
       // Now parse with the schema
       const eventData = insertEventSchema.parse(requestData);
       const event = await storage.createEvent(eventData);
@@ -2745,6 +2753,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Coerce FormData string values to proper types
+      if (typeof requestData.price === 'string') requestData.price = requestData.price === '' ? null : Number(requestData.price);
+      if (typeof requestData.featured === 'string') requestData.featured = requestData.featured === 'true';
+      if (typeof requestData.isSocaPassportEnabled === 'string') requestData.isSocaPassportEnabled = requestData.isSocaPassportEnabled === 'true';
+      if (typeof requestData.isPremiumPassport === 'string') requestData.isPremiumPassport = requestData.isPremiumPassport === 'true';
+      if (typeof requestData.stampPointsDefault === 'string') requestData.stampPointsDefault = Number(requestData.stampPointsDefault);
+      if (typeof requestData.checkinRadiusMeters === 'string') requestData.checkinRadiusMeters = Number(requestData.checkinRadiusMeters);
+
       // Log the update details
       console.log(`Updating event ${id} with date:`, requestData.date);
       console.log(`Image URL:`, requestData.imageUrl);
@@ -2847,6 +2863,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Invalid date format" });
         }
       }
+
+      // Coerce FormData string values to proper types
+      if (typeof requestData.price === 'string') requestData.price = requestData.price === '' ? null : Number(requestData.price);
+      if (typeof requestData.featured === 'string') requestData.featured = requestData.featured === 'true';
+      if (typeof requestData.isSocaPassportEnabled === 'string') requestData.isSocaPassportEnabled = requestData.isSocaPassportEnabled === 'true';
+      if (typeof requestData.isPremiumPassport === 'string') requestData.isPremiumPassport = requestData.isPremiumPassport === 'true';
+      if (typeof requestData.stampPointsDefault === 'string') requestData.stampPointsDefault = Number(requestData.stampPointsDefault);
+      if (typeof requestData.checkinRadiusMeters === 'string') requestData.checkinRadiusMeters = Number(requestData.checkinRadiusMeters);
 
       // Log the update details
       console.log(`Updating event ${id} with date:`, requestData.date);
