@@ -21,7 +21,6 @@ const BottomNavigation = ({ user: propUser }: BottomNavigationProps) => {
     { path: "/", label: "Home", icon: Home },
     { path: "/events", label: "Events", icon: CalendarDays },
     { path: "/shop", label: "Shop", icon: ShoppingBag },
-    { path: "/apps", label: "Apps", icon: Blocks },
     { path: "/media", label: "Media", icon: Images },
     { path: "/live", label: "Live", icon: Video, hasNotification: true },
   ];

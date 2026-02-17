@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, Calendar, ShoppingBag, Blocks, Ticket, Video, Users } from "lucide-react";
+import { Home, Calendar, ShoppingBag, Ticket, Video, Users } from "lucide-react";
 import { useIsMobile, useDeviceType } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -8,7 +8,6 @@ const navigationItems = [
   { path: "/events", icon: Calendar, label: "Events" },
   { path: "/my-tickets", icon: Ticket, label: "Tickets" },
   { path: "/shop", icon: ShoppingBag, label: "Shop" },
-  { path: "/apps", icon: Blocks, label: "Apps" },
   { path: "/live", icon: Video, label: "Live" },
   { path: "/community", icon: Users, label: "Community" }
 ];

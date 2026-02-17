@@ -9,11 +9,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/context/ThemeContext";
 import SGFlyerLogoPng from "@/assets/SGFLYERLOGO.png";
 import BrandVideo from "@/assets/videos/brand-video.mp4";
+import { Eye } from "lucide-react";
+import { VoidTransition } from "@/components/effects/VoidTransition";
 
 const LandingPage = () => {
     const [, navigate] = useLocation();
     const { toast } = useToast();
     const { setTheme } = useTheme();
+    const [showVoidTransition, setShowVoidTransition] = useState(false);
 
     const { data: featuredEvents, isLoading: eventsLoading } = useQuery<Event[]>({
         queryKey: [API_ROUTES.EVENTS_FEATURED],
@@ -97,11 +100,11 @@ const LandingPage = () => {
                                         🎫 GET YOUR SOCA PASSPORT
                                     </Button>
                                     <Button
-                                        variant="outline"
-                                        className="btn-modern glass-effect border-foreground/20 text-foreground hover:bg-foreground/10 px-8 py-6 uppercase tracking-widest text-lg font-semibold backdrop-blur-sm w-full"
-                                        onClick={() => enterTheVoid('/apps')}
+                                        className="btn-modern bg-black/80 border-2 border-white/20 text-white hover:border-purple-500/50 hover:shadow-[0_0_30px_rgba(100,60,255,0.3)] px-8 py-6 uppercase tracking-widest text-lg font-semibold backdrop-blur-sm w-full transition-all duration-500 group"
+                                        onClick={() => setShowVoidTransition(true)}
                                     >
-                                        APPS
+                                        <Eye className="mr-3 h-5 w-5 group-hover:scale-110 transition-transform" />
+                                        ENTER THE VOID
                                     </Button>
                                 </div>
                             </div>
@@ -125,6 +128,9 @@ const LandingPage = () => {
                     </div>
                 </div>
             </section>
+            {showVoidTransition && (
+                <VoidTransition onComplete={() => setShowVoidTransition(false)} />
+            )}
         </div>
     );
 };

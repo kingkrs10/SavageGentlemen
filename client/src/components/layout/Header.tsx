@@ -43,7 +43,6 @@ const Header = ({ user: propUser, onProfileClick, onLogout }: HeaderProps) => {
             <a href="/" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Home</a>
             <a href="/events" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Events</a>
             <a href="/shop" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Shop</a>
-            <a href="/apps" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Apps</a>
             <a href="/media" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Media</a>
             <a href="/live" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Live</a>
             {user && !user.isGuest && (
