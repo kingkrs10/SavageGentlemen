@@ -2558,10 +2558,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           requestData.additionalImages = additionalImagePaths;
         }
 
-        // Process video
+        // Process video - store in imageUrl if no image was uploaded
+        // (events table has no videoUrl column)
         if (files['video'] && files['video'][0]) {
           const videoFile = files['video'][0];
-          requestData.videoUrl = `/uploads/${videoFile.filename}`;
+          if (!requestData.imageUrl) {
+            requestData.imageUrl = `/uploads/${videoFile.filename}`;
+          }
         }
       }
 
@@ -2719,10 +2722,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        // Process video
+        // Process video - store in imageUrl if no image was uploaded
+        // (events table has no videoUrl column)
         if (files['video'] && files['video'][0]) {
           const videoFile = files['video'][0];
-          requestData.videoUrl = `/uploads/${videoFile.filename}`;
+          if (!requestData.imageUrl) {
+            requestData.imageUrl = `/uploads/${videoFile.filename}`;
+          }
         }
       }
 
@@ -2830,10 +2836,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        // Process video
+        // Process video - store in imageUrl if no image was uploaded
+        // (events table has no videoUrl column)
         if (files['video'] && files['video'][0]) {
           const videoFile = files['video'][0];
-          requestData.videoUrl = `/uploads/${videoFile.filename}`;
+          if (!requestData.imageUrl) {
+            requestData.imageUrl = `/uploads/${videoFile.filename}`;
+          }
         }
       }
 
