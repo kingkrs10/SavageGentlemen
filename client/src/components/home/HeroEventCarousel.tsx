@@ -136,6 +136,14 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
   useEffect(() => {
     if (!api || !autoPlay || events.length <= 1) return;
 
+    // Check if current slide is a video
+    // Array index is current - 1 because we add 1 to current for display
+    const currentEvent = events[current - 1];
+    const isVideo = currentEvent?.imageUrl && isVideoUrl(currentEvent.imageUrl);
+
+    // If it's a video, we don't use the timer (we wait for onEnded)
+    if (isVideo) return;
+
     const interval = setInterval(() => {
       if (api.canScrollNext()) {
         api.scrollNext();
@@ -145,7 +153,7 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
     }, 5000); // 5 seconds per slide
 
     return () => clearInterval(interval);
-  }, [api, autoPlay, events.length]);
+  }, [api, autoPlay, events.length, current]); // Added current to dependencies
 
   // Pause auto-play on hover or focus
   const handleMouseEnter = () => {
@@ -232,7 +240,7 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
                 aria-label={`${event.title} event details. Press Enter or Space to ${showDetails === index ? 'hide' : 'show'} more information.`}
                 data-testid={`carousel-slide-${event.id}`}
               >
-                {/* Background image */}
+                {/* Background image/video */}
                 <div className="absolute inset-0">
                   {event.imageUrl ? (
                     isVideoUrl(event.imageUrl) ? (
@@ -241,8 +249,14 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
                         className="w-full h-full object-cover"
                         autoPlay
                         muted
-                        loop
                         playsInline
+                        onEnded={() => {
+                          if (api?.canScrollNext()) {
+                            api.scrollNext();
+                          } else {
+                            api?.scrollTo(0);
+                          }
+                        }}
                       />
                     ) : (
                       <img
