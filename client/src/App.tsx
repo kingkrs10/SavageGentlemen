@@ -28,7 +28,7 @@ const Events = lazy(() => import("@/pages/events"));
 const EventDetail = lazy(() => import("@/pages/event-detail"));
 const Shop = lazy(() => import("@/pages/shop"));
 const Apps = lazy(() => import("@/pages/apps"));
-const AppsLanguageSensei = lazy(() => import("@/pages/apps-language-sensei"));
+
 const Media = lazy(() => import("@/pages/media"));
 const Live = lazy(() => import("@/pages/live"));
 const Checkout = lazy(() => import("@/pages/checkout"));
@@ -46,7 +46,7 @@ const FreeTicketsDashboard = lazy(() => import("@/pages/free-tickets-dashboard")
 const EmailManagement = lazy(() => import("@/pages/email-management"));
 const Profile = lazy(() => import("@/pages/profile"));
 const Settings = lazy(() => import("@/pages/settings"));
-const AiAssistant = lazy(() => import("@/pages/ai-assistant"));
+
 const Passport = lazy(() => import("@/pages/passport"));
 const SocaPassport = lazy(() => import("@/pages/socaport-app"));
 const PassportPromoters = lazy(() => import("@/pages/passport-promoters"));
@@ -83,7 +83,7 @@ function Router() {
         <Route path="/events/:id/:slug" component={EventDetail} />
         <Route path="/shop" component={Shop} />
         <Route path="/apps" component={Apps} />
-        <Route path="/apps/language-sensei" component={AppsLanguageSensei} />
+
         <Route path="/media" component={Media} />
         <Route path="/live" component={Live} />
         <Route path="/checkout" component={Checkout} />
@@ -101,7 +101,7 @@ function Router() {
         <Route path="/email-management" component={EmailManagement} />
         <Route path="/profile" component={Profile} />
         <Route path="/settings" component={Settings} />
-        <Route path="/ai-assistant" component={AiAssistant} />
+
         <Route path="/passport" component={Passport} />
         <Route path="/passport/:username" component={PassportPublicProfile} />
         <Route path="/socapassport" component={SocaPassport} />

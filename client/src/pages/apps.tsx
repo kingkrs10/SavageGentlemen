@@ -3,18 +3,7 @@ import { Blocks, Languages, ArrowRight } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
 
 const apps = [
-    {
-        id: "language-sensei",
-        name: "Language Sensei",
-        icon: "⛩️",
-        description: "Learn Japanese through AI-powered conversation. Messages appear in three layers: Japanese, Romaji, and English.",
-        tags: ["AI", "Japanese", "Education"],
-        path: "/apps/language-sensei",
-        external: false,
-        gradient: "from-red-900/40 to-amber-900/30",
-        accentColor: "text-amber-400",
-        borderColor: "border-red-800/30",
-    },
+
     {
         id: "survival-map",
         name: "Survival Map Generator",

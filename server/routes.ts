@@ -67,12 +67,7 @@ import {
   getAvailablePlans,
   handleStripeWebhook
 } from "./promoter-subscription-stripe";
-import {
-  createCheckoutSession,
-  handleStripeWebhook as handleLanguageSenseiWebhook,
-  getProStatus,
-  handleChat
-} from "./language-sensei";
+
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -170,11 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   router.post("/promoter-subscriptions/cancel", verifyFirebaseToken, cancelPromoterSubscription);
   router.post("/promoter-subscriptions/stripe-webhook", express.raw({ type: 'application/json' }), handleStripeWebhook);
 
-  // Language Sensei Pro Routes
-  router.post("/language-sensei/create-checkout", authenticateUser, createCheckoutSession);
-  router.post("/language-sensei/stripe-webhook", express.raw({ type: 'application/json' }), handleLanguageSenseiWebhook);
-  router.get("/language-sensei/pro-status", getProStatus);
-  router.post("/language-sensei/chat", handleChat);
+
 
   // Register social and enhanced ticketing routes
   registerSocialRoutes(app);
