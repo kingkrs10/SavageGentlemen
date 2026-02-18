@@ -28,7 +28,7 @@ const Events = lazy(() => import("@/pages/events"));
 const EventDetail = lazy(() => import("@/pages/event-detail"));
 const Shop = lazy(() => import("@/pages/shop"));
 const Apps = lazy(() => import("@/pages/apps"));
-
+const AppsLanguageSensei = lazy(() => import("@/pages/apps-language-sensei"));
 const Media = lazy(() => import("@/pages/media"));
 const Live = lazy(() => import("@/pages/live"));
 const Checkout = lazy(() => import("@/pages/checkout"));
@@ -83,7 +83,7 @@ function Router() {
         <Route path="/events/:id/:slug" component={EventDetail} />
         <Route path="/shop" component={Shop} />
         <Route path="/apps" component={Apps} />
-
+        <Route path="/apps/language-sensei" component={AppsLanguageSensei} />
         <Route path="/media" component={Media} />
         <Route path="/live" component={Live} />
         <Route path="/checkout" component={Checkout} />
