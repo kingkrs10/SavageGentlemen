@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/carousel";
 import { Event } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { getNormalizedImageUrl, isVideoUrl } from "@/lib/utils/image-utils";
 
 interface HeroEventCarouselProps {
   events: Event[];
@@ -62,8 +63,8 @@ const EventDetailsOverlay = ({ event, onGetTicket, isVisible }: EventDetailsOver
     >
       <div className="max-w-2xl space-y-4">
         {/* Event category badge */}
-        <Badge 
-          variant="secondary" 
+        <Badge
+          variant="secondary"
           className="bg-primary text-white text-sm font-semibold px-3 py-1"
           data-testid="event-category-badge"
         >
@@ -215,7 +216,7 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
         <CarouselContent className="h-full -ml-0">
           {events.map((event, index) => (
             <CarouselItem key={event.id} className="pl-0 h-full">
-              <div 
+              <div
                 className="relative w-full h-full cursor-pointer focus:outline-none focus:ring-4 focus:ring-orange-500/50 focus:ring-offset-2 focus:ring-offset-black"
                 onClick={() => setShowDetails(showDetails === index ? null : index)}
                 onKeyDown={(e) => {
@@ -234,50 +235,60 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
                 {/* Background image */}
                 <div className="absolute inset-0">
                   {event.imageUrl ? (
-                    <img
-                      src={event.imageUrl}
-                      alt={event.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        // Fallback to gradient background if image fails
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                      }}
-                    />
+                    isVideoUrl(event.imageUrl) ? (
+                      <video
+                        src={getNormalizedImageUrl(event.imageUrl)}
+                        className="w-full h-full object-cover"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                      />
+                    ) : (
+                      <img
+                        src={getNormalizedImageUrl(event.imageUrl)}
+                        alt={event.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                    )
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-primary via-orange-600 to-red-700" />
                   )}
-                  
+
                   {/* Gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-                </div>
 
-                {/* Default content (always visible) */}
-                <div className="absolute inset-0 flex items-center justify-center text-center px-8">
-                  <div className="max-w-4xl space-y-6">
-                    <Badge 
-                      variant="secondary" 
-                      className="bg-orange-500 text-white text-sm font-semibold px-3 py-1 mb-4"
-                    >
-                      {event.category || "FEATURED EVENT"}
-                    </Badge>
-                    
-                    <h1 className="text-5xl md:text-8xl font-bold text-white mb-4 tracking-tight drop-shadow-2xl">
-                      {event.title}
-                    </h1>
-                    
-                    <p className="text-xl md:text-3xl text-orange-400 font-medium drop-shadow-lg">
-                      {event.description?.split('\n')[0] || "Special Performance"}
-                    </p>
+                  {/* Default content (always visible) */}
+                  <div className="absolute inset-0 flex items-center justify-center text-center px-8">
+                    <div className="max-w-4xl space-y-6">
+                      <Badge
+                        variant="secondary"
+                        className="bg-orange-500 text-white text-sm font-semibold px-3 py-1 mb-4"
+                      >
+                        {event.category || "FEATURED EVENT"}
+                      </Badge>
+
+                      <h1 className="text-5xl md:text-8xl font-bold text-white mb-4 tracking-tight drop-shadow-2xl">
+                        {event.title}
+                      </h1>
+
+                      <p className="text-xl md:text-3xl text-orange-400 font-medium drop-shadow-lg">
+                        {event.description?.split('\n')[0] || "Special Performance"}
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                {/* Interactive details overlay */}
-                <EventDetailsOverlay
-                  event={event}
-                  onGetTicket={onGetTicket}
-                  isVisible={showDetails === index}
-                />
+                  {/* Interactive details overlay */}
+                  <EventDetailsOverlay
+                    event={event}
+                    onGetTicket={onGetTicket}
+                    isVisible={showDetails === index}
+                  />
+                </div>
               </div>
             </CarouselItem>
           ))}

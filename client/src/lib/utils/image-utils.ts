@@ -18,12 +18,12 @@ export function getNormalizedImageUrl(url: string | null): string {
     if (url.startsWith('/uploads/')) {
       return url; // Already has proper format
     }
-    
+
     // If it starts with uploads/, add leading slash
     if (url.startsWith('uploads/')) {
       return `/${url}`;
     }
-    
+
     // Any other format, normalize by adding /uploads/ prefix
     return `/uploads/${url.replace(/^\/+/, '')}`;
   }
@@ -53,21 +53,31 @@ export function getNormalizedImageUrl(url: string | null): string {
  */
 export function isValidImageUrl(url: string | null): boolean {
   if (!url) return false;
-  
+
   // Basic check for image extensions
   const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
   const hasValidExtension = validExtensions.some(ext => url.toLowerCase().endsWith(ext));
-  
+
   // Consider Google Drive URLs valid if they can be normalized
   const isGoogleDrive = url.includes('drive.google.com/file/d/');
-  
+
   return hasValidExtension || isGoogleDrive;
+}
+
+/**
+ * Checks if a URL points to a video file
+ */
+export function isVideoUrl(url: string | null): boolean {
+  if (!url) return false;
+
+  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov'];
+  return videoExtensions.some(ext => url.toLowerCase().endsWith(ext));
 }
 
 // Normalize additional images array from database
 export function normalizeAdditionalImages(additionalImages: string[] | string | null): string[] {
   if (!additionalImages) return [];
-  
+
   // Handle string format (JSON string from database)
   if (typeof additionalImages === 'string') {
     try {
@@ -81,11 +91,11 @@ export function normalizeAdditionalImages(additionalImages: string[] | string | 
       return [getNormalizedImageUrl(additionalImages)];
     }
   }
-  
+
   // Handle array format
   if (Array.isArray(additionalImages)) {
     return additionalImages.map(img => getNormalizedImageUrl(img));
   }
-  
+
   return [];
 }
