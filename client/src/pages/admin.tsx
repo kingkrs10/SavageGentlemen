@@ -172,8 +172,7 @@ import {
   Stamp,
   Upload,
   X,
-  Image as ImageIcon,
-  FileVideo
+  Image as ImageIcon
 } from "lucide-react";
 import LivestreamManager from "@/components/admin/LivestreamManager";
 import TicketScanner from "@/components/admin/TicketScanner";
@@ -276,9 +275,7 @@ export default function AdminPage() {
     carnivalCircuit: ''
   });
   const [eventImageFile, setEventImageFile] = useState<File | null>(null);
-  const [eventVideoFile, setEventVideoFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
   React.useEffect(() => {
@@ -705,9 +702,7 @@ export default function AdminPage() {
       carnivalCircuit: event.carnivalCircuit || ''
     });
     setEventImageFile(null);
-    setEventVideoFile(null);
     setImagePreview(null);
-    setVideoPreview(null);
     setEventDialogOpen(true);
   };
 
@@ -769,9 +764,7 @@ export default function AdminPage() {
       formData.append('imageUrl', eventForm.imageUrl);
     }
 
-    if (eventVideoFile) {
-      formData.append('video', eventVideoFile);
-    }
+
 
     return formData;
   };
@@ -784,9 +777,7 @@ export default function AdminPage() {
       countryCode: '', carnivalCircuit: ''
     });
     setEventImageFile(null);
-    setEventVideoFile(null);
     setImagePreview(null);
-    setVideoPreview(null);
   };
 
   // Helper to get auth headers for FormData requests (no Content-Type — browser sets multipart boundary)
@@ -1734,40 +1725,7 @@ export default function AdminPage() {
                     />
                   </div>
 
-                  {/* Video Upload */}
-                  <div className="space-y-2">
-                    <Label className="text-white flex items-center gap-2"><FileVideo className="h-4 w-4" /> Event Video (optional)</Label>
-                    {videoPreview ? (
-                      <div className="relative rounded-lg overflow-hidden border border-slate-600">
-                        <video src={videoPreview} className="w-full h-40 object-cover" muted />
-                        <button
-                          type="button"
-                          onClick={() => { setEventVideoFile(null); setVideoPreview(null); }}
-                          className="absolute top-2 right-2 bg-black/70 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-500 rounded-lg cursor-pointer bg-slate-700/50 hover:bg-slate-700 transition-colors">
-                        <FileVideo className="h-8 w-8 text-slate-400 mb-2" />
-                        <span className="text-sm text-slate-400">Click to upload video</span>
-                        <span className="text-xs text-slate-500 mt-1">MP4, WebM, MOV (max 100MB)</span>
-                        <input
-                          type="file"
-                          accept="video/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              setEventVideoFile(file);
-                              setVideoPreview(URL.createObjectURL(file));
-                            }
-                          }}
-                        />
-                      </label>
-                    )}
-                  </div>
+
 
                   <div className="flex items-center space-x-2">
                     <Checkbox

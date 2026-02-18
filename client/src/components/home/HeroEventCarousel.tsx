@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/carousel";
 import { Event } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { getNormalizedImageUrl, isVideoUrl } from "@/lib/utils/image-utils";
+import { getNormalizedImageUrl } from "@/lib/utils/image-utils";
 
 interface HeroEventCarouselProps {
   events: Event[];
@@ -136,14 +136,6 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
   useEffect(() => {
     if (!api || !autoPlay || events.length <= 1) return;
 
-    // Check if current slide is a video
-    // Array index is current - 1 because we add 1 to current for display
-    const currentEvent = events[current - 1];
-    const isVideo = currentEvent?.imageUrl && isVideoUrl(currentEvent.imageUrl);
-
-    // If it's a video, we don't use the timer (we wait for onEnded)
-    if (isVideo) return;
-
     const interval = setInterval(() => {
       if (api.canScrollNext()) {
         api.scrollNext();
@@ -153,7 +145,7 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
     }, 5000); // 5 seconds per slide
 
     return () => clearInterval(interval);
-  }, [api, autoPlay, events.length, current]); // Added current to dependencies
+  }, [api, autoPlay, events.length, current]);
 
   // Pause auto-play on hover or focus
   const handleMouseEnter = () => {
@@ -240,35 +232,18 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
                 aria-label={`${event.title} event details. Press Enter or Space to ${showDetails === index ? 'hide' : 'show'} more information.`}
                 data-testid={`carousel-slide-${event.id}`}
               >
-                {/* Background image/video */}
+                {/* Background image */}
                 <div className="absolute inset-0">
                   {event.imageUrl ? (
-                    isVideoUrl(event.imageUrl) ? (
-                      <video
-                        src={getNormalizedImageUrl(event.imageUrl)}
-                        className="w-full h-full object-cover"
-                        autoPlay
-                        muted
-                        playsInline
-                        onEnded={() => {
-                          if (api?.canScrollNext()) {
-                            api.scrollNext();
-                          } else {
-                            api?.scrollTo(0);
-                          }
-                        }}
-                      />
-                    ) : (
-                      <img
-                        src={getNormalizedImageUrl(event.imageUrl)}
-                        alt={event.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                        }}
-                      />
-                    )
+                    <img
+                      src={getNormalizedImageUrl(event.imageUrl)}
+                      alt={event.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
+                    />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-primary via-orange-600 to-red-700" />
                   )}

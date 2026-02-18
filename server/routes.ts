@@ -2532,7 +2532,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Event management
   router.post("/admin/events", authenticateUser, authorizeAdmin, upload.fields([
     { name: 'image', maxCount: 1 },
-    { name: 'video', maxCount: 1 },
     { name: 'additionalImages', maxCount: 10 }
   ]), async (req: Request, res: Response) => {
     try {
@@ -2558,14 +2557,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           requestData.additionalImages = additionalImagePaths;
         }
 
-        // Process video - store in imageUrl if no image was uploaded
-        // (events table has no videoUrl column)
-        if (files['video'] && files['video'][0]) {
-          const videoFile = files['video'][0];
-          if (!requestData.imageUrl) {
-            requestData.imageUrl = `/uploads/${videoFile.filename}`;
-          }
-        }
       }
 
       // Always ensure date is properly converted to a Date object
@@ -2673,7 +2664,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   router.put("/admin/events/:id", eventUpdateHandler, upload.fields([
     { name: 'image', maxCount: 1 },
-    { name: 'video', maxCount: 1 },
     { name: 'additionalImages', maxCount: 10 }
   ]), async (req: Request, res: Response) => {
     try {
@@ -2722,14 +2712,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        // Process video - store in imageUrl if no image was uploaded
-        // (events table has no videoUrl column)
-        if (files['video'] && files['video'][0]) {
-          const videoFile = files['video'][0];
-          if (!requestData.imageUrl) {
-            requestData.imageUrl = `/uploads/${videoFile.filename}`;
-          }
-        }
       }
 
       // Parse additionalImages from JSON string if it comes in that format
@@ -2787,7 +2769,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Also support PATCH method for event updates (for client compatibility)
   router.patch("/admin/events/:id", eventUpdateHandler, upload.fields([
     { name: 'image', maxCount: 1 },
-    { name: 'video', maxCount: 1 },
     { name: 'additionalImages', maxCount: 10 }
   ]), async (req: Request, res: Response) => {
     try {
@@ -2836,14 +2817,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        // Process video - store in imageUrl if no image was uploaded
-        // (events table has no videoUrl column)
-        if (files['video'] && files['video'][0]) {
-          const videoFile = files['video'][0];
-          if (!requestData.imageUrl) {
-            requestData.imageUrl = `/uploads/${videoFile.filename}`;
-          }
-        }
       }
 
       // Parse additionalImages from JSON string if it comes in that format
