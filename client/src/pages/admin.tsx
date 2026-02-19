@@ -180,7 +180,6 @@ import {
   Search,
   Filter,
   Trash,
-  Video,
   Plus
 } from "lucide-react";
 import LivestreamManager from "@/components/admin/LivestreamManager";
@@ -958,8 +957,8 @@ export default function AdminPage() {
       stampPointsDefault: event.stampPointsDefault || 50,
       countryCode: event.countryCode || '',
       carnivalCircuit: event.carnivalCircuit || '',
-      videoUrl: event.videoUrl || '',
-      galleryMedia: (event.galleryMedia as any[]) || []
+      videoUrl: (event as any).videoUrl || '',
+      galleryMedia: (event as any).galleryMedia || []
     });
     setEventImageFile(null);
     setImagePreview(null);
@@ -1868,7 +1867,9 @@ export default function AdminPage() {
                   isSocaPassportEnabled: false,
                   stampPointsDefault: 50,
                   countryCode: '',
-                  carnivalCircuit: ''
+                  carnivalCircuit: '',
+                  videoUrl: '',
+                  galleryMedia: []
                 });
               }
             }}>
