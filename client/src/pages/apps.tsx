@@ -27,6 +27,18 @@ const apps = [
         accentColor: "text-emerald-400",
         borderColor: "border-emerald-800/30",
     },
+    {
+        id: "savage-physics",
+        name: "Savage Physics",
+        icon: "⚛️",
+        description: "An interactive physics playground. Type your burdens, watch them float in antigravity, drag and throw them, then hit SAVAGE ENGAGE.",
+        tags: ["Physics", "Interactive", "Matter.js"],
+        path: "/apps/savage-physics",
+        external: false,
+        gradient: "from-gray-900/60 to-green-900/30",
+        accentColor: "text-green-400",
+        borderColor: "border-green-800/30",
+    },
 ];
 
 function AppCard({ app }: { app: typeof apps[number] }) {
