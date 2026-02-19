@@ -3562,7 +3562,7 @@ export default function AdminPage() {
                                 onClick={() => handleDeleteAd(ad.id, ad.title)}
                                 disabled={deleteAdMutation.isPending}
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                <Trash className="h-3.5 w-3.5" />
                               </Button>
                             </div>
                           </TableCell>
