@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { getNormalizedImageUrl } from "@/lib/utils/image-utils";
@@ -172,7 +172,13 @@ import {
   Stamp,
   Upload,
   X,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Megaphone,
+  Eye,
+  BarChart3,
+  Edit,
+  Trash2,
+  Plus
 } from "lucide-react";
 import LivestreamManager from "@/components/admin/LivestreamManager";
 import TicketScanner from "@/components/admin/TicketScanner";
@@ -184,6 +190,33 @@ export default function AdminPage() {
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
   const [userDialogOpen, setUserDialogOpen] = useState(false);
+
+  // Ad management state
+  const [isCreateAdModalOpen, setIsCreateAdModalOpen] = useState(false);
+  const [editingAd, setEditingAd] = useState<any>(null);
+  const [adFormData, setAdFormData] = useState({
+    title: '',
+    description: '',
+    type: 'standard',
+    imageUrl: '',
+    logoUrl: '',
+    linkUrl: '',
+    backgroundColor: 'bg-gray-800',
+    textColor: 'text-white',
+    ctaText: 'Learn More',
+    price: '',
+    eventDate: '',
+    location: '',
+    videoUrl: '',
+    isActive: true,
+    priority: 0,
+    startDate: '',
+    endDate: ''
+  });
+  const [adImagePreview, setAdImagePreview] = useState<string | null>(null);
+  const [adUploadedImage, setAdUploadedImage] = useState<File | null>(null);
+  const [adVideoPreview, setAdVideoPreview] = useState<string | null>(null);
+  const [adUploadedVideo, setAdUploadedVideo] = useState<File | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<number>(1); // Default to first event for development
   const [ticketForm, setTicketForm] = useState({
     name: '',
@@ -429,6 +462,188 @@ export default function AdminPage() {
     queryKey: ["/api/music/mixes"],
     enabled: !!currentUser,
   });
+
+  // Fetch sponsored content
+  const {
+    data: sponsoredContent = [],
+    isLoading: adsLoading,
+    refetch: refetchAds
+  } = useQuery<any[]>({
+    queryKey: ['/api/sponsored-content'],
+    queryFn: () => apiRequest('GET', '/api/sponsored-content').then(res => res.json()),
+    enabled: !!currentUser,
+  });
+
+  // Auth helper for ad mutations
+  const getAdAuthHeaders = (): Record<string, string> => {
+    const headers: Record<string, string> = {};
+    const firebaseToken = localStorage.getItem("firebaseToken");
+    if (firebaseToken) {
+      headers["Authorization"] = `Bearer ${firebaseToken}`;
+    } else {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        const userData = user?.data?.data || user?.data || user;
+        if (userData?.token) headers["Authorization"] = `Bearer ${userData.token}`;
+        if (userData?.id) headers["user-id"] = userData.id.toString();
+      }
+    }
+    return headers;
+  };
+
+  // Create ad mutation
+  const createAdMutation = useMutation({
+    mutationFn: async (adData: any) => {
+      const formData = new FormData();
+      Object.keys(adData).forEach(key => {
+        if (adData[key] !== null && adData[key] !== undefined) {
+          formData.append(key, adData[key]);
+        }
+      });
+      if (adUploadedImage) formData.append('image', adUploadedImage);
+      if (adUploadedVideo) formData.append('video', adUploadedVideo);
+
+      const response = await fetch('/api/admin/sponsored-content', {
+        method: 'POST',
+        body: formData,
+        headers: getAdAuthHeaders(),
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to create advertisement');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/sponsored-content'] });
+      refetchAds();
+      setIsCreateAdModalOpen(false);
+      setEditingAd(null);
+      resetAdForm();
+      toast({ title: "Success", description: "Advertisement created successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to create advertisement", variant: "destructive" });
+    }
+  });
+
+  // Update ad mutation
+  const updateAdMutation = useMutation({
+    mutationFn: async ({ id, adData }: { id: number; adData: any }) => {
+      const formData = new FormData();
+      Object.keys(adData).forEach(key => {
+        if (adData[key] !== null && adData[key] !== undefined) {
+          formData.append(key, adData[key]);
+        }
+      });
+      if (adUploadedImage) formData.append('image', adUploadedImage);
+      if (adUploadedVideo) formData.append('video', adUploadedVideo);
+
+      const response = await fetch(`/api/admin/sponsored-content/${id}`, {
+        method: 'PUT',
+        body: formData,
+        headers: getAdAuthHeaders(),
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to update advertisement');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/sponsored-content'] });
+      refetchAds();
+      setIsCreateAdModalOpen(false);
+      setEditingAd(null);
+      resetAdForm();
+      toast({ title: "Success", description: "Advertisement updated successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to update advertisement", variant: "destructive" });
+    }
+  });
+
+  // Delete ad mutation
+  const deleteAdMutation = useMutation({
+    mutationFn: (id: number) => apiRequest('DELETE', `/api/admin/sponsored-content/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/sponsored-content'] });
+      toast({ title: "Success", description: "Advertisement deleted successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to delete advertisement", variant: "destructive" });
+    }
+  });
+
+  // Ad helper functions
+  const resetAdForm = () => {
+    setAdFormData({
+      title: '', description: '', type: 'standard', imageUrl: '', logoUrl: '',
+      linkUrl: '', backgroundColor: 'bg-gray-800', textColor: 'text-white',
+      ctaText: 'Learn More', price: '', eventDate: '', location: '', videoUrl: '',
+      isActive: true, priority: 0, startDate: '', endDate: ''
+    });
+    setAdImagePreview(null);
+    setAdUploadedImage(null);
+    setAdVideoPreview(null);
+    setAdUploadedVideo(null);
+  };
+
+  const handleAdImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setAdUploadedImage(file);
+      const reader = new FileReader();
+      reader.onload = () => setAdImagePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAdVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setAdUploadedVideo(file);
+      setAdVideoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleAdFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingAd) {
+        updateAdMutation.mutate({ id: editingAd.id, adData: adFormData });
+      } else {
+        createAdMutation.mutate(adFormData);
+      }
+    } catch (error) {
+      console.error("Error submitting ad form:", error);
+      toast({ title: "Error", description: "Failed to submit advertisement data", variant: "destructive" });
+    }
+  };
+
+  const handleEditAd = (ad: any) => {
+    setEditingAd(ad);
+    setAdFormData({
+      title: ad.title || '', description: ad.description || '', type: ad.type || 'standard',
+      imageUrl: ad.imageUrl || '', logoUrl: ad.logoUrl || '', linkUrl: ad.linkUrl || '',
+      backgroundColor: ad.backgroundColor || 'bg-gray-800', textColor: ad.textColor || 'text-white',
+      ctaText: ad.ctaText || 'Learn More', price: ad.price || '', eventDate: ad.eventDate || '',
+      location: ad.location || '', videoUrl: ad.videoUrl || '',
+      isActive: ad.isActive !== undefined ? ad.isActive : true, priority: ad.priority || 0,
+      startDate: ad.startDate ? new Date(ad.startDate).toISOString().split('T')[0] : '',
+      endDate: ad.endDate ? new Date(ad.endDate).toISOString().split('T')[0] : ''
+    });
+    setAdImagePreview(ad.imageUrl || null);
+    setAdUploadedImage(null);
+    setIsCreateAdModalOpen(true);
+  };
+
+  const handleDeleteAd = (id: number, title: string) => {
+    if (window.confirm(`Are you sure you want to delete the advertisement "${title}"? This action cannot be undone.`)) {
+      deleteAdMutation.mutate(id);
+    }
+  };
 
   // Handle ticket form submission
   // State for tickets management
@@ -1349,8 +1564,8 @@ export default function AdminPage() {
         </div>
         <Separator />
 
-        <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid grid-cols-9 mb-8 bg-[#141e2e] border border-slate-700">
+        <Tabs defaultValue="products" className="w-full" data-testid="admin-tabs">
+          <TabsList className="grid grid-cols-10 mb-8 bg-[#141e2e] border border-slate-700">
             <TabsTrigger value="products" className="flex items-center gap-2">
               <PackageOpen className="h-4 w-4" /> Products
             </TabsTrigger>
@@ -1377,6 +1592,9 @@ export default function AdminPage() {
             </TabsTrigger>
             <TabsTrigger value="scanner" className="flex items-center gap-2">
               <ScanLine className="h-4 w-4" /> Scanner
+            </TabsTrigger>
+            <TabsTrigger value="ads" className="flex items-center gap-2">
+              <Megaphone className="h-4 w-4" /> Ads
             </TabsTrigger>
           </TabsList>
 
@@ -3039,7 +3257,390 @@ export default function AdminPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Ads Tab */}
+          <TabsContent value="ads" className="space-y-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Sponsored Content</CardTitle>
+                  <CardDescription>Manage advertisements displayed on your site.</CardDescription>
+                </div>
+                <Button
+                  className="sg-btn"
+                  onClick={() => {
+                    setEditingAd(null);
+                    resetAdForm();
+                    setIsCreateAdModalOpen(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" /> Create Ad
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {adsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
+                    <p className="mt-2 text-sm text-muted-foreground">Loading ads...</p>
+                  </div>
+                ) : sponsoredContent.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground border border-dashed rounded-lg">
+                    <Megaphone className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                    <p className="font-medium">No ads created yet</p>
+                    <p className="text-sm mt-1">Click "Create Ad" to get started</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Views</TableHead>
+                        <TableHead>Clicks</TableHead>
+                        <TableHead>Priority</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sponsoredContent.map((ad: any) => (
+                        <TableRow key={ad.id}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{ad.title}</p>
+                              <p className="text-xs text-muted-foreground line-clamp-1">{ad.description}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="capitalize">{ad.type}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={ad.isActive ? "default" : "secondary"}>
+                              {ad.isActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <span className="flex items-center gap-1 text-sm">
+                              <Eye className="h-3 w-3" /> {ad.views || 0}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="flex items-center gap-1 text-sm">
+                              <BarChart3 className="h-3 w-3" /> {ad.clicks || 0}
+                            </span>
+                          </TableCell>
+                          <TableCell>{ad.priority || 0}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => handleEditAd(ad)}
+                              >
+                                <Edit className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                onClick={() => handleDeleteAd(ad.id, ad.title)}
+                                disabled={deleteAdMutation.isPending}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
+
+        {/* Create/Edit Ad Dialog */}
+        <Dialog open={isCreateAdModalOpen} onOpenChange={setIsCreateAdModalOpen}>
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingAd ? 'Edit Advertisement' : 'Create New Advertisement'}</DialogTitle>
+              <DialogDescription>Fill in the details for your advertisement.</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleAdFormSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="ad-title">Title *</Label>
+                  <Input
+                    id="ad-title"
+                    value={adFormData.title}
+                    onChange={(e) => setAdFormData({ ...adFormData, title: e.target.value })}
+                    required
+                    placeholder="Enter ad title"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ad-type">Type *</Label>
+                  <Select
+                    value={adFormData.type}
+                    onValueChange={(value) => setAdFormData({ ...adFormData, type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select ad type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="standard">Standard</SelectItem>
+                      <SelectItem value="banner">Banner</SelectItem>
+                      <SelectItem value="product">Product</SelectItem>
+                      <SelectItem value="event">Event</SelectItem>
+                      <SelectItem value="video">Video</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="ad-description">Description *</Label>
+                <Textarea
+                  id="ad-description"
+                  value={adFormData.description}
+                  onChange={(e) => setAdFormData({ ...adFormData, description: e.target.value })}
+                  required
+                  placeholder="Enter ad description"
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="ad-link">Link URL</Label>
+                  <Input
+                    id="ad-link"
+                    value={adFormData.linkUrl}
+                    onChange={(e) => setAdFormData({ ...adFormData, linkUrl: e.target.value })}
+                    placeholder="https://example.com"
+                    type="url"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ad-cta">CTA Text</Label>
+                  <Input
+                    id="ad-cta"
+                    value={adFormData.ctaText}
+                    onChange={(e) => setAdFormData({ ...adFormData, ctaText: e.target.value })}
+                    placeholder="Learn More"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="ad-bg-color">Background Color</Label>
+                  <Input
+                    id="ad-bg-color"
+                    value={adFormData.backgroundColor}
+                    onChange={(e) => setAdFormData({ ...adFormData, backgroundColor: e.target.value })}
+                    placeholder="bg-gray-800"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ad-text-color">Text Color</Label>
+                  <Input
+                    id="ad-text-color"
+                    value={adFormData.textColor}
+                    onChange={(e) => setAdFormData({ ...adFormData, textColor: e.target.value })}
+                    placeholder="text-white"
+                  />
+                </div>
+              </div>
+
+              {(adFormData.type === 'product' || adFormData.type === 'event') && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {adFormData.type === 'product' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="ad-price">Price</Label>
+                      <Input
+                        id="ad-price"
+                        value={adFormData.price}
+                        onChange={(e) => setAdFormData({ ...adFormData, price: e.target.value })}
+                        placeholder="$99.99"
+                      />
+                    </div>
+                  )}
+                  {adFormData.type === 'event' && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="ad-event-date">Event Date</Label>
+                        <Input
+                          id="ad-event-date"
+                          value={adFormData.eventDate}
+                          onChange={(e) => setAdFormData({ ...adFormData, eventDate: e.target.value })}
+                          placeholder="March 15, 2024"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="ad-location">Location</Label>
+                        <Input
+                          id="ad-location"
+                          value={adFormData.location}
+                          onChange={(e) => setAdFormData({ ...adFormData, location: e.target.value })}
+                          placeholder="New York, NY"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {adFormData.type === 'video' && (
+                <div className="space-y-2">
+                  <Label>Upload Video</Label>
+                  <div className="flex items-center space-x-3">
+                    <Input
+                      type="file"
+                      accept="video/*"
+                      onChange={handleAdVideoUpload}
+                      className="flex-1"
+                    />
+                    {adVideoPreview && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (adVideoPreview) URL.revokeObjectURL(adVideoPreview);
+                          setAdVideoPreview(null);
+                          setAdUploadedVideo(null);
+                          setAdFormData({ ...adFormData, videoUrl: '' });
+                        }}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                  {adVideoPreview && (
+                    <div className="mt-2 relative w-full max-w-xs mx-auto">
+                      <video src={adVideoPreview} controls className="rounded border h-32 w-full object-cover" />
+                    </div>
+                  )}
+                  <div className="mt-2">
+                    <Label htmlFor="ad-video-url">Or paste Video URL</Label>
+                    <Input
+                      id="ad-video-url"
+                      value={adFormData.videoUrl}
+                      onChange={(e) => setAdFormData({ ...adFormData, videoUrl: e.target.value })}
+                      placeholder="https://youtube.com/watch?v=..."
+                      type="url"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label>Advertisement Image</Label>
+                <div className="flex items-center space-x-3">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAdImageUpload}
+                    className="flex-1"
+                  />
+                  {adImagePreview && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setAdImagePreview(null);
+                        setAdUploadedImage(null);
+                      }}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+                {adImagePreview && (
+                  <div className="mt-2 relative w-full max-w-xs mx-auto">
+                    <img src={adImagePreview} alt="Ad Preview" className="rounded border object-cover h-32 w-full" />
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="ad-priority">Priority</Label>
+                  <Input
+                    id="ad-priority"
+                    type="number"
+                    value={adFormData.priority}
+                    onChange={(e) => setAdFormData({ ...adFormData, priority: parseInt(e.target.value) || 0 })}
+                    placeholder="0"
+                    min="0"
+                    max="100"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ad-start-date">Start Date</Label>
+                  <Input
+                    id="ad-start-date"
+                    type="date"
+                    value={adFormData.startDate}
+                    onChange={(e) => setAdFormData({ ...adFormData, startDate: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ad-end-date">End Date</Label>
+                  <Input
+                    id="ad-end-date"
+                    type="date"
+                    value={adFormData.endDate}
+                    onChange={(e) => setAdFormData({ ...adFormData, endDate: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="ad-active"
+                  checked={adFormData.isActive}
+                  onChange={(e) => setAdFormData({ ...adFormData, isActive: e.target.checked })}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="ad-active">Active (will be displayed on site)</Label>
+              </div>
+
+              <DialogFooter className="flex space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsCreateAdModalOpen(false);
+                    setEditingAd(null);
+                    resetAdForm();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createAdMutation.isPending || updateAdMutation.isPending}
+                  className="sg-btn"
+                >
+                  {(createAdMutation.isPending || updateAdMutation.isPending) ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                      {editingAd ? 'Updating...' : 'Creating...'}
+                    </>
+                  ) : (
+                    editingAd ? 'Update Ad' : 'Create Ad'
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
