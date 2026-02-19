@@ -89,6 +89,8 @@ export const events = pgTable("events", {
   currency: text("currency").default("USD"), // Currency code (USD, CAD, etc.)
   imageUrl: text("image_url"),
   additionalImages: text("additional_images").array(), // Array of additional image URLs
+  videoUrl: text("video_url"), // Main video URL
+  galleryMedia: jsonb("gallery_media").$type<{ type: 'image' | 'video', url: string, caption?: string, thumbnail?: string }[]>(), // Mixed media gallery
   category: text("category"),
   featured: boolean("featured").default(false),
   organizerName: text("organizer_name").default("Savage Gentlemen"),
@@ -132,6 +134,8 @@ export const insertEventSchema = createInsertSchema(events)
     currency: true,
     imageUrl: true,
     additionalImages: true,
+    videoUrl: true,
+    galleryMedia: true,
     category: true,
     featured: true,
     organizerName: true,

@@ -2567,7 +2567,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Event management
   router.post("/admin/events", authenticateUser, authorizeAdmin, upload.fields([
     { name: 'image', maxCount: 1 },
-    { name: 'additionalImages', maxCount: 10 }
+    { name: 'video', maxCount: 1 },
+    { name: 'additionalImages', maxCount: 10 },
+    { name: 'gallery', maxCount: 20 }
   ]), async (req: Request, res: Response) => {
     try {
       // Get the request data
@@ -2584,12 +2586,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
           requestData.imageUrl = mainImagePath;
         }
 
-        // Process additional images
+        // Process main video
+        if (files['video'] && files['video'][0]) {
+          const mainVideo = files['video'][0];
+          const mainVideoPath = `/uploads/${mainVideo.filename}`;
+          requestData.videoUrl = mainVideoPath;
+        }
+
+        // Process additional images (legacy)
         if (files['additionalImages'] && files['additionalImages'].length > 0) {
           const additionalImagePaths = files['additionalImages'].map(
             file => `/uploads/${file.filename}`
           );
           requestData.additionalImages = additionalImagePaths;
+        }
+
+        // Process gallery media (new)
+        if (files['gallery'] && files['gallery'].length > 0) {
+          const newGalleryItems = files['gallery'].map(file => ({
+            type: file.mimetype.startsWith('video/') ? 'video' : 'image',
+            url: `/uploads/${file.filename}`
+          }));
+
+          // Parse existing galleryMedia if provided as string
+          let galleryMedia: any[] = [];
+          if (typeof requestData.galleryMedia === 'string') {
+            try {
+              galleryMedia = JSON.parse(requestData.galleryMedia);
+            } catch (e) {
+              console.error('Error parsing galleryMedia JSON:', e);
+            }
+          } else if (Array.isArray(requestData.galleryMedia)) {
+            galleryMedia = requestData.galleryMedia;
+          }
+
+          requestData.galleryMedia = [...galleryMedia, ...newGalleryItems];
+        } else if (typeof requestData.galleryMedia === 'string') {
+          // Handle case where only JSON is sent (no new files)
+          try {
+            requestData.galleryMedia = JSON.parse(requestData.galleryMedia);
+          } catch (e) {
+            console.error('Error parsing galleryMedia JSON:', e);
+          }
         }
 
       }
@@ -2804,7 +2842,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Also support PATCH method for event updates (for client compatibility)
   router.patch("/admin/events/:id", eventUpdateHandler, upload.fields([
     { name: 'image', maxCount: 1 },
-    { name: 'additionalImages', maxCount: 10 }
+    { name: 'video', maxCount: 1 },
+    { name: 'additionalImages', maxCount: 10 },
+    { name: 'gallery', maxCount: 20 }
   ]), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
@@ -2826,6 +2866,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const mainImage = files['image'][0];
           const mainImagePath = `/uploads/${mainImage.filename}`;
           requestData.imageUrl = mainImagePath;
+        }
+
+        // Process main video
+        if (files['video'] && files['video'][0]) {
+          const mainVideo = files['video'][0];
+          const mainVideoPath = `/uploads/${mainVideo.filename}`;
+          requestData.videoUrl = mainVideoPath;
         }
 
         // Process additional images
@@ -2852,6 +2899,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
+        // Process gallery media (new)
+        if (files['gallery'] && files['gallery'].length > 0) {
+          const newGalleryItems = files['gallery'].map(file => ({
+            type: file.mimetype.startsWith('video/') ? 'video' : 'image',
+            url: `/uploads/${file.filename}`
+          }));
+
+          // Parse existing galleryMedia if provided as string
+          let galleryMedia: any[] = [];
+
+          if (typeof requestData.galleryMedia === 'string') {
+            try {
+              galleryMedia = JSON.parse(requestData.galleryMedia);
+            } catch (e) {
+              console.error('Error parsing galleryMedia JSON:', e);
+              // Fallback to existing if parse fails? Or empty?
+              // If we are appending, we should probably start with empty if parse fails, or existing DB data?
+              // Existing DB data is safer if we want to "append" but the frontend usually sends the current state.
+              // Let's assume frontend sends the current state minus deleted items.
+            }
+          } else if (Array.isArray(requestData.galleryMedia)) {
+            galleryMedia = requestData.galleryMedia;
+          } else if (requestData.retainExistingGallery === 'true' && event.galleryMedia) {
+            // If retention flag is set but no JSON provided, use existing from DB
+            galleryMedia = event.galleryMedia as any[];
+          }
+
+          requestData.galleryMedia = [...galleryMedia, ...newGalleryItems];
+        } else if (typeof requestData.galleryMedia === 'string') {
+          // Handle case where only JSON is sent (no new files)
+          try {
+            requestData.galleryMedia = JSON.parse(requestData.galleryMedia);
+          } catch (e) {
+            console.error('Error parsing galleryMedia JSON:', e);
+          }
+        }
+      } else {
+        // No files uploaded, but maybe JSON updates for galleryMedia
+        if (typeof requestData.galleryMedia === 'string') {
+          try {
+            requestData.galleryMedia = JSON.parse(requestData.galleryMedia);
+          } catch (e) {
+            console.error('Error parsing galleryMedia JSON:', e);
+          }
+        }
       }
 
       // Parse additionalImages from JSON string if it comes in that format
@@ -2892,10 +2984,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log the update details
       console.log(`Updating event ${id} with date:`, requestData.date);
       console.log(`Image URL:`, requestData.imageUrl);
+      console.log(`Video URL:`, requestData.videoUrl);
       console.log(`Additional Images:`, requestData.additionalImages);
 
       // Clean up by removing properties we don't want to persist
       delete requestData.retainExistingImages;
+      delete requestData.retainExistingGallery;
 
       // Now update the event with the processed data
       const updatedEvent = await storage.updateEvent(id, requestData);

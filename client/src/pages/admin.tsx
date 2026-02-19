@@ -177,7 +177,10 @@ import {
   Eye,
   BarChart3,
   Edit,
-  Trash2,
+  Search,
+  Filter,
+  Trash,
+  Video,
   Plus
 } from "lucide-react";
 import LivestreamManager from "@/components/admin/LivestreamManager";
@@ -293,22 +296,36 @@ export default function AdminPage() {
 
   // Event form state
   const [eventForm, setEventForm] = useState({
-    title: '',
-    date: '',
-    time: '',
-    location: '',
-    price: 0,
-    description: '',
-    imageUrl: '',
-    category: 'party',
-    featured: false,
-    isSocaPassportEnabled: false,
-    stampPointsDefault: 50,
-    countryCode: '',
-    carnivalCircuit: ''
+    title: '', date: '', time: '', location: '', price: 0, description: '', imageUrl: '',
+    category: 'party', featured: false, isSocaPassportEnabled: false, stampPointsDefault: 50,
+    countryCode: '', carnivalCircuit: '', videoUrl: '', galleryMedia: [] as any[]
   });
   const [eventImageFile, setEventImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  // New state for video and gallery
+  const [eventVideoFile, setEventVideoFile] = useState<File | null>(null);
+  const [eventVideoPreview, setEventVideoPreview] = useState<string | null>(null);
+  const [eventGalleryFiles, setEventGalleryFiles] = useState<File[]>([]);
+  const [eventGalleryPreviews, setEventGalleryPreviews] = useState<string[]>([]);
+
+  // Delete event mutation
+  const deleteEventMutation = useMutation({
+    mutationFn: (id: number) => apiRequest('DELETE', `/api/admin/events/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/events"] }); // If exists
+      toast({ title: "Success", description: "Event deleted successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to delete event", variant: "destructive" });
+    }
+  });
+
+  const handleDeleteEvent = (id: number) => {
+    if (confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
+      deleteEventMutation.mutate(id);
+    }
+  };
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
   React.useEffect(() => {
@@ -940,10 +957,16 @@ export default function AdminPage() {
       isSocaPassportEnabled: event.isSocaPassportEnabled || false,
       stampPointsDefault: event.stampPointsDefault || 50,
       countryCode: event.countryCode || '',
-      carnivalCircuit: event.carnivalCircuit || ''
+      carnivalCircuit: event.carnivalCircuit || '',
+      videoUrl: event.videoUrl || '',
+      galleryMedia: (event.galleryMedia as any[]) || []
     });
     setEventImageFile(null);
     setImagePreview(null);
+    setEventVideoFile(null);
+    setEventVideoPreview(null);
+    setEventGalleryFiles([]);
+    setEventGalleryPreviews([]);
     setEventDialogOpen(true);
   };
 
@@ -998,27 +1021,47 @@ export default function AdminPage() {
     if (eventForm.countryCode) formData.append('countryCode', eventForm.countryCode);
     if (eventForm.carnivalCircuit) formData.append('carnivalCircuit', eventForm.carnivalCircuit);
 
-    // If a file was chosen, upload it; otherwise keep the URL
+    // Add main image if selected
     if (eventImageFile) {
       formData.append('image', eventImageFile);
     } else if (eventForm.imageUrl) {
       formData.append('imageUrl', eventForm.imageUrl);
     }
 
+    // Add main video if selected
+    if (eventVideoFile) {
+      formData.append('video', eventVideoFile);
+    } else if (eventForm.videoUrl) {
+      formData.append('videoUrl', eventForm.videoUrl);
+    }
 
+    // Add gallery files
+    if (eventGalleryFiles.length > 0) {
+      eventGalleryFiles.forEach((file) => {
+        formData.append('gallery', file);
+      });
+    }
+
+    // Pass existing gallery media as JSON
+    if (eventForm.galleryMedia && eventForm.galleryMedia.length > 0) {
+      formData.append('galleryMedia', JSON.stringify(eventForm.galleryMedia));
+    }
 
     return formData;
   };
 
   const resetEventFormState = () => {
     setEventForm({
-      title: '', date: '', time: '', location: '', price: 0,
-      description: '', imageUrl: '', category: 'party', featured: false,
-      isSocaPassportEnabled: false, stampPointsDefault: 50,
-      countryCode: '', carnivalCircuit: ''
+      title: '', date: '', time: '', location: '', price: 0, description: '', imageUrl: '',
+      category: 'party', featured: false, isSocaPassportEnabled: false, stampPointsDefault: 50,
+      countryCode: '', carnivalCircuit: '', videoUrl: '', galleryMedia: []
     });
     setEventImageFile(null);
     setImagePreview(null);
+    setEventVideoFile(null);
+    setEventVideoPreview(null);
+    setEventGalleryFiles([]);
+    setEventGalleryPreviews([]);
   };
 
   // Helper to get auth headers for FormData requests (no Content-Type — browser sets multipart boundary)
@@ -1781,6 +1824,13 @@ export default function AdminPage() {
                                 >
                                   Tickets
                                 </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleDeleteEvent(event.id)}
+                                >
+                                  <Trash className="h-4 w-4" />
+                                </Button>
                               </div>
                             </TableCell>
                           </TableRow>
@@ -1822,258 +1872,423 @@ export default function AdminPage() {
                 });
               }
             }}>
-              <DialogContent className="sm:max-w-[450px] bg-[#141e2e] text-white">
+              <DialogContent className="sm:max-w-[600px] bg-[#141e2e] text-white max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="text-white text-xl">
                     {editingEvent ? 'Edit Event' : 'Create new event'}
                   </DialogTitle>
                   <DialogDescription className="text-slate-400">
-                    {editingEvent ? 'Update event details below.' : 'Add a new event to the system with appropriate details.'}
+                    {editingEvent ? 'Update event details and media below.' : 'Add a new event to the system with appropriate details.'}
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title" className="text-white">Event Title</Label>
-                    <Input
-                      id="title"
-                      placeholder="Enter event title"
-                      className="bg-slate-700 border border-slate-600 text-white"
-                      value={eventForm.title}
-                      onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
-                    />
-                  </div>
+                <Tabs defaultValue="details" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 bg-slate-800 border border-slate-700 mb-4">
+                    <TabsTrigger value="details">Event Details</TabsTrigger>
+                    <TabsTrigger value="media">Multimedia & Gallery</TabsTrigger>
+                  </TabsList>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <TabsContent value="details" className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="date" className="text-white">Date</Label>
+                      <Label htmlFor="title" className="text-white">Event Title</Label>
                       <Input
-                        id="date"
-                        type="date"
+                        id="title"
+                        placeholder="Enter event title"
                         className="bg-slate-700 border border-slate-600 text-white"
-                        value={eventForm.date}
-                        onChange={(e) => setEventForm({ ...eventForm, date: e.target.value })}
+                        value={eventForm.title}
+                        onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="time" className="text-white">Time</Label>
-                      <Input
-                        id="time"
-                        type="time"
-                        className="bg-slate-700 border border-slate-600 text-white"
-                        value={eventForm.time}
-                        onChange={(e) => setEventForm({ ...eventForm, time: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="location" className="text-white">Location</Label>
-                    <Input
-                      id="location"
-                      placeholder="Enter event location"
-                      className="bg-slate-700 border border-slate-600 text-white"
-                      value={eventForm.location}
-                      onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="price" className="text-white">Base Price ($)</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
-                      className="bg-slate-700 border border-slate-600 text-white"
-                      value={eventForm.price}
-                      onChange={(e) => setEventForm({ ...eventForm, price: parseFloat(e.target.value) })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="category" className="text-white">Category</Label>
-                    <Select
-                      value={eventForm.category}
-                      onValueChange={(value) => setEventForm({ ...eventForm, category: value })}
-                    >
-                      <SelectTrigger className="bg-slate-700 border border-slate-600 text-white">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-700 text-white">
-                        <SelectItem value="party">Party</SelectItem>
-                        <SelectItem value="concert">Concert</SelectItem>
-                        <SelectItem value="festival">Festival</SelectItem>
-                        <SelectItem value="workshop">Workshop</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="description" className="text-white">Description</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Enter event description"
-                      className="bg-slate-700 border border-slate-600 text-white resize-none min-h-[100px]"
-                      value={eventForm.description}
-                      onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-                    />
-                  </div>
-
-                  {/* Image Upload */}
-                  <div className="space-y-2">
-                    <Label className="text-white flex items-center gap-2"><ImageIcon className="h-4 w-4" /> Event Image</Label>
-                    {(imagePreview || eventForm.imageUrl) ? (
-                      <div className="relative rounded-lg overflow-hidden border border-slate-600">
-                        <img
-                          src={imagePreview || getNormalizedImageUrl(eventForm.imageUrl)}
-                          alt="Event preview"
-                          className="w-full h-40 object-cover"
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="date" className="text-white">Date</Label>
+                        <Input
+                          id="date"
+                          type="date"
+                          className="bg-slate-700 border border-slate-600 text-white"
+                          value={eventForm.date}
+                          onChange={(e) => setEventForm({ ...eventForm, date: e.target.value })}
                         />
-                        <button
-                          type="button"
-                          onClick={() => { setEventImageFile(null); setImagePreview(null); setEventForm({ ...eventForm, imageUrl: '' }); }}
-                          className="absolute top-2 right-2 bg-black/70 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
                       </div>
-                    ) : (
-                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-500 rounded-lg cursor-pointer bg-slate-700/50 hover:bg-slate-700 transition-colors">
-                        <Upload className="h-8 w-8 text-slate-400 mb-2" />
-                        <span className="text-sm text-slate-400">Click to upload image</span>
-                        <span className="text-xs text-slate-500 mt-1">JPG, PNG, GIF, WebP</span>
-                        <input
+
+                      <div className="space-y-2">
+                        <Label htmlFor="time" className="text-white">Time</Label>
+                        <Input
+                          id="time"
+                          type="time"
+                          className="bg-slate-700 border border-slate-600 text-white"
+                          value={eventForm.time}
+                          onChange={(e) => setEventForm({ ...eventForm, time: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="location" className="text-white">Location</Label>
+                      <Input
+                        id="location"
+                        placeholder="Enter event location"
+                        className="bg-slate-700 border border-slate-600 text-white"
+                        value={eventForm.location}
+                        onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="price" className="text-white">Base Price ($)</Label>
+                      <Input
+                        id="price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        className="bg-slate-700 border border-slate-600 text-white"
+                        value={eventForm.price}
+                        onChange={(e) => setEventForm({ ...eventForm, price: parseFloat(e.target.value) })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="category" className="text-white">Category</Label>
+                      <Select
+                        value={eventForm.category}
+                        onValueChange={(value) => setEventForm({ ...eventForm, category: value })}
+                      >
+                        <SelectTrigger className="bg-slate-700 border border-slate-600 text-white">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-700 text-white">
+                          <SelectItem value="party">Party</SelectItem>
+                          <SelectItem value="concert">Concert</SelectItem>
+                          <SelectItem value="festival">Festival</SelectItem>
+                          <SelectItem value="workshop">Workshop</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="description" className="text-white">Description</Label>
+                      <Textarea
+                        id="description"
+                        placeholder="Enter event description"
+                        className="bg-slate-700 border border-slate-600 text-white resize-none min-h-[100px]"
+                        value={eventForm.description}
+                        onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                      />
+                    </div>
+
+                    {/* Image Upload */}
+                    <div className="space-y-2">
+                      <Label className="text-white flex items-center gap-2"><ImageIcon className="h-4 w-4" /> Main Image</Label>
+                      {(imagePreview || eventForm.imageUrl) ? (
+                        <div className="relative rounded-lg overflow-hidden border border-slate-600">
+                          <img
+                            src={imagePreview || getNormalizedImageUrl(eventForm.imageUrl)}
+                            alt="Event preview"
+                            className="w-full h-40 object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => { setEventImageFile(null); setImagePreview(null); setEventForm({ ...eventForm, imageUrl: '' }); }}
+                            className="absolute top-2 right-2 bg-black/70 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-500 rounded-lg cursor-pointer bg-slate-700/50 hover:bg-slate-700 transition-colors">
+                          <Upload className="h-8 w-8 text-slate-400 mb-2" />
+                          <span className="text-sm text-slate-400">Click to upload image</span>
+                          <span className="text-xs text-slate-500 mt-1">JPG, PNG, GIF, WebP</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setEventImageFile(file);
+                                setImagePreview(URL.createObjectURL(file));
+                              }
+                            }}
+                          />
+                        </label>
+                      )}
+
+                      {/* URL Fallback for Image */}
+                      {!imagePreview && !eventForm.imageUrl && (
+                        <div className="pt-2">
+                          <p className="text-xs text-slate-500 mb-1">Or paste a URL:</p>
+                          <Input
+                            placeholder="https://example.com/image.jpg"
+                            className="bg-slate-700 border border-slate-600 text-white text-sm"
+                            value={eventForm.imageUrl}
+                            onChange={(e) => { setEventForm({ ...eventForm, imageUrl: e.target.value }); }}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="featured"
+                        checked={eventForm.featured}
+                        onCheckedChange={(checked) =>
+                          setEventForm({ ...eventForm, featured: checked === true })
+                        }
+                        className="data-[state=checked]:bg-red-500"
+                      />
+                      <label
+                        htmlFor="featured"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-white"
+                      >
+                        Feature on homepage
+                      </label>
+                    </div>
+
+                    <Separator className="my-4 bg-slate-600" />
+
+                    <div className="space-y-4">
+                      {/* Passport Settings */}
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="passport-enabled" className="text-white font-semibold flex items-center gap-2">
+                            🎫 Soca Passport
+                          </Label>
+                          <p className="text-xs text-slate-400">
+                            Award stamps/points for check-ins
+                          </p>
+                        </div>
+                        <Switch
+                          id="passport-enabled"
+                          checked={eventForm.isSocaPassportEnabled}
+                          onCheckedChange={(checked) =>
+                            setEventForm({ ...eventForm, isSocaPassportEnabled: checked })
+                          }
+                        />
+                      </div>
+
+                      {eventForm.isSocaPassportEnabled && (
+                        <div className="space-y-3 pl-4 border-l-2 border-emerald-500">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="stamp-points" className="text-white text-sm">Points</Label>
+                              <Input
+                                id="stamp-points"
+                                type="number"
+                                min="1"
+                                placeholder="50"
+                                className="bg-slate-700 border border-slate-600 text-white"
+                                value={eventForm.stampPointsDefault}
+                                onChange={(e) => setEventForm({ ...eventForm, stampPointsDefault: parseInt(e.target.value) || 50 })}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="country-code" className="text-white text-sm">Country</Label>
+                              <Select
+                                value={eventForm.countryCode}
+                                onValueChange={(value) => setEventForm({ ...eventForm, countryCode: value })}
+                              >
+                                <SelectTrigger className="bg-slate-700 border border-slate-600 text-white">
+                                  <SelectValue placeholder="Select" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-slate-700 text-white">
+                                  <SelectItem value="US">🇺🇸 United States</SelectItem>
+                                  <SelectItem value="TT">🇹🇹 Trinidad & Tobago</SelectItem>
+                                  <SelectItem value="JM">🇯🇲 Jamaica</SelectItem>
+                                  <SelectItem value="BB">🇧🇧 Barbados</SelectItem>
+                                  <SelectItem value="GD">🇬🇩 Grenada</SelectItem>
+                                  <SelectItem value="LC">🇱🇨 Saint Lucia</SelectItem>
+                                  <SelectItem value="VC">🇻🇨 Saint Vincent</SelectItem>
+                                  <SelectItem value="AG">🇦🇬 Antigua & Barbuda</SelectItem>
+                                  <SelectItem value="KN">🇰🇳 Saint Kitts & Nevis</SelectItem>
+                                  <SelectItem value="DM">🇩🇲 Dominica</SelectItem>
+                                  <SelectItem value="CA">🇨🇦 Canada</SelectItem>
+                                  <SelectItem value="GB">🇬🇧 United Kingdom</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="carnival-circuit" className="text-white text-sm">Carnival Circuit</Label>
+                            <Input
+                              id="carnival-circuit"
+                              placeholder="e.g., Miami Carnival"
+                              className="bg-slate-700 border border-slate-600 text-white"
+                              value={eventForm.carnivalCircuit}
+                              onChange={(e) => setEventForm({ ...eventForm, carnivalCircuit: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="media" className="space-y-6">
+                    {/* Main Video Section */}
+                    <div className="space-y-4">
+                      <Label className="text-white flex items-center gap-2 text-lg"><Video className="h-5 w-5" /> Main Event Video</Label>
+                      <Card className="bg-slate-800 border-slate-700">
+                        <CardContent className="p-4 space-y-4">
+                          {(eventVideoPreview || eventForm.videoUrl) ? (
+                            <div className="relative rounded-lg overflow-hidden border border-slate-600 bg-black aspect-video">
+                              <video
+                                src={eventVideoPreview || getNormalizedImageUrl(eventForm.videoUrl)}
+                                controls
+                                className="w-full h-full"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEventVideoFile(null);
+                                  setEventVideoPreview(null);
+                                  setEventForm({ ...eventForm, videoUrl: '' });
+                                }}
+                                className="absolute top-2 right-2 bg-black/70 hover:bg-red-600 text-white rounded-full p-1 transition-colors z-10"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-500 rounded-lg cursor-pointer bg-slate-700/50 hover:bg-slate-700 transition-colors">
+                              <Video className="h-8 w-8 text-slate-400 mb-2" />
+                              <span className="text-sm text-slate-400">Upload Main Video</span>
+                              <span className="text-xs text-slate-500 mt-1">MP4, WebM (Max 50MB)</span>
+                              <input
+                                type="file"
+                                accept="video/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    setEventVideoFile(file);
+                                    setEventVideoPreview(URL.createObjectURL(file));
+                                  }
+                                }}
+                              />
+                            </label>
+                          )}
+
+                          {!eventForm.videoUrl && !eventVideoPreview && (
+                            <div className="pt-2">
+                              <p className="text-xs text-slate-500 mb-1">Or paste a video URL (MP4):</p>
+                              <Input
+                                placeholder="https://example.com/video.mp4"
+                                className="bg-slate-700 border border-slate-600 text-white text-sm"
+                                value={eventForm.videoUrl}
+                                onChange={(e) => { setEventForm({ ...eventForm, videoUrl: e.target.value }); }}
+                              />
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <Separator className="bg-slate-700" />
+
+                    {/* Gallery Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-white flex items-center gap-2 text-lg"><ImageIcon className="h-5 w-5" /> Media Gallery</Label>
+                        <Label htmlFor="gallery-upload" className="cursor-pointer bg-primary hover:bg-primary/90 text-white px-3 py-1 rounded-md text-sm flex items-center gap-2">
+                          <Plus className="h-4 w-4" /> Add Media
+                        </Label>
+                        <Input
+                          id="gallery-upload"
                           type="file"
-                          accept="image/*"
+                          multiple
+                          accept="image/*,video/*"
                           className="hidden"
                           onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              setEventImageFile(file);
-                              setImagePreview(URL.createObjectURL(file));
+                            if (e.target.files && e.target.files.length > 0) {
+                              const newFiles = Array.from(e.target.files);
+                              setEventGalleryFiles(prev => [...prev, ...newFiles]);
+
+                              // Create previews
+                              const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+                              setEventGalleryPreviews(prev => [...prev, ...newPreviews]);
                             }
                           }}
                         />
-                      </label>
-                    )}
-                    <p className="text-xs text-slate-500">Or paste a URL:</p>
-                    <Input
-                      placeholder="https://example.com/image.jpg"
-                      className="bg-slate-700 border border-slate-600 text-white text-sm"
-                      value={eventForm.imageUrl}
-                      onChange={(e) => { setEventForm({ ...eventForm, imageUrl: e.target.value }); setEventImageFile(null); setImagePreview(null); }}
-                    />
-                  </div>
-
-
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="featured"
-                      checked={eventForm.featured}
-                      onCheckedChange={(checked) =>
-                        setEventForm({ ...eventForm, featured: checked === true })
-                      }
-                      className="data-[state=checked]:bg-red-500"
-                    />
-                    <label
-                      htmlFor="featured"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-white"
-                    >
-                      Feature this event on homepage
-                    </label>
-                  </div>
-
-                  <Separator className="my-4 bg-slate-600" />
-
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="passport-enabled" className="text-white font-semibold">
-                          🎫 Soca Passport Integration
-                        </Label>
-                        <p className="text-xs text-slate-400">
-                          Award stamps and points when tickets are scanned
-                        </p>
                       </div>
-                      <Switch
-                        id="passport-enabled"
-                        checked={eventForm.isSocaPassportEnabled}
-                        onCheckedChange={(checked) =>
-                          setEventForm({ ...eventForm, isSocaPassportEnabled: checked })
-                        }
-                      />
+
+                      <div className="grid grid-cols-3 gap-3">
+                        {/* Existing Gallery Items */}
+                        {eventForm.galleryMedia && eventForm.galleryMedia.map((item, index) => (
+                          <div key={`existing-${index}`} className="relative aspect-square bg-slate-800 rounded-md overflow-hidden border border-slate-600 group">
+                            {item.type === 'video' ? (
+                              <video src={getNormalizedImageUrl(item.url)} className="w-full h-full object-cover" />
+                            ) : (
+                              <img src={getNormalizedImageUrl(item.url)} alt="Gallery item" className="w-full h-full object-cover" />
+                            )}
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  // Remove from existing gallery
+                                  const newGallery = [...eventForm.galleryMedia];
+                                  newGallery.splice(index, 1);
+                                  setEventForm({ ...eventForm, galleryMedia: newGallery });
+                                }}
+                                className="bg-red-600 text-white p-2 rounded-full hover:bg-red-700"
+                              >
+                                <Trash className="h-4 w-4" />
+                              </button>
+                            </div>
+                            <div className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1 rounded uppercase">
+                              {item.type}
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* New Upload Previews */}
+                        {eventGalleryFiles.map((file, index) => (
+                          <div key={`new-${index}`} className="relative aspect-square bg-slate-800 rounded-md overflow-hidden border border-emerald-500/50 group">
+                            {file.type.startsWith('video/') ? (
+                              <video src={eventGalleryPreviews[index]} className="w-full h-full object-cover" />
+                            ) : (
+                              <img src={eventGalleryPreviews[index]} alt="Preview" className="w-full h-full object-cover" />
+                            )}
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  // Remove from new uploads
+                                  const newFiles = [...eventGalleryFiles];
+                                  newFiles.splice(index, 1);
+                                  setEventGalleryFiles(newFiles);
+
+                                  const newPreviews = [...eventGalleryPreviews];
+                                  URL.revokeObjectURL(newPreviews[index]); // Cleanup
+                                  newPreviews.splice(index, 1);
+                                  setEventGalleryPreviews(newPreviews);
+                                }}
+                                className="bg-red-600 text-white p-2 rounded-full hover:bg-red-700"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                            <div className="absolute top-1 left-1 bg-emerald-600 text-white text-[10px] px-1 rounded uppercase">
+                              New
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {(eventForm.galleryMedia.length === 0 && eventGalleryFiles.length === 0) && (
+                        <div className="text-center py-8 text-slate-500 border border-dashed border-slate-700 rounded-lg">
+                          <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p>No media in gallery</p>
+                        </div>
+                      )}
                     </div>
+                  </TabsContent>
+                </Tabs>
 
-                    {eventForm.isSocaPassportEnabled && (
-                      <div className="space-y-3 pl-4 border-l-2 border-emerald-500">
-                        <div className="space-y-2">
-                          <Label htmlFor="stamp-points" className="text-white text-sm">
-                            Points per Stamp
-                          </Label>
-                          <Input
-                            id="stamp-points"
-                            type="number"
-                            min="1"
-                            step="1"
-                            placeholder="50"
-                            className="bg-slate-700 border border-slate-600 text-white"
-                            value={eventForm.stampPointsDefault}
-                            onChange={(e) => setEventForm({ ...eventForm, stampPointsDefault: parseInt(e.target.value) || 50 })}
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="country-code" className="text-white text-sm">
-                            Country
-                          </Label>
-                          <Select
-                            value={eventForm.countryCode}
-                            onValueChange={(value) => setEventForm({ ...eventForm, countryCode: value })}
-                          >
-                            <SelectTrigger className="bg-slate-700 border border-slate-600 text-white">
-                              <SelectValue placeholder="Select country" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-slate-700 text-white">
-                              <SelectItem value="US">🇺🇸 United States</SelectItem>
-                              <SelectItem value="TT">🇹🇹 Trinidad & Tobago</SelectItem>
-                              <SelectItem value="JM">🇯🇲 Jamaica</SelectItem>
-                              <SelectItem value="BB">🇧🇧 Barbados</SelectItem>
-                              <SelectItem value="GD">🇬🇩 Grenada</SelectItem>
-                              <SelectItem value="LC">🇱🇨 Saint Lucia</SelectItem>
-                              <SelectItem value="VC">🇻🇨 Saint Vincent</SelectItem>
-                              <SelectItem value="AG">🇦🇬 Antigua & Barbuda</SelectItem>
-                              <SelectItem value="KN">🇰🇳 Saint Kitts & Nevis</SelectItem>
-                              <SelectItem value="DM">🇩🇲 Dominica</SelectItem>
-                              <SelectItem value="CA">🇨🇦 Canada</SelectItem>
-                              <SelectItem value="GB">🇬🇧 United Kingdom</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="carnival-circuit" className="text-white text-sm">
-                            Carnival Circuit
-                          </Label>
-                          <Input
-                            id="carnival-circuit"
-                            placeholder="e.g., Miami Carnival, Trinidad Carnival"
-                            className="bg-slate-700 border border-slate-600 text-white"
-                            value={eventForm.carnivalCircuit}
-                            onChange={(e) => setEventForm({ ...eventForm, carnivalCircuit: e.target.value })}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                </div>
-
-                <DialogFooter className="flex space-x-2 justify-end">
+                <DialogFooter className="flex space-x-2 justify-end mt-4">
                   <Button
                     onClick={() => setEventDialogOpen(false)}
                     variant="outline"
