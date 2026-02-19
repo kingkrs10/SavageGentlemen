@@ -179,9 +179,9 @@ import {
   Edit,
   Search,
   Filter,
-  Trash,
   Plus
 } from "lucide-react";
+import AdminMediaPage from "./admin-media";
 import LivestreamManager from "@/components/admin/LivestreamManager";
 import TicketScanner from "@/components/admin/TicketScanner";
 import PassportManager from "@/components/admin/PassportManager";
@@ -1637,6 +1637,9 @@ export default function AdminPage() {
             </TabsTrigger>
             <TabsTrigger value="ads" className="flex items-center gap-2">
               <Megaphone className="h-4 w-4" /> Ads
+            </TabsTrigger>
+            <TabsTrigger value="media" className="flex items-center gap-2">
+              <ImageIcon className="h-4 w-4" /> Media
             </TabsTrigger>
           </TabsList>
 
@@ -3575,6 +3578,13 @@ export default function AdminPage() {
               </CardContent>
             </Card>
           </TabsContent>
+          <TabsContent value="media">
+            <Card>
+              <CardContent className="p-0">
+                <AdminMediaPage embedded />
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
 
         {/* Create/Edit Ad Dialog */}
@@ -3857,7 +3867,8 @@ export default function AdminPage() {
             </form>
           </DialogContent>
         </Dialog>
+
       </div>
-    </div>
+    </div >
   );
 }

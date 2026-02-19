@@ -6115,5 +6115,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add error handling middleware as the last middleware
   app.use(errorHandler);
 
+  // Media Collections Routes
+  app.get("/api/media/collections", asyncHandler(async (req, res) => {
+    const visibility = req.query.visibility as 'public' | 'private' | 'admin_only' | undefined;
+    const options: any = {};
+    if (visibility) options.visibility = visibility;
+    const collections = await storage.getAllMediaCollections(options);
+    res.json(collections);
+  }));
+
+  app.get("/api/media/collections/:id", asyncHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    const collection = await storage.getMediaCollection(id);
+    if (!collection) throw new AppError("Collection not found", 404);
+    const assets = await storage.getMediaAssetsByCollectionId(id);
+    res.json({ ...collection, assets });
+  }));
+
+  app.post("/api/media/collections", asyncHandler(async (req, res) => {
+    if (!req.user || req.user.role !== 'admin') throw new AuthenticationError("Admin access required");
+    const collectionData = insertMediaCollectionSchema.parse({
+      ...req.body,
+      createdBy: req.user.id
+    });
+    const collection = await storage.createMediaCollection(collectionData);
+    res.json(collection);
+  }));
+
+  app.put("/api/media/collections/:id", asyncHandler(async (req, res) => {
+    if (!req.user || req.user.role !== 'admin') throw new AuthenticationError("Admin access required");
+    const id = parseInt(req.params.id);
+    const updates = insertMediaCollectionSchema.partial().parse(req.body);
+    const collection = await storage.updateMediaCollection(id, updates);
+    if (!collection) throw new AppError("Collection not found", 404);
+    res.json(collection);
+  }));
+
+  app.delete("/api/media/collections/:id", asyncHandler(async (req, res) => {
+    if (!req.user || req.user.role !== 'admin') throw new AuthenticationError("Admin access required");
+    const id = parseInt(req.params.id);
+    const success = await storage.deleteMediaCollection(id);
+    if (!success) throw new AppError("Collection not found", 404);
+    res.json({ success: true });
+  }));
+
+  // Media Assets Routes
+  app.post("/api/media/assets", asyncHandler(async (req, res) => {
+    if (!req.user || req.user.role !== 'admin') throw new AuthenticationError("Admin access required");
+    const assetData = insertMediaAssetSchema.parse({
+      ...req.body,
+      createdBy: req.user.id
+    });
+    const asset = await storage.createMediaAsset(assetData);
+    res.json(asset);
+  }));
+
+  app.put("/api/media/assets/:id", asyncHandler(async (req, res) => {
+    if (!req.user || req.user.role !== 'admin') throw new AuthenticationError("Admin access required");
+    const id = parseInt(req.params.id);
+    const updates = insertMediaAssetSchema.partial().parse(req.body);
+    const asset = await storage.updateMediaAsset(id, updates);
+    if (!asset) throw new AppError("Asset not found", 404);
+    res.json(asset);
+  }));
+
+  app.delete("/api/media/assets/:id", asyncHandler(async (req, res) => {
+    if (!req.user || req.user.role !== 'admin') throw new AuthenticationError("Admin access required");
+    const id = parseInt(req.params.id);
+    const success = await storage.deleteMediaAsset(id);
+    if (!success) throw new AppError("Asset not found", 404);
+    res.json({ success: true });
+  }));
+
+  // File Upload for Media Assets
+  // upload middleware is already defined at line 106
+
+  app.post("/api/media/assets/upload", upload.single('file'), asyncHandler(async (req, res) => {
+    if (!req.user || req.user.role !== 'admin') throw new AuthenticationError("Admin access required");
+    if (!req.file) throw new ValidationError("No file uploaded");
+
+    const collectionId = parseInt(req.body.collectionId);
+    if (isNaN(collectionId)) throw new ValidationError("Invalid collection ID");
+
+    const storageKey = req.file.filename;
+    // URL serves from /uploads or /api/uploads
+    const url = `/uploads/${storageKey}`;
+
+    // Determine type from mimetype
+    const type = req.body.type || (req.file.mimetype.startsWith('video/') ? 'video' : 'image');
+
+    const assetData = insertMediaAssetSchema.parse({
+      collectionId,
+      type,
+      title: req.body.title || req.file.originalname,
+      description: req.body.description || '',
+      storageKey, // using storageKey field to store actual filename/key
+      originalFilename: req.file.originalname,
+      fileSize: req.file.size,
+      mimeType: req.file.mimetype,
+      isPublished: req.body.isPublished === 'true',
+      createdBy: req.user.id,
+      // For images, we don't have dimensions unless we calculate them (e.g. sharp)
+      // For videos, duration/dimensions need processing (ffmpeg)
+      // For now, we leave them null or use frontend provided metadata if sent
+      dimensions: req.body.dimensions ? JSON.parse(req.body.dimensions) : null,
+      duration: req.body.duration ? parseInt(req.body.duration) : null
+    });
+
+    const asset = await storage.createMediaAsset(assetData);
+    res.json(asset);
+  }));
+
   return httpServer;
 }

@@ -527,6 +527,7 @@ export interface IStorage {
   // Passport Social Share operations
   createSocialShare(share: InsertPassportSocialShare): Promise<PassportSocialShare>;
   getUserSocialShares(userId: number, limit?: number): Promise<PassportSocialShare[]>;
+
 }
 
 // In-memory storage implementation
@@ -2235,14 +2236,18 @@ export class MemStorage implements IStorage {
     }
   }
 
-  async incrementSponsoredContentViews(id: number): Promise<void> {
-    const content = this.sponsoredContent.get(id);
-    if (content) {
-      content.views = (content.views || 0) + 1;
-      content.updatedAt = new Date();
-      this.sponsoredContent.set(id, content);
+  // Media Collections
+  async getMediaCollections(visibility?: 'public' | 'private' | 'admin_only'): Promise<MediaCollection[]> {
+    if (visibility) {
+      if (visibility === 'public') {
+        return Array.from(this.mediaCollections.values()).filter(c => c.visibility === 'public');
+      }
+      return Array.from(this.mediaCollections.values()).filter(c => c.visibility === visibility);
     }
+    return Array.from(this.mediaCollections.values());
   }
+
+
 }
 
 // Database storage implementation
@@ -6065,4 +6070,5 @@ export class TicketDatabaseSync {
       throw error;
     }
   }
+
 }

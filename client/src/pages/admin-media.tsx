@@ -11,16 +11,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  Images, 
-  Upload, 
-  Plus, 
-  Edit, 
-  Trash, 
-  Eye, 
-  FileImage, 
-  FileVideo, 
-  Calendar, 
+import {
+  Images,
+  Upload,
+  Plus,
+  Edit,
+  Trash,
+  Eye,
+  FileImage,
+  FileVideo,
+  Calendar,
   Users,
   HardDrive,
   AlertCircle,
@@ -72,7 +72,11 @@ interface UploadProgress {
   error?: string;
 }
 
-const AdminMediaPage = () => {
+interface AdminMediaProps {
+  embedded?: boolean;
+}
+
+const AdminMediaPage = ({ embedded = false }: AdminMediaProps) => {
   const { user } = useUser();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('collections');
@@ -81,9 +85,9 @@ const AdminMediaPage = () => {
   const [editingCollection, setEditingCollection] = useState<MediaCollection | null>(null);
   const [editingAsset, setEditingAsset] = useState<MediaAsset | null>(null);
   const [selectedCollection, setSelectedCollection] = useState<number | null>(null);
-  
+
   const [uploads, setUploads] = useState<UploadProgress[]>([]);
-  
+
   // Form states
   const [collectionForm, setCollectionForm] = useState({
     title: '',
@@ -93,7 +97,7 @@ const AdminMediaPage = () => {
     isActive: true,
     coverImageUrl: ''
   });
-  
+
   const [assetForm, setAssetForm] = useState({
     title: '',
     description: '',
@@ -109,10 +113,10 @@ const AdminMediaPage = () => {
 
   // Auto-select the first collection when collections are loaded
   useEffect(() => {
-    console.log('Collection selection effect:', { 
-      collections: collections?.length, 
-      selectedCollection, 
-      firstCollectionId: collections?.[0]?.id 
+    console.log('Collection selection effect:', {
+      collections: collections?.length,
+      selectedCollection,
+      firstCollectionId: collections?.[0]?.id
     });
     if (collections && collections.length > 0 && selectedCollection === null) {
       console.log('Auto-selecting first collection:', collections[0].id);
@@ -164,10 +168,10 @@ const AdminMediaPage = () => {
       toast({ title: "Collection created successfully" });
     },
     onError: (error: any) => {
-      toast({ 
-        title: "Error creating collection", 
+      toast({
+        title: "Error creating collection",
         description: error.message,
-        variant: "destructive" 
+        variant: "destructive"
       });
     }
   });
@@ -186,10 +190,10 @@ const AdminMediaPage = () => {
       toast({ title: "Collection updated successfully" });
     },
     onError: (error: any) => {
-      toast({ 
-        title: "Error updating collection", 
+      toast({
+        title: "Error updating collection",
         description: error.message,
-        variant: "destructive" 
+        variant: "destructive"
       });
     }
   });
@@ -204,10 +208,10 @@ const AdminMediaPage = () => {
       toast({ title: "Collection deleted successfully" });
     },
     onError: (error: any) => {
-      toast({ 
-        title: "Error deleting collection", 
+      toast({
+        title: "Error deleting collection",
         description: error.message,
-        variant: "destructive" 
+        variant: "destructive"
       });
     }
   });
@@ -234,10 +238,10 @@ const AdminMediaPage = () => {
       toast({ title: "Asset saved successfully" });
     },
     onError: (error: any) => {
-      toast({ 
-        title: "Error saving asset", 
+      toast({
+        title: "Error saving asset",
         description: error.message,
-        variant: "destructive" 
+        variant: "destructive"
       });
     }
   });
@@ -255,10 +259,10 @@ const AdminMediaPage = () => {
       toast({ title: "Asset deleted successfully" });
     },
     onError: (error: any) => {
-      toast({ 
-        title: "Error deleting asset", 
+      toast({
+        title: "Error deleting asset",
         description: error.message,
-        variant: "destructive" 
+        variant: "destructive"
       });
     }
   });
@@ -309,21 +313,21 @@ const AdminMediaPage = () => {
 
   const handleFileUpload = async (files: FileList, collectionId: number) => {
     const fileArray = Array.from(files);
-    
+
     // Add files to upload queue
     const newUploads: UploadProgress[] = fileArray.map(file => ({
       file,
       progress: 0,
       status: 'uploading'
     }));
-    
+
     setUploads(prev => [...prev, ...newUploads]);
 
     // Upload each file
     for (let i = 0; i < fileArray.length; i++) {
       const file = fileArray[i];
       const uploadIndex = uploads.length + i;
-      
+
       try {
         // Create FormData with file and metadata
         const formData = new FormData();
@@ -337,12 +341,12 @@ const AdminMediaPage = () => {
 
         // Create a custom XMLHttpRequest for progress tracking
         const xhr = new XMLHttpRequest();
-        
+
         // Set up progress tracking
         xhr.upload.addEventListener('progress', (event) => {
           if (event.lengthComputable) {
             const percentComplete = Math.round((event.loaded / event.total) * 90); // Reserve 90% for upload, 10% for processing
-            setUploads(prev => prev.map((upload, idx) => 
+            setUploads(prev => prev.map((upload, idx) =>
               idx === uploadIndex ? { ...upload, progress: percentComplete } : upload
             ));
           }
@@ -374,10 +378,10 @@ const AdminMediaPage = () => {
 
         // Get the base URL for the API request
         const baseUrl = window.location.origin;
-        
+
         // Make the upload request
         xhr.open('POST', `${baseUrl}/api/media/assets/upload`);
-        
+
         // Add authentication headers if available
         const userStr = localStorage.getItem('user');
         let token = null;
@@ -397,9 +401,9 @@ const AdminMediaPage = () => {
         }
 
         xhr.send(formData);
-        
+
         // Update progress to show processing
-        setUploads(prev => prev.map((upload, idx) => 
+        setUploads(prev => prev.map((upload, idx) =>
           idx === uploadIndex ? { ...upload, progress: 90, status: 'processing' } : upload
         ));
 
@@ -407,10 +411,10 @@ const AdminMediaPage = () => {
         const createdAsset = await uploadPromise;
 
         // Update progress to show completion
-        setUploads(prev => prev.map((upload, idx) => 
-          idx === uploadIndex ? { 
-            ...upload, 
-            progress: 100, 
+        setUploads(prev => prev.map((upload, idx) =>
+          idx === uploadIndex ? {
+            ...upload,
+            progress: 100,
             status: 'completed',
             url: createdAsset.url
           } : upload
@@ -426,12 +430,12 @@ const AdminMediaPage = () => {
           title: "Upload successful",
           description: `${file.name} has been uploaded successfully.`
         });
-        
+
       } catch (error: any) {
         console.error('Upload error:', error);
-        setUploads(prev => prev.map((upload, idx) => 
-          idx === uploadIndex ? { 
-            ...upload, 
+        setUploads(prev => prev.map((upload, idx) =>
+          idx === uploadIndex ? {
+            ...upload,
             status: 'error',
             error: error.message || 'Upload failed'
           } : upload
@@ -462,22 +466,26 @@ const AdminMediaPage = () => {
   }, [collectionForm.title, editingCollection]);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <SEOHead 
-        title="Media Management - Admin - Savage Gentlemen"
-        description="Admin interface for managing media collections, photos, and videos."
-      />
-      
+    <div className={embedded ? "w-full" : "container mx-auto px-4 py-8"}>
+      {!embedded && (
+        <SEOHead
+          title="Media Management - Admin - Savage Gentlemen"
+          description="Admin interface for managing media collections, photos, and videos."
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Button 
-          variant="ghost" 
-          onClick={() => window.history.back()}
-          className="p-2"
-          data-testid="back-button"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
+        {!embedded && (
+          <Button
+            variant="ghost"
+            onClick={() => window.history.back()}
+            className="p-2"
+            data-testid="back-button"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+        )}
         <div>
           <h1 className="text-3xl font-bold">Media Management</h1>
           <p className="text-muted-foreground">Manage photo and video collections</p>
@@ -539,7 +547,7 @@ const AdminMediaPage = () => {
         <TabsContent value="collections" className="space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Media Collections</h2>
-            <Button 
+            <Button
               onClick={() => setShowCollectionDialog(true)}
               data-testid="create-collection-button"
             >
@@ -567,8 +575,8 @@ const AdminMediaPage = () => {
                 <Card key={collection.id} className="overflow-hidden">
                   <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center relative">
                     {collection.coverImageUrl ? (
-                      <img 
-                        src={collection.coverImageUrl} 
+                      <img
+                        src={collection.coverImageUrl}
                         alt={collection.title}
                         className="w-full h-full object-cover"
                       />
@@ -596,8 +604,8 @@ const AdminMediaPage = () => {
                       <span>{new Date(collection.createdAt).toLocaleDateString()}</span>
                     </div>
                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => {
                           setSelectedCollection(collection.id);
@@ -608,8 +616,8 @@ const AdminMediaPage = () => {
                         <Eye className="w-4 h-4 mr-1" />
                         View
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => handleEditCollection(collection)}
                         data-testid={`edit-collection-${collection.id}`}
@@ -617,8 +625,8 @@ const AdminMediaPage = () => {
                         <Edit className="w-4 h-4 mr-1" />
                         Edit
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => deleteCollectionMutation.mutate(collection.id)}
                         data-testid={`delete-collection-${collection.id}`}
@@ -654,8 +662,8 @@ const AdminMediaPage = () => {
               )}
             </div>
             <div className="flex gap-2">
-              <Select 
-                value={selectedCollection?.toString() || ''} 
+              <Select
+                value={selectedCollection?.toString() || ''}
                 onValueChange={(value) => setSelectedCollection(parseInt(value))}
               >
                 <SelectTrigger className="w-48">
@@ -669,7 +677,7 @@ const AdminMediaPage = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <Button 
+              <Button
                 onClick={() => setShowAssetDialog(true)}
                 disabled={!selectedCollection}
                 data-testid="add-asset-button"
@@ -685,8 +693,8 @@ const AdminMediaPage = () => {
               {selectedCollectionData.assets.map((asset) => (
                 <Card key={asset.id} className="overflow-hidden">
                   <div className="aspect-square bg-gray-100 dark:bg-gray-800 relative">
-                    <img 
-                      src={asset.thumbnailUrl || asset.url} 
+                    <img
+                      src={asset.thumbnailUrl || asset.url}
                       alt={asset.title}
                       className="w-full h-full object-cover"
                     />
@@ -706,16 +714,16 @@ const AdminMediaPage = () => {
                       <span>{new Date(asset.uploadedAt).toLocaleDateString()}</span>
                     </div>
                     <div className="flex gap-1">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => handleEditAsset(asset)}
                         data-testid={`edit-asset-${asset.id}`}
                       >
                         <Edit className="w-3 h-3" />
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => deleteAssetMutation.mutate(asset.id)}
                         data-testid={`delete-asset-${asset.id}`}
@@ -742,14 +750,14 @@ const AdminMediaPage = () => {
         <TabsContent value="upload" className="space-y-6">
           <div className="max-w-2xl mx-auto">
             <h2 className="text-xl font-semibold mb-6">Upload Media</h2>
-            
+
             <Card>
               <CardContent className="p-6">
                 <div className="space-y-6">
                   <div>
                     <Label>Select Collection</Label>
-                    <Select 
-                      value={selectedCollection?.toString() || ''} 
+                    <Select
+                      value={selectedCollection?.toString() || ''}
                       onValueChange={(value) => setSelectedCollection(parseInt(value))}
                     >
                       <SelectTrigger>
@@ -852,9 +860,9 @@ const AdminMediaPage = () => {
             <div className="flex gap-4">
               <div>
                 <Label>Visibility</Label>
-                <Select 
-                  value={collectionForm.visibility} 
-                  onValueChange={(value: 'public' | 'private') => 
+                <Select
+                  value={collectionForm.visibility}
+                  onValueChange={(value: 'public' | 'private') =>
                     setCollectionForm(prev => ({ ...prev, visibility: value }))
                   }
                 >
@@ -887,7 +895,7 @@ const AdminMediaPage = () => {
             }}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={() => {
                 if (editingCollection) {
                   updateCollectionMutation.mutate({
@@ -939,8 +947,8 @@ const AdminMediaPage = () => {
             </div>
             <div>
               <Label>Collection</Label>
-              <Select 
-                value={assetForm.collectionId.toString()} 
+              <Select
+                value={assetForm.collectionId.toString()}
                 onValueChange={(value) => setAssetForm(prev => ({ ...prev, collectionId: parseInt(value) }))}
               >
                 <SelectTrigger>
@@ -974,7 +982,7 @@ const AdminMediaPage = () => {
             }}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={() => {
                 saveAssetMutation.mutate({
                   id: editingAsset?.id,
