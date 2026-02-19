@@ -38,15 +38,24 @@ export function LazyImage({
   const [inView, setInView] = useState(false);
   const [attemptedFallback, setAttemptedFallback] = useState(false);
   const [currentSrc, setCurrentSrc] = useState<string | null>(null);
-  
+
+  // Guard against null/undefined src
+  if (!src && !fallbackSrc) {
+    return (
+      <div className={`relative w-full h-full ${placeholderColor}`}>
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900" />
+      </div>
+    );
+  }
+
   // Determine the final source URL to use
-  let finalSrc = currentSrc || src;
-  
+  let finalSrc = currentSrc || src || '';
+
   // Fix uploads URLs to ensure proper leading slash
-  if (finalSrc.includes('uploads/') && !finalSrc.startsWith('/')) {
+  if (finalSrc && finalSrc.includes('uploads/') && !finalSrc.startsWith('/')) {
     finalSrc = `/${finalSrc}`;
   }
-  
+
   // Use Intersection Observer to detect when image is in viewport
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -87,7 +96,7 @@ export function LazyImage({
     if (process.env.NODE_ENV !== 'production') {
       console.log("Image loaded successfully:", finalSrc);
     }
-    
+
     setIsLoaded(true);
   };
 
@@ -97,11 +106,11 @@ export function LazyImage({
     if (process.env.NODE_ENV !== 'production') {
       console.error("Error loading image:", finalSrc);
     }
-    
+
     // Try alternative URL formats if this is a local upload and we haven't tried fallbacks yet
     if (src?.includes('uploads/') && !attemptedFallback) {
       setAttemptedFallback(true);
-      
+
       // Try multiple alternative formats for better compatibility
       let alternativeSrc;
       if (src.startsWith('/uploads/')) {
@@ -114,15 +123,15 @@ export function LazyImage({
         // Try with uploads/ prefix
         alternativeSrc = `uploads/${src.replace(/^\/+/, '')}`;
       }
-      
+
       setCurrentSrc(alternativeSrc);
-      
+
       if (process.env.NODE_ENV !== 'production') {
         console.log("Trying alternative image URL format:", alternativeSrc);
       }
       return;
     }
-    
+
     setError(true);
     setIsLoaded(true); // Mark as loaded even though it's an error
   };
@@ -140,11 +149,11 @@ export function LazyImage({
     <div className="relative w-full h-full">
       {/* Show skeleton while loading */}
       {!isLoaded && (
-        <Skeleton 
+        <Skeleton
           className={`absolute inset-0 ${placeholderColor} ${loadingClassName}`}
         />
       )}
-      
+
       {/* The actual image */}
       <img
         ref={imgRef}

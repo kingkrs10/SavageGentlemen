@@ -679,6 +679,32 @@ export default function AdminPage() {
     }
   };
 
+  // User role change handler
+  const handleChangeUserRole = async (userId: number, newRole: string) => {
+    try {
+      const response = await apiRequest('PUT', `/api/admin/users/${userId}/role`, { role: newRole });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user role');
+      }
+
+      toast({
+        title: "Role Updated",
+        description: `User role changed to "${newRole}" successfully`,
+      });
+
+      // Refresh users list
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+    } catch (error) {
+      console.error("Failed to change user role:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update user role. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Event edit handler
   const handleEditEvent = (event: Event) => {
     setEditingEvent(event);
@@ -1877,6 +1903,7 @@ export default function AdminPage() {
                           <TableHead>Display Name</TableHead>
                           <TableHead>Email</TableHead>
                           <TableHead>Role</TableHead>
+                          <TableHead>Change Role</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -1911,6 +1938,21 @@ export default function AdminPage() {
                                 {user.role}
                               </span>
                             </TableCell>
+                            <TableCell>
+                              <Select
+                                value={user.role}
+                                onValueChange={(value) => handleChangeUserRole(user.id, value)}
+                              >
+                                <SelectTrigger className="w-[120px] bg-slate-700 border-slate-600 text-white h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-slate-800 border-slate-600 text-white">
+                                  <SelectItem value="user" className="text-white focus:bg-slate-700">User</SelectItem>
+                                  <SelectItem value="moderator" className="text-white focus:bg-slate-700">Moderator</SelectItem>
+                                  <SelectItem value="admin" className="text-white focus:bg-slate-700">Admin</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
                                 <Button
@@ -1922,16 +1964,6 @@ export default function AdminPage() {
                                   })}
                                 >
                                   Edit
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => toast({
-                                    title: "Change Role",
-                                    description: "Coming soon"
-                                  })}
-                                >
-                                  Role
                                 </Button>
                               </div>
                             </TableCell>

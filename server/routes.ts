@@ -59,7 +59,7 @@ import { promotersRouter } from "./promoters-routes";
 import { adminPassportRouter } from "./admin-passport-routes";
 import { adminPromotersRouter } from "./admin-promoters-routes";
 import { promoterDashboardRouter } from "./promoter-dashboard-routes";
-import { authenticateUser, generateSecureLoginToken } from "./auth-middleware";
+import { authenticateUser, generateSecureLoginToken, validateSecureLoginTokenPublic } from "./auth-middleware";
 import {
   createPromoterSubscription,
   cancelPromoterSubscription,
@@ -317,17 +317,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const token = authHeader.split(' ')[1];
 
           if (token && token !== 'undefined' && token !== 'null') {
-            try {
-              // Try Firebase token
-              const decodedToken = await admin.auth().verifyIdToken(token);
-              const userByFirebase = await storage.getUserByFirebaseId(decodedToken.uid);
+            // Try HMAC token first (faster, no external call)
+            const hmacUser = await validateSecureLoginTokenPublic(token);
+            if (hmacUser) {
+              user = hmacUser;
+              console.log("User found via HMAC token in /me endpoint:", user.id);
+            }
 
-              if (userByFirebase) {
-                user = userByFirebase;
-                console.log("User found via Firebase token in /me endpoint:", user.id);
+            // Try Firebase token if HMAC failed
+            if (!user) {
+              try {
+                const decodedToken = await admin.auth().verifyIdToken(token);
+                const userByFirebase = await storage.getUserByFirebaseId(decodedToken.uid);
+
+                if (userByFirebase) {
+                  user = userByFirebase;
+                  console.log("User found via Firebase token in /me endpoint:", user.id);
+                }
+              } catch (e) {
+                console.error("Error verifying Firebase token:", e);
               }
-            } catch (e) {
-              console.error("Error verifying Firebase token:", e);
             }
           }
         }
@@ -341,13 +350,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Return user information without sensitive data
+      // Return user info with a refreshed token for subsequent requests
       return res.status(200).json({
         id: user.id,
         username: user.username,
         displayName: user.displayName,
         avatar: user.avatar,
         isGuest: user.isGuest,
-        role: user.role
+        role: user.role,
+        token: generateSecureLoginToken(user)
       });
     } catch (error) {
       console.error("Error in /me endpoint:", error);
@@ -961,12 +972,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin-only sponsored content routes
-  router.post("/admin/sponsored-content", authenticateUser, authorizeAdmin, upload.single('image'), async (req: Request, res: Response) => {
+  router.post("/admin/sponsored-content", authenticateUser, authorizeAdmin, upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'video', maxCount: 1 }
+  ]), async (req: Request, res: Response) => {
     try {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+      let imageUrl = req.body.imageUrl || null;
+      let videoUrl = req.body.videoUrl || null;
+
+      if (files && files['image'] && files['image'][0]) {
+        imageUrl = `/uploads/${files['image'][0].filename}`;
+      }
+      if (files && files['video'] && files['video'][0]) {
+        videoUrl = `/uploads/${files['video'][0].filename}`;
+      }
+
       const sponsoredContentData = insertSponsoredContentSchema.parse({
         ...req.body,
         createdBy: req.user!.id,
-        imageUrl: req.file ? `/uploads/${req.file.filename}` : req.body.imageUrl || null,
+        imageUrl,
+        videoUrl,
         // Handle date parsing
         startDate: req.body.startDate ? new Date(req.body.startDate) : null,
         endDate: req.body.endDate ? new Date(req.body.endDate) : null,
@@ -982,9 +1008,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  router.put("/admin/sponsored-content/:id", authenticateUser, authorizeAdmin, upload.single('image'), async (req: Request, res: Response) => {
+  router.put("/admin/sponsored-content/:id", authenticateUser, authorizeAdmin, upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'video', maxCount: 1 }
+  ]), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
       const updateData = {
         ...req.body,
         // Handle date parsing
@@ -995,8 +1025,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Add image URL if new image uploaded
-      if (req.file) {
-        updateData.imageUrl = `/uploads/${req.file.filename}`;
+      if (files && files['image'] && files['image'][0]) {
+        updateData.imageUrl = `/uploads/${files['image'][0].filename}`;
+      }
+
+      // Add video URL if new video uploaded
+      if (files && files['video'] && files['video'][0]) {
+        updateData.videoUrl = `/uploads/${files['video'][0].filename}`;
       }
 
       const sponsoredContentData = insertSponsoredContentSchema.partial().parse(updateData);

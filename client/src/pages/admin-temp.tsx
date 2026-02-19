@@ -5,16 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUser } from "@/context/UserContext";
 import SEOHead from "@/components/SEOHead";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { 
-  Ticket, 
-  Users, 
-  LineChart, 
-  ShoppingBag, 
-  Calendar, 
-  Pencil, 
-  MapPin, 
-  Clock, 
-  X, 
+import {
+  Ticket,
+  Users,
+  LineChart,
+  ShoppingBag,
+  Calendar,
+  Pencil,
+  MapPin,
+  Clock,
+  X,
   Save,
   Trash,
   Plus,
@@ -40,21 +40,21 @@ const storeDeletedEventLocally = (event) => {
   try {
     // Get existing deleted events
     const existingEvents = JSON.parse(localStorage.getItem('sgDeletedEvents') || '[]');
-    
+
     // Add new event with timestamp
     existingEvents.push({
       event,
       deletedAt: new Date().toISOString()
     });
-    
+
     // Clean up events older than 24 hours
     const twentyFourHoursAgo = new Date();
     twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
-    
-    const filteredEvents = existingEvents.filter(item => 
+
+    const filteredEvents = existingEvents.filter(item =>
       new Date(item.deletedAt) > twentyFourHoursAgo
     );
-    
+
     // Save back to localStorage
     localStorage.setItem('sgDeletedEvents', JSON.stringify(filteredEvents));
     console.log(`Stored deleted event in localStorage: ${event.title}`);
@@ -76,7 +76,7 @@ const getDeletedEventsFromLocal = () => {
 const getLastDeletedEventFromLocal = () => {
   const events = getDeletedEventsFromLocal();
   if (events.length === 0) return null;
-  
+
   // Sort by deletedAt (newest first)
   events.sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt));
   return events[0];
@@ -86,12 +86,12 @@ const getLastDeletedEventFromLocal = () => {
 const findDeletedEventByName = (nameFragment) => {
   const events = getDeletedEventsFromLocal();
   if (events.length === 0) return null;
-  
+
   // Find any event with a title containing the nameFragment (case insensitive)
-  const matchingEvent = events.find(item => 
+  const matchingEvent = events.find(item =>
     item.event.title.toLowerCase().includes(nameFragment.toLowerCase())
   );
-  
+
   return matchingEvent;
 };
 
@@ -99,11 +99,11 @@ const findDeletedEventByName = (nameFragment) => {
 const getRecentlyDeletedEvents = () => {
   try {
     const events = JSON.parse(localStorage.getItem('sgDeletedEvents') || '[]');
-    
+
     // Filter for events deleted within the past hour
     const oneHourAgo = new Date();
     oneHourAgo.setHours(oneHourAgo.getHours() - 1);
-    
+
     return events.filter(item => new Date(item.deletedAt) > oneHourAgo);
   } catch (error) {
     console.error("Error retrieving recent deleted events:", error);
@@ -116,12 +116,12 @@ export default function AdminTemp() {
   const { isAdmin, user } = useUser();
   const [activeTab, setActiveTab] = useState("tools");
   const { toast } = useToast();
-  
+
   // Event management state
   const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false);
   const [isUndoAlertVisible, setIsUndoAlertVisible] = useState(false);
   const [lastDeletedEvent, setLastDeletedEvent] = useState<any>(null);
-  
+
   // Sponsored content state
   const [isCreateAdModalOpen, setIsCreateAdModalOpen] = useState(false);
   const [selectedAdType, setSelectedAdType] = useState<string>('standard');
@@ -147,6 +147,8 @@ export default function AdminTemp() {
   });
   const [adImagePreview, setAdImagePreview] = useState<string | null>(null);
   const [adUploadedImage, setAdUploadedImage] = useState<File | null>(null);
+  const [adVideoPreview, setAdVideoPreview] = useState<string | null>(null);
+  const [adUploadedVideo, setAdUploadedVideo] = useState<File | null>(null);
   const [eventFormData, setEventFormData] = useState({
     id: 0,
     title: "",
@@ -164,23 +166,23 @@ export default function AdminTemp() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
-  
+
   // Fetch events
-  const { 
-    data: events = [], 
-    isLoading: eventsLoading 
-  } = useQuery({ 
-    queryKey: ['/api/events'], 
+  const {
+    data: events = [],
+    isLoading: eventsLoading
+  } = useQuery({
+    queryKey: ['/api/events'],
     queryFn: () => apiRequest('GET', '/api/events').then(res => res.json())
   });
 
   // Fetch sponsored content
-  const { 
-    data: sponsoredContent = [], 
+  const {
+    data: sponsoredContent = [],
     isLoading: adsLoading,
     refetch: refetchAds
-  } = useQuery({ 
-    queryKey: ['/api/sponsored-content'], 
+  } = useQuery({
+    queryKey: ['/api/sponsored-content'],
     queryFn: () => apiRequest('GET', '/api/sponsored-content').then(res => res.json())
   });
 
@@ -193,12 +195,17 @@ export default function AdminTemp() {
           formData.append(key, adData[key]);
         }
       });
-      
+
       // Add image if uploaded
       if (adUploadedImage) {
         formData.append('image', adUploadedImage);
       }
-      
+
+      // Add video if uploaded
+      if (adUploadedVideo) {
+        formData.append('video', adUploadedVideo);
+      }
+
       const response = await fetch('/api/admin/sponsored-content', {
         method: 'POST',
         body: formData,
@@ -207,12 +214,12 @@ export default function AdminTemp() {
           'user-id': user?.id?.toString() || ''
         }
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(errorText || 'Failed to create advertisement');
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -243,12 +250,17 @@ export default function AdminTemp() {
           formData.append(key, adData[key]);
         }
       });
-      
+
       // Add image if uploaded
       if (adUploadedImage) {
         formData.append('image', adUploadedImage);
       }
-      
+
+      // Add video if uploaded
+      if (adUploadedVideo) {
+        formData.append('video', adUploadedVideo);
+      }
+
       const response = await fetch(`/api/admin/sponsored-content/${id}`, {
         method: 'PUT',
         body: formData,
@@ -257,12 +269,12 @@ export default function AdminTemp() {
           'user-id': user?.id?.toString() || ''
         }
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(errorText || 'Failed to update advertisement');
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -302,19 +314,19 @@ export default function AdminTemp() {
       });
     }
   });
-  
+
   // Function for checking deleted events in localStorage
   const [isCheckingLocalEvents, setIsCheckingLocalEvents] = useState(false);
-  
+
   const checkForDeletedEvents = (specificName = '', timeWindow = null) => {
     setIsCheckingLocalEvents(true);
     try {
       let deletedItems = [];
-      
+
       if (specificName) {
         // Look for a specific event name if provided
         const foundItem = findDeletedEventByName(specificName);
-        
+
         if (foundItem) {
           deletedItems = [foundItem];
         } else {
@@ -329,7 +341,7 @@ export default function AdminTemp() {
       } else if (timeWindow === 'recent') {
         // Get events deleted in the past hour
         deletedItems = getRecentlyDeletedEvents();
-        
+
         if (deletedItems.length === 0) {
           toast({
             title: "No Recent Deletions",
@@ -344,7 +356,7 @@ export default function AdminTemp() {
         const lastItem = getLastDeletedEventFromLocal();
         if (lastItem) deletedItems = [lastItem];
       }
-      
+
       if (deletedItems.length > 0) {
         // Show notifications for found events
         if (deletedItems.length === 1) {
@@ -352,7 +364,7 @@ export default function AdminTemp() {
           const deletedItem = deletedItems[0];
           setLastDeletedEvent(deletedItem.event);
           setIsUndoAlertVisible(true);
-          
+
           toast({
             title: "Deleted Event Found",
             description: `Found deleted event: "${deletedItem.event.title}". You can now restore it.`,
@@ -370,7 +382,7 @@ export default function AdminTemp() {
           // Multiple events found - show count and first one
           setLastDeletedEvent(deletedItems[0].event);
           setIsUndoAlertVisible(true);
-          
+
           toast({
             title: `${deletedItems.length} Deleted Events Found`,
             description: `Found ${deletedItems.length} recently deleted events. First one: "${deletedItems[0].event.title}"`,
@@ -402,7 +414,7 @@ export default function AdminTemp() {
       setIsCheckingLocalEvents(false);
     }
   };
-  
+
   // Function to restore an event from localStorage
   const handleRestoreEvent = async (eventToRestore) => {
     try {
@@ -416,18 +428,18 @@ export default function AdminTemp() {
       formData.append('imageUrl', eventToRestore.imageUrl || '');
       formData.append('category', eventToRestore.category || '');
       formData.append('price', String(eventToRestore.price || 0));
-      
+
       // Create the event
       const response = await apiRequest('POST', '/api/admin/events', formData);
       if (!response.ok) {
         throw new Error('Failed to restore event');
       }
-      
+
       // Remove from localStorage
       const allEvents = getDeletedEventsFromLocal();
       const updatedEvents = allEvents.filter(item => item.event.id !== eventToRestore.id);
       localStorage.setItem('sgDeletedEvents', JSON.stringify(updatedEvents));
-      
+
       // Success notification
       setIsUndoAlertVisible(false);
       setLastDeletedEvent(null);
@@ -435,10 +447,10 @@ export default function AdminTemp() {
         title: "Event Restored",
         description: `${eventToRestore.title} has been restored successfully!`
       });
-      
+
       // Refresh events list
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
-      
+
       return await response.json();
     } catch (error) {
       console.error("Error restoring event:", error);
@@ -450,7 +462,7 @@ export default function AdminTemp() {
       throw error;
     }
   };
-  
+
   // Restore deleted event mutation
   const restoreEventMutation = useMutation({
     mutationFn: async (eventId: number) => {
@@ -478,7 +490,7 @@ export default function AdminTemp() {
       });
     }
   });
-  
+
   // Event Mutations
   const updateEventMutation = useMutation({
     mutationFn: async (eventData: FormData) => {
@@ -536,11 +548,11 @@ export default function AdminTemp() {
       });
     }
   });
-  
+
   // Handle event form submission
   const handleEventFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       // Need to use FormData approach to handle multiple images
       const formData = new FormData();
@@ -549,22 +561,22 @@ export default function AdminTemp() {
       formData.append('date', eventFormData.date);
       formData.append('time', eventFormData.time);
       formData.append('location', eventFormData.location);
-      
+
       if (eventFormData.category) {
         formData.append('category', eventFormData.category);
       }
-      
+
       if (eventFormData.price) {
         formData.append('price', eventFormData.price);
       }
-      
+
       // Add main image if selected
       if (uploadedImage) {
         formData.append('image', uploadedImage);
       } else if (eventFormData.imageUrl) {
         formData.append('imageUrl', eventFormData.imageUrl);
       }
-      
+
       // Log form data structure for debugging
       console.log("Form data being submitted:", {
         title: eventFormData.title,
@@ -573,18 +585,18 @@ export default function AdminTemp() {
         images: uploadedImages.length,
         existingImages: eventFormData.images.length
       });
-      
+
       // Add all additional images
       uploadedImages.forEach((image) => {
         formData.append('additionalImages', image);
       });
-      
+
       // Add existing images that should be kept
       if (eventFormData.images && eventFormData.images.length > 0) {
         formData.append('existingImages', JSON.stringify(eventFormData.images));
         formData.append('retainExistingImages', 'true');
       }
-      
+
       // Submit the form data through the mutation
       updateEventMutation.mutate(formData);
     } catch (error) {
@@ -596,13 +608,13 @@ export default function AdminTemp() {
       });
     }
   };
-  
+
   // Handle single image upload
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setUploadedImage(file);
-      
+
       const reader = new FileReader();
       reader.onload = () => {
         setImagePreview(reader.result as string);
@@ -610,57 +622,57 @@ export default function AdminTemp() {
       reader.readAsDataURL(file);
     }
   };
-  
+
   // Handle multiple image upload
   const handleMultipleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const filesArray = Array.from(e.target.files);
       setUploadedImages([...uploadedImages, ...filesArray]);
-      
+
       // Create preview URLs for the new images
       const newPreviewUrls = filesArray.map(file => {
         const reader = new FileReader();
         const url = URL.createObjectURL(file);
-        
+
         reader.onload = () => {
           // Nothing needed here as we're using URL.createObjectURL
         };
         reader.readAsDataURL(file);
-        
+
         return url;
       });
-      
+
       setImagePreviewUrls([...imagePreviewUrls, ...newPreviewUrls]);
     }
   };
-  
+
   // Remove an image from the multiple upload list
   const removeImage = (index: number) => {
     const newImages = [...uploadedImages];
     const newPreviewUrls = [...imagePreviewUrls];
-    
+
     // Release the object URL to avoid memory leaks
     URL.revokeObjectURL(newPreviewUrls[index]);
-    
+
     newImages.splice(index, 1);
     newPreviewUrls.splice(index, 1);
-    
+
     setUploadedImages(newImages);
     setImagePreviewUrls(newPreviewUrls);
   };
-  
+
   // Clear image preview
   const clearImagePreview = () => {
     setImagePreview(null);
     setUploadedImage(null);
     setEventFormData({ ...eventFormData, imageUrl: "" });
   };
-  
+
   // Clear multiple image previews
   const clearAllImagePreviews = () => {
     // Release all object URLs to avoid memory leaks
     imagePreviewUrls.forEach(url => URL.revokeObjectURL(url));
-    
+
     setImagePreviewUrls([]);
     setUploadedImages([]);
   };
@@ -688,13 +700,15 @@ export default function AdminTemp() {
     });
     setAdImagePreview(null);
     setAdUploadedImage(null);
+    setAdVideoPreview(null);
+    setAdUploadedVideo(null);
   };
 
   const handleAdImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setAdUploadedImage(file);
-      
+
       const reader = new FileReader();
       reader.onload = () => {
         setAdImagePreview(reader.result as string);
@@ -703,9 +717,19 @@ export default function AdminTemp() {
     }
   };
 
+  const handleAdVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setAdUploadedVideo(file);
+
+      const url = URL.createObjectURL(file);
+      setAdVideoPreview(url);
+    }
+  };
+
   const handleAdFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       if (editingAd) {
         // Update existing ad
@@ -755,7 +779,7 @@ export default function AdminTemp() {
       deleteAdMutation.mutate(id);
     }
   };
-  
+
   useEffect(() => {
     // Preload image preview for edit modal
     if (selectedEvent && selectedEvent.imageUrl) {
@@ -763,7 +787,7 @@ export default function AdminTemp() {
     } else {
       setImagePreview(null);
     }
-    
+
     // Set up additional images if present
     if (selectedEvent && selectedEvent.additionalImages && Array.isArray(selectedEvent.additionalImages)) {
       // Set images array in form data (for editing existing images)
@@ -781,11 +805,11 @@ export default function AdminTemp() {
       }));
       setImagePreviewUrls([]);
     }
-    
+
     // Reset uploaded images
     setUploadedImages([]);
   }, [selectedEvent]);
-  
+
   if (!isAdmin) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -794,16 +818,16 @@ export default function AdminTemp() {
       </div>
     );
   }
-  
+
   return (
     <>
-      <SEOHead 
-        title="Admin Dashboard" 
-        description="Savage Gentlemen Admin Dashboard" 
+      <SEOHead
+        title="Admin Dashboard"
+        description="Savage Gentlemen Admin Dashboard"
       />
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
         <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Admin Dashboard</h1>
-        
+
         {/* Undo deletion alert */}
         {isUndoAlertVisible && lastDeletedEvent && (
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded shadow-sm">
@@ -817,7 +841,7 @@ export default function AdminTemp() {
                 <div className="ml-3">
                   <p className="text-sm text-yellow-700">
                     Event "{lastDeletedEvent.title}" was deleted.
-                    <button 
+                    <button
                       onClick={() => restoreEventMutation.mutate(lastDeletedEvent.id)}
                       className="font-medium underline text-yellow-700 hover:text-yellow-600 ml-1"
                     >
@@ -826,8 +850,8 @@ export default function AdminTemp() {
                   </p>
                 </div>
               </div>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="text-yellow-400 hover:text-yellow-500 focus:outline-none"
                 onClick={() => setIsUndoAlertVisible(false)}
               >
@@ -839,9 +863,9 @@ export default function AdminTemp() {
             </div>
           </div>
         )}
-        
-        <Tabs 
-          defaultValue="tools" 
+
+        <Tabs
+          defaultValue="tools"
           className="w-full"
           value={activeTab}
           onValueChange={setActiveTab}
@@ -872,7 +896,7 @@ export default function AdminTemp() {
               <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="tools" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Ticket Scanner Card */}
@@ -885,7 +909,7 @@ export default function AdminTemp() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-xs sm:text-sm mb-4">Scan and validate tickets for events.</p>
-                  <Button 
+                  <Button
                     onClick={() => navigate('/ticket-scanner')}
                     className="w-full h-10 text-sm"
                   >
@@ -893,7 +917,7 @@ export default function AdminTemp() {
                   </Button>
                 </CardContent>
               </Card>
-              
+
               {/* User Management Card */}
               <Card className="shadow-md">
                 <CardHeader className="pb-2">
@@ -904,7 +928,7 @@ export default function AdminTemp() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-xs sm:text-sm mb-4">Manage user roles and permissions.</p>
-                  <Button 
+                  <Button
                     onClick={() => navigate('/user-management')}
                     className="w-full h-10 text-sm"
                   >
@@ -923,7 +947,7 @@ export default function AdminTemp() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-xs sm:text-sm mb-4">Monitor free ticket usage and analytics.</p>
-                  <Button 
+                  <Button
                     onClick={() => navigate('/free-tickets')}
                     className="w-full h-10 text-sm"
                   >
@@ -942,7 +966,7 @@ export default function AdminTemp() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-xs sm:text-sm mb-4">Manage user emails and password resets.</p>
-                  <Button 
+                  <Button
                     onClick={() => navigate('/email-management')}
                     className="w-full h-10 text-sm"
                   >
@@ -961,7 +985,7 @@ export default function AdminTemp() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-xs sm:text-sm mb-4">Upload and manage photos and videos securely.</p>
-                  <Button 
+                  <Button
                     onClick={() => navigate('/admin/media')}
                     className="w-full h-10 text-sm"
                   >
@@ -971,7 +995,7 @@ export default function AdminTemp() {
               </Card>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="content" className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
               {/* Events List */}
@@ -984,7 +1008,7 @@ export default function AdminTemp() {
                     </div>
                     <div className="flex space-x-2">
                       <div className="flex flex-wrap gap-2">
-                        <Button 
+                        <Button
                           onClick={checkForDeletedEvents}
                           className="h-8 text-xs"
                           variant="outline"
@@ -994,7 +1018,7 @@ export default function AdminTemp() {
                           {isCheckingLocalEvents ? "Checking..." : "Check for Deleted Events"}
                         </Button>
                       </div>
-                      <Button 
+                      <Button
                         onClick={() => navigate('/events')}
                         className="h-8 text-xs"
                         variant="outline"
@@ -1014,7 +1038,7 @@ export default function AdminTemp() {
                   ) : events.length === 0 ? (
                     <div className="text-center py-6">
                       <p className="text-muted-foreground">No events found</p>
-                      <Button 
+                      <Button
                         onClick={() => {
                           setEventFormData({
                             id: 0,
@@ -1025,7 +1049,7 @@ export default function AdminTemp() {
                             location: "",
                             imageUrl: "",
                             category: "",
-                            price: "", 
+                            price: "",
                             images: []
                           });
                           setIsEditEventModalOpen(true);
@@ -1038,7 +1062,7 @@ export default function AdminTemp() {
                   ) : (
                     <div className="space-y-4">
                       <div className="flex justify-end">
-                        <Button 
+                        <Button
                           onClick={() => {
                             setEventFormData({
                               id: 0,
@@ -1063,8 +1087,8 @@ export default function AdminTemp() {
                         {events.map((event: any) => (
                           <Card key={event.id} className="overflow-hidden">
                             <div className="relative aspect-video bg-muted">
-                              <img 
-                                src={event.imageUrl} 
+                              <img
+                                src={event.imageUrl}
                                 alt={event.title}
                                 className="object-cover w-full h-full"
                                 onError={(e) => {
@@ -1089,8 +1113,8 @@ export default function AdminTemp() {
                                 </div>
                               </div>
                               <div className="mt-3 flex space-x-2">
-                                <Button 
-                                  variant="outline" 
+                                <Button
+                                  variant="outline"
                                   size="sm"
                                   className="text-xs h-8 px-2 flex-1"
                                   onClick={() => {
@@ -1113,8 +1137,8 @@ export default function AdminTemp() {
                                   <Pencil className="h-3 w-3 mr-1" />
                                   Edit
                                 </Button>
-                                <Button 
-                                  variant="destructive" 
+                                <Button
+                                  variant="destructive"
                                   size="sm"
                                   className="text-xs h-8 px-2"
                                   onClick={async () => {
@@ -1122,7 +1146,7 @@ export default function AdminTemp() {
                                       try {
                                         // Store the event info for potential undo operation
                                         setLastDeletedEvent(event);
-                                        
+
                                         // Use the admin-specific endpoint to ensure proper authorization
                                         const response = await apiRequest('DELETE', `/api/admin/events/${event.id}`);
                                         if (response.ok) {
@@ -1169,7 +1193,7 @@ export default function AdminTemp() {
               </Card>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="ads" className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
               {/* Sponsored Content Management Card */}
@@ -1180,7 +1204,7 @@ export default function AdminTemp() {
                       <ShoppingBag className="h-4 w-4 mr-2" />
                       Sponsored Content Management
                     </div>
-                    <Button 
+                    <Button
                       onClick={() => {
                         setEditingAd(null);
                         setSelectedAdType('standard');
@@ -1196,12 +1220,12 @@ export default function AdminTemp() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-sm mb-4">Manage sponsored content and advertisements displayed on your site.</p>
-                  
+
                   {/* Ad Types Quick Actions */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="text-xs"
                       onClick={() => {
                         toast({
@@ -1212,9 +1236,9 @@ export default function AdminTemp() {
                     >
                       Standard Ad
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="text-xs"
                       onClick={() => {
                         toast({
@@ -1225,9 +1249,9 @@ export default function AdminTemp() {
                     >
                       Banner Ad
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="text-xs"
                       onClick={() => {
                         toast({
@@ -1238,9 +1262,9 @@ export default function AdminTemp() {
                     >
                       Product Showcase
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="text-xs"
                       onClick={() => {
                         toast({
@@ -1274,9 +1298,8 @@ export default function AdminTemp() {
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
                                 <span className="text-sm font-medium">{ad.title}</span>
-                                <span className={`px-2 py-1 text-xs rounded-full ${
-                                  ad.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-                                }`}>
+                                <span className={`px-2 py-1 text-xs rounded-full ${ad.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                                  }`}>
                                   {ad.isActive ? 'Active' : 'Inactive'}
                                 </span>
                                 <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full capitalize">
@@ -1323,9 +1346,9 @@ export default function AdminTemp() {
 
                   {/* Ad Management Features */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-4 border-t">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="text-xs"
                       onClick={() => {
                         toast({
@@ -1336,9 +1359,9 @@ export default function AdminTemp() {
                     >
                       View Analytics
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="text-xs"
                       onClick={() => {
                         toast({
@@ -1349,9 +1372,9 @@ export default function AdminTemp() {
                     >
                       Schedule Ads
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="text-xs"
                       onClick={() => {
                         toast({
@@ -1367,7 +1390,7 @@ export default function AdminTemp() {
               </Card>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="tickets" className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
               {/* Tickets Management Card */}
@@ -1382,7 +1405,7 @@ export default function AdminTemp() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm mb-4">Manage tickets for events.</p>
-                  <Button 
+                  <Button
                     onClick={() => navigate('/ticket-management')}
                     className="w-full sm:w-auto"
                   >
@@ -1392,7 +1415,7 @@ export default function AdminTemp() {
               </Card>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="analytics" className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
               {/* Analytics Card */}
@@ -1405,7 +1428,7 @@ export default function AdminTemp() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm mb-4">View site and event analytics.</p>
-                  <Button 
+                  <Button
                     onClick={() => navigate('/analytics')}
                     className="w-full sm:w-auto"
                   >
@@ -1415,7 +1438,7 @@ export default function AdminTemp() {
               </Card>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="live" className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
               {/* Live Controls Card */}
@@ -1434,7 +1457,7 @@ export default function AdminTemp() {
           </TabsContent>
         </Tabs>
       </div>
-      
+
       {/* Edit Event Modal */}
       <Dialog open={isEditEventModalOpen} onOpenChange={setIsEditEventModalOpen}>
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
@@ -1448,7 +1471,7 @@ export default function AdminTemp() {
                 <Input
                   id="title"
                   value={eventFormData.title}
-                  onChange={(e) => setEventFormData({...eventFormData, title: e.target.value})}
+                  onChange={(e) => setEventFormData({ ...eventFormData, title: e.target.value })}
                   required
                 />
               </div>
@@ -1457,12 +1480,12 @@ export default function AdminTemp() {
                 <Input
                   id="location"
                   value={eventFormData.location}
-                  onChange={(e) => setEventFormData({...eventFormData, location: e.target.value})}
+                  onChange={(e) => setEventFormData({ ...eventFormData, location: e.target.value })}
                   required
                 />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="date">Date</Label>
@@ -1470,7 +1493,7 @@ export default function AdminTemp() {
                   id="date"
                   type="date"
                   value={eventFormData.date}
-                  onChange={(e) => setEventFormData({...eventFormData, date: e.target.value})}
+                  onChange={(e) => setEventFormData({ ...eventFormData, date: e.target.value })}
                   required
                 />
               </div>
@@ -1480,7 +1503,7 @@ export default function AdminTemp() {
                   id="time"
                   type="time"
                   value={eventFormData.time}
-                  onChange={(e) => setEventFormData({...eventFormData, time: e.target.value})}
+                  onChange={(e) => setEventFormData({ ...eventFormData, time: e.target.value })}
                   required
                 />
               </div>
@@ -1490,33 +1513,33 @@ export default function AdminTemp() {
                   id="price"
                   type="text"
                   value={eventFormData.price}
-                  onChange={(e) => setEventFormData({...eventFormData, price: e.target.value})}
+                  onChange={(e) => setEventFormData({ ...eventFormData, price: e.target.value })}
                   placeholder="e.g. 20.00"
                 />
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="category">Category (optional)</Label>
               <Input
                 id="category"
                 value={eventFormData.category}
-                onChange={(e) => setEventFormData({...eventFormData, category: e.target.value})}
+                onChange={(e) => setEventFormData({ ...eventFormData, category: e.target.value })}
                 placeholder="e.g. Music, Sports, etc."
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
                 value={eventFormData.description}
-                onChange={(e) => setEventFormData({...eventFormData, description: e.target.value})}
+                onChange={(e) => setEventFormData({ ...eventFormData, description: e.target.value })}
                 rows={5}
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label>Main Image</Label>
               <div className="mt-1 flex items-center space-x-3">
@@ -1528,9 +1551,9 @@ export default function AdminTemp() {
                   className="flex-1"
                 />
                 {imagePreview && (
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     size="sm"
                     onClick={clearImagePreview}
                   >
@@ -1538,18 +1561,18 @@ export default function AdminTemp() {
                   </Button>
                 )}
               </div>
-              
+
               {imagePreview && (
                 <div className="mt-2 relative w-full max-w-xs mx-auto">
-                  <img 
-                    src={imagePreview} 
-                    alt="Preview" 
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
                     className="rounded border object-cover h-40 w-full"
                   />
                 </div>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <Label>Additional Images</Label>
               <div className="mt-1 flex items-center space-x-3">
@@ -1562,9 +1585,9 @@ export default function AdminTemp() {
                   multiple
                 />
                 {(imagePreviewUrls.length > 0 || (eventFormData.images && eventFormData.images.length > 0)) && (
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     size="sm"
                     onClick={clearAllImagePreviews}
                   >
@@ -1572,7 +1595,7 @@ export default function AdminTemp() {
                   </Button>
                 )}
               </div>
-              
+
               {/* Previews of newly uploaded images */}
               {imagePreviewUrls.length > 0 && (
                 <div className="mt-2">
@@ -1580,9 +1603,9 @@ export default function AdminTemp() {
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                     {imagePreviewUrls.map((url, index) => (
                       <div key={`upload-${index}`} className="relative h-20 rounded border overflow-hidden">
-                        <img 
-                          src={url} 
-                          alt={`Preview ${index + 1}`} 
+                        <img
+                          src={url}
+                          alt={`Preview ${index + 1}`}
                           className="object-cover w-full h-full"
                         />
                         <Button
@@ -1599,7 +1622,7 @@ export default function AdminTemp() {
                   </div>
                 </div>
               )}
-              
+
               {/* Display of existing images */}
               {eventFormData.images && eventFormData.images.length > 0 && (
                 <div className="mt-4">
@@ -1607,9 +1630,9 @@ export default function AdminTemp() {
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                     {eventFormData.images.map((img, index) => (
                       <div key={`existing-${index}`} className="relative h-20 rounded border overflow-hidden">
-                        <img 
-                          src={img} 
-                          alt={`Image ${index + 1}`} 
+                        <img
+                          src={img}
+                          alt={`Image ${index + 1}`}
                           className="object-cover w-full h-full"
                         />
                         <Button
@@ -1620,7 +1643,7 @@ export default function AdminTemp() {
                           onClick={() => {
                             const updatedImages = [...eventFormData.images];
                             updatedImages.splice(index, 1);
-                            setEventFormData({...eventFormData, images: updatedImages});
+                            setEventFormData({ ...eventFormData, images: updatedImages });
                           }}
                         >
                           <X className="h-2 w-2" />
@@ -1631,17 +1654,17 @@ export default function AdminTemp() {
                 </div>
               )}
             </div>
-            
+
             <DialogFooter className="flex space-x-2 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => setIsEditEventModalOpen(false)}
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={updateEventMutation.isPending}
                 className="flex items-center"
               >
@@ -1670,7 +1693,7 @@ export default function AdminTemp() {
               {editingAd ? 'Edit Advertisement' : 'Create New Advertisement'}
             </DialogTitle>
           </DialogHeader>
-          
+
           <form onSubmit={handleAdFormSubmit} className="space-y-4">
             {/* Basic Information */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1679,17 +1702,17 @@ export default function AdminTemp() {
                 <Input
                   id="ad-title"
                   value={adFormData.title}
-                  onChange={(e) => setAdFormData({...adFormData, title: e.target.value})}
+                  onChange={(e) => setAdFormData({ ...adFormData, title: e.target.value })}
                   required
                   placeholder="Enter ad title"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="ad-type">Advertisement Type *</Label>
-                <Select 
-                  value={adFormData.type} 
-                  onValueChange={(value) => setAdFormData({...adFormData, type: value})}
+                <Select
+                  value={adFormData.type}
+                  onValueChange={(value) => setAdFormData({ ...adFormData, type: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select ad type" />
@@ -1704,19 +1727,19 @@ export default function AdminTemp() {
                 </Select>
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="ad-description">Description *</Label>
               <Textarea
                 id="ad-description"
                 value={adFormData.description}
-                onChange={(e) => setAdFormData({...adFormData, description: e.target.value})}
+                onChange={(e) => setAdFormData({ ...adFormData, description: e.target.value })}
                 required
                 placeholder="Enter ad description"
                 rows={3}
               />
             </div>
-            
+
             {/* URLs and Links */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -1724,23 +1747,23 @@ export default function AdminTemp() {
                 <Input
                   id="ad-link"
                   value={adFormData.linkUrl}
-                  onChange={(e) => setAdFormData({...adFormData, linkUrl: e.target.value})}
+                  onChange={(e) => setAdFormData({ ...adFormData, linkUrl: e.target.value })}
                   placeholder="https://example.com"
                   type="url"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="ad-cta">Call-to-Action Text</Label>
                 <Input
                   id="ad-cta"
                   value={adFormData.ctaText}
-                  onChange={(e) => setAdFormData({...adFormData, ctaText: e.target.value})}
+                  onChange={(e) => setAdFormData({ ...adFormData, ctaText: e.target.value })}
                   placeholder="Learn More"
                 />
               </div>
             </div>
-            
+
             {/* Visual Customization */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -1748,22 +1771,22 @@ export default function AdminTemp() {
                 <Input
                   id="ad-bg-color"
                   value={adFormData.backgroundColor}
-                  onChange={(e) => setAdFormData({...adFormData, backgroundColor: e.target.value})}
+                  onChange={(e) => setAdFormData({ ...adFormData, backgroundColor: e.target.value })}
                   placeholder="bg-gray-800"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="ad-text-color">Text Color</Label>
                 <Input
                   id="ad-text-color"
                   value={adFormData.textColor}
-                  onChange={(e) => setAdFormData({...adFormData, textColor: e.target.value})}
+                  onChange={(e) => setAdFormData({ ...adFormData, textColor: e.target.value })}
                   placeholder="text-white"
                 />
               </div>
             </div>
-            
+
             {/* Conditional Fields Based on Type */}
             {(adFormData.type === 'product' || adFormData.type === 'event') && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1773,12 +1796,12 @@ export default function AdminTemp() {
                     <Input
                       id="ad-price"
                       value={adFormData.price}
-                      onChange={(e) => setAdFormData({...adFormData, price: e.target.value})}
+                      onChange={(e) => setAdFormData({ ...adFormData, price: e.target.value })}
                       placeholder="$99.99"
                     />
                   </div>
                 )}
-                
+
                 {adFormData.type === 'event' && (
                   <>
                     <div className="space-y-2">
@@ -1786,17 +1809,17 @@ export default function AdminTemp() {
                       <Input
                         id="ad-event-date"
                         value={adFormData.eventDate}
-                        onChange={(e) => setAdFormData({...adFormData, eventDate: e.target.value})}
+                        onChange={(e) => setAdFormData({ ...adFormData, eventDate: e.target.value })}
                         placeholder="March 15, 2024"
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="ad-location">Location</Label>
                       <Input
                         id="ad-location"
                         value={adFormData.location}
-                        onChange={(e) => setAdFormData({...adFormData, location: e.target.value})}
+                        onChange={(e) => setAdFormData({ ...adFormData, location: e.target.value })}
                         placeholder="New York, NY"
                       />
                     </div>
@@ -1804,21 +1827,58 @@ export default function AdminTemp() {
                 )}
               </div>
             )}
-            
-            {/* Video URL for Video Ads */}
+
+            {/* Video Upload for Video Ads */}
             {adFormData.type === 'video' && (
               <div className="space-y-2">
-                <Label htmlFor="ad-video">Video URL</Label>
-                <Input
-                  id="ad-video"
-                  value={adFormData.videoUrl}
-                  onChange={(e) => setAdFormData({...adFormData, videoUrl: e.target.value})}
-                  placeholder="https://youtube.com/watch?v=..."
-                  type="url"
-                />
+                <Label>Upload Video</Label>
+                <div className="flex items-center space-x-3">
+                  <Input
+                    type="file"
+                    accept="video/*"
+                    onChange={handleAdVideoUpload}
+                    className="flex-1"
+                  />
+                  {adVideoPreview && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (adVideoPreview) URL.revokeObjectURL(adVideoPreview);
+                        setAdVideoPreview(null);
+                        setAdUploadedVideo(null);
+                        setAdFormData({ ...adFormData, videoUrl: '' });
+                      }}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+
+                {adVideoPreview && (
+                  <div className="mt-2 relative w-full max-w-xs mx-auto">
+                    <video
+                      src={adVideoPreview}
+                      controls
+                      className="rounded border h-32 w-full object-cover"
+                    />
+                  </div>
+                )}
+
+                <div className="mt-2">
+                  <Label htmlFor="ad-video-url">Or paste Video URL</Label>
+                  <Input
+                    id="ad-video-url"
+                    value={adFormData.videoUrl}
+                    onChange={(e) => setAdFormData({ ...adFormData, videoUrl: e.target.value })}
+                    placeholder="https://youtube.com/watch?v=..."
+                    type="url"
+                  />
+                </div>
               </div>
             )}
-            
+
             {/* Image Upload */}
             <div className="space-y-2">
               <Label>Advertisement Image</Label>
@@ -1830,9 +1890,9 @@ export default function AdminTemp() {
                   className="flex-1"
                 />
                 {adImagePreview && (
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     size="sm"
                     onClick={() => {
                       setAdImagePreview(null);
@@ -1843,18 +1903,18 @@ export default function AdminTemp() {
                   </Button>
                 )}
               </div>
-              
+
               {adImagePreview && (
                 <div className="mt-2 relative w-full max-w-xs mx-auto">
-                  <img 
-                    src={adImagePreview} 
-                    alt="Ad Preview" 
+                  <img
+                    src={adImagePreview}
+                    alt="Ad Preview"
                     className="rounded border object-cover h-32 w-full"
                   />
                 </div>
               )}
             </div>
-            
+
             {/* Scheduling and Priority */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
@@ -1863,50 +1923,50 @@ export default function AdminTemp() {
                   id="ad-priority"
                   type="number"
                   value={adFormData.priority}
-                  onChange={(e) => setAdFormData({...adFormData, priority: parseInt(e.target.value) || 0})}
+                  onChange={(e) => setAdFormData({ ...adFormData, priority: parseInt(e.target.value) || 0 })}
                   placeholder="0"
                   min="0"
                   max="100"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="ad-start-date">Start Date</Label>
                 <Input
                   id="ad-start-date"
                   type="date"
                   value={adFormData.startDate}
-                  onChange={(e) => setAdFormData({...adFormData, startDate: e.target.value})}
+                  onChange={(e) => setAdFormData({ ...adFormData, startDate: e.target.value })}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="ad-end-date">End Date</Label>
                 <Input
                   id="ad-end-date"
                   type="date"
                   value={adFormData.endDate}
-                  onChange={(e) => setAdFormData({...adFormData, endDate: e.target.value})}
+                  onChange={(e) => setAdFormData({ ...adFormData, endDate: e.target.value })}
                 />
               </div>
             </div>
-            
+
             {/* Active Status */}
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
                 id="ad-active"
                 checked={adFormData.isActive}
-                onChange={(e) => setAdFormData({...adFormData, isActive: e.target.checked})}
+                onChange={(e) => setAdFormData({ ...adFormData, isActive: e.target.checked })}
                 className="rounded border-gray-300"
               />
               <Label htmlFor="ad-active">Active (will be displayed on site)</Label>
             </div>
-            
+
             <DialogFooter className="flex space-x-2 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => {
                   setIsCreateAdModalOpen(false);
                   setEditingAd(null);
@@ -1915,8 +1975,8 @@ export default function AdminTemp() {
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={createAdMutation.isPending || updateAdMutation.isPending}
                 className="flex items-center"
               >
