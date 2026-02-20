@@ -720,11 +720,7 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.email === email
-    );
-  }
+
 
   async updateUserPassword(id: number, newPassword: string): Promise<User | undefined> {
     const user = await this.getUser(id);
