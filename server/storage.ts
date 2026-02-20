@@ -2663,59 +2663,60 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(events);
 
+    // Get all tickets for these events in a single query to prevent DB connection exhaustion
+    const eventIds = allEvents.map((e) => e.id);
+    const allTickets = eventIds.length > 0
+      ? await db.select().from(tickets).where(inArray(tickets.eventId, eventIds))
+      : [];
+
     // For each event, get the lowest active ticket price
-    const eventsWithLowestPrice = await Promise.all(
-      allEvents.map(async (event) => {
-        // Get all tickets for this event
-        const eventTickets = await db
-          .select()
-          .from(tickets)
-          .where(eq(tickets.eventId, event.id));
+    const eventsWithLowestPrice = allEvents.map((event) => {
+      // Get all tickets for this event
+      const eventTickets = allTickets.filter(t => t.eventId === event.id);
 
-        // Filter tickets that are active, within their sales period and have remaining quantity
-        const now = new Date();
-        const activeTickets = eventTickets.filter(ticket => {
-          // Check if ticket is active
-          if (ticket.status !== 'active') return false;
+      // Filter tickets that are active, within their sales period and have remaining quantity
+      const now = new Date();
+      const activeTickets = eventTickets.filter(ticket => {
+        // Check if ticket is active
+        if (ticket.status !== 'active') return false;
 
-          // Check remaining quantity
-          if (ticket.remainingQuantity <= 0) return false;
+        // Check remaining quantity
+        if (ticket.remainingQuantity <= 0) return false;
 
-          // Check if sales have ended
-          if (ticket.salesEndDate) {
-            const endDate = new Date(ticket.salesEndDate);
-            if (ticket.salesEndTime) {
-              const [hours, minutes] = ticket.salesEndTime.split(':');
-              endDate.setHours(parseInt(hours), parseInt(minutes));
-            }
-            if (now > endDate) return false;
+        // Check if sales have ended
+        if (ticket.salesEndDate) {
+          const endDate = new Date(ticket.salesEndDate);
+          if (ticket.salesEndTime) {
+            const [hours, minutes] = ticket.salesEndTime.split(':');
+            endDate.setHours(parseInt(hours), parseInt(minutes));
           }
-
-          // Check if sales have started
-          if (ticket.salesStartDate) {
-            const startDate = new Date(ticket.salesStartDate);
-            if (ticket.salesStartTime) {
-              const [hours, minutes] = ticket.salesStartTime.split(':');
-              startDate.setHours(parseInt(hours), parseInt(minutes));
-            }
-            if (now < startDate) return false;
-          }
-
-          return true;
-        });
-
-        // Find the lowest price among active tickets
-        let lowestActivePrice = null;
-        if (activeTickets.length > 0) {
-          lowestActivePrice = Math.min(...activeTickets.map(t => t.price || 0));
+          if (now > endDate) return false;
         }
 
-        return {
-          ...event,
-          lowestActivePrice
-        };
-      })
-    );
+        // Check if sales have started
+        if (ticket.salesStartDate) {
+          const startDate = new Date(ticket.salesStartDate);
+          if (ticket.salesStartTime) {
+            const [hours, minutes] = ticket.salesStartTime.split(':');
+            startDate.setHours(parseInt(hours), parseInt(minutes));
+          }
+          if (now < startDate) return false;
+        }
+
+        return true;
+      });
+
+      // Find the lowest price among active tickets
+      let lowestActivePrice = null;
+      if (activeTickets.length > 0) {
+        lowestActivePrice = Math.min(...activeTickets.map(t => t.price || 0));
+      }
+
+      return {
+        ...event,
+        lowestActivePrice
+      };
+    });
 
     return eventsWithLowestPrice;
   }
@@ -2771,58 +2772,59 @@ export class DatabaseStorage implements IStorage {
       }
     });
 
+    // Get all tickets for these events in a single query
+    const featuredEventIds = upcomingFeaturedEvents.map((e) => e.id);
+    const allFeaturedTickets = featuredEventIds.length > 0
+      ? await db.select().from(tickets).where(inArray(tickets.eventId, featuredEventIds))
+      : [];
+
     // For each upcoming featured event, get the lowest active ticket price
-    const eventsWithLowestPrice = await Promise.all(
-      upcomingFeaturedEvents.map(async (event) => {
-        // Get all tickets for this event
-        const eventTickets = await db
-          .select()
-          .from(tickets)
-          .where(eq(tickets.eventId, event.id));
+    const eventsWithLowestPrice = upcomingFeaturedEvents.map((event) => {
+      // Get all tickets for this event
+      const eventTickets = allFeaturedTickets.filter(t => t.eventId === event.id);
 
-        // Filter tickets that are active, within their sales period and have remaining quantity
-        const activeTickets = eventTickets.filter(ticket => {
-          // Check if ticket is active
-          if (ticket.status !== 'active') return false;
+      // Filter tickets that are active, within their sales period and have remaining quantity
+      const activeTickets = eventTickets.filter(ticket => {
+        // Check if ticket is active
+        if (ticket.status !== 'active') return false;
 
-          // Check remaining quantity
-          if (ticket.remainingQuantity <= 0) return false;
+        // Check remaining quantity
+        if (ticket.remainingQuantity <= 0) return false;
 
-          // Check if sales have ended
-          if (ticket.salesEndDate) {
-            const endDate = new Date(ticket.salesEndDate);
-            if (ticket.salesEndTime) {
-              const [hours, minutes] = ticket.salesEndTime.split(':');
-              endDate.setHours(parseInt(hours), parseInt(minutes));
-            }
-            if (now > endDate) return false;
+        // Check if sales have ended
+        if (ticket.salesEndDate) {
+          const endDate = new Date(ticket.salesEndDate);
+          if (ticket.salesEndTime) {
+            const [hours, minutes] = ticket.salesEndTime.split(':');
+            endDate.setHours(parseInt(hours), parseInt(minutes));
           }
-
-          // Check if sales have started
-          if (ticket.salesStartDate) {
-            const startDate = new Date(ticket.salesStartDate);
-            if (ticket.salesStartTime) {
-              const [hours, minutes] = ticket.salesStartTime.split(':');
-              startDate.setHours(parseInt(hours), parseInt(minutes));
-            }
-            if (now < startDate) return false;
-          }
-
-          return true;
-        });
-
-        // Find the lowest price among active tickets
-        let lowestActivePrice = null;
-        if (activeTickets.length > 0) {
-          lowestActivePrice = Math.min(...activeTickets.map(t => t.price || 0));
+          if (now > endDate) return false;
         }
 
-        return {
-          ...event,
-          lowestActivePrice
-        };
-      })
-    );
+        // Check if sales have started
+        if (ticket.salesStartDate) {
+          const startDate = new Date(ticket.salesStartDate);
+          if (ticket.salesStartTime) {
+            const [hours, minutes] = ticket.salesStartTime.split(':');
+            startDate.setHours(parseInt(hours), parseInt(minutes));
+          }
+          if (now < startDate) return false;
+        }
+
+        return true;
+      });
+
+      // Find the lowest price among active tickets
+      let lowestActivePrice = null;
+      if (activeTickets.length > 0) {
+        lowestActivePrice = Math.min(...activeTickets.map(t => t.price || 0));
+      }
+
+      return {
+        ...event,
+        lowestActivePrice
+      };
+    });
 
     return eventsWithLowestPrice;
   }

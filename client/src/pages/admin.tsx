@@ -179,7 +179,8 @@ import {
   Edit,
   Search,
   Filter,
-  Plus
+  Plus,
+  Trash
 } from "lucide-react";
 import AdminMediaPage from "./admin-media";
 import LivestreamManager from "@/components/admin/LivestreamManager";
