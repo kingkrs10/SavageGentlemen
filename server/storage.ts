@@ -164,7 +164,7 @@ import {
   InsertPassportQrCheckin
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gt, sql, lte, lt, isNotNull, not } from "drizzle-orm";
+import { eq, desc, and, gt, gte, sql, lte, lt, isNotNull, not } from "drizzle-orm";
 import crypto from "crypto";
 
 // Interface for storage operations
@@ -4665,16 +4665,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllMediaCollections(options?: { visibility?: string; isActive?: boolean }): Promise<MediaCollection[]> {
-    let query = db.select().from(mediaCollections);
+    const filters = [];
+    if (options?.visibility) filters.push(eq(mediaCollections.visibility, options.visibility));
+    if (options?.isActive !== undefined) filters.push(eq(mediaCollections.isActive, options.isActive));
 
-    if (options?.visibility) {
-      query = query.where(eq(mediaCollections.visibility, options.visibility));
-    }
-    if (options?.isActive !== undefined) {
-      query = query.where(eq(mediaCollections.isActive, options.isActive));
-    }
-
-    return await query;
+    if (filters.length === 0) return await db.select().from(mediaCollections);
+    return await db.select().from(mediaCollections).where(and(...filters));
   }
 
   async updateMediaCollection(id: number, collectionData: Partial<InsertMediaCollection>): Promise<MediaCollection | undefined> {
@@ -4723,22 +4719,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMediaAssetsByCollectionId(collectionId: number, options?: { isPublished?: boolean; limit?: number; offset?: number }): Promise<MediaAsset[]> {
-    let query = db
-      .select()
-      .from(mediaAssets)
-      .where(eq(mediaAssets.collectionId, collectionId));
-
+    const filters = [eq(mediaAssets.collectionId, collectionId)];
     if (options?.isPublished !== undefined) {
-      query = query.where(eq(mediaAssets.isPublished, options.isPublished));
+      filters.push(eq(mediaAssets.isPublished, options.isPublished));
     }
 
-    if (options?.limit) {
-      query = query.limit(options.limit);
-    }
+    let query: any = db.select().from(mediaAssets).where(and(...filters));
 
-    if (options?.offset) {
-      query = query.offset(options.offset);
-    }
+    if (options?.limit) query = query.limit(options.limit);
+    if (options?.offset) query = query.offset(options.offset);
 
     const assets = await query;
 
@@ -5044,16 +5033,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPassportRewardsByUserId(userId: number, status?: string): Promise<PassportReward[]> {
-    let query = db
-      .select()
-      .from(passportRewards)
-      .where(eq(passportRewards.userId, userId));
-
+    const filters = [eq(passportRewards.userId, userId)];
     if (status) {
-      query = query.where(eq(passportRewards.status, status)) as any;
+      filters.push(eq(passportRewards.status, status));
     }
 
-    return await query.orderBy(desc(passportRewards.createdAt));
+    return await db
+      .select()
+      .from(passportRewards)
+      .where(and(...filters))
+      .orderBy(desc(passportRewards.createdAt));
   }
 
   async createPassportReward(rewardData: InsertPassportReward): Promise<PassportReward> {
@@ -5095,15 +5084,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllPassportMissions(isActive?: boolean): Promise<PassportMission[]> {
-    let query = db
-      .select()
-      .from(passportMissions);
-
     if (isActive !== undefined) {
-      query = query.where(eq(passportMissions.isActive, isActive)) as any;
+      return await db
+        .select()
+        .from(passportMissions)
+        .where(eq(passportMissions.isActive, isActive))
+        .orderBy(desc(passportMissions.createdAt));
     }
 
-    return await query.orderBy(desc(passportMissions.createdAt));
+    return await db
+      .select()
+      .from(passportMissions)
+      .orderBy(desc(passportMissions.createdAt));
   }
 
   async createPassportMission(missionData: InsertPassportMission): Promise<PassportMission> {
