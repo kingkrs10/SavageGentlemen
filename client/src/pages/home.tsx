@@ -65,7 +65,7 @@ const Home = () => {
   return (
     <div className="mx-auto">
       {/* Interactive Event Carousel Hero */}
-      {featuredEvents && featuredEvents.length > 0 ? (
+      {Array.isArray(featuredEvents) && featuredEvents.length > 0 ? (
         <HeroEventCarousel
           events={featuredEvents}
           onGetTicket={handleGetTicket}
@@ -210,7 +210,7 @@ const Home = () => {
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-12">
             {/* Featured Events Section */}
-            {featuredEvents && featuredEvents.length > 0 && (
+            {Array.isArray(featuredEvents) && featuredEvents.length > 0 && (
               <section>
                 <div className="flex items-center justify-between mb-8">
                   <h2 className="heading-modern text-3xl gradient-text uppercase tracking-wide">Featured Events</h2>
@@ -245,7 +245,7 @@ const Home = () => {
             )}
 
             {/* Explore Merch Section */}
-            {featuredProducts && featuredProducts.length > 0 && (
+            {Array.isArray(featuredProducts) && featuredProducts.length > 0 && (
               <section className="py-20 bg-gradient-to-b from-background to-card">
                 <div className="text-center mb-12">
                   <div className="inline-block mb-6">

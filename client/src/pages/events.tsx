@@ -19,34 +19,34 @@ const Events = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [activeTab, setActiveTab] = useState("upcoming");
   const { toast } = useToast();
-  
+
   const { data: upcomingEvents, isLoading: upcomingLoading, isError: upcomingError, error: upcomingErrorDetails } = useQuery<Event[]>({
     queryKey: [API_ROUTES.EVENTS, 'upcoming'],
     queryFn: () => fetch(`${API_ROUTES.EVENTS}?status=upcoming`).then(res => res.json())
   });
-  
+
   const { data: pastEvents, isLoading: pastLoading, isError: pastError, error: pastErrorDetails } = useQuery<Event[]>({
     queryKey: [API_ROUTES.EVENTS, 'past'],
     queryFn: () => fetch(`${API_ROUTES.EVENTS}?status=past`).then(res => res.json())
   });
-  
+
   // Get the appropriate events based on active tab
   const currentEvents = activeTab === "upcoming" ? upcomingEvents : pastEvents;
   const isCurrentLoading = activeTab === "upcoming" ? upcomingLoading : pastLoading;
   const isCurrentError = activeTab === "upcoming" ? upcomingError : pastError;
   const currentError = activeTab === "upcoming" ? upcomingErrorDetails : pastErrorDetails;
-  
-  const filteredEvents = currentEvents?.filter(
+
+  const filteredEvents = Array.isArray(currentEvents) ? currentEvents.filter(
     (event) => selectedCategory === "all" || event.category === selectedCategory
-  );
-  
+  ) : [];
+
   // Featured event should always be from upcoming events
-  const featuredEvent = upcomingEvents?.find((event) => event.featured);
-  
+  const featuredEvent = Array.isArray(upcomingEvents) ? upcomingEvents.find((event) => event.featured) : undefined;
+
   const handleGetTicket = (eventId: number) => {
     // Find the event to get its price from current events
     const event = currentEvents?.find(e => e.id === eventId);
-    
+
     if (!event) {
       toast({
         title: "Error",
@@ -55,20 +55,20 @@ const Events = () => {
       });
       return;
     }
-    
+
     toast({
       title: "Processing",
       description: "Loading ticket options..."
     });
-    
+
     // Navigate to the event detail page first to show tickets
     window.location.href = `/events/${eventId}`;
   };
-  
+
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
   };
-  
+
   return (
     <div>
       {/* Hero Event */}
@@ -79,9 +79,9 @@ const Events = () => {
           </div>
         ) : featuredEvent ? (
           <>
-            <img 
-              src={getNormalizedImageUrl(featuredEvent.imageUrl)} 
-              alt={featuredEvent.title} 
+            <img
+              src={getNormalizedImageUrl(featuredEvent.imageUrl)}
+              alt={featuredEvent.title}
               className="w-full h-64 object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
@@ -92,24 +92,24 @@ const Events = () => {
               <Link href={`/events/${featuredEvent.id}`}>
                 <h2 className="text-3xl font-heading text-white hover:underline">{featuredEvent.title}</h2>
               </Link>
-              <p className="text-lg text-gray-200 mb-2">{featuredEvent.description.length > 150 ? 
+              <p className="text-lg text-gray-200 mb-2">{featuredEvent.description.length > 150 ?
                 `${featuredEvent.description.substring(0, 150)}...` : featuredEvent.description}</p>
               <div className="flex items-center text-sm text-gray-300 mb-4">
                 <span className="flex items-center mr-4">
-                  <Calendar className="w-4 h-4 mr-1" /> 
-                  {new Date(featuredEvent.date).toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric', 
-                    year: 'numeric' 
+                  <Calendar className="w-4 h-4 mr-1" />
+                  {new Date(featuredEvent.date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
                   })}
                 </span>
                 <span className="flex items-center">
-                  <MapPin className="w-4 h-4 mr-1" /> 
+                  <MapPin className="w-4 h-4 mr-1" />
                   {featuredEvent.location}
                 </span>
               </div>
               <div className="flex space-x-3">
-                <Button 
+                <Button
                   className="bg-primary text-white hover:bg-red-800 transition"
                   onClick={() => handleGetTicket(featuredEvent.id)}
                 >
@@ -120,11 +120,11 @@ const Events = () => {
                     View Details
                   </Button>
                 </Link>
-                <AddToCalendarButton 
-                  event={featuredEvent} 
-                  variant="outline" 
-                  size="default" 
-                  className="border-white text-white hover:bg-white/20" 
+                <AddToCalendarButton
+                  event={featuredEvent}
+                  variant="outline"
+                  size="default"
+                  className="border-white text-white hover:bg-white/20"
                   showText={false}
                 />
               </div>
@@ -141,8 +141,8 @@ const Events = () => {
       <div className="bg-gray-900 rounded-lg p-4 mb-6">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-lg font-semibold">Find Events</h3>
-          <Button 
-            variant="link" 
+          <Button
+            variant="link"
             className="text-sm text-primary p-0 h-auto"
             onClick={() => setSelectedCategory("all")}
           >
@@ -155,8 +155,8 @@ const Events = () => {
               key={category.id}
               variant={selectedCategory === category.id ? "default" : "outline"}
               className={
-                selectedCategory === category.id 
-                  ? "bg-primary text-white" 
+                selectedCategory === category.id
+                  ? "bg-primary text-white"
                   : "bg-gray-800 text-white hover:bg-gray-700"
               }
               size="sm"
@@ -171,27 +171,27 @@ const Events = () => {
       {/* Event Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger 
-            value="upcoming" 
+          <TabsTrigger
+            value="upcoming"
             className="flex items-center gap-2"
             data-testid="tab-upcoming-events"
           >
             <Clock className="w-4 h-4" />
             Upcoming Events
-            {upcomingEvents && (
+            {Array.isArray(upcomingEvents) && (
               <Badge variant="secondary" className="ml-1 text-xs">
                 {upcomingEvents.length}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger 
-            value="past" 
+          <TabsTrigger
+            value="past"
             className="flex items-center gap-2"
             data-testid="tab-past-events"
           >
             <CalendarOff className="w-4 h-4" />
             Past Events
-            {pastEvents && (
+            {Array.isArray(pastEvents) && (
               <Badge variant="secondary" className="ml-1 text-xs">
                 {pastEvents.length}
               </Badge>
@@ -220,9 +220,9 @@ const Events = () => {
             </div>
           ) : filteredEvents && filteredEvents.length > 0 ? (
             filteredEvents.map((event) => (
-              <EventCard 
-                key={event.id} 
-                event={event} 
+              <EventCard
+                key={event.id}
+                event={event}
                 variant="horizontal"
                 onGetTicket={handleGetTicket}
                 data-testid={`event-card-${event.id}`}
@@ -233,7 +233,7 @@ const Events = () => {
               <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">No Upcoming Events Found</h3>
               <p className="text-gray-400">
-                {selectedCategory !== "all" 
+                {selectedCategory !== "all"
                   ? "There are no upcoming events matching your filter. Try changing your selection."
                   : "There are no upcoming events scheduled at this time. Check back later!"
                 }
@@ -263,9 +263,9 @@ const Events = () => {
             </div>
           ) : filteredEvents && filteredEvents.length > 0 ? (
             filteredEvents.map((event) => (
-              <EventCard 
-                key={event.id} 
-                event={event} 
+              <EventCard
+                key={event.id}
+                event={event}
                 variant="horizontal"
                 onGetTicket={handleGetTicket}
                 isPastEvent={true}
@@ -277,7 +277,7 @@ const Events = () => {
               <CalendarOff className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">No Past Events Found</h3>
               <p className="text-gray-400">
-                {selectedCategory !== "all" 
+                {selectedCategory !== "all"
                   ? "There are no past events matching your filter. Try changing your selection."
                   : "No past events to display."
                 }
