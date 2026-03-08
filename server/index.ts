@@ -183,6 +183,10 @@ app.use((req, res, next) => {
     });
   });
 
+  // Explicitly serve the piano learning app to bypass Vite catch-all loops
+  const pianoAppDir = path.join(process.cwd(), 'client', 'public', 'apps', 'piana-learning-app');
+  app.use('/apps/piana-learning-app', express.static(pianoAppDir));
+
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
