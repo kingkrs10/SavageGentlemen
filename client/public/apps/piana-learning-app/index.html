@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Piano Hero</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0a2a">
+</head>
+
+<body>
+    <!-- Background Canvas for animations (Splash / Engineering / Fireworks / Lasers) -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Main Menu Overlay -->
+    <div id="main-menu" class="overlay">
+        <h1>Neon Piano Hero</h1>
+        <div class="menu-options">
+            <button class="menu-btn" data-mode="freeplay">Free Play</button>
+            <button class="menu-btn" data-mode="bossbattle">Boss Battle Challenge</button>
+            <button class="menu-btn" data-mode="fallingkeys">Falling Keys (Waterfall)</button>
+            <button class="menu-btn" data-mode="learnsong">Learn a Song</button>
+        </div>
+
+        <div class="settings-panel">
+            <div class="setting-group">
+                <label>Synth Voice:</label>
+                <select id="synth-voice">
+                    <option value="sine">Classic Space (Sine)</option>
+                    <option value="sawtooth">Electric Guitar (Sawtooth)</option>
+                    <option value="square">Robot Tech (Square)</option>
+                    <option value="triangle">Soft Glider (Triangle)</option>
+                </select>
+            </div>
+            <div class="setting-group">
+                <label>Visual Style:</label>
+                <select id="visual-style">
+                    <option value="splash">Paint Splatters</option>
+                    <option value="fireworks">Fireworks</option>
+                    <option value="lasers">Lasers</option>
+                    <option value="engineering">Look Inside (Engineering)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud" class="hidden">
+        <button id="btn-menu" class="hud-btn">Menu</button>
+        <div class="score-container" id="score-display">
+            <div>Score: <span id="score">0</span></div>
+            <div>Level: <span id="level">1</span></div>
+            <div id="midi-status" class="offline">MIDI: Offline</div>
+        </div>
+        <div class="message-container">
+            <div id="message"></div>
+            <div id="target-sequence" class="hidden"><span id="target-notes"></span></div>
+        </div>
+
+        <div id="song-selector-container" class="hidden">
+            <label>Song:</label>
+            <select id="song-selector">
+                <option value="twinkle">Twinkle Twinkle</option>
+                <option value="mary">Mary Had a Little Lamb</option>
+                <option value="ode">Ode to Joy</option>
+                <!-- Advanced Songs -->
+                <option value="starwars">Star Wars (Main Theme)</option>
+                <option value="happybday">Happy Birthday</option>
+                <option value="pirates">Pirates Theme</option>
+            </select>
+            <button id="btn-start-song" class="hud-btn">Play</button>
+        </div>
+    </div>
+
+    <!-- Falling Keys Container -->
+    <div id="waterfall-container" class="hidden">
+        <!-- Falling notes will be appended here via JS -->
+    </div>
+
+    <!-- Piano Keys Container -->
+    <div id="piano-container" class="hidden">
+        <!-- White keys -->
+        <div class="key white" data-note="C4"><span class="key-label">A</span></div>
+        <div class="key black" data-note="C#4"><span class="key-label">W</span></div>
+        <div class="key white" data-note="D4"><span class="key-label">S</span></div>
+        <div class="key black" data-note="D#4"><span class="key-label">E</span></div>
+        <div class="key white" data-note="E4"><span class="key-label">D</span></div>
+        <div class="key white" data-note="F4"><span class="key-label">F</span></div>
+        <div class="key black" data-note="F#4"><span class="key-label">T</span></div>
+        <div class="key white" data-note="G4"><span class="key-label">G</span></div>
+        <div class="key black" data-note="G#4"><span class="key-label">Y</span></div>
+        <div class="key white" data-note="A4"><span class="key-label">H</span></div>
+        <div class="key black" data-note="A#4"><span class="key-label">U</span></div>
+        <div class="key white" data-note="B4"><span class="key-label">J</span></div>
+        <div class="key white" data-note="C5"><span class="key-label">K</span></div>
+    </div>
+
+    <!-- PWA Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registered'))
+                    .catch(err => console.log('Service Worker registration failed: ', err));
+            });
+        }
+    </script>
+    <script src="app.js"></script>
+</body>
+
+</html>
