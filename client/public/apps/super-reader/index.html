@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Reader 2.0</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React and ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // Lucide implementation for CDN
+        const Icon = ({ name, size = 24, className = "" }) => {
+            const [svg, setSvg] = useState("");
+            useEffect(() => {
+                if (window.lucide) {
+                    const iconNodes = window.lucide.createElement(window.lucide[name]);
+                    // Simplified: just render a placeholder or use the browser-side create
+                }
+            }, [name]);
+            
+            // Using a simpler approach for CDN Lucide icons
+            return <i data-lucide={name.toLowerCase().replace(/([a-z])([A-Z])/g, '$1-$2')} style={{width: size, height: size}} className={className}></i>;
+        };
+
+        // Standardizing icons for the UI
+        const Star = (props) => <Icon name="Star" {...props} />;
+        const Search = (props) => <Icon name="Search" {...props} />;
+        const ArrowLeft = (props) => <Icon name="ArrowLeft" {...props} />;
+        const Volume2 = (props) => <Icon name="Volume2" {...props} />;
+        const Calendar = (props) => <Icon name="Calendar" {...props} />;
+        const Gift = (props) => <Icon name="Gift" {...props} />;
+        const MapIcon = (props) => <Icon name="Map" {...props} />;
+        const Lock = (props) => <Icon name="Lock" {...props} />;
+        const ShoppingBag = (props) => <Icon name="ShoppingBag" {...props} />;
+        const PlusCircle = (props) => <Icon name="PlusCircle" {...props} />;
+        const XCircle = (props) => <Icon name="XCircle" {...props} />;
+        const User = (props) => <Icon name="User" {...props} />;
+
+        // --- DATA ---
+        const AVATARS = [
+            { id: 'owl', name: 'Professor Owl', price: 0, icon: '🦉' },
+            { id: 'cat', name: 'Cool Cat', price: 50, icon: '😼' },
+            { id: 'robot', name: 'Robo-Read', price: 100, icon: '🤖' },
+            { id: 'dragon', name: 'Sparky', price: 200, icon: '🐲' },
+            { id: 'alien', name: 'Zorg', price: 300, icon: '👽' },
+            { id: 'king', name: 'Reading King', price: 500, icon: '👑' },
+            { id: 'hero', name: 'Super Hero', price: 1000, icon: '🦸' },
+            { id: 'legend', name: 'Legendary Dragon', price: 2000, icon: '🐉' },
+            { id: 'ninja', name: 'Shadow Ninja', price: 3000, icon: '🥷' },
+            { id: 'wizard', name: 'Grand Wizard', price: 5000, icon: '🧙‍♂️' },
+            { id: 'unicorn', name: 'Cosmic Unicorn', price: 10000, icon: '🦄' },
+        ];
+
+        const LEVELS = [
+            {
+                id: 1, name: "Sunny Meadow", type: "phonics", reward: 10,
+                description: "Short Vowels (Cat, Pot)", bg: "bg-green-100", color: "text-green-600",
+                questions: [
+                    { prompt: "Find the word with the short 'a' sound.", choices: ["cat", "kate", "cart"], answer: "cat" },
+                    { prompt: "Find the word with the short 'o' sound.", choices: ["pot", "boat", "boot"], answer: "pot" },
+                    { prompt: "Find the word with the short 'i' sound.", choices: ["pig", "pie", "page"], answer: "pig" },
+                ]
+            },
+            {
+                id: 2, name: "Whispering Woods", type: "fluency", reward: 15,
+                description: "Simple Sentences", bg: "bg-emerald-100", color: "text-emerald-700",
+                sentences: ["The cat sat on the mat.", "A big pig dug in the mud.", "The sun is hot today.", "I can run fast to the van."]
+            },
+            {
+                id: 3, name: "Rocky Ridge", type: "phonics", reward: 15,
+                description: "Blends (St, Bl, Tr)", bg: "bg-stone-200", color: "text-stone-700",
+                questions: [
+                    { prompt: "Find the word that starts with 'st'.", choices: ["star", "tar", "car"], answer: "star" },
+                    { prompt: "Find the word with the 'bl' blend.", choices: ["blue", "bell", "bee"], answer: "blue" },
+                    { prompt: "Find the word that starts with 'tr'.", choices: ["tree", "tee", "free"], answer: "tree" },
+                    { prompt: "Find the word ending with 'st'.", choices: ["fast", "fat", "fan"], answer: "fast" },
+                ]
+            },
+            {
+                id: 4, name: "Puzzle Bridge", type: "builder", reward: 20,
+                description: "Fix the sentences!", bg: "bg-orange-100", color: "text-orange-700",
+                sentences: ["The dog is very big", "I see a red bird flying", "She has a blue hat on"]
+            },
+            {
+                id: 5, name: "Echo Cave", type: "phonics", reward: 20,
+                description: "Long Vowels (Silent E)", bg: "bg-indigo-100", color: "text-indigo-600",
+                questions: [
+                    { prompt: "Find the word with the long 'a' sound.", choices: ["cake", "cat", "car"], answer: "cake" },
+                    { prompt: "Find the word with the long 'o' sound.", choices: ["rose", "rot", "rock"], answer: "rose" },
+                    { prompt: "Find the word with the long 'i' sound.", choices: ["kite", "kit", "kick"], answer: "kite" },
+                ]
+            },
+            {
+                id: 6, name: "Misty Mountain", type: "fluency", reward: 25,
+                description: "Longer Stories", bg: "bg-blue-100", color: "text-blue-700",
+                sentences: [
+                    "The brave knight walked up the steep hill to find the dragon.",
+                    "We are going to the store to buy apples and bananas.",
+                    "Please clean up your room before you go out to play.",
+                    "The bright moon shone through the window all night long."
+                ]
+            },
+            {
+                id: 7, name: "Crystal Cavern", type: "phonics", reward: 30,
+                description: "Silent Letters & Tricky Sounds", bg: "bg-cyan-100", color: "text-cyan-700",
+                questions: [
+                    { prompt: "Find the word with a silent 'k'.", choices: ["knee", "key", "keep"], answer: "knee" },
+                    { prompt: "Find the word with a silent 'w'.", choices: ["write", "wait", "white"], answer: "write" },
+                    { prompt: "Find the word where 'gh' is silent.", choices: ["night", "not", "nice"], answer: "night" },
+                    { prompt: "Find the word with the 'ch' sound like 'cheese'.", choices: ["chip", "ship", "kip"], answer: "chip" },
+                ]
+            },
+            {
+                id: 8, name: "Cloud City Boss", type: "boss", reward: 100,
+                description: "Expert Sight Words!", bg: "bg-purple-100", color: "text-purple-600",
+                words: ["through", "people", "because", "friend", "enough", "would", "should", "could"]
+            },
+            {
+                id: 9, name: "Vowel Valley", type: "phonics", reward: 40,
+                description: "Vowel Teams (ai, ea, oa)", bg: "bg-teal-100", color: "text-teal-700",
+                questions: [
+                    { prompt: "Find the word with the 'ai' sound.", choices: ["rain", "ran", "ring"], answer: "rain" },
+                    { prompt: "Find the word with the 'ea' sound like in 'team'.", choices: ["dream", "drip", "drum"], answer: "dream" },
+                    { prompt: "Find the word with the 'oa' sound.", choices: ["boat", "bot", "boot"], answer: "boat" },
+                ]
+            },
+            {
+                id: 10, name: "Pirate Cove", type: "phonics", reward: 40,
+                description: "R-Controlled (ar, or, er)", bg: "bg-amber-100", color: "text-amber-700",
+                questions: [
+                    { prompt: "Find the word with the 'ar' sound.", choices: ["star", "stay", "step"], answer: "star" },
+                    { prompt: "Find the word with the 'or' sound.", choices: ["storm", "stem", "stop"], answer: "storm" },
+                    { prompt: "Find the word with the 'er' sound.", choices: ["tiger", "time", "tie"], answer: "tiger" },
+                ]
+            },
+            {
+                id: 11, name: "Tornado Alley", type: "builder", reward: 50,
+                description: "Complex Sentences!", bg: "bg-rose-100", color: "text-rose-700",
+                sentences: [
+                    "I wanted to play outside but it started raining",
+                    "Because she studied hard she passed the big test",
+                    "The fast brown fox jumped over the lazy dog"
+                ]
+            },
+            {
+                id: 12, name: "Twister Town", type: "fluency", reward: 60,
+                description: "Tongue Twisters!", bg: "bg-fuchsia-100", color: "text-fuchsia-700",
+                sentences: [
+                    "She sells seashells by the seashore.",
+                    "How much wood would a woodchuck chuck?",
+                    "Peter Piper picked a peck of pickled peppers.",
+                    "A big black bear sat on a big black bug."
+                ]
+            },
+            {
+                id: 13, name: "Diphthong Desert", type: "phonics", reward: 70,
+                description: "Tricky Vowels (oi, ou, aw)", bg: "bg-orange-200", color: "text-orange-800",
+                questions: [
+                    { prompt: "Find the word with the 'oi' sound.", choices: ["coin", "cone", "can"], answer: "coin" },
+                    { prompt: "Find the word with the 'ou' sound.", choices: ["cloud", "clod", "cold"], answer: "cloud" },
+                    { prompt: "Find the word with the 'aw' sound.", choices: ["straw", "star", "stew"], answer: "straw" },
+                ]
+            },
+            {
+                id: 14, name: "Syllable Swamp", type: "phonics", reward: 80,
+                description: "Prefixes & Suffixes", bg: "bg-lime-100", color: "text-lime-700",
+                questions: [
+                    { prompt: "Find the word with the prefix 'un'.", choices: ["undo", "under", "uncle"], answer: "undo" },
+                    { prompt: "Find the word with the suffix 'ful'.", choices: ["playful", "pull", "full"], answer: "playful" },
+                    { prompt: "Find the word with the prefix 're'.", choices: ["rewrite", "real", "rest"], answer: "rewrite" },
+                ]
+            },
+            {
+                id: 15, name: "Galaxy Guardian", type: "boss", reward: 500,
+                description: "Ultimate Reading Master!", bg: "bg-slate-800", color: "text-yellow-400",
+                words: ["knowledge", "beautiful", "island", "machine", "ocean", "courage", "tomorrow", "laugh"]
+            }
+        ];
+
+        const speakText = (text) => {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                utterance.pitch = 1.1;
+                window.speechSynthesis.speak(utterance);
+            }
+        };
+
+        // --- SUB-COMPONENTS ---
+        function WorldMap({ levels, unlockedLevels, userData, onLevelSelect, onClaimReward }) {
+            const isRewardAvailable = userData.lastLogin !== new Date().toDateString();
+
+            return (
+                <div className="space-y-8 py-4 animate-in fade-in duration-500">
+                    <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
+                        <div className="relative z-10 flex justify-between items-center">
+                            <div>
+                                <h3 className="font-black text-xl mb-1 flex items-center gap-2"><Calendar size={20}/> Daily Gift</h3>
+                                <p className="text-indigo-100 text-sm font-medium">Come back every day!</p>
+                            </div>
+                            <button 
+                                onClick={onClaimReward}
+                                disabled={!isRewardAvailable}
+                                className={`px-4 py-2 rounded-xl font-bold shadow-md flex items-center gap-2 transition-transform ${isRewardAvailable ? 'bg-yellow-400 text-yellow-900 hover:scale-105 animate-pulse' : 'bg-white/20 text-white cursor-default'}`}
+                            >
+                                <Gift size={20} />
+                                {isRewardAvailable ? 'Claim!' : 'Done'}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-6 relative pb-20">
+                        <div className="absolute left-1/2 top-4 bottom-4 w-2 bg-slate-200 -translate-x-1/2 rounded-full -z-10" />
+                        {levels.map((level) => {
+                            const isUnlocked = unlockedLevels.includes(level.id);
+                            const isCompleted = unlockedLevels.includes(level.id + 1) || (level.id === levels.length && unlockedLevels.length > levels.length);
+                            let icon = <Lock size={24} />;
+                            if (isUnlocked) {
+                                if (level.type === 'boss') icon = '⚡️';
+                                else if (level.type === 'phonics') icon = '🔍';
+                                else if (level.type === 'builder') icon = '🧩';
+                                else icon = '📖';
+                            }
+
+                            return (
+                                <button
+                                    key={level.id}
+                                    onClick={() => onLevelSelect(level)}
+                                    disabled={!isUnlocked}
+                                    className={`relative group w-full p-4 rounded-3xl border-b-8 transition-all duration-200 transform ${isUnlocked ? `${level.bg} ${level.color} border-black/10 hover:brightness-95 active:scale-95` : 'bg-slate-100 text-slate-400 border-slate-200 grayscale'}`}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl shadow-sm ${isUnlocked ? 'bg-white' : 'bg-slate-200'}`}>{icon}</div>
+                                        <div className="text-left flex-1">
+                                            <div className="flex justify-between items-center">
+                                                <h3 className="font-black text-xl">{level.name}</h3>
+                                                {isCompleted && <div className="bg-yellow-400 text-white p-1 rounded-full"><Star size={12} fill="white" /></div>}
+                                            </div>
+                                            <p className="text-sm opacity-80 font-bold leading-tight mt-1">{level.description}</p>
+                                        </div>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        }
+
+        function AvatarShop({ avatars, userData, onBuy, onBack }) {
+            return (
+                <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-500">
+                    <button onClick={onBack} className="flex items-center gap-2 text-slate-400 font-bold hover:text-slate-600"><ArrowLeft size={20} /> Back to Map</button>
+                    <h2 className="text-3xl font-black text-slate-700 text-center">Avatar Shop</h2>
+                    <div className="grid grid-cols-2 gap-4 pb-20">
+                        {avatars.map(avatar => {
+                            const isOwned = userData.unlockedAvatars.includes(avatar.id);
+                            const isEquipped = userData.currentAvatar === avatar.id;
+                            return (
+                                <button
+                                    key={avatar.id}
+                                    onClick={() => onBuy(avatar)}
+                                    className={`p-4 rounded-3xl border-b-4 flex flex-col items-center gap-3 transition-all ${isEquipped ? 'bg-blue-100 border-blue-300 ring-2 ring-blue-500' : isOwned ? 'bg-white border-slate-200' : 'bg-slate-50 border-slate-200'}`}
+                                >
+                                    <div className="text-5xl">{avatar.icon}</div>
+                                    <div className="text-center font-bold text-slate-700">
+                                        <div>{avatar.name}</div>
+                                        {!isOwned && <div className="text-sm text-red-400 mt-1">{avatar.price} ⭐️</div>}
+                                        {isOwned && !isEquipped && <div className="text-xs text-slate-400 mt-1">OWNED</div>}
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        }
+
+        // --- GAME LOGIC ---
+        function SentenceBuilderLevel({ sentences, onComplete, onBack }) {
+            const [index, setIndex] = useState(0);
+            const [scrambled, setScrambled] = useState([]);
+            const [built, setBuilt] = useState([]);
+            const [isCorrect, setIsCorrect] = useState(null);
+            const targetSentence = sentences[index];
+
+            useEffect(() => {
+                const words = targetSentence.split(' ');
+                setScrambled([...words].sort(() => Math.random() - 0.5));
+                setBuilt([]);
+                setIsCorrect(null);
+                speakText("Make this sentence: " + targetSentence);
+            }, [index, targetSentence]);
+
+            const handleWordClick = (word, fromIndex) => {
+                if (isCorrect === true) return;
+                setScrambled(scrambled.filter((_, i) => i !== fromIndex));
+                setBuilt([...built, word]);
+            };
+
+            const checkAnswer = () => {
+                if (built.join(' ') === targetSentence) {
+                    setIsCorrect(true);
+                    speakText("Perfect!");
+                    setTimeout(() => {
+                        if (index + 1 < sentences.length) setIndex(i => i + 1);
+                        else onComplete();
+                    }, 1500);
+                } else {
+                    setIsCorrect(false);
+                    speakText("Not quite.");
+                    setTimeout(() => setIsCorrect(null), 1000);
+                }
+            };
+
+            const handleReset = () => {
+                 setScrambled([...targetSentence.split(' ')].sort(() => Math.random() - 0.5));
+                 setBuilt([]);
+            };
+
+            return (
+                <div className="space-y-6 animate-in slide-in-from-right duration-500">
+                    <div className="flex justify-between items-center"><button onClick={onBack} className="bg-white p-2 rounded-full"><ArrowLeft size={20}/></button><h2 className="font-black text-slate-700">BUILDER</h2><div className="w-10"></div></div>
+                    <div className="bg-white p-6 rounded-3xl shadow-sm border-b-4 border-slate-100 text-center space-y-6 min-h-[400px] flex flex-col">
+                        <button onClick={() => speakText("Make: " + targetSentence)} className="bg-orange-100 text-orange-600 p-3 rounded-full mx-auto"><Volume2 size={24} /></button>
+                        <div className={`min-h-[80px] p-4 rounded-2xl border-2 border-dashed flex flex-wrap gap-2 justify-center items-center ${isCorrect === true ? 'bg-green-50' : 'bg-slate-50'}`}>
+                            {built.map((word, i) => <span key={i} className="bg-white px-3 py-2 rounded-xl border-b-4 border-slate-200 font-bold">{word}</span>)}
+                        </div>
+                        <div className="flex flex-wrap gap-3 justify-center">
+                            {scrambled.map((word, i) => <button key={i} onClick={() => handleWordClick(word, i)} className="bg-orange-100 text-orange-700 px-4 py-3 rounded-xl border-b-4 border-orange-200 font-bold">{word}</button>)}
+                        </div>
+                        <div className="flex gap-3 justify-center mt-auto">
+                            <button onClick={handleReset} className="text-slate-400 font-bold px-4">Reset</button>
+                            <button onClick={checkAnswer} disabled={scrambled.length > 0} className={`px-8 py-3 rounded-xl font-black text-white ${scrambled.length === 0 ? 'bg-green-500 border-b-4 border-green-700' : 'bg-slate-200'}`}>Check</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function PhonicsLevel({ questions, onComplete, onBack }) {
+          const [index, setIndex] = useState(0);
+          const [feedback, setFeedback] = useState(null);
+          const question = questions[index];
+
+          const handleChoice = (choice) => {
+            if (choice === question.answer) {
+              setFeedback('correct');
+              speakText("Correct!");
+              setTimeout(() => {
+                if (index + 1 < questions.length) { setIndex(i => i + 1); setFeedback(null); } 
+                else onComplete();
+              }, 1000);
+            } else {
+              setFeedback('incorrect');
+              speakText("Try again.");
+              setTimeout(() => setFeedback(null), 1000);
+            }
+          };
+
+          return (
+            <div className="space-y-6 animate-in slide-in-from-right duration-500">
+              <div className="flex justify-between items-center"><button onClick={onBack} className="bg-white p-2 rounded-full"><ArrowLeft size={20}/></button><h2 className="font-black text-slate-700">PHONICS</h2><div className="w-10"></div></div>
+              <div className="bg-white p-6 rounded-3xl shadow-sm border-b-4 border-slate-100 text-center space-y-6">
+                <button onClick={() => speakText(question.prompt)} className="bg-purple-100 text-purple-600 p-4 rounded-full"><Volume2 size={32} /></button>
+                <h3 className="text-xl font-medium text-slate-700">"{question.prompt}"</h3>
+                <div className="grid grid-cols-1 gap-3">
+                  {question.choices.map((choice, i) => (
+                    <button key={i} onClick={() => handleChoice(choice)} className={`p-4 text-xl font-bold rounded-2xl border-b-4 transition-all ${feedback === 'correct' && choice === question.answer ? 'bg-green-500 text-white border-green-700' : 'bg-slate-50 text-slate-700 border-slate-200'}`}>{choice}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        function FluencyLevel({ sentences, onComplete, onBack }) {
+          const [index, setIndex] = useState(0);
+          const [isTimerRunning, setIsTimerRunning] = useState(false);
+          
+          return (
+            <div className="space-y-6 animate-in slide-in-from-right duration-500">
+              <div className="flex justify-between items-center"><button onClick={onBack} className="bg-white p-2 rounded-full"><ArrowLeft size={20}/></button><h2 className="font-black text-slate-700">FLUENCY</h2><div className="w-10"></div></div>
+              <div className="bg-white p-8 rounded-3xl shadow-sm border-b-4 border-slate-100 text-center space-y-8 min-h-[300px] flex flex-col justify-center">
+                <p className="text-2xl font-medium text-slate-800 leading-snug">{sentences[index]}</p>
+                <div className="flex gap-2 justify-center">
+                    <button onClick={() => setIsTimerRunning(!isTimerRunning)} className={`px-6 py-3 rounded-xl font-bold text-lg ${isTimerRunning ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>{isTimerRunning ? 'Stop' : 'Start'}</button>
+                    <button onClick={() => { setIsTimerRunning(false); if (index + 1 < sentences.length) setIndex(i=>i+1); else onComplete(); }} className="bg-slate-800 text-white px-6 py-3 rounded-xl font-bold text-lg">Next</button>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        function BossLevel({ words, onComplete, onBack, bgClass }) {
+            const [target, setTarget] = useState('');
+            const [options, setOptions] = useState([]);
+            const [score, setScore] = useState(0);
+            
+            useEffect(() => { newRound(); }, [score]);
+            const newRound = () => {
+                if (score >= 5) { onComplete(); return; }
+                const t = words[Math.floor(Math.random() * words.length)];
+                setTarget(t);
+                let decoys = words.filter(w => w !== t).sort(() => 0.5 - Math.random()).slice(0, 3);
+                setOptions([t, ...decoys].sort(() => 0.5 - Math.random()));
+                speakText(`Find: ${t}`);
+            };
+
+            const containerStyle = bgClass === "bg-slate-800" 
+              ? "bg-slate-800 text-white p-6 rounded-3xl text-center shadow-lg border-b-8 border-slate-900 relative overflow-hidden" 
+              : "bg-purple-600 text-white p-6 rounded-3xl text-center shadow-lg border-b-8 border-purple-800 relative overflow-hidden";
+
+            return (
+                <div className="space-y-6 animate-in slide-in-from-right duration-500">
+                    <div className="flex justify-between items-center"><button onClick={onBack} className="bg-white p-2 rounded-full"><ArrowLeft size={20}/></button><h2 className="font-black text-slate-700">BOSS</h2><div className="w-10"></div></div>
+                    <div className={containerStyle}>
+                        <h2 className="text-4xl sm:text-5xl font-black mb-6">{target}</h2>
+                        <div className="grid grid-cols-2 gap-4 relative z-10">
+                            {options.map((word, i) => (
+                                <button key={i} onClick={() => { if (word === target) { speakText("Yes!"); setScore(s => s + 1); } else speakText("No"); }} className={`bg-white text-xl font-black p-4 rounded-xl shadow-md ${bgClass === 'bg-slate-800' ? 'text-slate-800' : 'text-purple-600'}`}>{word}</button>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="text-center font-bold text-slate-400">Score: {score} / 5</div>
+                </div>
+            );
+        }
+
+        function GameController({ level, onComplete, onBack, addStars }) {
+          const reward = level.reward || 20;
+
+          if (level.type === 'phonics') return <PhonicsLevel questions={level.questions} onComplete={() => { addStars(reward); onComplete(); }} onBack={onBack} />;
+          if (level.type === 'fluency') return <FluencyLevel sentences={level.sentences} onComplete={() => { addStars(reward); onComplete(); }} onBack={onBack} />;
+          if (level.type === 'builder') return <SentenceBuilderLevel sentences={level.sentences} onComplete={() => { addStars(reward); onComplete(); }} onBack={onBack} />;
+          if (level.type === 'boss') return <BossLevel words={level.words} onComplete={() => { addStars(reward); onComplete(); }} onBack={onBack} bgClass={level.bg} />;
+          return null;
+        }
+
+        function MainGame({ userId, userName, onLogout }) {
+          const [view, setView] = useState('map'); 
+          const [userData, setUserData] = useState(() => {
+            if (userId === 'guest_user') {
+                const saved = sessionStorage.getItem('superReaderGuest');
+                return saved ? JSON.parse(saved) : { stars: 0, unlockedLevels: [1], unlockedAvatars: ['owl'], currentAvatar: 'owl', streak: 0, lastLogin: null };
+            }
+            
+            const saved = localStorage.getItem(`superReaderData_${userId}`);
+            return saved ? JSON.parse(saved) : { 
+              stars: 0, 
+              unlockedLevels: [1], 
+              unlockedAvatars: ['owl'], 
+              currentAvatar: 'owl',
+              streak: 0,
+              lastLogin: null
+            };
+          });
+          
+          const [currentLevel, setCurrentLevel] = useState(null);
+          const [showConfetti, setShowConfetti] = useState(false);
+
+          useEffect(() => {
+            if (userId === 'guest_user') {
+                sessionStorage.setItem('superReaderGuest', JSON.stringify(userData));
+            } else {
+                localStorage.setItem(`superReaderData_${userId}`, JSON.stringify(userData));
+            }
+            if (window.lucide) window.lucide.createIcons();
+          }, [userData, userId, view]);
+
+          const addStars = (amount) => setUserData(prev => ({ ...prev, stars: prev.stars + amount }));
+          
+          const claimDailyReward = () => {
+            const today = new Date().toDateString();
+            if (userData.lastLogin === today) {
+                speakText("Come back tomorrow!");
+                return;
+            }
+            setUserData(prev => ({
+                ...prev,
+                stars: prev.stars + 100,
+                streak: prev.streak + 1,
+                lastLogin: today
+            }));
+            speakText("Daily Gift! 100 stars!");
+            triggerConfetti();
+          };
+
+          const unlockNextLevel = (currentId) => {
+            const nextId = currentId + 1;
+            if (nextId <= LEVELS.length && !userData.unlockedLevels.includes(nextId)) {
+              setUserData(prev => ({ ...prev, unlockedLevels: [...prev.unlockedLevels, nextId] }));
+              triggerConfetti();
+            }
+          };
+
+          const triggerConfetti = () => {
+            setShowConfetti(true);
+            setTimeout(() => setShowConfetti(false), 3000);
+          };
+
+          const buyAvatar = (avatar) => {
+            if (userData.stars >= avatar.price && !userData.unlockedAvatars.includes(avatar.id)) {
+              setUserData(prev => ({
+                ...prev,
+                stars: prev.stars - avatar.price,
+                unlockedAvatars: [...prev.unlockedAvatars, avatar.id],
+                currentAvatar: avatar.id
+              }));
+              speakText(`Unlocked ${avatar.name}!`);
+              triggerConfetti();
+            } else if (userData.unlockedAvatars.includes(avatar.id)) {
+              setUserData(prev => ({ ...prev, currentAvatar: avatar.id }));
+            }
+          };
+
+          const startLevel = (level) => {
+            if (userData.unlockedLevels.includes(level.id)) {
+              setCurrentLevel(level);
+              setView('game');
+            }
+          };
+
+          const handleLevelComplete = () => {
+            speakText("Level Complete!");
+            if (currentLevel) unlockNextLevel(currentLevel.id);
+            setView('map');
+          };
+
+          const getAvatarIcon = () => {
+            const av = AVATARS.find(a => a.id === userData.currentAvatar);
+            return av ? av.icon : '🦉';
+          };
+
+          return (
+            <div className="min-h-screen bg-slate-50 font-sans text-gray-800 pb-20 relative overflow-hidden">
+              
+              {showConfetti && (
+                <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+                    <div className="text-6xl animate-bounce">🎉 ⭐ 🎉</div>
+                </div>
+              )}
+
+              <header className="bg-white p-3 shadow-sm border-b-4 border-slate-200 sticky top-0 z-20 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <button onClick={onLogout} className="text-xs bg-slate-100 p-2 rounded-lg font-bold text-slate-500 hover:bg-red-50 hover:text-red-500 transition-colors">
+                    Switch<br/>Hero
+                  </button>
+                  <div className="bg-blue-600 text-white p-2 rounded-xl shadow-sm cursor-pointer hover:scale-105 transition-transform" onClick={() => setView('shop')}>
+                    <span className="text-2xl">{getAvatarIcon()}</span>
+                  </div>
+                  <div>
+                    <h1 className="text-lg font-extrabold text-slate-800 leading-none">{userName}</h1>
+                    <div className="flex items-center gap-1">
+                        <span className="text-xs text-slate-400 font-bold uppercase">Lvl {userData.unlockedLevels.length}</span>
+                        {userData.streak > 0 && <span className="text-xs bg-orange-100 text-orange-600 px-1 rounded font-bold">🔥 {userData.streak}</span>}
+                    </div>
+                  </div>
+                </div>
+                
+                <div onClick={() => setView('shop')} className="flex items-center gap-2 bg-yellow-100 px-3 py-1.5 rounded-full border-2 border-yellow-300 shadow-sm cursor-pointer hover:bg-yellow-200 transition-colors">
+                  <Star className="text-yellow-500 fill-yellow-500" size={20} />
+                  <span className="text-lg font-black text-yellow-700">{userData.stars}</span>
+                </div>
+              </header>
+
+              <main className="max-w-md mx-auto p-4">
+                {view === 'map' && (
+                  <WorldMap 
+                    levels={LEVELS} 
+                    unlockedLevels={userData.unlockedLevels} 
+                    userData={userData}
+                    onLevelSelect={startLevel} 
+                    onClaimReward={claimDailyReward}
+                  />
+                )}
+
+                {view === 'shop' && (
+                  <AvatarShop 
+                    avatars={AVATARS} 
+                    userData={userData} 
+                    onBuy={buyAvatar} 
+                    onBack={() => setView('map')} 
+                  />
+                )}
+
+                {view === 'game' && currentLevel && (
+                  <GameController 
+                    level={currentLevel} 
+                    onComplete={handleLevelComplete} 
+                    onBack={() => setView('map')}
+                    addStars={addStars}
+                  />
+                )}
+              </main>
+
+              {view === 'map' && (
+                <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur border border-slate-200 shadow-2xl rounded-full p-2 flex gap-2 z-10">
+                  <button onClick={() => setView('map')} className="p-3 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition-colors">
+                    <MapIcon size={24} />
+                  </button>
+                  <button onClick={() => setView('shop')} className="p-3 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+                    <ShoppingBag size={24} />
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        function App() {
+          const [currentUser, setCurrentUser] = useState(null);
+          const [profiles, setProfiles] = useState(() => {
+            const saved = localStorage.getItem('superReaderProfiles');
+            return saved ? JSON.parse(saved) : [];
+          });
+          const [isCreating, setIsCreating] = useState(false);
+          const [newByName, setNewByName] = useState("");
+
+          useEffect(() => {
+            localStorage.setItem('superReaderProfiles', JSON.stringify(profiles));
+            if (window.lucide) window.lucide.createIcons();
+          }, [profiles]);
+
+          const handleCreateProfile = (e) => {
+            e.preventDefault();
+            if (!newByName.trim()) return;
+            
+            const newProfile = { id: Date.now(), name: newByName };
+            setProfiles([...profiles, newProfile]);
+            setCurrentUser(newProfile);
+            setNewByName("");
+            setIsCreating(false);
+          };
+          
+          const handleGuestPlay = () => {
+            const guestProfile = { id: 'guest_user', name: 'Guest Explorer' };
+            setCurrentUser(guestProfile);
+          };
+
+          const deleteProfile = (e, id) => {
+            e.stopPropagation();
+            if (window.confirm("Delete this hero? Progress will be lost.")) {
+              setProfiles(profiles.filter(p => p.id !== id));
+              localStorage.removeItem(`superReaderData_${id}`); 
+            }
+          };
+
+          if (!currentUser) {
+            return (
+              <div className="min-h-screen bg-slate-50 font-sans text-gray-800 flex items-center justify-center p-4">
+                <div className="max-w-md w-full bg-white rounded-3xl shadow-xl border-b-8 border-slate-200 p-8 space-y-6 animate-in zoom-in duration-300">
+                  <div className="text-center space-y-2">
+                    <h1 className="text-3xl font-black text-blue-600 tracking-tight">Super Reader <span className="text-orange-500">2.0</span></h1>
+                    <p className="text-slate-400 font-bold">Pick your hero to start!</p>
+                    <div className="text-xs text-slate-300 uppercase tracking-widest font-semibold">No Login Required</div>
+                  </div>
+
+                  {!isCreating ? (
+                    <div className="space-y-4">
+                      {profiles.length > 0 ? (
+                        <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
+                          {profiles.map(profile => (
+                            <button
+                              key={profile.id}
+                              onClick={() => setCurrentUser(profile)}
+                              className="flex items-center justify-between w-full p-4 bg-blue-50 hover:bg-blue-100 text-blue-800 font-black text-xl rounded-2xl border-b-4 border-blue-200 transition-all active:scale-95 group"
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="bg-white p-2 rounded-full text-2xl shadow-sm">🦸</span>
+                                {profile.name}
+                              </div>
+                              <div 
+                                onClick={(e) => deleteProfile(e, profile.id)}
+                                className="text-slate-300 hover:text-red-400 p-2 hover:bg-white rounded-full transition-colors"
+                              >
+                                <XCircle size={20} />
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-6 text-slate-400 italic bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                            No saved heroes yet.
+                        </div>
+                      )}
+                      
+                      <div className="pt-2 space-y-3">
+                        <button 
+                            onClick={() => setIsCreating(true)}
+                            className="w-full py-4 rounded-2xl bg-slate-800 text-white font-bold hover:bg-slate-700 border-b-4 border-slate-900 active:scale-95 transition-all flex items-center justify-center gap-2"
+                        >
+                            <PlusCircle size={20}/> Create New Hero
+                        </button>
+                        
+                        <button 
+                            onClick={handleGuestPlay}
+                            className="w-full py-3 rounded-2xl text-slate-500 font-bold hover:bg-slate-100 transition-colors text-sm"
+                        >
+                            Or Play as Guest (No Save)
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleCreateProfile} className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-400 uppercase">Hero Name</label>
+                        <input 
+                            autoFocus
+                            type="text" 
+                            placeholder="e.g. Super Sam" 
+                            className="w-full text-center text-2xl font-bold p-4 rounded-2xl border-2 border-blue-200 focus:border-blue-500 outline-none bg-blue-50 text-blue-900 placeholder:text-blue-200"
+                            value={newByName}
+                            onChange={e => setNewByName(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex gap-3">
+                        <button type="button" onClick={() => setIsCreating(false)} className="flex-1 py-3 font-bold text-slate-400 hover:bg-slate-50 rounded-xl">Cancel</button>
+                        <button type="submit" className="flex-1 bg-green-500 text-white font-black py-3 rounded-xl border-b-4 border-green-700 active:scale-95 transition hover:bg-green-400">Save!</button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <MainGame 
+              key={currentUser.id} 
+              userId={currentUser.id} 
+              userName={currentUser.name} 
+              onLogout={() => setCurrentUser(null)} 
+            />
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
