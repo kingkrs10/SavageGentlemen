@@ -83,11 +83,11 @@ export const securityHeaders = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://js.stripe.com", "https://www.paypal.com", "https://00dcd90e-d031-4095-90fd-c1ff532901ca-00-wc6t90e8ztsv.riker.replit.dev"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.tailwindcss.com", "https://unpkg.com", "https://js.stripe.com", "https://www.paypal.com", "https://00dcd90e-d031-4095-90fd-c1ff532901ca-00-wc6t90e8ztsv.riker.replit.dev"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://unpkg.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https://i.etsystatic.com", "https://printify.com", "https:", "*.replit.dev", "*.replit.app"],
-      connectSrc: ["'self'", "https://api.stripe.com", "https://www.paypal.com", "https://fonts.googleapis.com", "https://fonts.gstatic.com", "https://00dcd90e-d031-4095-90fd-c1ff532901ca-00-wc6t90e8ztsv.riker.replit.dev"],
+      connectSrc: ["'self'", "https://api.stripe.com", "https://www.paypal.com", "https://fonts.googleapis.com", "https://fonts.gstatic.com", "https://unpkg.com", "https://00dcd90e-d031-4095-90fd-c1ff532901ca-00-wc6t90e8ztsv.riker.replit.dev"],
       frameSrc: ["'self'", "https://js.stripe.com", "https://www.paypal.com"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: []
