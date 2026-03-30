@@ -2737,7 +2737,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   router.put("/admin/events/:id", eventUpdateHandler, upload.fields([
     { name: 'image', maxCount: 1 },
-    { name: 'additionalImages', maxCount: 10 }
+    { name: 'video', maxCount: 1 },
+    { name: 'additionalImages', maxCount: 10 },
+    { name: 'gallery', maxCount: 20 }
   ]), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
@@ -2785,6 +2787,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
+        // Process main video
+        if (files['video'] && files['video'][0]) {
+          const mainVideo = files['video'][0];
+          const mainVideoPath = `/uploads/${mainVideo.filename}`;
+          requestData.videoUrl = mainVideoPath;
+        }
+
+        // Process gallery media (new)
+        if (files['gallery'] && files['gallery'].length > 0) {
+          const newGalleryItems = files['gallery'].map(file => ({
+            type: file.mimetype.startsWith('video/') ? 'video' : 'image',
+            url: `/uploads/${file.filename}`
+          }));
+
+          // Parse existing galleryMedia if provided as string
+          let galleryMedia: any[] = [];
+          if (typeof requestData.galleryMedia === 'string') {
+            try {
+              galleryMedia = JSON.parse(requestData.galleryMedia);
+            } catch (e) {
+              console.error('Error parsing galleryMedia JSON:', e);
+            }
+          } else if (Array.isArray(requestData.galleryMedia)) {
+            galleryMedia = requestData.galleryMedia;
+          } else if (requestData.retainExistingGallery === 'true' && event && event.galleryMedia) {
+            galleryMedia = event.galleryMedia as any[];
+          }
+
+          requestData.galleryMedia = [...galleryMedia, ...newGalleryItems];
+        } else if (typeof requestData.galleryMedia === 'string') {
+          // Handle case where only JSON is sent (no new files)
+          try {
+            requestData.galleryMedia = JSON.parse(requestData.galleryMedia);
+          } catch (e) {
+            console.error('Error parsing galleryMedia JSON:', e);
+          }
+        }
+      } else {
+        // No files uploaded, but maybe JSON updates for galleryMedia
+        if (typeof requestData.galleryMedia === 'string') {
+          try {
+            requestData.galleryMedia = JSON.parse(requestData.galleryMedia);
+          } catch (e) {
+            console.error('Error parsing galleryMedia JSON:', e);
+          }
+        }
       }
 
       // Parse additionalImages from JSON string if it comes in that format
