@@ -1,6 +1,7 @@
 import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { User } from '@/lib/types';
 import { apiRequest } from '@/lib/queryClient';
+import { storeUserData, clearAuthData } from '@/lib/auth-utils';
 
 interface UserContextType {
   user: User | null;
@@ -49,11 +50,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               // Session is valid, set the user state
               const validatedUser = await response.json();
               console.log("User session validated successfully");
+              storeUserData(validatedUser);
               setUser(validatedUser);
             } else {
               // Session is invalid, clear the user data
               console.error("User session invalid, clearing local storage");
-              localStorage.removeItem("user");
+              clearAuthData();
               setUser(null);
             }
           } catch (error) {
@@ -64,7 +66,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       } catch (error) {
         console.error("Error initializing user from localStorage:", error);
-        localStorage.removeItem("user");
+        clearAuthData();
         setUser(null);
       }
     };
@@ -80,29 +82,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Set user in state
     setUser(userData);
     
-    // Make sure the token is preserved
-    if (userData && userData.token) {
-      console.log("User has token, storing in localStorage");
-    } else {
-      console.log("User has no token, attempting to find one");
-    }
-    
-    // Store in localStorage with consistent structure
-    localStorage.setItem("user", JSON.stringify({ 
-      status: "success", 
-      data: userData 
-    }));
-    
-    // Also store userId separately for fallback authentication
-    if (userData && userData.id) {
-      localStorage.setItem("userId", userData.id.toString());
-      console.log("Stored userId in localStorage:", userData.id);
-    }
-    
-    // Dispatch auth changed event
-    window.dispatchEvent(new CustomEvent('sg:auth:changed', { 
-      detail: { user: userData } 
-    }));
+    // Store using centralized utility to ensure all fields are set
+    storeUserData(userData);
   };
 
   // Update user function - merge new data with existing user
@@ -112,24 +93,14 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const updatedUser = { ...user, ...userData };
     setUser(updatedUser);
     
-    // Store updated user in localStorage
-    localStorage.setItem("user", JSON.stringify({ 
-      status: "success", 
-      data: updatedUser 
-    }));
-    
-    // Dispatch auth changed event
-    window.dispatchEvent(new CustomEvent('sg:auth:changed', { 
-      detail: { user: updatedUser } 
-    }));
+    // Store updated user
+    storeUserData(updatedUser);
   };
 
   // Logout function - clear user from state and localStorage
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("user");
-    // Dispatch auth changed event
-    window.dispatchEvent(new CustomEvent('sg:auth:changed', { detail: { user: null } }));
+    clearAuthData();
   };
 
   return (

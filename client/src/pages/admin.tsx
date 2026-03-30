@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getAuthHeaders } from "@/lib/auth-utils";
 
 // Define types for the admin dashboard
 interface User {
@@ -493,20 +494,7 @@ export default function AdminPage() {
 
   // Auth helper for ad mutations
   const getAdAuthHeaders = (): Record<string, string> => {
-    const headers: Record<string, string> = {};
-    const firebaseToken = localStorage.getItem("firebaseToken");
-    if (firebaseToken) {
-      headers["Authorization"] = `Bearer ${firebaseToken}`;
-    } else {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        const userData = user?.data?.data || user?.data || user;
-        if (userData?.token) headers["Authorization"] = `Bearer ${userData.token}`;
-        if (userData?.id) headers["user-id"] = userData.id.toString();
-      }
-    }
-    return headers;
+    return getAuthHeaders();
   };
 
   // Create ad mutation
@@ -677,25 +665,8 @@ export default function AdminPage() {
     setTicketsError(null);
 
     try {
-      // Build auth headers manually
-      const headers: Record<string, string> = {};
-      const firebaseToken = localStorage.getItem("firebaseToken");
-      if (firebaseToken) {
-        headers["Authorization"] = `Bearer ${firebaseToken}`;
-      } else {
-        // Try user's stored token
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          const userData = user?.data?.data || user?.data || user;
-          if (userData?.token) {
-            headers["Authorization"] = `Bearer ${userData.token}`;
-          }
-          if (userData?.id) {
-            headers["user-id"] = userData.id.toString();
-          }
-        }
-      }
+      // Fetch tickets from the backend
+      const headers = getAuthHeaders();
 
       const response = await fetch(`/api/admin/tickets/event/${eventId}`, {
         headers,

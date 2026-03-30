@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { getAuthHeaders } from "./auth-utils";
 
 async function throwIfResNotOk(res: Response, errorMessage?: string) {
   if (!res.ok) {
@@ -32,64 +33,19 @@ export async function apiRequest(
     headers["Content-Type"] = "application/json";
   }
   
-  // Add authentication headers from all possible sources
-  let userId = null;
-  let authToken = null;
   try {
     const normalizedUrl = normalizeUrl(url);
     console.log("API Request to:", normalizedUrl, "Method:", method);
     
-    // STEP 1: Try Firebase token first (most secure)
-    const firebaseToken = localStorage.getItem("firebaseToken");
-    if (firebaseToken) {
-      authToken = firebaseToken;
-      headers["Authorization"] = `Bearer ${firebaseToken}`;
-      console.log("Using Firebase token");
-    }
+    // Get headers using standard auth-utils
+    const authHeaders = getAuthHeaders();
+    headers = { ...headers, ...authHeaders };
     
-    // STEP 2: Try user's stored token (secure login token)
-    if (!authToken) {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        try {
-          const user = JSON.parse(storedUser);
-          
-          // Handle nested data structures: { data: { data: { id: ... } } }, { data: { id: ... } }, { id: ... }
-          let userData = user;
-          if (user.data && user.data.data) {
-            userData = user.data.data;
-          } else if (user.data) {
-            userData = user.data;
-          }
-          
-          if (userData && userData.token) {
-            authToken = userData.token;
-            headers["Authorization"] = `Bearer ${userData.token}`;
-            console.log("Using stored user token");
-          }
-          
-          if (userData && userData.id) {
-            userId = userData.id.toString();
-            // Only add user-id header for non-payment/ticket routes (allow admin routes)
-            if (!normalizedUrl.includes('/payment') && !normalizedUrl.includes('/ticket')) {
-              headers["user-id"] = userId;
-            }
-          }
-        } catch (parseError) {
-          console.error("Error parsing user from localStorage:", parseError);
-        }
+    // Filter headers for specific routes if needed
+    if (normalizedUrl.includes('/payment') || normalizedUrl.includes('/ticket')) {
+      if (headers['user-id'] && !normalizedUrl.includes('/admin')) {
+        delete headers['user-id'];
       }
-    }
-    
-    // Log outcome of authentication gathering
-    if (userId) {
-      console.log("Added user-id header for user:", userId);
-    }
-    
-    if (authToken) {
-      console.log("Added Authorization header (token found)");
-    } else {
-      console.log("No authentication token available from any source");
     }
   } catch (error) {
     console.error("Error setting up authentication headers:", error);
@@ -145,72 +101,22 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    // Add authentication headers from all possible sources
+    // Add authentication headers from all possible sources using centralized utility
     let headers: Record<string, string> = {};
-    let userId = null;
-    let authToken = null;
     
     try {
       const url = queryKey[0] as string;
       const normalizedUrl = normalizeUrl(url);
       console.log("Query to:", normalizedUrl, "(original:", url, ")");
       
-      // STEP 1: Try Firebase token first (most secure)
-      const firebaseToken = localStorage.getItem("firebaseToken");
-      if (firebaseToken) {
-        authToken = firebaseToken;
-        headers["Authorization"] = `Bearer ${firebaseToken}`;
-        console.log("Using Firebase token");
-      }
+      headers = getAuthHeaders();
       
-      // STEP 2: Try user's stored token (secure login token)
-      if (!authToken) {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          try {
-            const user = JSON.parse(storedUser);
-            
-            // Handle nested data structures: { data: { data: { id: ... } } }, { data: { id: ... } }, { id: ... }
-            let userData = user;
-            if (user.data && user.data.data) {
-              userData = user.data.data;
-            } else if (user.data) {
-              userData = user.data;
-            }
-            
-            if (userData && userData.token) {
-              authToken = userData.token;
-              headers["Authorization"] = `Bearer ${userData.token}`;
-              console.log("Using stored user token");
-            }
-            
-            if (userData && userData.id) {
-              userId = userData.id.toString();
-              // Only add user-id header for non-payment/ticket routes (allow admin routes)
-              if (!normalizedUrl.includes('/payment') && !normalizedUrl.includes('/ticket')) {
-                headers["user-id"] = userId;
-              }
-              
-              // Log role if available (helpful for debugging permission issues)
-              if (userData.role) {
-                console.log("User role:", userData.role);
-              }
-            }
-          } catch (parseError) {
-            console.error("Error parsing user from localStorage:", parseError);
-          }
+      // Filter headers for specific routes if needed
+      if (normalizedUrl.includes('/payment') || normalizedUrl.includes('/ticket')) {
+        // Only removing user-id for these specific routes per legacy logic
+        if (headers['user-id'] && !normalizedUrl.includes('/admin')) {
+          delete headers['user-id'];
         }
-      }
-      
-      // Log outcome of authentication gathering
-      if (userId) {
-        console.log("Added user-id header for user:", userId);
-      }
-      
-      if (authToken) {
-        console.log("Added Authorization header (token found)");
-      } else {
-        console.log("No authentication token available from any source");
       }
     } catch (error) {
       console.error("Error setting up authentication headers:", error);
