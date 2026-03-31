@@ -8,8 +8,12 @@ import { User } from '@/lib/types';
 import { apiRequest } from "@/lib/queryClient";
 
 // Initialize Stripe outside component to avoid recreation
-const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_TYooMQauvdEDq54NiTphI7jx';
-console.log(`Using Stripe key: ${stripeKey}`);
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || '';
+if (!stripeKey) {
+  console.warn("Stripe key is missing in environment variables. Checkout may fail.");
+} else {
+  console.log(`Using Stripe key: ${stripeKey.substring(0, 7)}...`);
+}
 const stripePromise = loadStripe(stripeKey);
 
 // Determine if we're in test mode based on the Stripe key
