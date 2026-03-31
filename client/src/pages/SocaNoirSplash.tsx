@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/context/ThemeContext";
 import { VoidTransition } from "@/components/effects/VoidTransition";
 import { Eye, Ticket, MapPin, Calendar, Clock } from "lucide-react";
+import { useUser } from "@/context/UserContext";
 import gsap from "gsap";
 
 const SocaNoirSplash = () => {
     const [, navigate] = useLocation();
     const { setTheme } = useTheme();
+    const { user } = useUser();
     const [showVoidTransition, setShowVoidTransition] = useState(false);
 
     useEffect(() => {
@@ -31,7 +33,20 @@ const SocaNoirSplash = () => {
     };
 
     const handleTicketsClick = () => {
-        window.location.href = "https://www.savgent.com/events/2/soca-noi-rose";
+        const checkoutUrl = "/checkout?eventId=2&ticketId=2&amount=15&currency=USD&title=SOCA%20NOIR%20ROSE";
+        
+        if (!user || user.isGuest) {
+            // Dispatch event to open auth modal with redirect path
+            window.dispatchEvent(new CustomEvent("sg:open-auth-modal", { 
+                detail: { 
+                    redirectPath: checkoutUrl,
+                    tab: 'login'
+                } 
+            }));
+        } else {
+            // Already logged in, go straight to checkout
+            navigate(checkoutUrl);
+        }
     };
 
     return (

@@ -211,6 +211,16 @@ function AppContent() {
           description="Secure your early bird tickets for the ultimate Caribbean experience."
         />
         <SocaNoirSplash />
+        
+        {showAuthModal && (
+          <AuthModal
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+            onAuthSuccess={handleAuthSuccess}
+            onGuestLogin={() => guestLoginMutation.mutate()}
+          />
+        )}
+        
         <Toaster />
       </div>
     );
