@@ -21,6 +21,7 @@ import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { GlitchTransition } from "@/components/effects/GlitchTransition";
 import { RealityToggle } from "@/components/layout/RealityToggle";
 import LandingPage from "@/pages/LandingPage";
+import SocaNoirSplash from "@/pages/SocaNoirSplash";
 
 // Lazily load pages for code splitting
 const Home = lazy(() => import("@/pages/home"));
@@ -201,16 +202,15 @@ function AppContent() {
   const { theme } = useTheme();
 
   // SPLASH SCREEN MODE (Luxury)
-  // If the user is in Luxury mode, we ONLY show the Landing Page (Splash Screen).
-  // The "Enter the Void" button (Reality Toggle) is the only way out.
+  // If the user is in Luxury mode, we ONLY show the Soca Noir Splash Page.
   if (theme === 'luxury') {
     return (
       <>
         <SEOHead
-          title="Savage Gentlemen | Experience"
-          description="We're more than events. We're a movement."
+          title="SOCA NÓIR | Savage Gentlemen"
+          description="Secure your early bird tickets for the ultimate Caribbean experience."
         />
-        <LandingPage />
+        <SocaNoirSplash />
         <Toaster />
       </>
     );

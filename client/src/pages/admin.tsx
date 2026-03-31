@@ -60,8 +60,21 @@ interface Ticket {
   quantity: number;
   remainingQuantity: number;
   isActive: boolean;
-  maxPerPurchase?: number;
-  description?: string | null;
+  maxPerPurchase: number;
+  description: string | null;
+  status: string;
+  priceType: string;
+  minPerOrder: number;
+  displayRemainingQuantity: boolean;
+  hideIfSoldOut: boolean;
+  hidePriceIfSoldOut: boolean;
+  secretCode: string | null;
+  salesStartDate: Date | string | null;
+  salesStartTime: string | null;
+  salesEndDate: Date | string | null;
+  salesEndTime: string | null;
+  lockMinQuantity: number | null;
+  lockTicketTypeId: number | null;
 }
 
 interface Order {
@@ -706,23 +719,23 @@ export default function AdminPage() {
       description: ticket.description || '',
       // Essential tab fields
       maxPerPurchase: ticket.maxPerPurchase || 4,
-      isActive: ticket.isActive !== null ? ticket.isActive : true,
-      // Advanced tab fields - populate with defaults or existing values
-      priceType: 'standard',
-      minPerOrder: 1,
-      displayRemainingQuantity: true,
-      hideIfSoldOut: false,
-      hidePriceIfSoldOut: false,
-      secretCode: '',
-      salesStartDate: '',
-      salesStartTime: '',
-      salesEndDate: '',
-      salesEndTime: '',
-      hideBeforeSalesStart: false,
-      hideAfterSalesEnd: false,
-      lockMinQuantity: null,
-      lockTicketTypeId: null,
-      status: 'on_sale'
+      isActive: ticket.isActive !== undefined ? ticket.isActive : true,
+      // Advanced tab fields - populate with actual values
+      priceType: ticket.priceType || 'standard',
+      minPerOrder: ticket.minPerOrder || 1,
+      displayRemainingQuantity: ticket.displayRemainingQuantity !== undefined ? ticket.displayRemainingQuantity : true,
+      hideIfSoldOut: ticket.hideIfSoldOut || false,
+      hidePriceIfSoldOut: ticket.hidePriceIfSoldOut || false,
+      secretCode: ticket.secretCode || '',
+      salesStartDate: ticket.salesStartDate ? (typeof ticket.salesStartDate === 'string' ? ticket.salesStartDate.split('T')[0] : new Date(ticket.salesStartDate).toISOString().split('T')[0]) : '',
+      salesStartTime: ticket.salesStartTime || '',
+      salesEndDate: ticket.salesEndDate ? (typeof ticket.salesEndDate === 'string' ? ticket.salesEndDate.split('T')[0] : new Date(ticket.salesEndDate).toISOString().split('T')[0]) : '',
+      salesEndTime: ticket.salesEndTime || '',
+      hideBeforeSalesStart: false, // Default if not in interface
+      hideAfterSalesEnd: false, // Default if not in interface
+      lockMinQuantity: ticket.lockMinQuantity || null,
+      lockTicketTypeId: ticket.lockTicketTypeId || null,
+      status: ticket.status || 'on_sale'
     });
 
     // Open the ticket dialog
@@ -1210,6 +1223,16 @@ export default function AdminPage() {
 
   const handleCreateTicket = async () => {
     try {
+      // Validate logical constraints
+      if (ticketForm.minPerOrder > ticketForm.maxPerPurchase) {
+        toast({
+          title: "Invalid quantities",
+          description: "Minimum order quantity cannot be greater than maximum quantity per purchase.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       // Prepare the complete ticket data for submission
       const ticketData = {
         eventId: selectedEventId,
@@ -2954,7 +2977,7 @@ export default function AdminPage() {
                           type="submit"
                           className="bg-teal-500 hover:bg-teal-600 text-white font-medium rounded-md border-none"
                           onClick={handleCreateTicket}
-                          disabled={!ticketForm.name || ticketForm.price <= 0 || ticketForm.quantity <= 0}
+                          disabled={!ticketForm.name || ticketForm.price < 0 || ticketForm.quantity <= 0}
                         >
                           SAVE
                         </Button>

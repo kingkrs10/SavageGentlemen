@@ -784,6 +784,24 @@ select {
     }
   }
 
+  @keyframes flicker-rose {
+    0%, 100% { opacity: 0.8; filter: drop-shadow(0 0 10px #f97316) drop-shadow(0 0 20px #ea580c); }
+    50% { opacity: 1; filter: drop-shadow(0 0 15px #fb923c) drop-shadow(0 0 30px #f97316); }
+  }
+  @keyframes sunset-glow {
+    0%, 100% { opacity: 0.6; filter: drop-shadow(0 0 10px #f43f5e); }
+    50% { opacity: 0.9; filter: drop-shadow(0 0 20px #fb7185); }
+  }
+  .animate-flicker-rose {
+    animation: flicker-rose 3s infinite ease-in-out;
+  }
+  .animate-sunset-glow {
+    animation: sunset-glow 5s infinite ease-in-out;
+  }
+  .animate-pulsate-neon {
+    animation: sunset-glow 4s infinite ease-in-out;
+  }
+
   .animate-fade-in {
     animation: fadeIn 1s ease-in-out;
   }
@@ -813,4 +831,83 @@ select {
       opacity: 1;
     }
   }
+}
+
+/* SOCA NÓIR Splash Page Animations */
+@keyframes flicker-rose {
+  0%, 100% { opacity: 1; filter: brightness(1) drop-shadow(0 0 20px rgba(255, 0, 0, 0.5)); }
+  50% { opacity: 0.9; filter: brightness(1.2) drop-shadow(0 0 40px rgba(255, 50, 0, 0.8)); }
+}
+
+@keyframes pulsate-neon {
+  0%, 100% { text-shadow: 0 0 5px #ff2d55, 0 0 10px #ff2d55, 0 0 20px #ff2d55; opacity: 1; }
+  50% { text-shadow: 0 0 10px #ff2d55, 0 0 20px #ff2d55, 0 0 40px #ff2d55; opacity: 0.8; }
+}
+
+@keyframes wave-motion {
+  0%, 100% { transform: translateY(0) scaleX(1); }
+  50% { transform: translateY(5px) scaleX(1.02); }
+}
+
+@keyframes shooting-star {
+  0% { transform: translateX(0) translateY(0) rotate(-45deg); opacity: 0; }
+  10% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: translateX(-500px) translateY(500px) rotate(-45deg); opacity: 0; }
+}
+
+.animate-flicker-rose {
+  animation: flicker-rose 3s infinite ease-in-out;
+}
+
+.animate-pulsate-neon {
+  animation: pulsate-neon 2s infinite ease-in-out;
+}
+
+.animate-wave-motion {
+  animation: wave-motion 6s infinite ease-in-out;
+}
+
+.animate-shooting-star {
+  animation: shooting-star 4s infinite linear;
+}
+
+.glass-panel-fluid {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  border-radius: 12px;
+}
+
+.glass-panel-sunset {
+  background: rgba(25, 10, 20, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(251, 146, 60, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  transition: all 0.5s ease;
+}
+
+.glass-panel-sunset:hover {
+  background: rgba(40, 15, 30, 0.5);
+  border: 1px solid rgba(251, 146, 60, 0.3);
+  box-shadow: 0 12px 48px 0 rgba(251, 146, 60, 0.1);
+}
+
+.neon-border-sunset {
+  background: linear-gradient(90deg, #f97316, #fb7185, #f43f5e);
+  padding: 1px;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+}
+
+.neon-border-flame {
+  border: 1px solid transparent;
+  background-image: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0)), linear-gradient(45deg, #ff4d00, #ff0055);
+  background-origin: border-box;
+  background-clip: content-box, border-box;
+  box-shadow: 0 0 15px rgba(255, 77, 0, 0.4);
 }

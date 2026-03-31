@@ -3120,53 +3120,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Ticket management
   router.post("/admin/tickets", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
-      // Process date fields and data conversion before validation
+      console.log("Received ticket data for creation:", req.body);
+      
+      // Fast validation of basic types before conversion
       const processedData = { ...req.body };
 
-      // Handle price conversion
+      // Handle price conversion (dollars to cents)
       if (typeof processedData.price === 'string') {
         const priceValue = parseFloat(processedData.price);
-        if (!isNaN(priceValue)) {
-          processedData.price = Math.round(priceValue * 100); // Convert to cents
-        }
+        processedData.price = !isNaN(priceValue) ? Math.round(priceValue * 100) : 0;
+      } else if (typeof processedData.price === 'number') {
+        processedData.price = Math.round(processedData.price * 100);
       }
 
-      // Handle quantity conversion
-      if (typeof processedData.quantity === 'string') {
-        processedData.quantity = parseInt(processedData.quantity, 10);
+      // Handle numeric fields
+      if (typeof processedData.quantity === 'string') processedData.quantity = parseInt(processedData.quantity, 10);
+      if (typeof processedData.eventId === 'string') processedData.eventId = parseInt(processedData.eventId, 10);
+      if (typeof processedData.minPerOrder === 'string') processedData.minPerOrder = parseInt(processedData.minPerOrder, 10);
+      if (typeof processedData.maxPerPurchase === 'string') processedData.maxPerPurchase = parseInt(processedData.maxPerPurchase, 10);
+
+      // Now validate with schema
+      const parseResult = insertTicketSchema.safeParse(processedData);
+      
+      if (!parseResult.success) {
+        console.error("Ticket validation failed:", parseResult.error);
+        return res.status(400).json({ errors: parseResult.error.errors });
       }
 
-      // Handle date fields
-      const dateFields = ['salesStartDate', 'salesEndDate', 'sales_start_date', 'sales_end_date'];
-      for (const field of dateFields) {
-        if (field in processedData) {
-          if (processedData[field] === '' || processedData[field] === undefined) {
-            processedData[field] = null;
-          } else if (typeof processedData[field] === 'string' && processedData[field]) {
-            try {
-              const parsedDate = new Date(processedData[field]);
-              if (!isNaN(parsedDate.getTime())) {
-                processedData[field] = parsedDate;
-              } else {
-                processedData[field] = null;
-              }
-            } catch (e) {
-              console.warn(`Failed to parse date for field ${field}:`, processedData[field]);
-              processedData[field] = null;
-            }
-          }
-        }
+      const finalData = parseResult.data;
+
+      // Ensure remainingQuantity is set to quantity on creation
+      if (finalData.quantity !== undefined) {
+        (finalData as any).remainingQuantity = finalData.quantity;
       }
 
-      // Make sure eventId is properly formatted as a number
-      if (processedData.eventId) {
-        processedData.eventId = parseInt(String(processedData.eventId));
-      }
+      console.log("Processed ticket data for storage:", finalData);
 
-      console.log("Processed ticket data:", processedData);
-
-      // Create the ticket with processed data
-      const ticket = await storage.createTicket(processedData);
+      // Create the ticket
+      const ticket = await storage.createTicket(finalData as any);
       return res.status(201).json(ticket);
     } catch (err) {
       console.error("Error creating ticket:", err);
@@ -3205,67 +3196,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   router.put("/admin/tickets/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
       const ticketId = parseInt(req.params.id);
-      console.log(`Updating ticket with ID: ${ticketId} Data:`, req.body);
+      console.log(`Updating ticket ID ${ticketId} with data:`, req.body);
+      
+      const processedData = { ...req.body };
 
-      // Convert price from dollars to cents properly
-      let price = req.body.price;
-      if (typeof price === 'string' || typeof price === 'number') {
-        const priceValue = parseFloat(String(price));
-        if (!isNaN(priceValue)) {
-          // Always convert to cents by multiplying by 100
-          price = Math.round(priceValue * 100);
-          console.log(`Converting price from ${req.body.price} to ${price} cents`);
-        }
+      // Handle price conversion (dollars to cents) if provided
+      if (processedData.price !== undefined) {
+        const priceValue = typeof processedData.price === 'string' ? parseFloat(processedData.price) : processedData.price;
+        processedData.price = !isNaN(priceValue) ? Math.round(priceValue * 100) : 0;
       }
 
-      // Clean up empty date fields
-      const updateData = {
-        ...req.body,
-        price,
+      // Handle numeric fields
+      if (typeof processedData.quantity === 'string') processedData.quantity = parseInt(processedData.quantity, 10);
+      if (typeof processedData.minPerOrder === 'string') processedData.minPerOrder = parseInt(processedData.minPerOrder, 10);
+      if (typeof processedData.maxPerPurchase === 'string') processedData.maxPerPurchase = parseInt(processedData.maxPerPurchase, 10);
+
+      // Now validate with schema (partial for updates)
+      const parseResult = insertTicketSchema.partial().safeParse(processedData);
+      
+      if (!parseResult.success) {
+        console.error("Ticket update validation failed:", parseResult.error);
+        return res.status(400).json({ errors: parseResult.error.errors });
+      }
+
+      const finalData = {
+        ...parseResult.data,
         updatedAt: new Date()
       };
 
-      // Handle date fields - convert empty strings to null or ensure proper Date objects
-      const dateFields = ['salesStartDate', 'salesEndDate', 'sales_start_date', 'sales_end_date', 'createdAt', 'updatedAt'];
+      console.log("Processed ticket update for storage:", finalData);
 
-      for (const field of dateFields) {
-        if (field in updateData) {
-          if (updateData[field] === '' || updateData[field] === undefined) {
-            updateData[field] = null;
-          } else if (typeof updateData[field] === 'string' && updateData[field]) {
-            try {
-              // Try to parse as Date if it's not empty
-              const parsedDate = new Date(updateData[field]);
-              if (!isNaN(parsedDate.getTime())) {
-                updateData[field] = parsedDate;
-              } else {
-                updateData[field] = null;
-              }
-            } catch (e) {
-              console.warn(`Failed to parse date for field ${field}:`, updateData[field]);
-              updateData[field] = null;
-            }
-          }
-        }
-      }
-
-      // Make sure eventId is properly formatted
-      if (updateData.eventId) {
-        updateData.eventId = parseInt(String(updateData.eventId));
-        // For database schema that uses event_id instead of eventId
-        updateData.event_id = updateData.eventId;
-      }
-
-      console.log("Processed update data:", updateData);
-
-      const updatedTicket = await storage.updateTicket(ticketId, updateData);
+      const updatedTicket = await storage.updateTicket(ticketId, finalData as any);
+      
       if (!updatedTicket) {
         return res.status(404).json({ message: "Ticket not found" });
       }
+      
       return res.status(200).json(updatedTicket);
     } catch (err) {
       console.error("Error updating ticket:", err);
-      return res.status(500).json({ message: "Failed to update ticket" });
+      return res.status(500).json({ message: "Internal server error" });
     }
   });
 
