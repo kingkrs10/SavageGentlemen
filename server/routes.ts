@@ -4056,33 +4056,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // PayPal payment routes
-  // Duplicate routes for compatibility with both /api/payment and /payment paths
-  // PayPal setup with /api prefix
-  router.get("/api/payment/paypal-setup", async (req: Request, res: Response) => {
-    await loadPaypalDefault(req, res);
-  });
-
-  // PayPal setup without /api prefix (for backward compatibility)
+  // Standardized routes: since router is mounted on /api, these will be /api/payment/...
+  
+  // PayPal setup 
   router.get("/payment/paypal-setup", async (req: Request, res: Response) => {
     await loadPaypalDefault(req, res);
   });
 
-  // API prefixed PayPal order route
-  router.post("/api/payment/paypal-order", async (req: Request, res: Response) => {
-    await createPaypalOrder(req, res);
-  });
-
-  // Non-prefixed PayPal order route (for backward compatibility)
+  // PayPal order route
   router.post("/payment/paypal-order", async (req: Request, res: Response) => {
     await createPaypalOrder(req, res);
   });
 
-  // API prefixed PayPal capture route
-  router.post("/api/payment/paypal-order/:orderID/capture", async (req: Request, res: Response) => {
-    await capturePaypalOrder(req, res);
-  });
-
-  // Non-prefixed PayPal capture route (for backward compatibility)
+  // PayPal capture route
   router.post("/payment/paypal-order/:orderID/capture", async (req: Request, res: Response) => {
     await capturePaypalOrder(req, res);
   });
@@ -5144,8 +5130,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Stripe payment routes
-  // API prefixed create-intent endpoint - SECURE VERSION WITH SERVER-SIDE PRICING
-  router.post("/api/payment/create-intent", authenticateUser, async (req: Request, res: Response) => {
+  // Since router is mounted on /api, this will be /api/payment/create-intent
+  router.post("/payment/create-intent", authenticateUser, async (req: Request, res: Response) => {
     try {
       const user = (req as any).user;
 

@@ -8,11 +8,13 @@ import { User } from '@/lib/types';
 import { apiRequest } from "@/lib/queryClient";
 
 // Initialize Stripe outside component to avoid recreation
-const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || '';
-if (!stripeKey) {
-  console.warn("Stripe key is missing in environment variables. Checkout may fail.");
+// Initialize Stripe outside component to avoid recreation
+// Standardizing Stripe key retrieval for production and development
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_TYooMQauvdEDq54NiTphI7jx';
+if (!stripeKey || stripeKey === 'pk_test_TYooMQauvdEDq54NiTphI7jx') {
+  console.warn("Using Stripe test key. Please ensure VITE_STRIPE_PUBLIC_KEY is set in your environment for LIVE payments.");
 } else {
-  console.log(`Using Stripe key: ${stripeKey.substring(0, 7)}...`);
+  console.log(`Using Stripe key: ${stripeKey.substring(0, 10)}... [PROD]`);
 }
 const stripePromise = loadStripe(stripeKey);
 

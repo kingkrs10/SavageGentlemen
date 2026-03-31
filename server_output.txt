@@ -1,0 +1,1560 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+10:28:55 PM [express] Firebase Admin initialized with default configuration
+[EMAIL_PROVIDER] Using email provider: sendgrid
+Current working directory: /Users/sg/SavageGentlemen
+Configured uploads directory: /Users/sg/SavageGentlemen/uploads
+Uploads directory exists and has proper permissions
+Multer configuration successful
+Starting comprehensive ticket database synchronization...
+🎫 Seeding Soca Passport tiers...
+10:28:57 PM [express] serving on port 5001
+✅ Server is running and accessible on all interfaces at port 5001
+🔥 Application ready for deployment at http://0.0.0.0:5001
+  ✓ BRONZE tier already exists
+  ✓ SILVER tier already exists
+  ✓ GOLD tier already exists
+  ✓ ELITE tier already exists
+✅ Passport tiers seeded successfully!
+Ticket database synchronization completed successfully
+Ticket data reconciliation completed
+✓ Ticket database synchronization completed on startup
+[PERF] GET /index.html - 195.67ms
+Browserslist: browsers data (caniuse-lite) is 17 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[PERF] GET /@vite/client - 91.44ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/vite/dist/client/env.mjs - 0.22ms
+[PERF] GET /src/main.tsx - 419.67ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/react_jsx-dev-runtime.js - 1.58ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/react-dom_client.js - 2.17ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@tanstack_react-query.js - 1.93ms
+[PERF] GET /@react-refresh - 1009.56ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-4B2QHNJT.js - 2.76ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-ZMLY2J2T.js - 171.86ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-276SZO74.js - 139.90ms
+[PERF] GET /src/lib/queryClient.ts - 233.08ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-CRNJR6QK.js - 167.80ms
+[PERF] GET /src/App.tsx - 310.53ms
+[PERF] GET /src/lib/auth-utils.ts - 145.45ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/react.js - 13.30ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/wouter.js - 17.07ms
+[PERF] GET /src/index.css - 6739.47ms
+[PERF] GET /src/components/ui/tooltip.tsx - 6176.87ms
+[PERF] GET /src/components/layout/BottomNavigation.tsx - 4463.69ms
+[PERF] GET /src/components/ui/toaster.tsx - 6217.74ms
+[PERF] GET /src/components/SEOHead.tsx - 1.83ms
+[PERF] GET /src/lib/ga-analytics.ts - 0.56ms
+[PERF] GET /src/lib/analytics.ts - 11.69ms
+[PERF] GET /src/components/layout/Header.tsx - 6419.70ms
+[PERF] GET /src/components/auth/AuthModal.tsx - 4867.20ms
+[PERF] GET /src/context/ThemeContext.tsx - 262.17ms
+[PERF] GET /src/context/UserContext.tsx - 395.34ms
+[PERF] GET /src/components/layout/RealityToggle.tsx - 0.90ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-tooltip.js - 0.63ms
+[PERF] GET /src/pages/not-found.tsx - 562.16ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/lucide-react.js - 2.85ms
+[PERF] GET /src/components/effects/GlitchTransition.tsx - 381.60ms
+[PERF] GET /src/components/ErrorBoundary.tsx - 652.44ms
+[PERF] GET /src/pages/LandingPage.tsx - 153.28ms
+[PERF] GET /src/lib/utils.ts - 172.43ms
+[PERF] GET /src/components/ui/toast.tsx - 71.14ms
+[PERF] GET /src/hooks/use-toast.ts - 130.64ms
+[PERF] GET /src/assets/SGFLYERLOGO.png - 0.41ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/react-hook-form.js - 0.81ms
+[PERF] GET /src/components/ui/button.tsx - 150.49ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@hookform_resolvers_zod.js - 0.34ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/zod.js - 1.74ms
+[PERF] GET /src/components/ui/avatar.tsx - 244.08ms
+[PERF] GET /src/components/ui/dropdown-menu.tsx - 264.91ms
+[PERF] GET /src/components/ThemeToggle.tsx - 233.09ms
+[PERF] GET /src/components/ui/dialog.tsx - 47.33ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-JYL32WHJ.js - 0.52ms
+[PERF] GET /src/hooks/use-auth.ts - 56.63ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-LJ4JPJ6Z.js - 1.27ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-APDZTKBG.js - 0.55ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-KJENTXVB.js - 0.95ms
+[PERF] GET /src/components/ui/form.tsx - 81.49ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-ED5C5U6M.js - 1.15ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-5GWRQQ35.js - 1.03ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-3RXG37ZK.js - 0.42ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-W26MZUFT.js - 1.18ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-6ZEHPUQI.js - 0.89ms
+[PERF] GET /src/components/ui/tabs.tsx - 109.25ms
+[PERF] GET /src/components/ui/input.tsx - 138.26ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-GR3B7I3S.js - 1.90ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/gsap.js - 1.90ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-DVHSTOKX.js - 3.61ms
+[PERF] GET /src/assets/videos/brand-video.mp4 - 0.50ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/clsx.js - 0.77ms
+[PERF] GET /src/components/ui/card.tsx - 91.93ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/tailwind-merge.js - 0.61ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-toast.js - 1.70ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-YGCRICWC.js - 1.09ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-slot.js - 0.97ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/class-variance-authority.js - 1.49ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-dropdown-menu.js - 1.15ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-avatar.js - 0.75ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/next-themes.js - 0.56ms
+[PERF] GET /src/lib/constants.ts - 79.90ms
+[PERF] GET /src/components/effects/VoidTransition.tsx - 112.49ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-dialog.js - 0.83ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/firebase_auth.js - 1.64ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-U7P2NEEE.js - 0.58ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-tabs.js - 1.59ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-KF2WSQRE.js - 3.91ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-WM6SXSWM.js - 2.06ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-7OZC5HC5.js - 0.90ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-V5HFRF4I.js - 0.92ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-UMWMWBIR.js - 0.82ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-5GZZXOHZ.js - 1.02ms
+[PERF] GET /src/lib/firebase.ts - 63.04ms
+[PERF] GET /src/components/home/HeroEventCarousel.tsx - 191.65ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-NNYI7QEY.js - 1.19ms
+[PERF] GET /src/lib/void-sound.ts - 31.30ms
+[PERF] GET /src/components/ui/label.tsx - 74.00ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/firebase_app.js - 0.63ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-label.js - 5.26ms
+[PERF] GET /src/components/ui/badge.tsx - 19.91ms
+[PERF] GET /src/lib/utils/image-utils.ts - 18.30ms
+[PERF] GET /src/components/ui/carousel.tsx - 34.86ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/embla-carousel-react.js - 0.34ms
+[AUDIT] 2026-03-31T02:29:18.725Z | User: anonymous | IP: 127.0.0.1 | POST /api/analytics/page-view
+Creating page view with data: {"path":"/admin","userId":null,"sessionId":"1768540975833-wyxkf4870q","deviceType":"desktop","browser":"Chrome","referrer":null,"duration":null}
+[PERF] GET /src/assets/SGFLYERLOGO.png - 2.97ms
+[PERF] GET /me - 104.04ms
+10:29:18 PM [express] GET /api/me 401 in 108ms :: {"message":"Not authenticated"}
+Page view created successfully
+[PERF] POST /page-view - 130.60ms
+10:29:18 PM [express] POST /api/analytics/page-view 201 in 131ms :: {"id":16,"path":"/admin","userId"…
+[PERF] GET /index.html - 43.70ms
+[PERF] GET /index.html - 39.79ms
+[PERF] GET /index.html - 23.14ms
+[PERF] GET /src/pages/admin.tsx - 1235.88ms
+[PERF] GET /index.html - 488.40ms
+[PERF] GET /src/components/ui/textarea.tsx - 20.83ms
+[PERF] GET /src/components/ui/checkbox.tsx - 39.10ms
+[PERF] GET /src/components/ui/switch.tsx - 1.21ms
+[PERF] GET /src/components/ui/table.tsx - 56.80ms
+[PERF] GET /src/components/ui/select.tsx - 71.02ms
+[PERF] GET /src/components/ui/separator.tsx - 87.01ms
+[PERF] GET /index.html - 48.74ms
+[PERF] GET /src/components/admin/TicketScanner.tsx - 91.05ms
+[PERF] GET /src/components/admin/LivestreamManager.tsx - 192.90ms
+[PERF] GET /src/pages/admin-media.tsx - 259.31ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-checkbox.js - 0.71ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-switch.js - 11.63ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-select.js - 4.00ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-separator.js - 4.98ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/html5-qrcode.js - 7.36ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-COCYWFQH.js - 1.10ms
+[PERF] GET /src/components/admin/PassportManager.tsx - 537.88ms
+[PERF] GET /src/components/ui/alert.tsx - 126.91ms
+[PERF] GET /src/components/ui/skeleton.tsx - 119.22ms
+[PERF] GET /src/components/ui/progress.tsx - 137.92ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-progress.js - 1.26ms
+Fetching events with status filter: all
+Authenticating request: {
+  path: '/admin/tickets/event/1',
+  userId: undefined,
+  hasAuthHeader: false
+}
+SECURITY: Authentication required for admin route: /admin/tickets/event/1
+[PERF] GET /admin/tickets/event/1 - 45.45ms
+10:29:20 PM [express] GET /api/admin/tickets/event/1 401 in 47ms :: {"message":"Admin authentication …
+Authenticating request: { path: '/admin/users', userId: '854', hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 4.35ms
+10:29:20 PM [express] GET /api/admin/users 401 in 7ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: '854', hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 4.29ms
+10:29:20 PM [express] GET /api/admin/tickets 401 in 6ms :: {"message":"Admin authentication required.…
+[PERF] GET /products - 34.80ms
+10:29:20 PM [express] GET /api/products 304 in 36ms :: []
+Authenticating request: { path: '/admin/orders', userId: '854', hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 3.72ms
+10:29:20 PM [express] GET /api/admin/orders 401 in 6ms :: {"message":"Admin authentication required. …
+Successfully retrieved 2 events
+[PERF] GET /events - 156.37ms
+10:29:20 PM [express] GET /api/events 200 in 158ms :: [{"id":1,"title":"Test Event 2026","description…
+[PERF] GET /livestreams - 131.39ms
+10:29:20 PM [express] GET /api/livestreams 200 in 135ms :: []
+[PERF] GET /sponsored-content - 128.52ms
+10:29:20 PM [express] GET /api/sponsored-content 304 in 131ms :: []
+[PERF] GET /music/mixes - 209.16ms
+10:29:21 PM [express] GET /api/music/mixes 200 in 215ms :: []
+[PERF] GET /sw.js - 4.00ms
+[AUDIT] 2026-03-31T02:30:08.146Z | User: 854 | IP: 127.0.0.1 | POST /api/admin/tickets
+[SENSITIVE OPERATION] Details: {"method":"POST","path":"/api/admin/tickets","user":"854","ip":"127.0.0.1","userAgent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"}
+Authenticating request: { path: '/admin/tickets', userId: '854', hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] POST /admin/tickets - 3.07ms
+10:30:08 PM [express] POST /api/admin/tickets 401 in 5ms :: {"message":"Admin authentication required…
+[PERF] GET /index.html - 26.60ms
+[PERF] GET /@vite/client - 32.68ms
+[PERF] GET /src/main.tsx - 0.67ms
+[PERF] GET /@react-refresh - 0.37ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/vite/dist/client/env.mjs - 0.56ms
+[PERF] GET /src/lib/queryClient.ts - 0.46ms
+[PERF] GET /src/App.tsx - 0.26ms
+[PERF] GET /src/index.css - 0.51ms
+[PERF] GET /src/lib/auth-utils.ts - 0.31ms
+[PERF] GET /src/components/ui/toaster.tsx - 0.84ms
+[PERF] GET /src/components/ui/tooltip.tsx - 0.87ms
+[PERF] GET /src/components/auth/AuthModal.tsx - 0.51ms
+[PERF] GET /src/components/ErrorBoundary.tsx - 0.47ms
+[PERF] GET /src/components/layout/Header.tsx - 0.53ms
+[PERF] GET /src/components/layout/BottomNavigation.tsx - 0.42ms
+[PERF] GET /src/pages/not-found.tsx - 0.32ms
+[PERF] GET /src/components/SEOHead.tsx - 0.37ms
+[PERF] GET /src/context/UserContext.tsx - 0.53ms
+[PERF] GET /src/lib/ga-analytics.ts - 0.88ms
+[PERF] GET /src/lib/analytics.ts - 0.23ms
+[PERF] GET /src/context/ThemeContext.tsx - 0.45ms
+[PERF] GET /src/components/effects/GlitchTransition.tsx - 0.36ms
+[PERF] GET /src/components/layout/RealityToggle.tsx - 0.60ms
+[PERF] GET /src/pages/LandingPage.tsx - 0.40ms
+[PERF] GET /src/hooks/use-toast.ts - 0.39ms
+[PERF] GET /src/components/ui/toast.tsx - 5.83ms
+[PERF] GET /src/hooks/use-auth.ts - 0.33ms
+[PERF] GET /src/components/ui/dialog.tsx - 0.44ms
+[PERF] GET /src/components/ui/button.tsx - 0.29ms
+[PERF] GET /src/components/ui/form.tsx - 0.19ms
+[PERF] GET /src/components/ui/input.tsx - 1.16ms
+[PERF] GET /src/components/ui/tabs.tsx - 0.20ms
+[PERF] GET /src/assets/SGFLYERLOGO.png - 0.31ms
+[PERF] GET /src/lib/utils.ts - 0.14ms
+[PERF] GET /src/components/ui/avatar.tsx - 0.12ms
+[PERF] GET /src/components/ui/card.tsx - 0.13ms
+[PERF] GET /src/components/home/HeroEventCarousel.tsx - 0.09ms
+[PERF] GET /src/components/ThemeToggle.tsx - 0.15ms
+[PERF] GET /src/components/ui/dropdown-menu.tsx - 0.18ms
+[PERF] GET /src/assets/videos/brand-video.mp4 - 0.39ms
+[PERF] GET /src/components/effects/VoidTransition.tsx - 0.09ms
+[PERF] GET /src/lib/constants.ts - 0.24ms
+[PERF] GET /src/lib/firebase.ts - 0.26ms
+[PERF] GET /src/components/ui/label.tsx - 0.23ms
+[PERF] GET /src/components/ui/badge.tsx - 0.22ms
+[PERF] GET /src/components/ui/carousel.tsx - 0.12ms
+[PERF] GET /src/lib/utils/image-utils.ts - 0.24ms
+[PERF] GET /src/lib/void-sound.ts - 0.16ms
+[PERF] GET /src/assets/SGFLYERLOGO.png - 0.76ms
+[AUDIT] 2026-03-31T02:30:19.694Z | User: anonymous | IP: 127.0.0.1 | POST /api/analytics/page-view
+Creating page view with data: {"path":"/login","userId":null,"sessionId":"1768540975833-wyxkf4870q","deviceType":"desktop","browser":"Chrome","referrer":null,"duration":null}
+Page view created successfully
+[PERF] POST /page-view - 75.90ms
+10:30:19 PM [express] POST /api/analytics/page-view 201 in 76ms :: {"id":17,"path":"/login","userId":…
+[PERF] GET /me - 67.99ms
+10:30:19 PM [express] GET /api/me 401 in 69ms :: {"message":"Not authenticated"}
+[PERF] GET /index.html - 14.22ms
+[PERF] GET /index.html - 13.97ms
+[PERF] GET /index.html - 22.40ms
+[PERF] GET /index.html - 14.72ms
+[PERF] GET /index.html - 12.70ms
+[PERF] GET /sw.js - 0.97ms
+[PERF] GET /@vite/client - 1.73ms
+[PERF] GET /@react-refresh - 0.29ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/vite/dist/client/env.mjs - 1.37ms
+[PERF] GET /src/components/ui/toaster.tsx - 0.30ms
+[PERF] GET /src/components/ui/tooltip.tsx - 0.28ms
+[PERF] GET /src/components/layout/Header.tsx - 0.29ms
+[PERF] GET /src/components/layout/BottomNavigation.tsx - 0.39ms
+[PERF] GET /src/components/auth/AuthModal.tsx - 0.27ms
+[PERF] GET /src/components/ErrorBoundary.tsx - 0.43ms
+[PERF] GET /src/components/SEOHead.tsx - 0.89ms
+[PERF] GET /src/context/UserContext.tsx - 0.39ms
+[PERF] GET /src/lib/ga-analytics.ts - 0.68ms
+[PERF] GET /src/pages/not-found.tsx - 0.92ms
+[PERF] GET /src/lib/queryClient.ts - 0.26ms
+[PERF] GET /src/lib/analytics.ts - 0.30ms
+[PERF] GET /src/context/ThemeContext.tsx - 0.35ms
+[PERF] GET /src/components/effects/GlitchTransition.tsx - 0.40ms
+[PERF] GET /src/components/layout/RealityToggle.tsx - 0.27ms
+[PERF] GET /src/pages/LandingPage.tsx - 0.27ms
+[PERF] GET /src/lib/utils.ts - 0.22ms
+[PERF] GET /src/hooks/use-toast.ts - 0.30ms
+[PERF] GET /src/components/ui/toast.tsx - 0.51ms
+[PERF] GET /src/components/ThemeToggle.tsx - 0.47ms
+[PERF] GET /src/components/ui/dropdown-menu.tsx - 0.56ms
+[PERF] GET /src/components/ui/avatar.tsx - 0.33ms
+[PERF] GET /src/assets/SGFLYERLOGO.png - 0.80ms
+[PERF] GET /src/components/ui/button.tsx - 0.21ms
+[PERF] GET /src/hooks/use-auth.ts - 0.38ms
+[PERF] GET /src/components/ui/dialog.tsx - 0.45ms
+[PERF] GET /src/components/ui/form.tsx - 0.63ms
+[PERF] GET /src/components/ui/input.tsx - 0.63ms
+[PERF] GET /src/components/ui/tabs.tsx - 0.55ms
+[PERF] GET /src/lib/auth-utils.ts - 0.33ms
+[PERF] GET /src/components/ui/card.tsx - 0.30ms
+[PERF] GET /src/components/home/HeroEventCarousel.tsx - 0.35ms
+[PERF] GET /src/lib/constants.ts - 0.42ms
+[PERF] GET /src/assets/videos/brand-video.mp4 - 0.96ms
+[PERF] GET /src/components/effects/VoidTransition.tsx - 0.16ms
+[PERF] GET /src/lib/firebase.ts - 0.25ms
+[PERF] GET /src/components/ui/label.tsx - 1.12ms
+[PERF] GET /src/components/ui/badge.tsx - 0.24ms
+[PERF] GET /src/lib/void-sound.ts - 0.28ms
+[PERF] GET /src/components/ui/carousel.tsx - 0.15ms
+[PERF] GET /src/lib/utils/image-utils.ts - 0.16ms
+[PERF] GET /index.html - 5.83ms
+[PERF] GET /index.html - 7.49ms
+[PERF] GET /index.html - 2.86ms
+[PERF] GET /index.html - 3.62ms
+[PERF] GET /index.html - 6.02ms
+[PERF] GET /sw.js - 0.75ms
+[PERF] GET /index.html - 58.80ms
+[PERF] GET /@vite/client - 2.13ms
+[PERF] GET /src/main.tsx - 1.07ms
+[PERF] GET /@react-refresh - 0.44ms
+[PERF] GET /src/lib/queryClient.ts - 2.14ms
+[PERF] GET /src/App.tsx - 0.20ms
+[PERF] GET /src/index.css - 1.07ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/vite/dist/client/env.mjs - 0.21ms
+[PERF] GET /src/lib/auth-utils.ts - 0.62ms
+[PERF] GET /src/components/ui/toaster.tsx - 0.35ms
+[PERF] GET /src/components/ui/tooltip.tsx - 12.79ms
+[PERF] GET /src/components/layout/Header.tsx - 1.62ms
+[PERF] GET /src/components/layout/BottomNavigation.tsx - 0.64ms
+[PERF] GET /src/components/SEOHead.tsx - 0.35ms
+[PERF] GET /src/pages/not-found.tsx - 0.37ms
+[PERF] GET /src/context/UserContext.tsx - 0.58ms
+[PERF] GET /src/components/ErrorBoundary.tsx - 0.71ms
+[PERF] GET /src/components/auth/AuthModal.tsx - 1.92ms
+[PERF] GET /src/lib/analytics.ts - 0.48ms
+[PERF] GET /src/context/ThemeContext.tsx - 1.13ms
+[PERF] GET /src/components/effects/GlitchTransition.tsx - 0.45ms
+[PERF] GET /src/components/layout/RealityToggle.tsx - 0.38ms
+[PERF] GET /src/lib/ga-analytics.ts - 0.48ms
+[PERF] GET /src/hooks/use-toast.ts - 0.39ms
+[PERF] GET /src/components/ui/toast.tsx - 0.52ms
+[PERF] GET /src/lib/utils.ts - 0.41ms
+[PERF] GET /src/components/ThemeToggle.tsx - 0.38ms
+[PERF] GET /src/components/ui/dropdown-menu.tsx - 1.77ms
+[PERF] GET /src/pages/LandingPage.tsx - 0.67ms
+[PERF] GET /src/components/ui/avatar.tsx - 1.01ms
+[PERF] GET /src/components/ui/button.tsx - 0.27ms
+[PERF] GET /src/assets/SGFLYERLOGO.png - 0.64ms
+[PERF] GET /src/components/ui/card.tsx - 0.22ms
+[PERF] GET /src/hooks/use-auth.ts - 1.17ms
+[PERF] GET /src/components/ui/form.tsx - 0.36ms
+[PERF] GET /src/components/ui/input.tsx - 0.38ms
+[PERF] GET /src/components/ui/tabs.tsx - 0.39ms
+[PERF] GET /src/components/ui/dialog.tsx - 0.30ms
+[PERF] GET /src/lib/constants.ts - 0.34ms
+[PERF] GET /src/assets/videos/brand-video.mp4 - 1.46ms
+[PERF] GET /src/components/effects/VoidTransition.tsx - 0.37ms
+[PERF] GET /src/components/home/HeroEventCarousel.tsx - 0.28ms
+[PERF] GET /src/lib/firebase.ts - 0.26ms
+[PERF] GET /src/components/ui/label.tsx - 0.21ms
+[PERF] GET /src/lib/void-sound.ts - 0.15ms
+[PERF] GET /src/components/ui/badge.tsx - 0.14ms
+[PERF] GET /src/components/ui/carousel.tsx - 0.09ms
+[PERF] GET /src/lib/utils/image-utils.ts - 0.15ms
+[PERF] GET /src/assets/SGFLYERLOGO.png - 1.99ms
+[AUDIT] 2026-03-31T02:30:45.915Z | User: anonymous | IP: 127.0.0.1 | POST /api/analytics/page-view
+Creating page view with data: {"path":"/admin","userId":null,"sessionId":"1768540975833-wyxkf4870q","deviceType":"desktop","browser":"Chrome","referrer":null,"duration":null}
+[PERF] GET /src/pages/admin.tsx - 1.37ms
+Page view created successfully
+[PERF] POST /page-view - 42.07ms
+10:30:45 PM [express] POST /api/analytics/page-view 201 in 43ms :: {"id":18,"path":"/admin","userId":…
+[PERF] GET /me - 23.40ms
+10:30:45 PM [express] GET /api/me 401 in 26ms :: {"message":"Not authenticated"}
+[PERF] GET /src/components/ui/select.tsx - 0.42ms
+[PERF] GET /src/components/ui/separator.tsx - 0.56ms
+[PERF] GET /src/components/ui/table.tsx - 0.38ms
+[PERF] GET /src/components/ui/textarea.tsx - 0.57ms
+[PERF] GET /src/components/ui/checkbox.tsx - 1.33ms
+[PERF] GET /src/components/ui/switch.tsx - 0.51ms
+[PERF] GET /src/pages/admin-media.tsx - 0.82ms
+[PERF] GET /src/components/admin/LivestreamManager.tsx - 0.12ms
+[PERF] GET /src/components/admin/TicketScanner.tsx - 0.17ms
+[PERF] GET /src/components/admin/PassportManager.tsx - 0.11ms
+[PERF] GET /index.html - 6.64ms
+[PERF] GET /index.html - 3.19ms
+[PERF] GET /src/components/ui/progress.tsx - 0.46ms
+[PERF] GET /src/components/ui/alert.tsx - 0.43ms
+[PERF] GET /src/components/ui/skeleton.tsx - 0.46ms
+[PERF] GET /index.html - 25.36ms
+[PERF] GET /index.html - 10.17ms
+[PERF] GET /index.html - 6.77ms
+[PERF] GET /products - 16.81ms
+10:30:47 PM [express] GET /api/products 304 in 18ms :: []
+Fetching events with status filter: all
+Authenticating request: {
+  path: '/admin/tickets/event/1',
+  userId: undefined,
+  hasAuthHeader: false
+}
+SECURITY: Authentication required for admin route: /admin/tickets/event/1
+[PERF] GET /admin/tickets/event/1 - 2.08ms
+10:30:47 PM [express] GET /api/admin/tickets/event/1 401 in 4ms :: {"message":"Admin authentication r…
+Authenticating request: { path: '/admin/users', userId: '854', hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 2.21ms
+10:30:47 PM [express] GET /api/admin/users 401 in 4ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: '854', hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 3.04ms
+10:30:47 PM [express] GET /api/admin/tickets 401 in 4ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: '854', hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 2.34ms
+10:30:47 PM [express] GET /api/admin/orders 401 in 4ms :: {"message":"Admin authentication required. …
+[PERF] GET /livestreams - 99.30ms
+10:30:47 PM [express] GET /api/livestreams 304 in 101ms :: []
+Successfully retrieved 2 events
+[PERF] GET /events - 147.45ms
+10:30:47 PM [express] GET /api/events 304 in 150ms :: [{"id":1,"title":"Test Event 2026","description…
+[PERF] GET /music/mixes - 254.20ms
+10:30:47 PM [express] GET /api/music/mixes 304 in 256ms :: []
+[PERF] GET /sponsored-content - 264.19ms
+10:30:47 PM [express] GET /api/sponsored-content 304 in 265ms :: []
+[PERF] GET /sw.js - 0.61ms
+[AUDIT] 2026-03-31T02:31:55.476Z | User: anonymous | IP: 127.0.0.1 | POST /api/auth/login
+[PERF] POST /auth/login - 291.82ms
+10:31:55 PM [express] POST /api/auth/login 401 in 294ms :: {"status":"error","message":"Invalid usern…
+[PERF] GET /sw.js - 1.12ms
+[PERF] GET /sw.js - 0.45ms
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 57.03ms
+12:23:31 AM [express] GET /api/admin/users 401 in 83ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 9.46ms
+12:23:31 AM [express] GET /api/admin/tickets 401 in 17ms :: {"message":"Admin authentication required…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 17.09ms
+12:23:31 AM [express] GET /api/admin/orders 401 in 30ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 1.91ms
+12:25:04 AM [express] GET /api/admin/users 401 in 21ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 1.20ms
+12:25:04 AM [express] GET /api/admin/tickets 401 in 3ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 5.39ms
+12:25:04 AM [express] GET /api/admin/orders 401 in 6ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 9.50ms
+12:25:35 AM [express] GET /api/admin/users 401 in 13ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 1.87ms
+12:25:35 AM [express] GET /api/admin/tickets 401 in 4ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 1.71ms
+12:25:35 AM [express] GET /api/admin/orders 401 in 4ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 9.79ms
+12:26:13 AM [express] GET /api/admin/users 401 in 12ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 6.01ms
+12:26:13 AM [express] GET /api/admin/tickets 401 in 11ms :: {"message":"Admin authentication required…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 2.84ms
+12:26:13 AM [express] GET /api/admin/orders 401 in 6ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 0.86ms
+12:31:02 AM [express] GET /api/admin/tickets 401 in 2ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 0.59ms
+12:31:02 AM [express] GET /api/admin/users 401 in 2ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.67ms
+12:31:02 AM [express] GET /api/admin/orders 401 in 2ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 2.22ms
+12:32:35 AM [express] GET /api/admin/users 401 in 4ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 1.16ms
+12:32:35 AM [express] GET /api/admin/tickets 401 in 3ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 1.25ms
+12:32:35 AM [express] GET /api/admin/orders 401 in 3ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 0.83ms
+12:56:44 AM [express] GET /api/admin/users 401 in 2ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 0.54ms
+12:56:44 AM [express] GET /api/admin/tickets 401 in 1ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.48ms
+12:56:44 AM [express] GET /api/admin/orders 401 in 2ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 1.68ms
+1:15:19 AM [express] GET /api/admin/users 401 in 3ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 0.70ms
+1:15:20 AM [express] GET /api/admin/tickets 401 in 8ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.55ms
+1:15:20 AM [express] GET /api/admin/orders 401 in 4ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 1.25ms
+1:56:51 AM [express] GET /api/admin/users 401 in 2ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 1.72ms
+1:56:52 AM [express] GET /api/admin/tickets 401 in 13ms :: {"message":"Admin authentication required…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 1.00ms
+1:56:52 AM [express] GET /api/admin/orders 401 in 4ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 1.45ms
+2:54:32 AM [express] GET /api/admin/users 401 in 2ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 0.44ms
+2:54:32 AM [express] GET /api/admin/tickets 401 in 2ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.43ms
+2:54:32 AM [express] GET /api/admin/orders 401 in 1ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 1.27ms
+3:11:34 AM [express] GET /api/admin/users 401 in 1ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 0.49ms
+3:11:34 AM [express] GET /api/admin/tickets 401 in 1ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.52ms
+3:11:34 AM [express] GET /api/admin/orders 401 in 2ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 0.76ms
+3:29:15 AM [express] GET /api/admin/users 401 in 2ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 0.42ms
+3:29:15 AM [express] GET /api/admin/tickets 401 in 1ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.34ms
+3:29:15 AM [express] GET /api/admin/orders 401 in 1ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 4.27ms
+3:47:40 AM [express] GET /api/admin/users 401 in 5ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 0.62ms
+3:47:40 AM [express] GET /api/admin/tickets 401 in 2ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.51ms
+3:47:40 AM [express] GET /api/admin/orders 401 in 0ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 1.46ms
+4:04:29 AM [express] GET /api/admin/users 401 in 2ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 0.45ms
+4:04:29 AM [express] GET /api/admin/tickets 401 in 1ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.46ms
+4:04:29 AM [express] GET /api/admin/orders 401 in 1ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 1.24ms
+4:27:49 AM [express] GET /api/admin/users 401 in 2ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 0.50ms
+4:27:49 AM [express] GET /api/admin/tickets 401 in 1ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.45ms
+4:27:49 AM [express] GET /api/admin/orders 401 in 1ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 0.68ms
+5:08:44 AM [express] GET /api/admin/users 401 in 1ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 0.50ms
+5:08:44 AM [express] GET /api/admin/tickets 401 in 1ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.87ms
+5:08:44 AM [express] GET /api/admin/orders 401 in 2ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 1.39ms
+5:49:51 AM [express] GET /api/admin/users 401 in 2ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 1.89ms
+5:49:51 AM [express] GET /api/admin/tickets 401 in 4ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 2.70ms
+5:49:51 AM [express] GET /api/admin/orders 401 in 9ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 2.70ms
+6:08:19 AM [express] GET /api/admin/users 401 in 5ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 1.12ms
+6:08:19 AM [express] GET /api/admin/tickets 401 in 3ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 1.17ms
+6:08:19 AM [express] GET /api/admin/orders 401 in 5ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 2.09ms
+6:25:28 AM [express] GET /api/admin/users 401 in 8ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 2.34ms
+6:25:28 AM [express] GET /api/admin/tickets 401 in 4ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 2.33ms
+6:25:28 AM [express] GET /api/admin/orders 401 in 3ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 1.24ms
+6:44:42 AM [express] GET /api/admin/users 401 in 2ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 0.42ms
+6:44:42 AM [express] GET /api/admin/tickets 401 in 1ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.56ms
+6:44:42 AM [express] GET /api/admin/orders 401 in 1ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 1.44ms
+7:05:45 AM [express] GET /api/admin/users 401 in 2ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 0.41ms
+7:05:45 AM [express] GET /api/admin/tickets 401 in 1ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.41ms
+7:05:45 AM [express] GET /api/admin/orders 401 in 2ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 1.55ms
+7:27:14 AM [express] GET /api/admin/tickets 401 in 2ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.47ms
+7:27:14 AM [express] GET /api/admin/orders 401 in 2ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 0.46ms
+7:27:14 AM [express] GET /api/admin/users 401 in 1ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 1.47ms
+7:46:14 AM [express] GET /api/admin/users 401 in 2ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 0.49ms
+7:46:14 AM [express] GET /api/admin/tickets 401 in 1ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.43ms
+7:46:14 AM [express] GET /api/admin/orders 401 in 1ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 1.24ms
+8:04:29 AM [express] GET /api/admin/users 401 in 2ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 0.50ms
+8:04:29 AM [express] GET /api/admin/tickets 401 in 1ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.45ms
+8:04:30 AM [express] GET /api/admin/orders 401 in 3ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 1.92ms
+8:26:32 AM [express] GET /api/admin/users 401 in 3ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 0.42ms
+8:26:32 AM [express] GET /api/admin/tickets 401 in 2ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 1.04ms
+8:26:32 AM [express] GET /api/admin/orders 401 in 2ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 1.72ms
+8:46:10 AM [express] GET /api/admin/users 401 in 3ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 1.27ms
+8:46:10 AM [express] GET /api/admin/tickets 401 in 4ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 1.39ms
+8:46:10 AM [express] GET /api/admin/orders 401 in 5ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 2.37ms
+9:00:04 AM [express] GET /api/admin/users 401 in 3ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 1.95ms
+9:00:04 AM [express] GET /api/admin/tickets 401 in 4ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.51ms
+9:00:04 AM [express] GET /api/admin/orders 401 in 2ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 1.62ms
+9:09:50 AM [express] GET /api/admin/users 401 in 2ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 1.34ms
+9:09:50 AM [express] GET /api/admin/tickets 401 in 13ms :: {"message":"Admin authentication required…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.69ms
+9:09:50 AM [express] GET /api/admin/orders 401 in 4ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 4.84ms
+9:27:30 AM [express] GET /api/admin/users 401 in 6ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 0.48ms
+9:27:30 AM [express] GET /api/admin/tickets 401 in 1ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.63ms
+9:27:30 AM [express] GET /api/admin/orders 401 in 2ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 1.41ms
+9:46:55 AM [express] GET /api/admin/users 401 in 1ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 0.40ms
+9:46:55 AM [express] GET /api/admin/tickets 401 in 1ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.62ms
+9:46:55 AM [express] GET /api/admin/orders 401 in 1ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 1.55ms
+10:06:00 AM [express] GET /api/admin/tickets 401 in 2ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 0.42ms
+10:06:00 AM [express] GET /api/admin/users 401 in 1ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.54ms
+10:06:00 AM [express] GET /api/admin/orders 401 in 1ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 1.31ms
+10:25:43 AM [express] GET /api/admin/tickets 401 in 2ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.44ms
+10:25:43 AM [express] GET /api/admin/orders 401 in 1ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 0.41ms
+10:25:43 AM [express] GET /api/admin/users 401 in 1ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 1.27ms
+10:38:11 AM [express] GET /api/admin/users 401 in 2ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 0.54ms
+10:38:11 AM [express] GET /api/admin/tickets 401 in 3ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 1.14ms
+10:38:11 AM [express] GET /api/admin/orders 401 in 2ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 1.61ms
+11:19:26 AM [express] GET /api/admin/users 401 in 2ms :: {"message":"Admin authentication required. P…
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 0.56ms
+11:19:26 AM [express] GET /api/admin/tickets 401 in 1ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.64ms
+11:19:26 AM [express] GET /api/admin/orders 401 in 3ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/users', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/users
+[PERF] GET /admin/users - 29.63ms
+11:26:10 AM [express] GET /api/admin/users 401 in 50ms :: {"message":"Admin authentication required. …
+Authenticating request: { path: '/admin/tickets', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/tickets
+[PERF] GET /admin/tickets - 3.15ms
+11:26:10 AM [express] GET /api/admin/tickets 401 in 4ms :: {"message":"Admin authentication required.…
+Authenticating request: { path: '/admin/orders', userId: undefined, hasAuthHeader: false }
+SECURITY: Authentication required for admin route: /admin/orders
+[PERF] GET /admin/orders - 0.72ms
+11:26:10 AM [express] GET /api/admin/orders 401 in 16ms :: {"message":"Admin authentication required.…
+1:56:44 PM [vite] hmr update /src/index.css
+1:57:21 PM [vite] hmr update /src/App.tsx, /src/index.css
+1:57:30 PM [vite] hmr update /src/App.tsx, /src/index.css
+1:57:44 PM [vite] hmr update /src/App.tsx, /src/index.css
+1:57:59 PM [vite] hmr update /src/index.css
+[PERF] GET /@vite/client - 227.69ms
+[PERF] GET /@react-refresh - 1.37ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/vite/dist/client/env.mjs - 2.27ms
+[PERF] GET /src/components/ui/toaster.tsx - 80.42ms
+[PERF] GET /src/components/ui/tooltip.tsx - 1.73ms
+[PERF] GET /src/components/ErrorBoundary.tsx - 1.34ms
+[PERF] GET /src/pages/not-found.tsx - 2.21ms
+[PERF] GET /src/components/layout/Header.tsx - 1.64ms
+[PERF] GET /src/context/UserContext.tsx - 1.39ms
+[PERF] GET /src/lib/queryClient.ts - 2.99ms
+[PERF] GET /src/lib/analytics.ts - 0.21ms
+[PERF] GET /src/context/ThemeContext.tsx - 0.41ms
+[PERF] GET /src/lib/ga-analytics.ts - 2.40ms
+[PERF] GET /src/components/layout/BottomNavigation.tsx - 2.95ms
+[PERF] GET /src/components/effects/GlitchTransition.tsx - 61.18ms
+[PERF] GET /src/components/layout/RealityToggle.tsx - 1.34ms
+[PERF] GET /src/pages/LandingPage.tsx - 3.20ms
+[PERF] GET /src/components/auth/AuthModal.tsx - 2.77ms
+[PERF] GET /src/components/ui/toast.tsx - 0.44ms
+[PERF] GET /src/lib/utils.ts - 0.23ms
+[PERF] GET /src/hooks/use-toast.ts - 0.25ms
+[PERF] GET /src/components/SEOHead.tsx - 2.63ms
+[PERF] GET /src/components/ThemeToggle.tsx - 0.42ms
+[PERF] GET /src/components/ui/dropdown-menu.tsx - 0.46ms
+[PERF] GET /src/components/ui/button.tsx - 0.29ms
+[PERF] GET /src/components/ui/card.tsx - 0.40ms
+[PERF] GET /src/lib/auth-utils.ts - 0.43ms
+[PERF] GET /src/components/ui/avatar.tsx - 0.31ms
+[PERF] GET /src/assets/SGFLYERLOGO.png - 7.23ms
+[PERF] GET /src/components/home/HeroEventCarousel.tsx - 0.17ms
+[PERF] GET /src/lib/constants.ts - 0.97ms
+[PERF] GET /src/assets/videos/brand-video.mp4 - 4.85ms
+[PERF] GET /src/hooks/use-auth.ts - 0.19ms
+[PERF] GET /src/components/effects/VoidTransition.tsx - 0.11ms
+[PERF] GET /src/components/ui/dialog.tsx - 0.10ms
+[PERF] GET /src/components/ui/form.tsx - 0.14ms
+[PERF] GET /src/components/ui/input.tsx - 0.17ms
+[PERF] GET /src/components/ui/tabs.tsx - 0.18ms
+[PERF] GET /src/components/ui/badge.tsx - 0.36ms
+[PERF] GET /src/components/ui/carousel.tsx - 0.30ms
+[PERF] GET /src/lib/utils/image-utils.ts - 0.25ms
+[PERF] GET /src/lib/firebase.ts - 0.24ms
+[PERF] GET /src/lib/void-sound.ts - 0.09ms
+[PERF] GET /src/components/ui/label.tsx - 0.20ms
+[PERF] GET /index.html - 467.72ms
+[PERF] GET /index.html - 439.69ms
+[PERF] GET /sw.js - 4.48ms
+
+warn - The class `duration-[20s]` is ambiguous and matches multiple utilities.
+warn - If this is content and not a class, replace it with `duration-&lsqb;20s&rsqb;` to silence this warning.
+[PERF] GET /index.html - 2440.25ms
+[PERF] GET /index.html - 42.42ms
+[PERF] GET /index.html - 4.70ms
+2:08:33 PM [vite] ✨ new dependencies optimized: framer-motion
+2:08:33 PM [vite] ✨ optimized dependencies changed. reloading
+[PERF] GET /@vite/client - 35.76ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/vite/dist/client/env.mjs - 0.21ms
+[PERF] GET /@react-refresh - 18.02ms
+[PERF] GET /src/components/ui/toaster.tsx - 54.47ms
+[PERF] GET /src/components/ui/tooltip.tsx - 61.31ms
+[PERF] GET /src/components/layout/BottomNavigation.tsx - 167.14ms
+[PERF] GET /src/components/auth/AuthModal.tsx - 500.88ms
+[PERF] GET /src/components/SEOHead.tsx - 414.49ms
+[PERF] GET /src/context/UserContext.tsx - 117.56ms
+[PERF] GET /src/components/layout/Header.tsx - 636.21ms
+[PERF] GET /src/components/ErrorBoundary.tsx - 651.59ms
+[PERF] GET /src/pages/not-found.tsx - 547.50ms
+[PERF] GET /src/lib/queryClient.ts - 488.91ms
+[PERF] GET /src/lib/ga-analytics.ts - 289.46ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/react_jsx-dev-runtime.js - 0.41ms
+[PERF] GET /src/context/ThemeContext.tsx - 173.85ms
+[PERF] GET /src/hooks/use-toast.ts - 0.37ms
+[PERF] GET /src/components/ui/toast.tsx - 0.50ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/react.js - 0.33ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-tooltip.js - 1.22ms
+[PERF] GET /src/lib/utils.ts - 0.32ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/wouter.js - 0.30ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/lucide-react.js - 1.28ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/react-hook-form.js - 0.60ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@hookform_resolvers_zod.js - 0.21ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/zod.js - 0.80ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@tanstack_react-query.js - 0.31ms
+[PERF] GET /src/hooks/use-auth.ts - 0.25ms
+[PERF] GET /src/components/ui/dialog.tsx - 0.49ms
+[PERF] GET /src/components/ui/button.tsx - 0.42ms
+[PERF] GET /src/lib/analytics.ts - 266.88ms
+[PERF] GET /src/components/ui/form.tsx - 0.25ms
+[PERF] GET /src/components/effects/GlitchTransition.tsx - 258.35ms
+[PERF] GET /src/assets/SGFLYERLOGO.png - 0.26ms
+[PERF] GET /src/components/ui/input.tsx - 0.74ms
+[PERF] GET /src/components/ui/tabs.tsx - 0.39ms
+[PERF] GET /src/components/layout/RealityToggle.tsx - 216.84ms
+[PERF] GET /src/components/ThemeToggle.tsx - 0.55ms
+[PERF] GET /src/components/ui/dropdown-menu.tsx - 0.48ms
+[PERF] GET /src/lib/auth-utils.ts - 0.18ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-ZMLY2J2T.js - 0.34ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-4B2QHNJT.js - 0.63ms
+[PERF] GET /src/components/ui/avatar.tsx - 0.73ms
+[PERF] GET /src/components/ui/card.tsx - 0.32ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/class-variance-authority.js - 0.33ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-LJ4JPJ6Z.js - 0.27ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-FZ3EWJ2E.js - 1.87ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-toast.js - 0.77ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-WDZA43RC.js - 0.29ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-QSIPOHEG.js - 0.27ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-DX2OJG3L.js - 0.26ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-AK667T4D.js - 0.28ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-CEWN3W7Q.js - 0.45ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-3RXG37ZK.js - 0.30ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-DVHSTOKX.js - 0.51ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-GR3B7I3S.js - 0.39ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-EKUFKA4I.js - 0.33ms
+[PERF] GET /src/pages/LandingPage.tsx - 249.76ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-276SZO74.js - 2.31ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-CRNJR6QK.js - 0.29ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/clsx.js - 0.90ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/tailwind-merge.js - 0.38ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-YGCRICWC.js - 0.40ms
+[PERF] GET /src/components/ui/label.tsx - 0.27ms
+[PERF] GET /src/lib/firebase.ts - 0.57ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-dialog.js - 0.35ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-slot.js - 0.74ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/gsap.js - 1.22ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/firebase_auth.js - 0.95ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-tabs.js - 0.32ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/next-themes.js - 1.59ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-dropdown-menu.js - 0.43ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-avatar.js - 0.42ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-U7P2NEEE.js - 0.22ms
+[PERF] GET /src/assets/videos/brand-video.mp4 - 0.14ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-WM6SXSWM.js - 0.40ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/firebase_app.js - 1.93ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@radix-ui_react-label.js - 0.21ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-UDPAJ25V.js - 0.24ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-UMWMWBIR.js - 0.13ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-7YLQ65CS.js - 0.49ms
+[PERF] GET /src/lib/constants.ts - 46.72ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-V5HFRF4I.js - 0.65ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-HNIN33PS.js - 0.50ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-NNYI7QEY.js - 1.49ms
+[PERF] GET /src/components/effects/VoidTransition.tsx - 53.29ms
+[PERF] GET /src/components/home/HeroEventCarousel.tsx - 67.00ms
+[PERF] GET /src/lib/void-sound.ts - 29.41ms
+[PERF] GET /src/components/ui/badge.tsx - 3.26ms
+[PERF] GET /src/lib/utils/image-utils.ts - 16.46ms
+[PERF] GET /src/components/ui/carousel.tsx - 24.16ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/embla-carousel-react.js - 0.38ms
+[PERF] GET /index.html - 11.70ms
+[PERF] GET /index.html - 13.99ms
+[PERF] GET /index.html - 6.58ms
+[PERF] GET /index.html - 12.95ms
+[PERF] GET /index.html - 6.45ms
+[PERF] GET /sw.js - 0.79ms
+[PERF] GET /@vite/client - 1.07ms
+[PERF] GET /@react-refresh - 0.93ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/vite/dist/client/env.mjs - 0.48ms
+[PERF] GET /src/components/ui/toaster.tsx - 0.38ms
+[PERF] GET /src/components/ui/tooltip.tsx - 0.45ms
+[PERF] GET /src/components/layout/Header.tsx - 23.04ms
+[PERF] GET /src/context/UserContext.tsx - 0.45ms
+[PERF] GET /src/components/SEOHead.tsx - 0.24ms
+[PERF] GET /src/components/layout/BottomNavigation.tsx - 1.49ms
+[PERF] GET /src/lib/ga-analytics.ts - 0.47ms
+[PERF] GET /src/lib/analytics.ts - 0.50ms
+[PERF] GET /src/components/auth/AuthModal.tsx - 2.13ms
+[PERF] GET /src/context/ThemeContext.tsx - 0.53ms
+[PERF] GET /src/lib/queryClient.ts - 0.76ms
+[PERF] GET /src/components/ErrorBoundary.tsx - 0.25ms
+[PERF] GET /src/components/effects/GlitchTransition.tsx - 0.30ms
+[PERF] GET /src/components/layout/RealityToggle.tsx - 0.79ms
+[PERF] GET /src/pages/not-found.tsx - 0.59ms
+[PERF] GET /src/components/ui/toast.tsx - 0.33ms
+[PERF] GET /src/pages/LandingPage.tsx - 0.77ms
+[PERF] GET /src/lib/utils.ts - 0.33ms
+[PERF] GET /src/hooks/use-toast.ts - 0.29ms
+[PERF] GET /src/components/ThemeToggle.tsx - 0.34ms
+[PERF] GET /src/components/ui/dropdown-menu.tsx - 0.29ms
+[PERF] GET /src/components/ui/avatar.tsx - 0.16ms
+[PERF] GET /src/components/ui/button.tsx - 0.20ms
+[PERF] GET /src/assets/SGFLYERLOGO.png - 2.68ms
+[PERF] GET /src/lib/auth-utils.ts - 0.33ms
+[PERF] GET /src/hooks/use-auth.ts - 0.15ms
+[PERF] GET /src/components/ui/dialog.tsx - 0.83ms
+[PERF] GET /src/components/ui/card.tsx - 0.15ms
+[PERF] GET /src/components/ui/form.tsx - 0.14ms
+[PERF] GET /src/components/ui/input.tsx - 0.34ms
+[PERF] GET /src/components/ui/tabs.tsx - 0.29ms
+[PERF] GET /src/components/home/HeroEventCarousel.tsx - 0.14ms
+[PERF] GET /src/assets/videos/brand-video.mp4 - 0.77ms
+[PERF] GET /src/components/effects/VoidTransition.tsx - 0.37ms
+[PERF] GET /src/lib/constants.ts - 0.26ms
+[PERF] GET /src/lib/firebase.ts - 0.41ms
+[PERF] GET /src/components/ui/label.tsx - 0.15ms
+[PERF] GET /src/components/ui/badge.tsx - 0.21ms
+[PERF] GET /src/components/ui/carousel.tsx - 0.14ms
+[PERF] GET /src/lib/utils/image-utils.ts - 0.18ms
+[PERF] GET /src/lib/void-sound.ts - 0.14ms
+[PERF] GET /index.html - 30.21ms
+[PERF] GET /index.html - 34.33ms
+[PERF] GET /index.html - 8.44ms
+[PERF] GET /index.html - 2.34ms
+[PERF] GET /index.html - 2.04ms
+[PERF] GET /sw.js - 0.71ms
+[PERF] GET /index.html - 41.94ms
+[PERF] GET /@vite/client - 1.03ms
+[PERF] GET /src/main.tsx - 1.38ms
+[PERF] GET /@react-refresh - 0.89ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/vite/dist/client/env.mjs - 0.46ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/react-dom_client.js - 1.23ms
+[PERF] GET /src/App.tsx - 2.07ms
+[PERF] GET /src/lib/queryClient.ts - 2.25ms
+[PERF] GET /src/index.css - 0.59ms
+[PERF] GET /src/components/ui/toaster.tsx - 0.45ms
+[PERF] GET /src/components/ui/tooltip.tsx - 0.35ms
+[PERF] GET /src/components/SEOHead.tsx - 0.30ms
+[PERF] GET /src/pages/not-found.tsx - 1.00ms
+[PERF] GET /src/components/layout/Header.tsx - 0.29ms
+[PERF] GET /src/components/layout/BottomNavigation.tsx - 0.36ms
+[PERF] GET /src/components/auth/AuthModal.tsx - 0.34ms
+[PERF] GET /src/components/ErrorBoundary.tsx - 0.71ms
+[PERF] GET /src/context/UserContext.tsx - 0.48ms
+[PERF] GET /src/lib/ga-analytics.ts - 0.36ms
+[PERF] GET /src/lib/analytics.ts - 0.63ms
+[PERF] GET /src/context/ThemeContext.tsx - 1.11ms
+[PERF] GET /src/components/effects/GlitchTransition.tsx - 0.80ms
+[PERF] GET /src/pages/SocaNoirSplash.tsx - 2.46ms
+[PERF] GET /src/components/layout/RealityToggle.tsx - 0.37ms
+[PERF] GET /src/lib/auth-utils.ts - 1.44ms
+[PERF] GET /src/hooks/use-toast.ts - 0.31ms
+[PERF] GET /src/components/ui/toast.tsx - 0.29ms
+[PERF] GET /src/lib/utils.ts - 0.23ms
+[PERF] GET /src/hooks/use-auth.ts - 0.79ms
+[PERF] GET /src/components/ui/dialog.tsx - 0.53ms
+[PERF] GET /src/components/ui/button.tsx - 0.65ms
+[PERF] GET /src/components/ui/form.tsx - 0.58ms
+[PERF] GET /src/components/ui/input.tsx - 1.09ms
+[PERF] GET /src/components/ui/tabs.tsx - 0.24ms
+[PERF] GET /src/assets/SGFLYERLOGO.png - 0.99ms
+[PERF] GET /src/components/ui/card.tsx - 0.46ms
+[PERF] GET /src/components/ThemeToggle.tsx - 0.38ms
+[PERF] GET /src/components/ui/dropdown-menu.tsx - 0.19ms
+[PERF] GET /src/components/ui/avatar.tsx - 0.69ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/framer-motion.js - 1.88ms
+[PERF] GET /src/components/effects/VoidTransition.tsx - 0.23ms
+[PERF] GET /src/lib/firebase.ts - 0.44ms
+[PERF] GET /src/components/ui/label.tsx - 0.26ms
+[PERF] GET /src/lib/void-sound.ts - 0.16ms
+[AUDIT] 2026-03-31T18:09:42.462Z | User: anonymous | IP: 127.0.0.1 | POST /api/analytics/page-view
+Creating page view with data: {"path":"/soca-noir","userId":null,"sessionId":"1768540975833-wyxkf4870q","deviceType":"desktop","browser":"Chrome","referrer":null,"duration":null}
+[PERF] GET /src/assets/SGFLYERLOGO.png - 0.40ms
+[PERF] GET /index.html - 10.01ms
+[PERF] GET /index.html - 16.66ms
+[PERF] GET /index.html - 34.55ms
+Page view created successfully
+[PERF] POST /page-view - 801.63ms
+2:09:43 PM [express] POST /api/analytics/page-view 201 in 804ms :: {"id":29,"path":"/soca-noir","use…
+[PERF] GET /index.html - 57.60ms
+[PERF] GET /index.html - 6.25ms
+[PERF] GET /sw.js - 1.15ms
+[AUDIT] 2026-03-31T18:09:51.256Z | User: anonymous | IP: 127.0.0.1 | POST /api/analytics/page-view
+Creating page view with data: {"path":"/","userId":null,"sessionId":"1768540975833-wyxkf4870q","deviceType":"desktop","browser":"Chrome","referrer":null,"duration":null}
+[PERF] GET /index.html - 260.81ms
+Page view created successfully
+[PERF] POST /page-view - 296.02ms
+2:09:51 PM [express] POST /api/analytics/page-view 201 in 299ms :: {"id":30,"path":"/","userId":null…
+[PERF] GET /index.html - 24.61ms
+[PERF] GET /src/pages/home.tsx - 372.29ms
+[PERF] GET /src/components/home/HeroEventCarousel.tsx - 0.37ms
+[PERF] GET /index.html - 347.19ms
+[PERF] GET /src/components/home/EventsBanner.tsx - 321.71ms
+[PERF] GET /src/lib/constants.ts - 0.65ms
+[PERF] GET /src/components/ui/skeleton.tsx - 376.76ms
+[PERF] GET /src/components/ui/carousel.tsx - 0.55ms
+[PERF] GET /src/assets/videos/brand-video.mp4 - 1.00ms
+[PERF] GET /src/components/ui/badge.tsx - 0.35ms
+[PERF] GET /src/lib/utils/image-utils.ts - 0.22ms
+[PERF] GET /src/components/home/AdSpace.tsx - 242.22ms
+[PERF] GET /index.html - 147.88ms
+[PERF] GET /src/components/home/EventCard.tsx - 650.97ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/attached_assets/SGFLYERLOGO.png - 0.57ms
+[PERF] GET /src/components/ui/LazyImage.tsx - 326.47ms
+[PERF] GET /src/lib/currency.ts - 77.69ms
+[PERF] GET /src/components/events/AddToCalendarButton.tsx - 109.06ms
+[PERF] GET /src/lib/calendarService.ts - 13.06ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/react-icons_fa.js - 232.71ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/file-saver.js - 11.00ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/ics.js - 35.02ms
+[PERF] GET /src/assets/videos/brand-video.mp4 - 0.80ms
+Fetching events with status filter: all
+Fetching featured events...
+Successfully retrieved 2 events
+[PERF] GET /events - 96.93ms
+2:09:53 PM [express] GET /api/events 304 in 99ms :: [{"id":1,"title":"Test Event 2026","description"…
+[PERF] GET /livestreams/current - 25.07ms
+2:09:53 PM [express] GET /api/livestreams/current 200 in 26ms
+[PERF] GET /sponsored-content/active - 160.53ms
+2:09:53 PM [express] GET /api/sponsored-content/active 304 in 162ms :: []
+[PERF] GET /posts - 28.93ms
+2:09:53 PM [express] GET /api/posts 200 in 30ms :: []
+[PERF] GET /products/featured - 128.45ms
+2:09:53 PM [express] GET /api/products/featured 304 in 129ms :: []
+Successfully retrieved 1 featured events
+[PERF] GET /events/featured - 165.84ms
+2:09:53 PM [express] GET /api/events/featured 200 in 168ms :: [{"id":2,"title":"SOCA NOIŘ ROSE","des…
+[PERF] GET /src/assets/videos/brand-video.mp4 - 1.33ms
+[AUDIT] 2026-03-31T18:09:53.815Z | User: anonymous | IP: 127.0.0.1 | POST /api/analytics/events/2/view
+[PERF] GET /index.html - 24.91ms
+[PERF] POST /events/2/view - 161.23ms
+2:09:53 PM [express] POST /api/analytics/events/2/view 200 in 163ms :: {"id":2,"eventId":2,"views":4…
+[PERF] GET /index.html - 9.67ms
+[PERF] GET /@vite/client - 1.61ms
+[PERF] GET /src/main.tsx - 1.52ms
+[PERF] GET /@react-refresh - 0.85ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/vite/dist/client/env.mjs - 0.78ms
+[PERF] GET /src/lib/queryClient.ts - 0.99ms
+[PERF] GET /src/App.tsx - 1.38ms
+[PERF] GET /src/index.css - 1.85ms
+[PERF] GET /src/lib/auth-utils.ts - 0.27ms
+[PERF] GET /src/components/ui/toaster.tsx - 0.20ms
+[PERF] GET /src/components/ui/tooltip.tsx - 0.28ms
+[PERF] GET /src/components/layout/Header.tsx - 0.65ms
+[PERF] GET /src/components/auth/AuthModal.tsx - 0.21ms
+[PERF] GET /src/components/layout/BottomNavigation.tsx - 0.41ms
+[PERF] GET /src/components/ErrorBoundary.tsx - 0.47ms
+[PERF] GET /src/components/SEOHead.tsx - 0.43ms
+[PERF] GET /src/pages/not-found.tsx - 0.40ms
+[PERF] GET /src/context/UserContext.tsx - 0.43ms
+[PERF] GET /src/lib/ga-analytics.ts - 1.65ms
+[PERF] GET /src/lib/analytics.ts - 0.34ms
+[PERF] GET /src/components/effects/GlitchTransition.tsx - 0.34ms
+[PERF] GET /src/context/ThemeContext.tsx - 0.28ms
+[PERF] GET /src/components/layout/RealityToggle.tsx - 0.42ms
+[PERF] GET /src/pages/SocaNoirSplash.tsx - 0.29ms
+[PERF] GET /src/hooks/use-toast.ts - 1.27ms
+[PERF] GET /src/components/ui/toast.tsx - 0.35ms
+[PERF] GET /src/lib/utils.ts - 0.37ms
+[PERF] GET /src/components/ui/button.tsx - 0.47ms
+[PERF] GET /src/assets/SGFLYERLOGO.png - 0.64ms
+[PERF] GET /src/hooks/use-auth.ts - 1.77ms
+[PERF] GET /src/components/ThemeToggle.tsx - 0.63ms
+[PERF] GET /src/components/ui/dialog.tsx - 0.65ms
+[PERF] GET /src/components/ui/form.tsx - 0.24ms
+[PERF] GET /src/components/ui/input.tsx - 0.34ms
+[PERF] GET /src/components/ui/dropdown-menu.tsx - 0.46ms
+[PERF] GET /src/components/ui/card.tsx - 0.34ms
+[PERF] GET /src/components/ui/tabs.tsx - 0.85ms
+[PERF] GET /src/components/ui/avatar.tsx - 0.47ms
+[PERF] GET /src/components/effects/VoidTransition.tsx - 0.90ms
+[PERF] GET /src/lib/firebase.ts - 0.18ms
+[PERF] GET /src/components/ui/label.tsx - 1.77ms
+[PERF] GET /src/lib/void-sound.ts - 0.46ms
+[PERF] GET /src/assets/SGFLYERLOGO.png - 0.46ms
+[AUDIT] 2026-03-31T18:10:15.344Z | User: anonymous | IP: 127.0.0.1 | POST /api/analytics/page-view
+Creating page view with data: {"path":"/soca-bg.png","userId":null,"sessionId":"1768540975833-wyxkf4870q","deviceType":"desktop","browser":"Chrome","referrer":null,"duration":null}
+Page view created successfully
+[PERF] POST /page-view - 101.00ms
+2:10:15 PM [express] POST /api/analytics/page-view 201 in 106ms :: {"id":31,"path":"/soca-bg.png","u…
+[PERF] GET /index.html - 54.46ms
+[PERF] GET /index.html - 59.83ms
+[PERF] GET /index.html - 71.25ms
+[PERF] GET /index.html - 6.68ms
+[PERF] GET /index.html - 8.93ms
+[PERF] GET /sw.js - 5.98ms
+[PERF] GET /@vite/client - 0.45ms
+[PERF] GET /@react-refresh - 0.52ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/vite/dist/client/env.mjs - 0.27ms
+[PERF] GET /src/components/ui/toaster.tsx - 0.66ms
+[PERF] GET /src/components/ui/tooltip.tsx - 0.42ms
+[PERF] GET /src/components/layout/Header.tsx - 0.49ms
+[PERF] GET /src/components/layout/BottomNavigation.tsx - 0.49ms
+[PERF] GET /src/components/auth/AuthModal.tsx - 0.39ms
+[PERF] GET /src/components/ErrorBoundary.tsx - 0.45ms
+[PERF] GET /src/components/SEOHead.tsx - 0.27ms
+[PERF] GET /src/pages/not-found.tsx - 0.56ms
+[PERF] GET /src/lib/ga-analytics.ts - 0.37ms
+[PERF] GET /src/lib/queryClient.ts - 0.31ms
+[PERF] GET /src/context/UserContext.tsx - 0.34ms
+[PERF] GET /src/context/ThemeContext.tsx - 0.32ms
+[PERF] GET /src/lib/analytics.ts - 0.36ms
+[PERF] GET /src/components/effects/GlitchTransition.tsx - 0.66ms
+[PERF] GET /src/components/layout/RealityToggle.tsx - 0.41ms
+[PERF] GET /src/pages/LandingPage.tsx - 0.42ms
+[PERF] GET /src/hooks/use-toast.ts - 0.45ms
+[PERF] GET /src/components/ui/toast.tsx - 0.32ms
+[PERF] GET /src/lib/utils.ts - 0.64ms
+[PERF] GET /src/components/ThemeToggle.tsx - 0.31ms
+[PERF] GET /src/components/ui/dropdown-menu.tsx - 0.77ms
+[PERF] GET /src/components/ui/avatar.tsx - 0.25ms
+[PERF] GET /src/components/ui/button.tsx - 0.26ms
+[PERF] GET /src/assets/SGFLYERLOGO.png - 0.81ms
+[PERF] GET /src/hooks/use-auth.ts - 0.49ms
+[PERF] GET /src/components/ui/dialog.tsx - 0.27ms
+[PERF] GET /src/components/ui/form.tsx - 0.57ms
+[PERF] GET /src/components/ui/input.tsx - 0.36ms
+[PERF] GET /src/components/ui/tabs.tsx - 0.36ms
+[PERF] GET /src/components/ui/card.tsx - 0.53ms
+[PERF] GET /src/lib/auth-utils.ts - 0.22ms
+[PERF] GET /src/components/home/HeroEventCarousel.tsx - 0.14ms
+[PERF] GET /src/lib/constants.ts - 0.11ms
+[PERF] GET /src/assets/videos/brand-video.mp4 - 0.27ms
+[PERF] GET /src/components/effects/VoidTransition.tsx - 0.13ms
+[PERF] GET /src/lib/firebase.ts - 0.14ms
+[PERF] GET /src/components/ui/label.tsx - 0.33ms
+[PERF] GET /src/components/ui/badge.tsx - 0.19ms
+[PERF] GET /src/components/ui/carousel.tsx - 0.39ms
+[PERF] GET /src/lib/utils/image-utils.ts - 0.18ms
+[PERF] GET /src/lib/void-sound.ts - 0.15ms
+[PERF] GET /index.html - 11.00ms
+[PERF] GET /index.html - 11.58ms
+[PERF] GET /index.html - 5.74ms
+[PERF] GET /index.html - 3.90ms
+[PERF] GET /index.html - 3.11ms
+[PERF] GET /sw.js - 0.55ms
+[PERF] GET /index.html - 4.26ms
+[PERF] GET /@vite/client - 0.87ms
+[PERF] GET /src/main.tsx - 0.63ms
+[PERF] GET /@react-refresh - 0.31ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/vite/dist/client/env.mjs - 0.31ms
+[PERF] GET /src/lib/queryClient.ts - 0.32ms
+[PERF] GET /src/App.tsx - 0.74ms
+[PERF] GET /src/index.css - 0.47ms
+[PERF] GET /src/lib/auth-utils.ts - 0.40ms
+[PERF] GET /src/components/ui/toaster.tsx - 0.26ms
+[PERF] GET /src/components/ui/tooltip.tsx - 0.60ms
+[PERF] GET /src/components/layout/BottomNavigation.tsx - 0.25ms
+[PERF] GET /src/components/layout/Header.tsx - 2.57ms
+[PERF] GET /src/context/UserContext.tsx - 0.20ms
+[PERF] GET /src/pages/not-found.tsx - 2.49ms
+[PERF] GET /src/components/auth/AuthModal.tsx - 0.93ms
+[PERF] GET /src/lib/analytics.ts - 0.13ms
+[PERF] GET /src/context/ThemeContext.tsx - 0.13ms
+[PERF] GET /src/lib/ga-analytics.ts - 0.34ms
+[PERF] GET /src/components/ErrorBoundary.tsx - 0.23ms
+[PERF] GET /src/components/layout/RealityToggle.tsx - 1.41ms
+[PERF] GET /src/pages/SocaNoirSplash.tsx - 25.55ms
+[PERF] GET /src/components/effects/GlitchTransition.tsx - 0.31ms
+[PERF] GET /src/components/SEOHead.tsx - 0.28ms
+[PERF] GET /src/hooks/use-toast.ts - 0.26ms
+[PERF] GET /src/components/ui/toast.tsx - 1.33ms
+[PERF] GET /src/lib/utils.ts - 0.84ms
+[PERF] GET /src/components/ThemeToggle.tsx - 0.94ms
+[PERF] GET /src/components/ui/dropdown-menu.tsx - 0.51ms
+[PERF] GET /src/components/ui/avatar.tsx - 0.32ms
+[PERF] GET /src/components/ui/button.tsx - 0.34ms
+[PERF] GET /src/assets/SGFLYERLOGO.png - 0.57ms
+[PERF] GET /src/components/ui/card.tsx - 1.12ms
+[PERF] GET /src/hooks/use-auth.ts - 5.07ms
+[PERF] GET /src/components/ui/form.tsx - 0.19ms
+[PERF] GET /src/components/ui/input.tsx - 1.53ms
+[PERF] GET /src/components/ui/dialog.tsx - 0.17ms
+[PERF] GET /src/components/ui/tabs.tsx - 0.71ms
+[PERF] GET /src/components/effects/VoidTransition.tsx - 0.12ms
+[PERF] GET /src/lib/firebase.ts - 0.27ms
+[PERF] GET /src/components/ui/label.tsx - 0.12ms
+[PERF] GET /src/lib/void-sound.ts - 0.39ms
+[PERF] GET /src/assets/SGFLYERLOGO.png - 0.86ms
+[AUDIT] 2026-03-31T18:10:46.561Z | User: anonymous | IP: 127.0.0.1 | POST /api/analytics/page-view
+Creating page view with data: {"path":"/assets/images/soca-noir/bg.png","userId":null,"sessionId":"1768540975833-wyxkf4870q","deviceType":"desktop","browser":"Chrome","referrer":null,"duration":null}
+Page view created successfully
+[PERF] POST /page-view - 77.61ms
+2:10:46 PM [express] POST /api/analytics/page-view 201 in 78ms :: {"id":32,"path":"/assets/images/so…
+[PERF] GET /index.html - 13.10ms
+[PERF] GET /index.html - 6.60ms
+[PERF] GET /index.html - 4.85ms
+[PERF] GET /index.html - 10.34ms
+[PERF] GET /index.html - 7.92ms
+[PERF] GET /sw.js - 0.78ms
+2:11:11 PM [vite] hmr update /src/App.tsx, /src/index.css
+2:11:48 PM [vite] hmr update /src/App.tsx, /src/index.css
+2:12:05 PM [vite] hmr update /src/App.tsx, /src/index.css
+2:12:14 PM [vite] hmr update /src/pages/SocaNoirSplash.tsx, /src/index.css
+[PERF] GET /events/2 - 100.42ms
+2:12:29 PM [express] GET /api/events/2 200 in 101ms :: {"id":2,"title":"SOCA NOIŘ ROSE","description…
+[PERF] GET /events/2 - 756.43ms
+2:19:17 PM [express] GET /api/events/2 200 in 763ms :: {"id":2,"title":"SOCA NOIŘ ROSE","description…
+[PERF] GET /events/2 - 32.72ms
+2:19:24 PM [express] GET /api/events/2 200 in 34ms :: {"id":2,"title":"SOCA NOIŘ ROSE","description"…
+[PERF] GET /events/2 - 33.60ms
+2:19:30 PM [express] GET /api/events/2 200 in 34ms :: {"id":2,"title":"SOCA NOIŘ ROSE","description"…
+[PERF] GET /events/2 - 33.71ms
+2:19:38 PM [express] GET /api/events/2 200 in 34ms :: {"id":2,"title":"SOCA NOIŘ ROSE","description"…
+[PERF] GET /events/2 - 32.49ms
+2:19:44 PM [express] GET /api/events/2 200 in 36ms :: {"id":2,"title":"SOCA NOIŘ ROSE","description"…
+[PERF] GET /events/2 - 42.27ms
+2:19:58 PM [express] GET /api/events/2 200 in 43ms :: {"id":2,"title":"SOCA NOIŘ ROSE","description"…
+[PERF] GET /events/2 - 114.87ms
+2:20:53 PM [express] GET /api/events/2 200 in 118ms :: {"id":2,"title":"SOCA NOIŘ ROSE","description…
+[PERF] GET /favicon.ico - 22.96ms
+[PERF] GET /sw.js - 3.13ms
+[PERF] GET /index.html - 29.04ms
+[PERF] GET /@vite/client - 0.73ms
+[PERF] GET /src/main.tsx - 0.51ms
+[PERF] GET /@react-refresh - 0.61ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/vite/dist/client/env.mjs - 0.22ms
+[PERF] GET /src/lib/queryClient.ts - 0.64ms
+[PERF] GET /src/App.tsx - 1.79ms
+[PERF] GET /src/index.css - 1.06ms
+[PERF] GET /src/lib/auth-utils.ts - 1.71ms
+[PERF] GET /src/components/ui/toaster.tsx - 2.32ms
+[PERF] GET /src/components/ui/tooltip.tsx - 0.30ms
+[PERF] GET /src/components/layout/Header.tsx - 0.71ms
+[PERF] GET /src/components/ErrorBoundary.tsx - 0.44ms
+[PERF] GET /src/components/SEOHead.tsx - 1.79ms
+[PERF] GET /src/pages/not-found.tsx - 0.85ms
+[PERF] GET /src/lib/ga-analytics.ts - 1.07ms
+[PERF] GET /src/lib/analytics.ts - 1.10ms
+[PERF] GET /src/context/UserContext.tsx - 0.35ms
+[PERF] GET /src/components/layout/BottomNavigation.tsx - 0.80ms
+[PERF] GET /src/context/ThemeContext.tsx - 0.34ms
+[PERF] GET /src/pages/SocaNoirSplash.tsx - 1.51ms
+[PERF] GET /src/components/layout/RealityToggle.tsx - 0.60ms
+[PERF] GET /src/components/effects/GlitchTransition.tsx - 0.63ms
+[PERF] GET /src/components/auth/AuthModal.tsx - 1.03ms
+[PERF] GET /src/components/ui/toast.tsx - 0.69ms
+[PERF] GET /src/lib/utils.ts - 0.36ms
+[PERF] GET /src/hooks/use-toast.ts - 0.47ms
+[PERF] GET /src/components/ThemeToggle.tsx - 0.46ms
+[PERF] GET /src/components/ui/dropdown-menu.tsx - 0.42ms
+[PERF] GET /src/components/ui/avatar.tsx - 0.46ms
+[PERF] GET /src/components/ui/button.tsx - 0.29ms
+[PERF] GET /src/assets/SGFLYERLOGO.png - 0.74ms
+[PERF] GET /src/components/ui/card.tsx - 0.19ms
+[PERF] GET /src/components/effects/VoidTransition.tsx - 0.46ms
+[PERF] GET /src/hooks/use-auth.ts - 0.16ms
+[PERF] GET /src/components/ui/dialog.tsx - 0.18ms
+[PERF] GET /src/components/ui/form.tsx - 0.23ms
+[PERF] GET /src/components/ui/input.tsx - 0.14ms
+[PERF] GET /src/components/ui/tabs.tsx - 0.17ms
+[PERF] GET /src/lib/void-sound.ts - 0.25ms
+[PERF] GET /src/lib/firebase.ts - 0.47ms
+[PERF] GET /src/components/ui/label.tsx - 0.34ms
+[AUDIT] 2026-03-31T18:21:43.296Z | User: anonymous | IP: 127.0.0.1 | POST /api/analytics/page-view
+Creating page view with data: {"path":"/events/2/soca-noi-rose","userId":null,"sessionId":"1768540975833-wyxkf4870q","deviceType":"desktop","browser":"Chrome","referrer":null,"duration":null}
+[PERF] GET /src/assets/SGFLYERLOGO.png - 1.95ms
+[PERF] GET /src/pages/event-detail.tsx - 451.16ms
+Page view created successfully
+[PERF] POST /page-view - 419.33ms
+2:21:43 PM [express] POST /api/analytics/page-view 201 in 420ms :: {"id":33,"path":"/events/2/soca-n…
+[PERF] GET /src/lib/constants.ts - 2.92ms
+[PERF] GET /src/lib/utils/url-utils.ts - 1.50ms
+[PERF] GET /src/components/event/EventPageHeader.tsx - 3.35ms
+[PERF] GET /src/components/ui/skeleton.tsx - 0.27ms
+[PERF] GET /src/components/ui/badge.tsx - 0.63ms
+[PERF] GET /src/lib/utils/image-utils.ts - 0.27ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/date-fns.js - 1.01ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/attached_assets/SGFLYERLOGO.png - 0.83ms
+[PERF] GET /src/components/ui/LazyImage.tsx - 0.18ms
+[PERF] GET /src/lib/calendarService.ts - 0.17ms
+[PERF] GET /src/lib/currency.ts - 2.72ms
+[PERF] GET /src/components/social/EventReviews.tsx - 0.69ms
+[PERF] GET /src/components/ui/carousel.tsx - 0.25ms
+[PERF] GET /index.html - 8.51ms
+[PERF] GET /index.html - 77.87ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-M2L767F2.js - 0.73ms
+[PERF] GET /src/components/ui/BrandLoader.tsx - 1.34ms
+[PERF] GET /src/components/ui/textarea.tsx - 1.37ms
+[PERF] GET /index.html - 18.27ms
+[PERF] GET /index.html - 6.71ms
+[PERF] GET /index.html - 103.61ms
+[PERF] GET /events/2 - 117.75ms
+2:21:45 PM [express] GET /api/events/2 304 in 119ms :: {"id":2,"title":"SOCA NOIŘ ROSE","description…
+[PERF] GET /api/events/2/reviews - 81.73ms
+2:21:45 PM [express] GET /api/events/2/reviews 200 in 84ms :: {"reviews":[],"stats":{"averageRating"…
+[PERF] GET /index.html - 14.93ms
+[PERF] GET /index.html - 15.79ms
+[PERF] GET /Users/sg/SavageGentlemen/attached_assets/SGFLYERLOGO.png - 17.75ms
+[PERF] GET /sw.js - 1.46ms
+2:34:49 PM [vite] hmr update /src/index.css
+2:35:27 PM [vite] hmr update /src/pages/SocaNoirSplash.tsx, /src/index.css
+2:54:16 PM [vite] hmr update /src/pages/SocaNoirSplash.tsx, /src/index.css
+2:54:24 PM [vite] hmr update /src/App.tsx, /src/index.css
+2:56:29 PM [vite] hmr update /src/App.tsx, /src/index.css
+3:07:00 PM [vite] hmr update /src/App.tsx, /src/index.css
+3:07:09 PM [vite] hmr update /src/pages/SocaNoirSplash.tsx, /src/index.css
+3:20:30 PM [vite] page reload src/components/SimpleStripeCheckout.tsx
+3:35:19 PM [vite] page reload src/components/SimpleStripeCheckout.tsx
+[PERF] GET /index.html - 60.71ms
+[PERF] GET /@vite/client - 1.82ms
+[PERF] GET /src/main.tsx - 1.33ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/vite/dist/client/env.mjs - 0.37ms
+[PERF] GET /@react-refresh - 0.26ms
+
+warn - The class `duration-[30s]` is ambiguous and matches multiple utilities.
+warn - If this is content and not a class, replace it with `duration-&lsqb;30s&rsqb;` to silence this warning.
+[PERF] GET /src/index.css - 4942.57ms
+[PERF] GET /src/lib/queryClient.ts - 0.64ms
+[PERF] GET /src/lib/auth-utils.ts - 0.21ms
+[PERF] GET /src/App.tsx - 5122.46ms
+[PERF] GET /src/components/layout/BottomNavigation.tsx - 0.40ms
+[PERF] GET /src/components/ui/toaster.tsx - 0.45ms
+[PERF] GET /src/components/ui/tooltip.tsx - 0.35ms
+[PERF] GET /src/components/layout/Header.tsx - 0.62ms
+[PERF] GET /src/components/auth/AuthModal.tsx - 0.68ms
+[PERF] GET /src/components/SEOHead.tsx - 0.33ms
+[PERF] GET /src/pages/not-found.tsx - 0.25ms
+[PERF] GET /src/lib/ga-analytics.ts - 0.29ms
+[PERF] GET /src/context/UserContext.tsx - 0.97ms
+[PERF] GET /src/context/ThemeContext.tsx - 0.31ms
+[PERF] GET /src/components/ErrorBoundary.tsx - 0.53ms
+[PERF] GET /src/lib/analytics.ts - 0.28ms
+[PERF] GET /src/components/effects/GlitchTransition.tsx - 0.45ms
+[PERF] GET /src/components/layout/RealityToggle.tsx - 0.37ms
+[PERF] GET /src/lib/utils.ts - 0.31ms
+[PERF] GET /src/hooks/use-toast.ts - 0.43ms
+[PERF] GET /src/components/ui/toast.tsx - 0.53ms
+[PERF] GET /src/components/ThemeToggle.tsx - 0.34ms
+[PERF] GET /src/components/ui/dropdown-menu.tsx - 0.46ms
+[PERF] GET /src/components/ui/button.tsx - 0.58ms
+[PERF] GET /src/components/ui/avatar.tsx - 0.54ms
+[PERF] GET /src/assets/SGFLYERLOGO.png - 0.85ms
+[PERF] GET /src/hooks/use-auth.ts - 0.40ms
+[PERF] GET /src/components/ui/dialog.tsx - 0.41ms
+[PERF] GET /src/components/ui/form.tsx - 0.24ms
+[PERF] GET /src/pages/SocaNoirSplash.tsx - 343.07ms
+[PERF] GET /src/components/ui/input.tsx - 0.96ms
+[PERF] GET /src/components/ui/tabs.tsx - 1.19ms
+[PERF] GET /src/components/ui/card.tsx - 0.28ms
+[PERF] GET /src/components/effects/VoidTransition.tsx - 0.29ms
+[PERF] GET /src/lib/firebase.ts - 0.46ms
+[PERF] GET /src/components/ui/label.tsx - 0.33ms
+[PERF] GET /src/lib/void-sound.ts - 0.35ms
+[AUDIT] 2026-03-31T19:38:04.187Z | User: anonymous | IP: 127.0.0.1 | POST /api/analytics/page-view
+Creating page view with data: {"path":"/checkout","userId":null,"sessionId":"1768540975833-wyxkf4870q","deviceType":"desktop","browser":"Chrome","referrer":null,"duration":null}
+[PERF] GET /src/assets/SGFLYERLOGO.png - 7.07ms
+[PERF] GET /src/pages/checkout.tsx - 626.32ms
+Page view created successfully
+[PERF] POST /page-view - 500.72ms
+3:38:04 PM [express] POST /api/analytics/page-view 201 in 502ms :: {"id":68,"path":"/checkout","user…
+[PERF] GET /src/components/PayPalButton.tsx - 1.70ms
+[PERF] GET /src/components/SimpleStripeCheckout.tsx - 2.62ms
+[PERF] GET /src/components/ui/BrandLoader.tsx - 0.64ms
+[PERF] GET /src/components/ui/alert.tsx - 1.59ms
+[PERF] GET /index.html - 54.67ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@stripe_stripe-js.js - 0.79ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/@stripe_react-stripe-js.js - 0.80ms
+[PERF] GET /@fs/Users/sg/SavageGentlemen/node_modules/.vite/deps/chunk-XETWR5TH.js - 1.27ms
+[PERF] GET /index.html - 82.58ms
+[PERF] GET /index.html - 61.22ms
+[PERF] GET /index.html - 13.37ms
+[PERF] GET /me - 0.81ms
+3:38:05 PM [express] GET /api/me 401 in 3ms :: {"message":"Not authenticated"}
+[PERF] GET /index.html - 10.72ms
+[PERF] GET /sw.js - 1.37ms
+3:40:10 PM [vite] hmr update /src/components/PayPalButton.tsx, /src/index.css
+info: Request POST https://api-m.paypal.com/v1/oauth2/token 
+info: Request body {"type":"form","content":[{"key":"grant_type","value":"client_credentials"},{"key":"intent","value":"sdk_init"},{"key":"response_type","value":"client_token"}]}
+info: Response 401 77 application/json
+info: Response headers {"connection":"keep-alive","content-length":"77","set-cookie":"**Redacted**","server-timing":"**Redacted**","paypal-debug-id":"**Redacted**","access-control-expose-headers":"**Redacted**","content-type":"application/json","x-paypal-token-service":"**Redacted**","pragma":"no-cache","cache-control":"max-age=0, no-cache, no-store, must-revalidate","accept-ranges":"**Redacted**","via":"1.1 varnish, 1.1 varnish","edge-control":"**Redacted**","date":"Tue, 31 Mar 2026 19:40:42 GMT","strict-transport-security":"**Redacted**","x-served-by":"**Redacted**","x-cache":"**Redacted**","x-cache-hits":"**Redacted**","x-timer":"**Redacted**","vary":"Accept-Encoding"}
+/Users/sg/SavageGentlemen/node_modules/@apimatic/core/lib/errors/apiError.js:16
+        var _this = _super.call(this, message) || this;
+                           ^
+
+OAuthProviderError
+    at OAuthProviderError.ApiError [as constructor] (/Users/sg/SavageGentlemen/node_modules/@apimatic/core/lib/errors/apiError.js:16:28)
+    at new OAuthProviderError (/Users/sg/SavageGentlemen/node_modules/@paypal/paypal-server-sdk/src/errors/oAuthProviderError.ts:24:1)
+    at /Users/sg/SavageGentlemen/node_modules/@apimatic/core/lib/http/requestBuilder.js:457:31
+    at DefaultRequestBuilder.<anonymous> (/Users/sg/SavageGentlemen/node_modules/@apimatic/core/lib/http/requestBuilder.js:186:50)
+    at step (/Users/sg/SavageGentlemen/node_modules/tslib/tslib.js:196:27)
+    at Object.next (/Users/sg/SavageGentlemen/node_modules/tslib/tslib.js:177:57)
+    at fulfilled (/Users/sg/SavageGentlemen/node_modules/tslib/tslib.js:167:62)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  request: {
+    method: 'POST',
+    url: 'https://api-m.paypal.com/v1/oauth2/token',
+    headers: {
+      Authorization: 'Basic RU0yWkFUb3JGUzJEdVBkQXNIbEFnN1AxNEh5Y1BUa1I5RVk5UE1zYXJpMmhWUFM2dmhWX1RrX29LRVBSbXNURmQzdk1ac3VFVUY0bHhHaGE6UExBQ0VIT0xERVJfUExFQVNFX1VQREFURQ==',
+      'user-agent': 'PayPal REST API TypeScript SDK, Version: 1.0.0, on OS {os-info}',
+      accept: 'application/json'
+    },
+    body: {
+      type: 'form',
+      content: [
+        { key: 'grant_type', value: 'client_credentials' },
+        { key: 'intent', value: 'sdk_init' },
+        { key: 'response_type', value: 'client_token' }
+      ]
+    }
+  },
+  statusCode: 401,
+  headers: {
+    connection: 'keep-alive',
+    'content-length': '77',
+    'set-cookie': 'l7_az=ccg14.slc; Path=/; Domain=paypal.com; Expires=Tue, 31 Mar 2026 20:10:42 GMT; HttpOnly; Secure',
+    'server-timing': 'traceparent;desc="00-000000000000000000061478d3b3e528-030a216279c0ec4c-01"',
+    'paypal-debug-id': '61478d3b3e528',
+    'access-control-expose-headers': 'Server-Timing',
+    'content-type': 'application/json',
+    'x-paypal-token-service': 'IAAS',
+    pragma: 'no-cache',
+    'cache-control': 'max-age=0, no-cache, no-store, must-revalidate',
+    'accept-ranges': 'bytes',
+    via: '1.1 varnish, 1.1 varnish',
+    'edge-control': 'max-age=0',
+    date: 'Tue, 31 Mar 2026 19:40:42 GMT',
+    'strict-transport-security': 'max-age=63072000; includeSubDomains; preload',
+    'x-served-by': 'cache-iad-kiad7000049-IAD, cache-iad-kiad7000049-IAD, cache-ewr-kewr1740052-EWR',
+    'x-cache': 'MISS, MISS, MISS',
+    'x-cache-hits': '0, 0, 0',
+    'x-timer': 'S1774986042.937005,VS0,VE208',
+    vary: 'Accept-Encoding'
+  },
+  body: '{"error":"invalid_client","error_description":"Client Authentication failed"}',
+  result: [Object: null prototype] {
+    error: 'invalid_client',
+    error_description: 'Client Authentication failed'
+  }
+}
+
+Node.js v23.8.0
+npm notice
+npm notice New major version of npm available! 10.9.2 -> 11.12.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.12.1
+npm notice To update run: npm install -g npm@11.12.1
+npm notice

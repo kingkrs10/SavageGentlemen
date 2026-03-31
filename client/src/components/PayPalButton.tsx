@@ -50,7 +50,7 @@ export default function PayPalButton({
       ticketId: ticketId || undefined,   // Required for ticket-specific pricing
       ticketName: ticketName || undefined
     };
-    const response = await fetch("/payment/paypal-order", {
+    const response = await fetch("/api/payment/paypal-order", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(orderPayload),
@@ -68,7 +68,7 @@ export default function PayPalButton({
       ticketName: ticketName || undefined
     } : {};
     
-    const response = await fetch(`/payment/paypal-order/${orderId}/capture`, {
+    const response = await fetch(`/api/payment/paypal-order/${orderId}/capture`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -132,11 +132,18 @@ export default function PayPalButton({
   }, []);
   const initPayPal = async () => {
     try {
-      const clientToken: string = await fetch("/payment/paypal-setup")
-        .then((res) => res.json())
-        .then((data) => {
-          return data.clientToken;
-        });
+      console.log("Initializing PayPal with setup route...");
+      const response = await fetch("/api/payment/paypal-setup");
+      if (!response.ok) {
+        throw new Error(`PayPal setup failed with status: ${response.status}`);
+      }
+      const data = await response.json();
+      const clientToken = data.clientToken;
+      
+      if (!clientToken) {
+        throw new Error("No client token received from PayPal setup");
+      }
+
       const sdkInstance = await (window as any).paypal.createInstance({
         clientToken,
         components: ["paypal-payments"],
