@@ -164,7 +164,7 @@ import {
   InsertPassportQrCheckin
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gt, gte, sql, lte, lt, isNotNull, not } from "drizzle-orm";
+import { eq, desc, and, gt, gte, sql, lte, lt, isNotNull, not, inArray } from "drizzle-orm";
 import crypto from "crypto";
 
 // Interface for storage operations
