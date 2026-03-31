@@ -35,7 +35,7 @@ const SocaNoirSplash = () => {
     };
 
     return (
-        <div className="relative min-h-screen w-full overflow-hidden bg-[#050005] text-white font-sans">
+        <div className="fixed inset-0 z-[50] w-full min-h-screen overflow-hidden bg-[#050005] text-white font-sans">
             {/* BACKGROUND LAYER */}
             <div className="absolute inset-0 z-0">
                 {/* Main Sunset Motion Background */}

@@ -79,7 +79,8 @@ function Router() {
       </div>
     }>
       <Switch>
-        <Route path="/" component={Home} />
+        <Route path="/" component={SocaNoirSplash} />
+        <Route path="/home" component={Home} />
         <Route path="/events" component={Events} />
         <Route path="/events/:id" component={EventDetail} />
         <Route path="/events/:id/:slug" component={EventDetail} />
@@ -199,20 +200,19 @@ function AppContent() {
     }
   };
 
-  const { theme } = useTheme();
+  const isSplashPage = location === '/';
 
-  // SPLASH SCREEN MODE (Luxury)
-  // If the user is in Luxury mode, we ONLY show the Soca Noir Splash Page.
-  if (theme === 'luxury') {
+  // SPLASH SCREEN MODE (Universal Landing)
+  if (isSplashPage) {
     return (
-      <>
+      <div className="fixed inset-0 z-[9999] bg-[#050005]">
         <SEOHead
           title="SOCA NÓIR | Savage Gentlemen"
           description="Secure your early bird tickets for the ultimate Caribbean experience."
         />
         <SocaNoirSplash />
         <Toaster />
-      </>
+      </div>
     );
   }
 
@@ -261,11 +261,23 @@ export default function App() {
     <ErrorBoundary>
       <UserProvider>
         <ThemeProvider>
-          <GlitchTransition />
-          <RealityToggle />
-          <AppContent />
+          <AppWrapper />
         </ThemeProvider>
       </UserProvider>
     </ErrorBoundary>
+  );
+}
+
+function AppWrapper() {
+  const { theme } = useTheme();
+  const [location] = useLocation();
+  const isSplash = location === '/';
+
+  return (
+    <>
+      {!isSplash && <GlitchTransition />}
+      {!isSplash && <RealityToggle />}
+      <AppContent />
+    </>
   );
 }
