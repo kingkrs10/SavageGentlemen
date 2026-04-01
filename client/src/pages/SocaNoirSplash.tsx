@@ -33,22 +33,10 @@ const SocaNoirSplash = () => {
     };
 
     const handleTicketsClick = () => {
-        const checkoutUrl = "/checkout?eventId=2&ticketId=2&amount=15&currency=USD&title=SOCA%20NOIR%20ROSE";
+        const eventUrl = "/events/2";
         
-        // If we have a user (registered or guest), proceed directly
-        if (user) {
-            console.log("Splash: User exists (Guest or Registered), navigating to checkout");
-            navigate(checkoutUrl);
-        } else {
-            // No user session, trigger auth modal which has "Continue as guest"
-            console.log("Splash: No user session, opening auth modal");
-            window.dispatchEvent(new CustomEvent("sg:open-auth-modal", { 
-                detail: { 
-                    redirectPath: checkoutUrl,
-                    tab: 'login'
-                } 
-            }));
-        }
+        // Navigate directly to the event page to show all ticket options
+        navigate(eventUrl);
     };
 
     return (
