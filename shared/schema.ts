@@ -94,7 +94,7 @@ export const events = pgTable("events", {
   category: text("category"),
   featured: boolean("featured").default(false),
   organizerName: text("organizer_name").default("Savage Gentlemen"),
-  organizerEmail: text("organizer_email").default("savgmen@gmail.com"),
+  organizerEmail: text("organizer_email").default("info@savgent.com"),
   // Soca Passport fields
   isSocaPassportEnabled: boolean("is_soca_passport_enabled").default(false),
   stampPointsDefault: integer("stamp_points_default").default(50),
