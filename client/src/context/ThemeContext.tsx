@@ -16,7 +16,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Initialize from localStorage or default to 'luxury'
     const [theme, setTheme] = useState<Theme>(() => {
         const saved = localStorage.getItem('theme');
-        return (saved === 'tactical' || saved === 'luxury') ? saved : 'luxury';
+        return (saved === 'tactical' || saved === 'luxury') ? saved : 'tactical';
     });
     const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -62,9 +62,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Initial setup
     useEffect(() => {
-        document.body.classList.add('theme-luxury');
-        document.documentElement.classList.remove('dark');
-        document.documentElement.classList.add('light');
+        document.body.classList.add('theme-tactical');
+        document.documentElement.classList.remove('light');
+        document.documentElement.classList.add('dark');
     }, []);
 
     return (

@@ -334,15 +334,16 @@ export default function SimpleStripeCheckout({
       options={{ 
         clientSecret,
         appearance: { 
-          theme: 'flat',
+          theme: document.documentElement.classList.contains('dark') ? 'night' : 'flat',
           variables: {
-            colorPrimary: '#E91E63',
-            colorBackground: '#ffffff',
-            colorText: '#30313d',
+            colorPrimary: '#D4AF37', // Gold from logo/brand
+            colorBackground: document.documentElement.classList.contains('dark') ? '#0A0D14' : '#ffffff',
+            colorText: document.documentElement.classList.contains('dark') ? '#ffffff' : '#30313d',
             colorDanger: '#df1b41',
+            colorTextSecondary: document.documentElement.classList.contains('dark') ? '#a1a1aa' : '#6b7280',
             fontFamily: 'Inter, system-ui, sans-serif',
             spacingUnit: '4px',
-            borderRadius: '4px'
+            borderRadius: '8px'
           }
         }
       }}
