@@ -844,12 +844,91 @@ export default function Checkout() {
             )}
           </div>
           
-          <Tabs 
-            value={paymentMethod} 
-            onValueChange={setPaymentMethod} 
-            defaultValue="card" 
-            className="mt-6"
-          >
+          {user && user.isGuest && !user.email ? (
+            <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 p-6 rounded-lg my-6">
+              <div className="text-center mb-6">
+                <Mail className="mx-auto h-12 w-12 text-amber-500 mb-2" />
+                <h3 className="text-lg font-medium text-amber-900 dark:text-amber-100">Email Required for Tickets</h3>
+                <p className="text-amber-700 dark:text-amber-300 mt-1 text-sm">
+                  We need your email address so we can send you your ticket confirmation and QR code.
+                </p>
+              </div>
+              
+              <div className="space-y-4 max-w-sm mx-auto">
+                <div className="space-y-2">
+                  <Label htmlFor="guest-email-paid">Email Address</Label>
+                  <Input
+                    id="guest-email-paid"
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={guestEmail}
+                    onChange={(e) => {
+                      setGuestEmail(e.target.value);
+                      setEmailError('');
+                    }}
+                    className={emailError ? 'border-red-500' : ''}
+                  />
+                  {emailError && (
+                    <p className="text-sm text-red-500">{emailError}</p>
+                  )}
+                </div>
+                
+                <Button
+                  className="w-full"
+                  disabled={processingFreeTicket}
+                  onClick={async () => {
+                    if (!guestEmail.trim()) {
+                      setEmailError('Email address is required');
+                      return;
+                    }
+                    
+                    if (!guestEmail.includes('@') || !guestEmail.includes('.')) {
+                      setEmailError('Please enter a valid email address');
+                      return;
+                    }
+                    
+                    setEmailError('');
+                    setProcessingFreeTicket(true);
+                    
+                    try {
+                      const res = await fetch(`/api/users/${user.id}/profile`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: guestEmail.trim() })
+                      });
+                      
+                      if (res.ok) {
+                        // Reload the page to ensure all components get the updated user context
+                        window.location.reload();
+                      } else {
+                        const data = await res.json();
+                        setEmailError(data.message || 'Failed to save email');
+                        setProcessingFreeTicket(false);
+                      }
+                    } catch (err) {
+                      setEmailError('An error occurred. Please try again.');
+                      setProcessingFreeTicket(false);
+                    }
+                  }}
+                >
+                  {processingFreeTicket ? (
+                    <>
+                      <span className="animate-pulse">Saving...</span>
+                      <span className="ml-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                    </>
+                  ) : (
+                    "Continue to Payment"
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Tabs 
+              value={paymentMethod} 
+              onValueChange={setPaymentMethod} 
+              defaultValue="card" 
+              className="mt-6"
+            >
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="card">Credit Card</TabsTrigger>
               <TabsTrigger value="paypal">PayPal</TabsTrigger>
@@ -1024,6 +1103,7 @@ export default function Checkout() {
               </div>
             </TabsContent>
           </Tabs>
+          )}
         </CardContent>
         <CardFooter className="flex justify-between">
           <Button variant="outline" onClick={() => window.history.back()}>
