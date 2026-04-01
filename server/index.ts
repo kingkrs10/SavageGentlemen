@@ -23,7 +23,6 @@ const corsOptions = {
       'https://www.sgxmedia.com',
       /\.savgent\.com$/,
       /\.sgxmedia\.com$/,
-      /\.replit\.app$/,
       // Allow all during development, even in production mode
       ...(true ? ['http://localhost:3000', 'http://localhost:5000', /localhost/, /127.0.0.1/] : [])
     ]

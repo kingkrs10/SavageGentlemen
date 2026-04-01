@@ -133,12 +133,12 @@ function AppContent() {
   };
 
   const guestLoginMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/auth/guest", {});
+    mutationFn: async (data: { email?: string } = {}) => {
+      const res = await apiRequest("POST", "/api/auth/guest", data);
       return res.json();
     },
     onSuccess: (data) => {
-      login(data);
+      handleAuthSuccess(data);
     },
   });
 
@@ -205,7 +205,7 @@ function AppContent() {
   // SPLASH SCREEN MODE (Universal Landing)
   if (isSplashPage) {
     return (
-      <div className="fixed inset-0 z-[9999] bg-[#050005]">
+      <div className="fixed inset-0 z-[40] bg-[#050005]">
         <SEOHead
           title="SOCA NÓIR | Savage Gentlemen"
           description="Secure your early bird tickets for the ultimate Caribbean experience."

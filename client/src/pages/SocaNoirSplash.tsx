@@ -35,22 +35,24 @@ const SocaNoirSplash = () => {
     const handleTicketsClick = () => {
         const checkoutUrl = "/checkout?eventId=2&ticketId=2&amount=15&currency=USD&title=SOCA%20NOIR%20ROSE";
         
-        if (!user || user.isGuest) {
-            // Dispatch event to open auth modal with redirect path
+        // If we have a user (registered or guest), proceed directly
+        if (user) {
+            console.log("Splash: User exists (Guest or Registered), navigating to checkout");
+            navigate(checkoutUrl);
+        } else {
+            // No user session, trigger auth modal which has "Continue as guest"
+            console.log("Splash: No user session, opening auth modal");
             window.dispatchEvent(new CustomEvent("sg:open-auth-modal", { 
                 detail: { 
                     redirectPath: checkoutUrl,
                     tab: 'login'
                 } 
             }));
-        } else {
-            // Already logged in, go straight to checkout
-            navigate(checkoutUrl);
         }
     };
 
     return (
-        <div className="fixed inset-0 z-[50] w-full min-h-screen overflow-hidden bg-[#050005] text-white font-sans">
+        <div className="relative z-0 w-full min-h-screen overflow-hidden bg-[#050005] text-white font-sans">
             {/* BACKGROUND LAYER */}
             <div className="absolute inset-0 z-0">
                 {/* Main Sunset Motion Background */}
@@ -149,6 +151,7 @@ const SocaNoirSplash = () => {
                         transition={{ duration: 0.6, delay: 0.4 }}
                     >
                         <Button 
+                            id="tickets-cta-button"
                             onClick={handleTicketsClick}
                             className="relative group h-auto bg-transparent border-0 px-16 py-12 rounded-2xl transition-all duration-700 hover:scale-[1.02]"
                         >

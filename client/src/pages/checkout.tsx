@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
 import { useLocation } from 'wouter';
 import PayPalButton from '@/components/PayPalButton';
 import SimpleStripeCheckout from '@/components/SimpleStripeCheckout';
@@ -20,7 +21,7 @@ import BrandLoader from '@/components/ui/BrandLoader';
 import { User } from '@/lib/types';
 import { AlertCircle, Mail } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { getAuthHeaders, getCurrentUser as getAuthUserData } from '@/lib/auth-utils';
+import { getAuthHeaders, getCurrentUser as getAuthUserData, storeUserData } from '@/lib/auth-utils';
 
 // Stripe implementation has been moved to SimpleStripeCheckout component
 
@@ -43,6 +44,42 @@ export default function Checkout() {
   const [emailError, setEmailError] = useState('');
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+
+  // Guest login mutation
+  const guestLoginMutation = useMutation({
+    mutationFn: async (data?: { email: string }) => {
+      const res = await apiRequest("POST", "/api/auth/guest", data || {});
+      if (!res.ok) throw new Error("Guest login failed");
+      return res.json();
+    },
+    onSuccess: (userData) => {
+      console.log("Guest login successful:", userData);
+      setUser(userData);
+      
+      // Use the centralized utility to store user data and token
+      if (typeof storeUserData === 'function') {
+        storeUserData(userData);
+      } else {
+        localStorage.setItem("user", JSON.stringify({ status: "success", data: userData }));
+        if (userData.token) {
+          localStorage.setItem("authToken", userData.token);
+        }
+      }
+      
+      toast({
+        title: "Guest Session Started",
+        description: "You are now checking out as a guest.",
+      });
+    },
+    onError: (error) => {
+      console.error("Guest login error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to start guest session. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
   
   // Helper function to validate email
   const isValidEmail = (email: string) => {
@@ -63,8 +100,15 @@ export default function Checkout() {
           console.log("Checkout page: User authenticated", userData);
           setUser(userData);
           
-          // Store the user data in localStorage for persistence
-          localStorage.setItem("user", JSON.stringify(userData));
+          // Store the user data in localStorage using consistent format
+          if (typeof storeUserData === 'function') {
+            storeUserData(userData);
+          } else {
+            localStorage.setItem("user", JSON.stringify({ status: "success", data: userData }));
+            if (userData.token) {
+              localStorage.setItem("authToken", userData.token);
+            }
+          }
         } else {
           console.log("Checkout page: User not authenticated");
           // Clear localStorage to ensure consistent state
@@ -326,10 +370,73 @@ export default function Checkout() {
               >
                 Create Account
               </Button>
+              
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-gray-300 dark:border-gray-700" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white dark:bg-gray-900 px-2 text-gray-500">Or Checkout as Guest</span>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="guest-email" className="text-sm font-medium">
+                    Email Address <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input 
+                      id="guest-email" 
+                      type="email" 
+                      placeholder="Enter your email to receive tickets" 
+                      className="pl-10"
+                      value={guestEmail}
+                      onChange={(e) => {
+                        setGuestEmail(e.target.value);
+                        if (emailError) setEmailError('');
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && guestEmail && isValidEmail(guestEmail)) {
+                          guestLoginMutation.mutate({ email: guestEmail });
+                        }
+                      }}
+                    />
+                  </div>
+                  {emailError && (
+                    <p className="text-xs text-red-500 mt-1">{emailError}</p>
+                  )}
+                  <p className="text-[10px] text-gray-500 italic">
+                    Tickets will be sent to this email address. No account required.
+                  </p>
+                </div>
+
+                <Button
+                  id="guest-checkout-button"
+                  variant="secondary"
+                  className="w-full py-6 font-semibold"
+                  onClick={() => {
+                    const email = guestEmail.trim();
+                    if (!email) {
+                      setEmailError('Email is required for ticket delivery');
+                      return;
+                    }
+                    if (!isValidEmail(email)) {
+                      setEmailError('Please enter a valid email address');
+                      return;
+                    }
+                    guestLoginMutation.mutate({ email });
+                  }}
+                  disabled={guestLoginMutation.isPending || !guestEmail}
+                >
+                  {guestLoginMutation.isPending ? "Starting Guest Session..." : "Continue to Payment"}
+                </Button>
+              </div>
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Button variant="ghost" onClick={() => window.history.back()}>
+            <Button variant="ghost" className="text-sm" onClick={() => window.history.back()}>
               Back to Event
             </Button>
           </CardFooter>

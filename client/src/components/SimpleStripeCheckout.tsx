@@ -301,7 +301,7 @@ export default function SimpleStripeCheckout({
     };
     
     createIntent();
-  }, [amount, eventId, eventTitle, ticketId, ticketName, toast]);
+  }, [amount, eventId, eventTitle, ticketId, ticketName, userData, toast]);
   
   if (isLoading) {
     return (
