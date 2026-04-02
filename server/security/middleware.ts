@@ -83,29 +83,31 @@ export const securityHeaders = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.tailwindcss.com", "https://unpkg.com", "https://js.stripe.com", "https://www.paypal.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.tailwindcss.com", "https://unpkg.com", "https://js.stripe.com", "https://www.paypal.com", "https://*.stripe.com"],
+      scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://unpkg.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https://i.etsystatic.com", "https://printify.com", "https:"],
-      connectSrc: ["'self'", "ws://localhost:*", "wss://*", "https://api.stripe.com", "https://www.paypal.com", "https://fonts.googleapis.com", "https://fonts.gstatic.com", "https://unpkg.com"],
-      frameSrc: ["'self'", "https://js.stripe.com", "https://www.paypal.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+      imgSrc: ["'self'", "data:", "https://i.etsystatic.com", "https://printify.com", "https://*.stripe.com", "https://*.paypal.com", "https:"],
+      connectSrc: ["'self'", "ws://localhost:*", "wss://*", "https://api.stripe.com", "https://www.paypal.com", "https://fonts.googleapis.com", "https://fonts.gstatic.com", "https://unpkg.com", "https://*.firebaseio.com", "https://*.googleapis.com"],
+      frameSrc: ["'self'", "https://js.stripe.com", "https://www.paypal.com", "https://*.stripe.com"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: []
     }
   },
   // Hide X-Powered-By header
   hidePoweredBy: true,
+  // Cross-Origin Embedder Policy - set to false to avoid issues with third-party scripts/images
+  crossOriginEmbedderPolicy: false,
   // Set strict Transport Security for 1 year, including subdomains
   hsts: {
     maxAge: 31536000,
     includeSubDomains: true,
     preload: true
   },
-  // Do not allow the page to be framed
+  // Do not allow the page to be framed, but allow it for Stripe/Paypal if needed
   frameguard: { 
-    action: 'deny' 
+    action: 'sameorigin' 
   },
-  // Additional security settings are managed by Helmet's defaults
 });
 
 /**
@@ -141,49 +143,37 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction) 
  * Sanitize middleware to sanitize input
  */
 export const sanitizeInput = (req: Request, _res: Response, next: NextFunction) => {
-  // Function to deeply sanitize an object
-  const sanitizeObject = (obj: any): any => {
-    if (obj === null || obj === undefined) {
-      return obj;
-    }
+  // Only sanitize strings in the body, query, and params
+  // Skip sanitization for complex objects to avoid corrupting JSON 
+  // and for admin/sensitive routes where raw input is needed
+  if (req.originalUrl.includes('/api/admin/') || req.originalUrl.includes('/api/payment/')) {
+    return next();
+  }
 
-    if (typeof obj === 'string') {
-      // Basic XSS protection for strings
-      return obj
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#x27;')
-        .replace(/\//g, '&#x2F;');
-    }
-
-    if (typeof obj === 'object') {
-      if (Array.isArray(obj)) {
-        return obj.map(item => sanitizeObject(item));
-      }
-
-      const sanitized: any = {};
-      for (const [key, value] of Object.entries(obj)) {
-        sanitized[key] = sanitizeObject(value);
-      }
-      return sanitized;
-    }
-
-    return obj;
+  const sanitizeValue = (val: any): any => {
+    if (typeof val !== 'string') return val;
+    
+    // Basic protection against script tags while allowing common characters
+    return val
+      .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "")
+      .replace(/on\w+="[^"]*"/gim, "")
+      .replace(/javascript:[^"]*/gim, "");
   };
 
-  // Sanitize request body, query, and params
-  if (req.body) {
-    req.body = sanitizeObject(req.body);
-  }
+  const sanitizeDeep = (obj: any): any => {
+    if (!obj || typeof obj !== 'object') return sanitizeValue(obj);
+    if (Array.isArray(obj)) return obj.map(sanitizeDeep);
+    
+    const sanitized: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      sanitized[key] = sanitizeDeep(value);
+    }
+    return sanitized;
+  };
 
-  if (req.query) {
-    req.query = sanitizeObject(req.query);
-  }
-
-  if (req.params) {
-    req.params = sanitizeObject(req.params);
-  }
+  if (req.body) req.body = sanitizeDeep(req.body);
+  if (req.query) req.query = sanitizeDeep(req.query);
+  if (req.params) req.params = sanitizeDeep(req.params);
 
   next();
 };

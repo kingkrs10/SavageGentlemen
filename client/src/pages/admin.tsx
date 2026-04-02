@@ -35,7 +35,7 @@ interface Product {
   etsyUrl?: string | null;
 }
 
-interface Event {
+interface AdminEvent {
   id: number;
   title: string;
   date: Date | string;
@@ -331,19 +331,42 @@ export default function AdminPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/events"] }); // If exists
-      toast({ title: "Success", description: "Event deleted successfully" });
+      toast({ title: "Success", description: "AdminEvent deleted successfully" });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message || "Failed to delete event", variant: "destructive" });
     }
   });
 
-  const handleDeleteEvent = (id: number) => {
-    if (confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
-      deleteEventMutation.mutate(id);
+  const handleDeleteEvent = async (event: AdminEvent) => {
+    if (!event || !event.id) return;
+    
+    if (!confirm(`Are you sure you want to delete "${event.title}"? This will also remove all associated tickets, purchases, and analytics. This action cannot be undone.`)) return;
+
+    try {
+      const response = await apiRequest('DELETE', `/api/admin/events/${event.id}`);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to delete event');
+      }
+
+      toast({
+        title: "AdminEvent Deleted",
+        description: `"${event.title}" and all related records have been successfully removed.`,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/events"] });
+    } catch (error: any) {
+      console.error("Failed to delete event:", error);
+      toast({
+        title: "Error Deleting AdminEvent",
+        description: error.message || "Failed to delete event. Please ensure all dependent records can be removed.",
+        variant: "destructive"
+      });
     }
   };
-  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [editingEvent, setEditingEvent] = useState<AdminEvent | null>(null);
 
   React.useEffect(() => {
     // Check if user is logged in and is admin
@@ -443,7 +466,7 @@ export default function AdminPage() {
     data: events,
     isLoading: eventsLoading,
     error: eventsError
-  } = useQuery<Event[]>({
+  } = useQuery<AdminEvent[]>({
     queryKey: ["/api/events"],
   });
 
@@ -611,7 +634,7 @@ export default function AdminPage() {
     setAdUploadedVideo(null);
   };
 
-  const handleAdImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAdImageUpload = (e: React.ChangeAdminEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setAdUploadedImage(file);
@@ -621,7 +644,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleAdVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAdVideoUpload = (e: React.ChangeAdminEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setAdUploadedVideo(file);
@@ -629,7 +652,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleAdFormSubmit = async (e: React.FormEvent) => {
+  const handleAdFormSubmit = async (e: React.FormAdminEvent) => {
     e.preventDefault();
     try {
       if (editingAd) {
@@ -982,7 +1005,8 @@ export default function AdminPage() {
       const response = await apiRequest('DELETE', `/api/admin/users/${userId}`);
 
       if (!response.ok) {
-        throw new Error('Failed to delete user');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to delete user');
       }
 
       toast({
@@ -991,11 +1015,11 @@ export default function AdminPage() {
       });
 
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to delete user:", error);
       toast({
-        title: "Error",
-        description: "Failed to delete user. Please try again.",
+        title: "Error Deleting User",
+        description: error.message || "Failed to delete user. Please try again.",
         variant: "destructive"
       });
     }
@@ -1008,10 +1032,12 @@ export default function AdminPage() {
     if (!confirm(`Are you sure you want to delete ${selectedUsers.length} selected users? This action cannot be undone.`)) return;
 
     try {
-      const response = await apiRequest('DELETE', '/api/admin/users', { userIds: selectedUsers });
+      // Use 'ids' as the payload key to match most API patterns, though routes.ts handles both
+      const response = await apiRequest('DELETE', '/api/admin/users', { ids: selectedUsers });
 
       if (!response.ok) {
-        throw new Error('Failed to delete users');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to delete users');
       }
 
       toast({
@@ -1021,11 +1047,11 @@ export default function AdminPage() {
 
       setSelectedUsers([]);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to delete users in bulk:", error);
       toast({
-        title: "Error",
-        description: "Failed to delete users. Please try again.",
+        title: "Error Deleting Users",
+        description: error.message || "Failed to delete users. Please try again.",
         variant: "destructive"
       });
     }
@@ -1057,8 +1083,8 @@ export default function AdminPage() {
     }
   };
 
-  // Event edit handler
-  const handleEditEvent = (event: Event) => {
+  // AdminEvent edit handler
+  const handleEditEvent = (event: AdminEvent) => {
     setEditingEvent(event);
     const eventDate = new Date(event.date);
     const dateStr = eventDate.toISOString().split('T')[0];
@@ -1090,7 +1116,7 @@ export default function AdminPage() {
     setEventDialogOpen(true);
   };
 
-  // Event update handler
+  // AdminEvent update handler
   const handleUpdateEvent = async () => {
     if (!editingEvent) return;
 
@@ -1111,7 +1137,7 @@ export default function AdminPage() {
 
       if (!response.ok) throw new Error('Failed to update event');
 
-      toast({ title: "Event Updated", description: `Event "${eventForm.title}" updated successfully` });
+      toast({ title: "AdminEvent Updated", description: `AdminEvent "${eventForm.title}" updated successfully` });
       setEventDialogOpen(false);
       setEditingEvent(null);
       resetEventFormState();
@@ -1203,7 +1229,7 @@ export default function AdminPage() {
     return headers;
   };
 
-  // Event creation handler
+  // AdminEvent creation handler
   const handleCreateEvent = async () => {
     try {
       if (!eventForm.title || !eventForm.date || !eventForm.location) {
@@ -1223,7 +1249,7 @@ export default function AdminPage() {
       if (!response.ok) throw new Error('Failed to create event');
       await response.json();
 
-      toast({ title: "Event Created", description: `Event "${eventForm.title}" created successfully` });
+      toast({ title: "AdminEvent Created", description: `AdminEvent "${eventForm.title}" created successfully` });
       setEventDialogOpen(false);
       resetEventFormState();
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
@@ -1743,7 +1769,7 @@ export default function AdminPage() {
               <PackageOpen className="h-4 w-4" /> Products
             </TabsTrigger>
             <TabsTrigger value="events" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" /> Events
+              <Calendar className="h-4 w-4" /> AdminEvents
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" /> Users
@@ -1843,16 +1869,16 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
 
-          {/* Events Tab */}
+          {/* AdminEvents Tab */}
           <TabsContent value="events" className="space-y-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>Events</CardTitle>
+                  <CardTitle>AdminEvents</CardTitle>
                   <CardDescription>Manage events and performances</CardDescription>
                 </div>
                 <Button className="sg-btn" onClick={() => { setEditingEvent(null); resetEventFormState(); setEventDialogOpen(true); }}>
-                  <Calendar className="h-4 w-4 mr-2" /> Add Event
+                  <Calendar className="h-4 w-4 mr-2" /> Add AdminEvent
                 </Button>
               </CardHeader>
               <CardContent>
@@ -1877,7 +1903,7 @@ export default function AdminPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {events.map((event) => (
+                        {events.map((event: AdminEvent) => (
                           <TableRow key={event.id}>
                             <TableCell>
                               <div className="h-12 w-12 overflow-hidden rounded border">
@@ -1960,7 +1986,7 @@ export default function AdminPage() {
                                 <Button
                                   variant="destructive"
                                   size="sm"
-                                  onClick={() => handleDeleteEvent(event.id)}
+                                  onClick={() => handleDeleteEvent(event)}
                                 >
                                   <Trash className="h-4 w-4" />
                                 </Button>
@@ -1976,14 +2002,14 @@ export default function AdminPage() {
                     <Calendar className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                     <h3 className="text-lg font-medium">No events found</h3>
                     <p className="text-sm text-gray-500">
-                      Create your first event by clicking the "Add Event" button above.
+                      Create your first event by clicking the "Add AdminEvent" button above.
                     </p>
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Event Dialog */}
+            {/* AdminEvent Dialog */}
             <Dialog open={eventDialogOpen} onOpenChange={(open) => {
               setEventDialogOpen(open);
               if (!open) {
@@ -2010,7 +2036,7 @@ export default function AdminPage() {
               <DialogContent className="sm:max-w-[600px] bg-[#141e2e] text-white max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="text-white text-xl">
-                    {editingEvent ? 'Edit Event' : 'Create new event'}
+                    {editingEvent ? 'Edit AdminEvent' : 'Create new event'}
                   </DialogTitle>
                   <DialogDescription className="text-slate-400">
                     {editingEvent ? 'Update event details and media below.' : 'Add a new event to the system with appropriate details.'}
@@ -2019,13 +2045,13 @@ export default function AdminPage() {
 
                 <Tabs defaultValue="details" className="w-full">
                   <TabsList className="grid w-full grid-cols-2 bg-slate-800 border border-slate-700 mb-4">
-                    <TabsTrigger value="details">Event Details</TabsTrigger>
+                    <TabsTrigger value="details">AdminEvent Details</TabsTrigger>
                     <TabsTrigger value="media">Multimedia & Gallery</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="details" className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="title" className="text-white">Event Title</Label>
+                      <Label htmlFor="title" className="text-white">AdminEvent Title</Label>
                       <Input
                         id="title"
                         placeholder="Enter event title"
@@ -2121,7 +2147,7 @@ export default function AdminPage() {
                         <div className="relative rounded-lg overflow-hidden border border-slate-600">
                           <img
                             src={imagePreview || getNormalizedImageUrl(eventForm.imageUrl)}
-                            alt="Event preview"
+                            alt="AdminEvent preview"
                             className="w-full h-40 object-cover"
                           />
                           <button
@@ -2265,7 +2291,7 @@ export default function AdminPage() {
                   <TabsContent value="media" className="space-y-6">
                     {/* Main Video Section */}
                     <div className="space-y-4">
-                      <Label className="text-white flex items-center gap-2 text-lg"><Video className="h-5 w-5" /> Main Event Video</Label>
+                      <Label className="text-white flex items-center gap-2 text-lg"><Video className="h-5 w-5" /> Main AdminEvent Video</Label>
                       <Card className="bg-slate-800 border-slate-700">
                         <CardContent className="p-4 space-y-4">
                           {(eventVideoPreview || eventForm.videoUrl) ? (
@@ -2435,7 +2461,7 @@ export default function AdminPage() {
                     onClick={editingEvent ? handleUpdateEvent : handleCreateEvent}
                     className="sg-btn"
                   >
-                    {editingEvent ? 'Update Event' : 'Create Event'}
+                    {editingEvent ? 'Update AdminEvent' : 'Create AdminEvent'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -2762,12 +2788,12 @@ export default function AdminPage() {
                         </DialogDescription>
                       </DialogHeader>
 
-                      {/* Event Selection */}
+                      {/* AdminEvent Selection */}
                       <div className="mb-4">
                         <select
                           id="event"
                           className="w-full rounded-md border border-slate-600 bg-slate-700 px-3 py-2 text-sm text-white"
-                          value={selectedEventId}
+                          value={selectedEventId || ""}
                           onChange={(e) => setSelectedEventId(Number(e.target.value))}
                         >
                           {events?.map((event) => (
@@ -3188,7 +3214,7 @@ export default function AdminPage() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Name</TableHead>
-                          <TableHead>Event</TableHead>
+                          <TableHead>AdminEvent</TableHead>
                           <TableHead>Price</TableHead>
                           <TableHead>Sold</TableHead>
                           <TableHead>Remaining</TableHead>
@@ -3203,7 +3229,7 @@ export default function AdminPage() {
 
                           // Find the event name instead of just showing the ID
                           const event = events?.find(e => e.id === ticket.eventId);
-                          const eventName = event ? event.title : `Event #${ticket.eventId}`;
+                          const eventName = event ? event.title : `AdminEvent #${ticket.eventId}`;
 
                           return (
                             <TableRow key={ticket.id}>
@@ -3811,7 +3837,7 @@ export default function AdminPage() {
                       <SelectItem value="standard">Standard</SelectItem>
                       <SelectItem value="banner">Banner</SelectItem>
                       <SelectItem value="product">Product</SelectItem>
-                      <SelectItem value="event">Event</SelectItem>
+                      <SelectItem value="event">AdminEvent</SelectItem>
                       <SelectItem value="video">Video</SelectItem>
                     </SelectContent>
                   </Select>
@@ -3889,7 +3915,7 @@ export default function AdminPage() {
                   {adFormData.type === 'event' && (
                     <>
                       <div className="space-y-2">
-                        <Label htmlFor="ad-event-date">Event Date</Label>
+                        <Label htmlFor="ad-event-date">AdminEvent Date</Label>
                         <Input
                           id="ad-event-date"
                           value={adFormData.eventDate}

@@ -1026,29 +1026,7 @@ export class MemStorage implements IStorage {
     return updatedEvent;
   }
 
-  async deleteEvent(id: number): Promise<boolean> {
-    try {
-      // Check if event exists
-      const event = await this.getEvent(id);
-      if (!event) {
-        console.log(`Event with ID ${id} not found for deletion`);
-        return false;
-      }
-
-      console.log(`Deleting event with ID: ${id}`);
-
-      // Store the event in memory before deleting (for undo functionality)
-      storeDeletedEvent(event);
-
-      // Using db directly since this is a PostgreSQL implementation
-      await db.delete(events).where(eq(events.id, id));
-      console.log(`Event with ID ${id} deleted successfully`);
-      return true;
-    } catch (error) {
-      console.error(`Error deleting event with ID ${id}:`, error);
-      return false;
-    }
-  }
+  // Method removed - duplicate of DatabaseStorage implementation
 
   async getLastDeletedEvent(): Promise<{ event: Event, deletedAt: Date } | null> {
     try {
@@ -2588,34 +2566,56 @@ export class DatabaseStorage implements IStorage {
       console.log(`Starting cascade deletion for user ID ${id}`);
       
       // Delete user's related data to prevent foreign key constraints
-      // Note: Some tables have onDelete: 'cascade', but we'll explicitly handle ones that might not
       
-      // Remove from password reset tokens
+      // 1. Authentication & Security
       await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, id));
       
-      // Remove from email subscribers
+      // 2. Communications
       await db.delete(emailSubscribers).where(eq(emailSubscribers.userId, id));
       
-      // Remove from ai assistant configs
+      // 3. AI Features
       await db.delete(aiAssistantConfigs).where(eq(aiAssistantConfigs.userId, id));
-      
-      // Remove from ai chat sessions
       await db.delete(aiChatSessions).where(eq(aiChatSessions.userId, id));
+      // Note: aiChatMessages are linked to sessions, which should be handled by DB or explicit deletion if needed
       
-      // Remove from passport social shares
+      // 4. Social & Passport
       await db.delete(passportSocialShares).where(eq(passportSocialShares.userId, id));
+      await db.delete(passportStamps).where(eq(passportStamps.userId, id));
+      await db.delete(passportProfiles).where(eq(passportProfiles.userId, id));
       
-      // Remove from music mix purchases
+      // 5. Purchases & Orders
       await db.delete(musicMixPurchases).where(eq(musicMixPurchases.userId, id));
-
-      // Remove from ticket scans
+      
+      // Delete ticket scans first (references ticketId/userId)
       await db.delete(ticketScans).where(eq(ticketScans.userId, id));
+      
+      // Delete ticket purchases (references user)
+      await db.delete(ticketPurchases).where(eq(ticketPurchases.userId, id));
+      
+      // Delete order items then orders (references user)
+      const userOrders = await db.select().from(orders).where(eq(orders.userId, id));
+      const orderIds = userOrders.map(o => o.id);
+      if (orderIds.length > 0) {
+        await db.delete(orderItems).where(inArray(orderItems.orderId, orderIds));
+        await db.delete(orders).where(eq(orders.userId, id));
+      }
+      
+      // 6. Content
+      await db.delete(comments).where(eq(comments.userId, id));
+      await db.delete(chatMessages).where(eq(chatMessages.userId, id));
+      await db.delete(posts).where(eq(posts.userId, id));
+      
+      // 7. Analytics
+      await db.delete(pageViews).where(eq(pageViews.userId, id));
+      await db.delete(userEvents).where(eq(userEvents.userId, id));
+      await db.delete(mediaAccessLogs).where(eq(mediaAccessLogs.userId, id));
 
+      // 8. Finally delete the user
       const result = await db
         .delete(users)
         .where(eq(users.id, id));
 
-      console.log(`User ID ${id} deleted successfully`);
+      console.log(`User ID ${id} and all related data deleted successfully`);
       return result.rowCount > 0;
     } catch (error) {
       console.error(`Error deleting user with ID ${id}:`, error);
@@ -3006,29 +3006,37 @@ export class DatabaseStorage implements IStorage {
 
   async deleteEvent(id: number): Promise<boolean> {
     try {
-      console.log(`Starting cascade deletion for event ID ${id}`);
+      console.log(`Starting comprehensive cascade deletion for event ID ${id}`);
       
-      // 1. Delete associated tickets and their related records
+      // Get the event first for logging and undo
+      const event = await this.getEvent(id);
+      if (event) {
+        storeDeletedEvent(event);
+      }
+      
+      // 1. Handle Tickets and Scans
       const eventTickets = await db.select().from(tickets).where(eq(tickets.eventId, id));
       const ticketIds = eventTickets.map(t => t.id);
       
       if (ticketIds.length > 0) {
-        // ticketScans references ticketIds
+        // Delete scans that reference these tickets
         await db.delete(ticketScans).where(inArray(ticketScans.ticketId, ticketIds));
         
-        // enhancedTickets references ticketIds (cascaded by DB, but good to be safe)
+        // Delete enhanced ticket metadata
         await db.delete(enhancedTickets).where(inArray(enhancedTickets.ticketId, ticketIds));
+        
+        // Delete order items that reference these tickets
+        await db.delete(orderItems).where(inArray(orderItems.ticketId, ticketIds));
       }
       
-      // 2. Delete ticket purchases for this event
-      // This also clears related transfers, refunds, and addon purchases via DB cascade
+      // 2. Delete related event content
+      await db.delete(discountCodes).where(eq(discountCodes.eventId, id));
+      
+      // 3. Delete ticket purchases
       await db.delete(ticketPurchases).where(eq(ticketPurchases.eventId, id));
       
-      // 3. Delete event analytics
+      // 4. Delete analytics
       await db.delete(eventAnalytics).where(eq(eventAnalytics.eventId, id));
-      
-      // 4. Delete tickets
-      await db.delete(tickets).where(eq(tickets.eventId, id));
       
       // 5. Delete media uploads related to this event
       await db.delete(mediaUploads)
@@ -3037,16 +3045,19 @@ export class DatabaseStorage implements IStorage {
           eq(mediaUploads.relatedEntityId, id)
         ));
       
-      // 6. Finally delete the event
+      // 6. Delete the actual tickets
+      await db.delete(tickets).where(eq(tickets.eventId, id));
+      
+      // 7. Finally delete the event
       const result = await db
         .delete(events)
         .where(eq(events.id, id));
       
-      console.log(`Event ID ${id} and all related data deleted successfully`);
+      console.log(`Event ID ${id} and all dependent records deleted successfully`);
       return result.rowCount > 0;
     } catch (error) {
       console.error(`Error deleting event with ID ${id}:`, error);
-      throw error; // Throw so the route handler gets a 500 with the specific error
+      throw error; 
     }
   }
 
