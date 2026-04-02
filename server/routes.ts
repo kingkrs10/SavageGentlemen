@@ -3230,14 +3230,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ errors: parseResult.error.errors });
       }
 
-      const finalData = {
-        ...parseResult.data,
+      // Build final data — price is ALREADY in cents from above, so pass directly to DB
+      // (skip storage.updateTicket's own price conversion)
+      const finalData: Record<string, any> = {
         updatedAt: new Date()
       };
+      
+      const parsedData = parseResult.data as any;
+      for (const key of Object.keys(parsedData)) {
+        if (parsedData[key] !== undefined) {
+          finalData[key] = parsedData[key];
+        }
+      }
 
-      console.log("Processed ticket update for storage:", finalData);
+      console.log("Processed ticket update for storage (price already in cents):", finalData);
 
-      const updatedTicket = await storage.updateTicket(ticketId, finalData as any);
+      // Use direct DB update to avoid storage.updateTicket's price re-conversion
+      const updatedTicket = await storage.updateTicketDirect(ticketId, finalData);
       
       if (!updatedTicket) {
         return res.status(404).json({ message: "Ticket not found" });

@@ -740,7 +740,7 @@ export default function AdminPage() {
     // Populate the form with the ticket's data
     setTicketForm({
       name: ticket.name,
-      price: ticket.price,
+      price: ticket.price / 100,
       quantity: ticket.quantity,
       description: ticket.description || '',
       // Essential tab fields
@@ -1396,13 +1396,29 @@ export default function AdminPage() {
       }
 
       // Prepare the complete ticket data for submission
-      const ticketData = {
+      const ticketData: Record<string, any> = {
         eventId: selectedEventId,
-        ...ticketForm,
-        // Convert date strings to timestamps if needed
-        salesStartDate: ticketForm.salesStartDate ? new Date(ticketForm.salesStartDate) : null,
-        salesEndDate: ticketForm.salesEndDate ? new Date(ticketForm.salesEndDate) : null,
-        // Ensure remainingQuantity starts equal to quantity
+        name: ticketForm.name,
+        price: ticketForm.price,
+        quantity: ticketForm.quantity,
+        description: ticketForm.description || null,
+        maxPerPurchase: ticketForm.maxPerPurchase,
+        isActive: ticketForm.isActive,
+        priceType: ticketForm.priceType,
+        minPerOrder: ticketForm.minPerOrder,
+        displayRemainingQuantity: ticketForm.displayRemainingQuantity,
+        hideIfSoldOut: ticketForm.hideIfSoldOut,
+        hidePriceIfSoldOut: ticketForm.hidePriceIfSoldOut,
+        secretCode: ticketForm.secretCode || null,
+        salesStartDate: ticketForm.salesStartDate || null,
+        salesStartTime: ticketForm.salesStartTime || null,
+        salesEndDate: ticketForm.salesEndDate || null,
+        salesEndTime: ticketForm.salesEndTime || null,
+        hideBeforeSalesStart: ticketForm.hideBeforeSalesStart,
+        hideAfterSalesEnd: ticketForm.hideAfterSalesEnd,
+        lockMinQuantity: ticketForm.lockMinQuantity || null,
+        lockTicketTypeId: ticketForm.lockTicketTypeId || null,
+        status: ticketForm.status,
         remainingQuantity: ticketForm.quantity
       };
 
@@ -1417,11 +1433,20 @@ export default function AdminPage() {
         successMessage = `Ticket "${ticketForm.name}" updated successfully`;
       }
 
-      // Make API call to create or update the ticket
-      const response = await apiRequest(method, url, ticketData);
+      // Make API call to create or update the ticket — use skipErrorThrow to handle errors ourselves
+      const response = await apiRequest(method, url, ticketData, { skipErrorThrow: true });
 
       if (!response.ok) {
-        throw new Error('Failed to save ticket');
+        let errorMsg = 'Failed to save ticket';
+        try {
+          const errorData = await response.json();
+          if (errorData.errors && Array.isArray(errorData.errors)) {
+            errorMsg = errorData.errors.map((e: any) => e.message || JSON.stringify(e)).join(', ');
+          } else if (errorData.message) {
+            errorMsg = errorData.message;
+          }
+        } catch (_) { /* ignore parse error */ }
+        throw new Error(errorMsg);
       }
 
       const result = await response.json();
@@ -1448,10 +1473,8 @@ export default function AdminPage() {
         price: 0,
         quantity: 0,
         description: '',
-        // Essential tab fields
         maxPerPurchase: 4,
         isActive: true,
-        // Advanced tab fields
         priceType: 'standard',
         minPerOrder: 1,
         displayRemainingQuantity: true,
@@ -1472,13 +1495,13 @@ export default function AdminPage() {
       // Reset to Essential tab
       setActiveTab("essential");
 
-      // In a production implementation, we would invalidate the tickets query to refetch tickets
-      // queryClient.invalidateQueries(["/api/admin/tickets"]);
-    } catch (error) {
-      console.error("Failed to create ticket:", error);
+      // Invalidate tickets queries
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/tickets"] });
+    } catch (error: any) {
+      console.error("Failed to save ticket:", error);
       toast({
         title: "Error",
-        description: "Failed to create ticket. Please try again.",
+        description: error.message || "Failed to save ticket. Please try again.",
         variant: "destructive"
       });
     }

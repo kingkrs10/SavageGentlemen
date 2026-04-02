@@ -280,6 +280,7 @@ export interface IStorage {
   getTicketsByEventId(eventId: number): Promise<Ticket[]>;
   getPublicTicketsByEventId(eventId: number): Promise<Ticket[]>;
   updateTicket(id: number, ticketData: Partial<InsertTicket>): Promise<Ticket | undefined>;
+  updateTicketDirect(id: number, data: Record<string, any>): Promise<Ticket | undefined>;
 
   // Ticket purchase operations
   createTicketPurchase(ticketPurchase: InsertTicketPurchase): Promise<TicketPurchase>;
@@ -1346,6 +1347,14 @@ export class MemStorage implements IStorage {
       ...cleanedData
     };
 
+    this.tickets.set(id, updatedTicket);
+    return updatedTicket;
+  }
+
+  async updateTicketDirect(id: number, data: Record<string, any>): Promise<Ticket | undefined> {
+    const ticket = await this.getTicket(id);
+    if (!ticket) return undefined;
+    const updatedTicket: Ticket = { ...ticket, ...data };
     this.tickets.set(id, updatedTicket);
     return updatedTicket;
   }
@@ -3555,6 +3564,28 @@ export class DatabaseStorage implements IStorage {
       return updatedTicket || undefined;
     } catch (error) {
       console.error("Error updating ticket in database:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a ticket with pre-processed data (e.g., price already in cents).
+   * Unlike updateTicket, this method does NOT re-convert price or other fields.
+   */
+  async updateTicketDirect(id: number, data: Record<string, any>): Promise<Ticket | undefined> {
+    try {
+      console.log("Direct updating ticket with ID:", id, "Data:", JSON.stringify(data, null, 2));
+
+      const [updatedTicket] = await db
+        .update(tickets)
+        .set(data)
+        .where(eq(tickets.id, id))
+        .returning();
+
+      console.log("Direct update ticket result:", updatedTicket ? "Success" : "No ticket returned");
+      return updatedTicket || undefined;
+    } catch (error) {
+      console.error("Error in direct ticket update:", error);
       throw error;
     }
   }
