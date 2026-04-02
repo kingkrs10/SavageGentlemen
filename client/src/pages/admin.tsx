@@ -634,7 +634,7 @@ export default function AdminPage() {
     setAdUploadedVideo(null);
   };
 
-  const handleAdImageUpload = (e: React.ChangeAdminEvent<HTMLInputElement>) => {
+  const handleAdImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setAdUploadedImage(file);
@@ -644,7 +644,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleAdVideoUpload = (e: React.ChangeAdminEvent<HTMLInputElement>) => {
+  const handleAdVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setAdUploadedVideo(file);
@@ -652,7 +652,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleAdFormSubmit = async (e: React.FormAdminEvent) => {
+  const handleAdFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (editingAd) {
@@ -1395,7 +1395,16 @@ export default function AdminPage() {
         return;
       }
 
-      // Prepare the complete ticket data for submission
+      if (!selectedEventId) {
+        toast({
+          title: "Select an Event",
+          description: "Please select an event to create a ticket for.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Prepare the complete ticket data for submission - explicitly map all schema fields
       const ticketData: Record<string, any> = {
         eventId: selectedEventId,
         name: ticketForm.name,
@@ -1419,7 +1428,19 @@ export default function AdminPage() {
         lockMinQuantity: ticketForm.lockMinQuantity || null,
         lockTicketTypeId: ticketForm.lockTicketTypeId || null,
         status: ticketForm.status,
-        remainingQuantity: ticketForm.quantity
+        remainingQuantity: ticketForm.quantity,
+        // Additional schema fields with safe defaults
+        tierLevel: "standard",
+        benefits: [],
+        includedItems: [],
+        transferable: true,
+        refundable: false,
+        earlyAccess: false,
+        prioritySupport: false,
+        exclusiveContent: false,
+        meetGreet: false,
+        backstageAccess: false,
+        seatingPriority: "general"
       };
 
       let url = '/api/admin/tickets';

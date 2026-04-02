@@ -3149,33 +3149,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (typeof processedData.eventId === 'string') processedData.eventId = parseInt(processedData.eventId, 10);
       if (typeof processedData.minPerOrder === 'string') processedData.minPerOrder = parseInt(processedData.minPerOrder, 10);
       if (typeof processedData.maxPerPurchase === 'string') processedData.maxPerPurchase = parseInt(processedData.maxPerPurchase, 10);
+      if (typeof processedData.remainingQuantity === 'string') processedData.remainingQuantity = parseInt(processedData.remainingQuantity, 10);
+
+      // Explicitly check for valid eventId to avoid foreign key constraint errors
+      if (!processedData.eventId || isNaN(processedData.eventId)) {
+        console.error("Ticket creation failed: Missing or invalid eventId", processedData.eventId);
+        return res.status(400).json({ message: "An event must be selected for the ticket" });
+      }
 
       // Now validate with schema
       const parseResult = insertTicketSchema.safeParse(processedData);
       
       if (!parseResult.success) {
-        console.error("Ticket validation failed:", parseResult.error);
+        console.error("Ticket validation failed details:", JSON.stringify(parseResult.error.errors, null, 2));
         return res.status(400).json({ errors: parseResult.error.errors });
       }
 
       const finalData = parseResult.data;
 
-      // Ensure remainingQuantity is set to quantity on creation
-      if (finalData.quantity !== undefined) {
+      // Ensure remainingQuantity is set to quantity on creation if not provided
+      if (finalData.quantity !== undefined && finalData.remainingQuantity === undefined) {
         (finalData as any).remainingQuantity = finalData.quantity;
       }
 
-      console.log("Processed ticket data for storage:", finalData);
+      console.log("Storage layer call: createTicket with data:", JSON.stringify(finalData, null, 2));
 
       // Create the ticket
       const ticket = await storage.createTicket(finalData as any);
       return res.status(201).json(ticket);
     } catch (err) {
-      console.error("Error creating ticket:", err);
-      if (err instanceof Error) {
-        return res.status(400).json({ errors: [{ path: "server", message: err.message }] });
-      }
-      return res.status(500).json({ message: "Failed to create ticket" });
+      console.error("CRITICAL ERROR creating ticket:", err);
+      // Return the specific error message if it helps debugging
+      const errorMessage = err instanceof Error ? err.message : "Persistence failure";
+      return res.status(500).json({ message: "Internal server error", details: errorMessage });
     }
   });
 
@@ -3206,32 +3212,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update ticket
   router.put("/admin/tickets/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
-      const ticketId = parseInt(req.params.id);
-      console.log(`Updating ticket ID ${ticketId} with data:`, req.body);
+      const ticketId = parseInt(req.params.id, 10);
+      if (isNaN(ticketId)) {
+        return res.status(400).json({ message: "Invalid ticket ID" });
+      }
       
       const processedData = { ...req.body };
 
-      // Handle price conversion (dollars to cents) if provided
+      // Handle price conversion (dollars to cents) if it was sent as dollars
+      // (The front-end construction usually sends raw numbers, check carefully)
       if (processedData.price !== undefined) {
         const priceValue = typeof processedData.price === 'string' ? parseFloat(processedData.price) : processedData.price;
+        // If price is sent in dollars, convert to cents
+        // We assume frontend in admin.tsx sends dollars (e.g. 10.00)
         processedData.price = !isNaN(priceValue) ? Math.round(priceValue * 100) : 0;
       }
 
       // Handle numeric fields
       if (typeof processedData.quantity === 'string') processedData.quantity = parseInt(processedData.quantity, 10);
+      if (typeof processedData.eventId === 'string') processedData.eventId = parseInt(processedData.eventId, 10);
       if (typeof processedData.minPerOrder === 'string') processedData.minPerOrder = parseInt(processedData.minPerOrder, 10);
       if (typeof processedData.maxPerPurchase === 'string') processedData.maxPerPurchase = parseInt(processedData.maxPerPurchase, 10);
+      if (typeof processedData.remainingQuantity === 'string') processedData.remainingQuantity = parseInt(processedData.remainingQuantity, 10);
 
-      // Now validate with schema (partial for updates)
-      const parseResult = insertTicketSchema.partial().safeParse(processedData);
+      const parseResult = insertTicketSchema.safeParse(processedData);
       
       if (!parseResult.success) {
-        console.error("Ticket update validation failed:", parseResult.error);
+        console.error("Ticket update validation failed:", JSON.stringify(parseResult.error.errors, null, 2));
         return res.status(400).json({ errors: parseResult.error.errors });
       }
 
-      // Build final data — price is ALREADY in cents from above, so pass directly to DB
-      // (skip storage.updateTicket's own price conversion)
+      // Build final data
       const finalData: Record<string, any> = {
         updatedAt: new Date()
       };
@@ -3243,18 +3254,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      console.log("Processed ticket update for storage (price already in cents):", finalData);
+      console.log("Direct update call: storage.updateTicketDirect with data:", JSON.stringify(finalData, null, 2));
 
-      // Use direct DB update to avoid storage.updateTicket's price re-conversion
-      const updatedTicket = await storage.updateTicketDirect(ticketId, finalData);
-      
-      if (!updatedTicket) {
-        return res.status(404).json({ message: "Ticket not found" });
+      try {
+        // Use direct DB update to avoid storage.updateTicket's price re-conversion
+        const updatedTicket = await storage.updateTicketDirect(ticketId, finalData);
+        
+        if (!updatedTicket) {
+          return res.status(404).json({ message: "Ticket not found" });
+        }
+        
+        return res.status(200).json(updatedTicket);
+      } catch (dbErr) {
+        console.error("DATABASE ERROR updating ticket:", dbErr);
+        const errorMessage = dbErr instanceof Error ? dbErr.message : "Primary key or constraint violation";
+        return res.status(500).json({ message: "Internal server error", details: errorMessage });
       }
-      
-      return res.status(200).json(updatedTicket);
     } catch (err) {
-      console.error("Error updating ticket:", err);
+      console.error("CRITICAL ERROR in ticket update route:", err);
       return res.status(500).json({ message: "Internal server error" });
     }
   });

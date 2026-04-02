@@ -1354,7 +1354,11 @@ export class MemStorage implements IStorage {
   async updateTicketDirect(id: number, data: Record<string, any>): Promise<Ticket | undefined> {
     const ticket = await this.getTicket(id);
     if (!ticket) return undefined;
-    const updatedTicket: Ticket = { ...ticket, ...data };
+    
+    // Create a copy without the 'id' to avoid accidental primary key updates
+    const { id: _, ...dataToUpdate } = data;
+    const updatedTicket: Ticket = { ...ticket, ...dataToUpdate };
+    
     this.tickets.set(id, updatedTicket);
     return updatedTicket;
   }
@@ -3576,9 +3580,17 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log("Direct updating ticket with ID:", id, "Data:", JSON.stringify(data, null, 2));
 
+      // Create a clean update record by removing the id if it exists
+      const { id: _, updatedAt, ...restOfData } = data;
+      
+      const dataToUpdate = {
+        ...restOfData,
+        updatedAt: updatedAt || new Date()
+      };
+
       const [updatedTicket] = await db
         .update(tickets)
-        .set(data)
+        .set(dataToUpdate)
         .where(eq(tickets.id, id))
         .returning();
 
