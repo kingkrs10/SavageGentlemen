@@ -2213,6 +2213,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: 199, // $1.99 in cents
       currency: 'usd',
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: 'always',
+      },
       metadata: {
         mixId: mixId.toString(),
         mixTitle: mix.title
@@ -3657,6 +3661,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Ticket management extensions
+  router.patch("/admin/tickets/:id/status", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { isActive } = req.body;
+      
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ticket ID" });
+      
+      const success = await storage.updateTicketStatus(id, isActive);
+      if (!success) return res.status(404).json({ message: "Ticket not found" });
+      
+      return res.status(200).json({ success: true });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  router.delete("/admin/tickets/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ticket ID" });
+      
+      const success = await storage.deleteTicket(id);
+      if (!success) return res.status(404).json({ message: "Ticket not found" });
+      
+      return res.status(200).json({ success: true });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // User management
   router.get("/admin/users", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
@@ -3723,18 +3760,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email is already in use by another user" });
       }
 
-      // Update the user's email
-      const updatedUser = await storage.updateUser(userId, { email });
+      // Update the user
+      const updatedUser = await storage.updateUser(userId, { 
+        email, 
+        role: req.body.role,
+        displayName: req.body.displayName,
+        username: req.body.username
+      });
+      
       if (!updatedUser) {
-        return res.status(500).json({ message: "Failed to update user email" });
+        return res.status(500).json({ message: "Failed to update user" });
       }
 
       // Remove sensitive information
       const { password, ...userWithoutPassword } = updatedUser;
       return res.status(200).json(userWithoutPassword);
     } catch (err) {
-      console.error("Error updating user email:", err);
-      return res.status(500).json({ message: "Failed to update user email" });
+      console.error("Error updating user:", err);
+      return res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  // Bulk delete users (admin only)
+  router.delete("/admin/users", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const { ids, userIds } = req.body;
+      const targetIds = ids || userIds;
+      
+      if (!Array.isArray(targetIds) || targetIds.length === 0) {
+        return res.status(400).json({ message: "Invalid or empty user IDs list" });
+      }
+
+      console.log(`Admin user ${req.user?.id} bulk deleting users:`, targetIds);
+      const results = await storage.deleteUsersBulk(targetIds);
+      
+      return res.status(200).json({
+        success: true,
+        message: `Successfully deleted ${results.success} users, ${results.failed} failed`,
+        results
+      });
+    } catch (err) {
+      console.error("Error bulk deleting users:", err);
+      return res.status(500).json({ message: "Failed to bulk delete users" });
+    }
+  });
+
+  // Individual delete user (admin only)
+  router.delete("/admin/users/:id", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
+      console.log(`Admin user ${req.user?.id} deleting user ID: ${id}`);
+      const success = await storage.deleteUser(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "User not found or could not be deleted" });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "User deleted successfully"
+      });
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      return res.status(500).json({ message: "Failed to delete user" });
     }
   });
 
@@ -5189,6 +5281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currency: authoritativeCurrency,
         automatic_payment_methods: {
           enabled: true,
+          allow_redirects: 'always',
         },
         metadata: {
           eventId: eventId.toString(),
@@ -5337,6 +5430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currency: authoritativeCurrency,
         automatic_payment_methods: {
           enabled: true,
+          allow_redirects: 'always',
         },
         metadata: {
           eventId: eventId.toString(),

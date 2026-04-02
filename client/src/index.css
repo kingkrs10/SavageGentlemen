@@ -64,36 +64,45 @@
 
 /* Tactical Theme Override - Enforce Dark Mode */
 .theme-tactical {
-  --background: 220 10% 4%;
-  /* Slightly blue-tinted black background */
-  --foreground: 0 0% 98%;
-  --card: 220 10% 6%;
-  --card-foreground: 0 0% 98%;
-  --popover: 220 10% 4%;
-  --popover-foreground: 0 0% 98%;
+  --background: 220 10% 2%;
+  /* Pure deep black for max contrast */
+  --foreground: 0 0% 100%;
+  /* Pure white */
+  --card: 220 10% 4%;
+  --card-foreground: 0 0% 100%;
+  --popover: 220 10% 2%;
+  --popover-foreground: 0 0% 100%;
 
   /* Primary: Rich Red from logo */
-  --primary: 0 80% 30%;
+  --primary: 0 80% 45%;
+  /* Brighter red for visibility */
   --primary-foreground: 0 0% 100%;
 
   /* Secondary: Deep navy blue for contrast */
-  --secondary: 220 70% 16%;
-  --secondary-foreground: 0 0% 98%;
+  --secondary: 220 70% 20%;
+  --secondary-foreground: 0 0% 100%;
 
   /* Muted: Subtle blue-gray tones */
-  --muted: 220 10% 16%;
-  --muted-foreground: 220 5% 65%;
+  --muted: 220 10% 20%;
+  --muted-foreground: 220 10% 80%;
+  /* Much lighter for readability */
 
   /* Accent: Gold/amber color from logo */
-  --accent: 36 100% 50%;
-  --accent-foreground: 0 0% 10%;
+  --accent: 36 100% 60%;
+  /* Brighter gold */
+  --accent-foreground: 0 0% 0%;
 
   /* Utility colors */
-  --destructive: 0 70% 30%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 220 12% 18%;
-  --input: 220 12% 18%;
-  --ring: 220 70% 30%;
+  --destructive: 0 80% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 12% 25%;
+  /* Lighter border for visibility */
+  --input: 220 12% 25%;
+  --ring: 220 70% 45%;
+
+  /* Theme-specific Glass Override */
+  --glass-bg: rgba(0, 0, 0, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.15);
 }
 
 /* Modern Glassmorphism Effects */

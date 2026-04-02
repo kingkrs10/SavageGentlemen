@@ -207,6 +207,9 @@ export default function AdminPage() {
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
   const [userDialogOpen, setUserDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [activeDashboardTab, setActiveDashboardTab] = useState("products");
 
   // Ad management state
   const [isCreateAdModalOpen, setIsCreateAdModalOpen] = useState(false);
@@ -234,8 +237,8 @@ export default function AdminPage() {
   const [adUploadedImage, setAdUploadedImage] = useState<File | null>(null);
   const [adVideoPreview, setAdVideoPreview] = useState<string | null>(null);
   const [adUploadedVideo, setAdUploadedVideo] = useState<File | null>(null);
-  const [selectedEventId, setSelectedEventId] = useState<number>(1); // Default to first event for development
-  const [ticketForm, setTicketForm] = useState({
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [ticketForm, setTicketForm] = useState<any>({
     name: '',
     price: 0,
     quantity: 0,
@@ -807,33 +810,54 @@ export default function AdminPage() {
 
   const handleToggleTicketStatus = async (ticket: Ticket) => {
     try {
-      // Toggle the status
-      const newStatus = !ticket.isActive;
-
-      // Make API call to update the ticket's status
-      const response = await apiRequest('PUT', `/api/admin/tickets/${ticket.id}/toggle-status`);
+      const response = await apiRequest('PATCH', `/api/admin/tickets/${ticket.id}/status`, {
+        isActive: !ticket.isActive
+      });
 
       if (!response.ok) {
         throw new Error('Failed to update ticket status');
       }
 
-      const result = await response.json();
-
       toast({
-        title: `Ticket ${newStatus ? 'Activated' : 'Deactivated'}`,
-        description: `The ticket "${ticket.name}" is now ${newStatus ? 'active' : 'inactive'}`,
+        title: "Status Updated",
+        description: `Ticket status ${!ticket.isActive ? 'activated' : 'deactivated'} successfully`,
       });
 
       // Refresh the tickets list
-      if (selectedEventId) {
-        fetchTicketsForEvent(selectedEventId);
-      }
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/tickets"] });
     } catch (error) {
-      console.error('Error updating ticket status:', error);
+      console.error("Failed to update ticket status:", error);
       toast({
         title: "Error",
-        description: "Failed to update ticket status",
-        variant: "destructive",
+        description: "Failed to update ticket status. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteTicket = async (ticketId: number) => {
+    if (!confirm("Are you sure you want to delete this ticket? This will also remove all scan records associated with it.")) return;
+
+    try {
+      const response = await apiRequest('DELETE', `/api/admin/tickets/${ticketId}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to delete ticket');
+      }
+
+      toast({
+        title: "Ticket Deleted",
+        description: "The ticket has been successfully removed.",
+      });
+
+      // Refresh the tickets list
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/tickets"] });
+    } catch (error) {
+      console.error("Failed to delete ticket:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete ticket. Please try again.",
+        variant: "destructive"
       });
     }
   };
@@ -890,6 +914,118 @@ export default function AdminPage() {
       toast({
         title: "Error",
         description: "Failed to create user. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  // User edit handler
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    setUserForm({
+      username: user.username,
+      displayName: user.displayName || '',
+      email: user.email || '',
+      password: '', // Password not editable here
+      role: user.role
+    });
+    setUserDialogOpen(true);
+  };
+
+  // User update handler
+  const handleUpdateUser = async () => {
+    if (!editingUser) return;
+
+    try {
+      if (!userForm.username || !userForm.email) {
+        toast({
+          title: "Missing fields",
+          description: "Username and email are required",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const response = await apiRequest('PUT', `/api/admin/users/${editingUser.id}`, {
+        username: userForm.username,
+        displayName: userForm.displayName,
+        email: userForm.email,
+        role: userForm.role
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user');
+      }
+
+      toast({
+        title: "User Updated",
+        description: `User "${userForm.username}" updated successfully`,
+      });
+
+      setUserDialogOpen(false);
+      setEditingUser(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+    } catch (error) {
+      console.error("Failed to update user:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update user. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Individual user delete handler
+  const handleDeleteUser = async (userId: number) => {
+    if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
+
+    try {
+      const response = await apiRequest('DELETE', `/api/admin/users/${userId}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to delete user');
+      }
+
+      toast({
+        title: "User Deleted",
+        description: "The user has been successfully removed.",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete user. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Bulk user delete handler
+  const handleDeleteUsersBulk = async () => {
+    if (selectedUsers.length === 0) return;
+
+    if (!confirm(`Are you sure you want to delete ${selectedUsers.length} selected users? This action cannot be undone.`)) return;
+
+    try {
+      const response = await apiRequest('DELETE', '/api/admin/users', { userIds: selectedUsers });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete users');
+      }
+
+      toast({
+        title: "Users Deleted",
+        description: `${selectedUsers.length} users have been successfully removed.`,
+      });
+
+      setSelectedUsers([]);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+    } catch (error) {
+      console.error("Failed to delete users in bulk:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete users. Please try again.",
         variant: "destructive"
       });
     }
@@ -1601,7 +1737,7 @@ export default function AdminPage() {
         </div>
         <Separator />
 
-        <Tabs defaultValue="products" className="w-full" data-testid="admin-tabs">
+        <Tabs value={activeDashboardTab} onValueChange={setActiveDashboardTab} className="w-full" data-testid="admin-tabs">
           <TabsList className="grid grid-cols-10 mb-8 bg-[#141e2e] border border-slate-700">
             <TabsTrigger value="products" className="flex items-center gap-2">
               <PackageOpen className="h-4 w-4" /> Products
@@ -1814,10 +1950,10 @@ export default function AdminPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => toast({
-                                    title: "Manage Tickets",
-                                    description: "Coming soon"
-                                  })}
+                                  onClick={() => {
+                                    setSelectedEventId(event.id);
+                                    setActiveDashboardTab("tickets");
+                                  }}
                                 >
                                   Tickets
                                 </Button>
@@ -2314,9 +2450,30 @@ export default function AdminPage() {
                   <CardTitle>Users</CardTitle>
                   <CardDescription>Manage user accounts and permissions</CardDescription>
                 </div>
-                <Button className="sg-btn" onClick={() => setUserDialogOpen(true)}>
-                  <Users className="h-4 w-4 mr-2" /> Add User
-                </Button>
+                <div className="flex gap-2">
+                  {selectedUsers.length > 0 && (
+                    <Button
+                      variant="destructive"
+                      className="flex items-center gap-2"
+                      onClick={handleDeleteUsersBulk}
+                    >
+                      <Trash className="h-4 w-4" /> Delete ({selectedUsers.length})
+                    </Button>
+                  )}
+                  <Button className="sg-btn" onClick={() => {
+                    setEditingUser(null);
+                    setUserForm({
+                      username: '',
+                      displayName: '',
+                      email: '',
+                      password: '',
+                      role: 'user'
+                    });
+                    setUserDialogOpen(true);
+                  }}>
+                    <Users className="h-4 w-4 mr-2" /> Add User
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {usersLoading ? (
@@ -2330,6 +2487,18 @@ export default function AdminPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead className="w-[40px]">
+                            <Checkbox
+                              checked={users?.length > 0 && selectedUsers.length === users.length}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedUsers(users.map(u => u.id));
+                                } else {
+                                  setSelectedUsers([]);
+                                }
+                              }}
+                            />
+                          </TableHead>
                           <TableHead className="w-[50px]">Avatar</TableHead>
                           <TableHead>Username</TableHead>
                           <TableHead>Display Name</TableHead>
@@ -2341,7 +2510,19 @@ export default function AdminPage() {
                       </TableHeader>
                       <TableBody>
                         {users.map((user) => (
-                          <TableRow key={user.id}>
+                          <TableRow key={user.id} className={selectedUsers.includes(user.id) ? "bg-slate-800/50" : ""}>
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedUsers.includes(user.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSelectedUsers(prev => [...prev, user.id]);
+                                  } else {
+                                    setSelectedUsers(prev => prev.filter(id => id !== user.id));
+                                  }
+                                }}
+                              />
+                            </TableCell>
                             <TableCell>
                               <div className="h-8 w-8 overflow-hidden rounded-full border">
                                 {user.avatar ? (
@@ -2390,12 +2571,16 @@ export default function AdminPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => toast({
-                                    title: "Edit User",
-                                    description: "Coming soon"
-                                  })}
+                                  onClick={() => handleEditUser(user)}
                                 >
                                   Edit
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleDeleteUser(user.id)}
+                                >
+                                  <Trash className="h-4 w-4" />
                                 </Button>
                               </div>
                             </TableCell>
@@ -2420,9 +2605,11 @@ export default function AdminPage() {
             <Dialog open={userDialogOpen} onOpenChange={setUserDialogOpen}>
               <DialogContent className="sm:max-w-[450px] bg-[#141e2e] text-white">
                 <DialogHeader>
-                  <DialogTitle className="text-white text-xl">Create new user</DialogTitle>
+                  <DialogTitle className="text-white text-xl">
+                    {editingUser ? `Edit User: ${editingUser.username}` : 'Create new user'}
+                  </DialogTitle>
                   <DialogDescription className="text-slate-400">
-                    Add a new user to the system with appropriate permissions.
+                    {editingUser ? 'Update user profile details below.' : 'Add a new user to the system with appropriate permissions.'}
                   </DialogDescription>
                 </DialogHeader>
 
@@ -2461,17 +2648,19 @@ export default function AdminPage() {
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-white">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Enter password"
-                      className="bg-slate-700 border border-slate-600 text-white"
-                      value={userForm.password}
-                      onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-                    />
-                  </div>
+                  {!editingUser && (
+                    <div className="space-y-2">
+                      <Label htmlFor="password" className="text-white">Password</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="Enter password"
+                        className="bg-slate-700 border border-slate-600 text-white"
+                        value={userForm.password}
+                        onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                      />
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label htmlFor="role" className="text-white">Role</Label>
@@ -2495,8 +2684,8 @@ export default function AdminPage() {
                   <Button type="button" variant="outline" onClick={() => setUserDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button className="sg-btn" onClick={handleCreateUser}>
-                    Create User
+                  <Button className="sg-btn" onClick={editingUser ? handleUpdateUser : handleCreateUser}>
+                    {editingUser ? 'Update User' : 'Create User'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -2557,8 +2746,8 @@ export default function AdminPage() {
                           lockMinQuantity: null,
                           lockTicketTypeId: null
                         });
-                        // Default to the first event if available
-                        if (events && events.length > 0) {
+                        // Default to the first event if none selected
+                        if (!selectedEventId && events && events.length > 0) {
                           setSelectedEventId(events[0].id);
                         }
                       }}>
@@ -3046,6 +3235,14 @@ export default function AdminPage() {
                                     onClick={() => handleToggleTicketStatus(ticket)}
                                   >
                                     {ticket.isActive ? "Deactivate" : "Activate"}
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => handleDeleteTicket(ticket.id)}
+                                  >
+                                    <Trash className="h-4 w-4" />
                                   </Button>
                                 </div>
                               </TableCell>

@@ -10,8 +10,8 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // The sender email that will be used for all communications
 // Using a verified SendGrid sender email to bypass DNS authentication issues
-const DEFAULT_FROM_EMAIL = process.env.SENDGRID_VERIFIED_SENDER_EMAIL || 'no-reply@trial-k68zxl2jmjzgj905.mlsender.net';
-const ADMIN_EMAIL = process.env.SENDGRID_VERIFIED_SENDER_EMAIL || 'no-reply@trial-k68zxl2jmjzgj905.mlsender.net'; // Official organizer email
+const DEFAULT_FROM_EMAIL = process.env.SENDGRID_VERIFIED_SENDER_EMAIL || 'info@savgent.com';
+const ADMIN_EMAIL = process.env.SENDGRID_VERIFIED_SENDER_EMAIL || 'info@savgent.com'; // Official organizer email
 
 interface EmailOptions {
   to: string;
@@ -207,7 +207,7 @@ export const sendTicketEmail = async (
       
       <div class="footer">
         <p>This email was sent to ${userEmail} by Savage Gentlemen.</p>
-        <p>If you have any questions, please contact us at support@sgxmedia.com</p>
+        <p>If you have any questions, please contact us at info@savgent.com</p>
         <p>&copy; ${new Date().getFullYear()} Savage Gentlemen. All rights reserved.</p>
       </div>
     </body>
@@ -374,7 +374,7 @@ export const sendOrderConfirmation = async (
       
       <div class="footer">
         <p>This email was sent to ${userEmail} by Savage Gentlemen.</p>
-        <p>If you have any questions, please contact us at support@sgxmedia.com</p>
+        <p>If you have any questions, please contact us at info@savgent.com</p>
         <p>&copy; ${new Date().getFullYear()} Savage Gentlemen. All rights reserved.</p>
       </div>
     </body>
@@ -569,7 +569,7 @@ export const sendWelcomeEmail = async (
       
       <div class="footer">
         <p>This email was sent to ${userEmail} by Savage Gentlemen.</p>
-        <p>If you have any questions, please contact us at support@sgxmedia.com</p>
+        <p>If you have any questions, please contact us at info@savgent.com</p>
         <p>&copy; ${new Date().getFullYear()} Savage Gentlemen. All rights reserved.</p>
       </div>
     </body>
@@ -686,7 +686,7 @@ export const sendPasswordResetEmail = async (
       
       <div class="footer">
         <p>This email was sent to ${userEmail} by Savage Gentlemen.</p>
-        <p>If you have any questions, please contact us at support@sgxmedia.com</p>
+        <p>If you have any questions, please contact us at info@savgent.com</p>
         <p>&copy; ${new Date().getFullYear()} Savage Gentlemen. All rights reserved.</p>
       </div>
     </body>

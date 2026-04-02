@@ -2585,15 +2585,55 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUser(id: number): Promise<boolean> {
     try {
+      console.log(`Starting cascade deletion for user ID ${id}`);
+      
+      // Delete user's related data to prevent foreign key constraints
+      // Note: Some tables have onDelete: 'cascade', but we'll explicitly handle ones that might not
+      
+      // Remove from password reset tokens
+      await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, id));
+      
+      // Remove from email subscribers
+      await db.delete(emailSubscribers).where(eq(emailSubscribers.userId, id));
+      
+      // Remove from ai assistant configs
+      await db.delete(aiAssistantConfigs).where(eq(aiAssistantConfigs.userId, id));
+      
+      // Remove from ai chat sessions
+      await db.delete(aiChatSessions).where(eq(aiChatSessions.userId, id));
+      
+      // Remove from passport social shares
+      await db.delete(passportSocialShares).where(eq(passportSocialShares.userId, id));
+      
+      // Remove from music mix purchases
+      await db.delete(musicMixPurchases).where(eq(musicMixPurchases.userId, id));
+
+      // Remove from ticket scans
+      await db.delete(ticketScans).where(eq(ticketScans.userId, id));
+
       const result = await db
         .delete(users)
         .where(eq(users.id, id));
 
+      console.log(`User ID ${id} deleted successfully`);
       return result.rowCount > 0;
     } catch (error) {
       console.error(`Error deleting user with ID ${id}:`, error);
       return false;
     }
+  }
+
+  async deleteUsersBulk(ids: number[]): Promise<{success: number, failed: number}> {
+    let success = 0;
+    let failed = 0;
+    
+    for (const id of ids) {
+      const ok = await this.deleteUser(id);
+      if (ok) success++;
+      else failed++;
+    }
+    
+    return { success, failed };
   }
 
   async setUserPro(userId: number): Promise<void> {
@@ -2965,10 +3005,49 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteEvent(id: number): Promise<boolean> {
-    const result = await db
-      .delete(events)
-      .where(eq(events.id, id));
-    return result.rowCount > 0;
+    try {
+      console.log(`Starting cascade deletion for event ID ${id}`);
+      
+      // 1. Delete associated tickets and their related records
+      const eventTickets = await db.select().from(tickets).where(eq(tickets.eventId, id));
+      const ticketIds = eventTickets.map(t => t.id);
+      
+      if (ticketIds.length > 0) {
+        // ticketScans references ticketIds
+        await db.delete(ticketScans).where(inArray(ticketScans.ticketId, ticketIds));
+        
+        // enhancedTickets references ticketIds (cascaded by DB, but good to be safe)
+        await db.delete(enhancedTickets).where(inArray(enhancedTickets.ticketId, ticketIds));
+      }
+      
+      // 2. Delete ticket purchases for this event
+      // This also clears related transfers, refunds, and addon purchases via DB cascade
+      await db.delete(ticketPurchases).where(eq(ticketPurchases.eventId, id));
+      
+      // 3. Delete event analytics
+      await db.delete(eventAnalytics).where(eq(eventAnalytics.eventId, id));
+      
+      // 4. Delete tickets
+      await db.delete(tickets).where(eq(tickets.eventId, id));
+      
+      // 5. Delete media uploads related to this event
+      await db.delete(mediaUploads)
+        .where(and(
+          eq(mediaUploads.relatedEntityType, 'event'),
+          eq(mediaUploads.relatedEntityId, id)
+        ));
+      
+      // 6. Finally delete the event
+      const result = await db
+        .delete(events)
+        .where(eq(events.id, id));
+      
+      console.log(`Event ID ${id} and all related data deleted successfully`);
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error(`Error deleting event with ID ${id}:`, error);
+      throw error; // Throw so the route handler gets a 500 with the specific error
+    }
   }
 
   // Product operations
@@ -3471,13 +3550,35 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTicket(id: number): Promise<boolean> {
     try {
-      await db
+      // 1. Delete ticket scans
+      await db.delete(ticketScans).where(eq(ticketScans.ticketId, id));
+      
+      // 2. Delete enhanced ticket details
+      await db.delete(enhancedTickets).where(eq(enhancedTickets.ticketId, id));
+      
+      // 3. Delete ticket
+      const result = await db
         .delete(tickets)
         .where(eq(tickets.id, id));
 
-      return true;
+      return result.rowCount > 0;
     } catch (error) {
       console.error("Error deleting ticket:", error);
+      return false;
+    }
+  }
+
+  async updateTicketStatus(id: number, isActive: boolean): Promise<boolean> {
+    try {
+      const [updated] = await db
+        .update(tickets)
+        .set({ isActive, updatedAt: new Date() })
+        .where(eq(tickets.id, id))
+        .returning();
+      
+      return !!updated;
+    } catch (error) {
+      console.error("Error updating ticket status:", error);
       return false;
     }
   }
