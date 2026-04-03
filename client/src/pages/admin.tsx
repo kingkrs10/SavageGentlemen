@@ -1040,10 +1040,22 @@ export default function AdminPage() {
         throw new Error(errorData.message || 'Failed to delete users');
       }
 
-      toast({
-        title: "Users Deleted",
-        description: `${selectedUsers.length} users have been successfully removed.`,
-      });
+      const data = await response.json().catch(() => ({}));
+      const successCount = data.results?.success || 0;
+      const failedCount = data.results?.failed || 0;
+
+      if (failedCount > 0) {
+        toast({
+          title: "Partial Success",
+          description: `Successfully deleted ${successCount} users. ${failedCount} users could not be deleted due to dependencies.`,
+          variant: "warning" as any
+        });
+      } else {
+        toast({
+          title: "Users Deleted",
+          description: `${successCount} users have been successfully removed.`,
+        });
+      }
 
       setSelectedUsers([]);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
