@@ -89,16 +89,16 @@ const SocaNoirSplash = () => {
                     <motion.div 
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="glass-panel-sunset px-6 py-3 border-l-2 border-orange-500/50"
+                        className="glass-panel-sunset px-3 py-2 sm:px-6 sm:py-3 border-l-2 border-orange-500/50"
                     >
-                        <span className="text-[10px] md:text-xs uppercase tracking-[0.4em] font-bold text-orange-200/80">SavageGentlemen</span>
+                        <span className="text-[8px] sm:text-[10px] md:text-xs uppercase tracking-[0.2em] sm:tracking-[0.4em] font-bold text-orange-200/80">SavageGentlemen</span>
                     </motion.div>
                     <motion.div 
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="glass-panel-sunset px-6 py-3 border-r-2 border-rose-500/50"
+                        className="glass-panel-sunset px-3 py-2 sm:px-6 sm:py-3 border-r-2 border-rose-500/50"
                     >
-                        <span className="text-[10px] md:text-xs uppercase tracking-[0.4em] font-bold text-rose-200/80">KingLeo Promotions</span>
+                        <span className="text-[8px] sm:text-[10px] md:text-xs uppercase tracking-[0.2em] sm:tracking-[0.4em] font-bold text-rose-200/80">KingLeo Promotions</span>
                     </motion.div>
                 </div>
 
@@ -109,25 +109,25 @@ const SocaNoirSplash = () => {
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 1 }}
                     >
-                        <h1 className="text-6xl md:text-9xl font-black uppercase tracking-tighter leading-[0.85] [text-shadow:_0_0_40px_rgba(251,146,60,0.15)]">
+                        <h1 className="text-[2.75rem] leading-[1.1] sm:text-6xl sm:leading-[0.95] md:text-9xl md:leading-[0.85] font-black uppercase tracking-tighter [text-shadow:_0_0_40px_rgba(251,146,60,0.15)]">
                             SOCA NÓIR <br/>
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-rose-500 to-orange-400 animate-sunset-glow">
                                 RÓSÉ
                             </span>
                         </h1>
                         
-                        <div className="mt-10 flex flex-wrap gap-4 justify-center items-center">
-                            <div className="flex items-center gap-3 text-white/90 glass-panel-sunset px-6 py-3 rounded-full">
-                                <Calendar className="w-4 h-4 text-orange-400" />
-                                <span className="text-sm md:text-base uppercase tracking-widest font-bold">05.17.26</span>
+                        <div className="mt-6 md:mt-10 flex flex-wrap gap-2 md:gap-4 justify-center items-center">
+                            <div className="flex items-center gap-2 md:gap-3 text-white/90 glass-panel-sunset px-4 py-2 md:px-6 md:py-3 rounded-full">
+                                <Calendar className="w-3.5 h-3.5 md:w-4 h-4 text-orange-400" />
+                                <span className="text-xs md:text-base uppercase tracking-widest font-bold">05.17.26</span>
                             </div>
-                            <div className="flex items-center gap-3 text-white/90 glass-panel-sunset px-6 py-3 rounded-full">
-                                <Clock className="w-4 h-4 text-rose-400" />
-                                <span className="text-sm md:text-base uppercase tracking-widest font-bold">STARTS AT 6:00 PM</span>
+                            <div className="flex items-center gap-2 md:gap-3 text-white/90 glass-panel-sunset px-4 py-2 md:px-6 md:py-3 rounded-full">
+                                <Clock className="w-3.5 h-3.5 md:w-4 h-4 text-rose-400" />
+                                <span className="text-xs md:text-base uppercase tracking-widest font-bold">STARTS AT 6:00 PM</span>
                             </div>
-                            <div className="flex items-center gap-3 text-white/90 glass-panel-sunset px-6 py-3 rounded-full">
-                                <MapPin className="w-4 h-4 text-orange-500" />
-                                <span className="text-sm md:text-base uppercase tracking-widest font-bold">HOBOKEN, NJ</span>
+                            <div className="flex items-center gap-2 md:gap-3 text-white/90 glass-panel-sunset px-4 py-2 md:px-6 md:py-3 rounded-full">
+                                <MapPin className="w-3.5 h-3.5 md:w-4 h-4 text-orange-500" />
+                                <span className="text-xs md:text-base uppercase tracking-widest font-bold">HOBOKEN, NJ</span>
                             </div>
                         </div>
                     </motion.div>
@@ -141,7 +141,7 @@ const SocaNoirSplash = () => {
                         <Button 
                             id="tickets-cta-button"
                             onClick={handleTicketsClick}
-                            className="relative group h-auto bg-transparent border-0 px-16 py-12 rounded-2xl transition-all duration-700 hover:scale-[1.02]"
+                            className="relative group h-auto bg-transparent border-0 px-6 py-8 sm:px-12 sm:py-10 md:px-16 md:py-12 rounded-2xl transition-all duration-700 hover:scale-[1.02]"
                         >
                             {/* Sunset Border Effect */}
                             <div className="absolute inset-0 neon-border-sunset opacity-60 group-hover:opacity-100 transition-opacity rounded-2xl" />
@@ -150,13 +150,13 @@ const SocaNoirSplash = () => {
                             <div className="absolute inset-[1px] bg-black/60 backdrop-blur-2xl rounded-2xl z-0 border border-white/5" />
                             
                             {/* Button Content */}
-                            <div className="relative z-10 flex items-center gap-6">
-                                <div className="p-4 bg-gradient-to-br from-orange-500/20 to-rose-600/20 rounded-xl group-hover:from-orange-500/40 group-hover:to-rose-600/40 transition-all duration-500">
-                                    <Ticket className="w-8 h-8 text-white group-hover:scale-110 transition-transform" />
+                            <div className="relative z-10 flex items-center gap-4 md:gap-6">
+                                <div className="p-3 md:p-4 bg-gradient-to-br from-orange-500/20 to-rose-600/20 rounded-xl group-hover:from-orange-500/40 group-hover:to-rose-600/40 transition-all duration-500">
+                                    <Ticket className="w-6 h-6 md:w-8 h-8 text-white group-hover:scale-110 transition-transform" />
                                 </div>
                                 <div className="flex flex-col items-start text-left">
-                                    <span className="text-[10px] md:text-xs uppercase tracking-[0.4em] text-orange-400 font-black mb-1">Comfy & Fashionable</span>
-                                    <span className="text-2xl md:text-3xl font-black uppercase tracking-tight text-white group-hover:text-orange-100 transition-colors">
+                                    <span className="text-[8px] md:text-xs uppercase tracking-[0.4em] text-orange-400 font-black mb-1">Comfy & Fashionable</span>
+                                    <span className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight text-white group-hover:text-orange-100 transition-colors">
                                         Secure Early Bird Tickets
                                     </span>
                                 </div>
