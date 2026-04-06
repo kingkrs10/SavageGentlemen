@@ -470,6 +470,7 @@ export interface IStorage {
   // Promoter operations
   createPromoter(promoter: InsertPromoter): Promise<Promoter>;
   getPromoterByUserId(userId: number): Promise<Promoter | undefined>;
+  getPromoterByReferralCode(referralCode: string): Promise<Promoter | undefined>;
   getPromoter(id: number): Promise<Promoter | undefined>;
 
   // Promoter Subscription Plan operations
@@ -5345,6 +5346,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(promoters)
       .where(eq(promoters.userId, userId));
+    return promoter;
+  }
+
+  async getPromoterByReferralCode(referralCode: string): Promise<Promoter | undefined> {
+    const [promoter] = await db
+      .select()
+      .from(promoters)
+      .where(eq(promoters.referralCode, referralCode));
     return promoter;
   }
 

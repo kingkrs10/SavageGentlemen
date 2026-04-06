@@ -34,6 +34,14 @@ interface DashboardResponse {
         totalCheckins: number;
         todayCheckins: number;
         totalCreditsAwarded: number;
+        referralSales: Array<{
+            promoterId: number;
+            promoterName: string;
+            referralCode: string;
+            orderCount: number;
+            totalRevenue: number;
+            ticketCount: number;
+        }>;
     };
     checkins: CheckinData[];
 }
@@ -197,6 +205,55 @@ export default function PromoterDashboard() {
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* Referral Stats (New) */}
+                {stats.referralSales && stats.referralSales.length > 0 && (
+                    <Card className="bg-black/60 backdrop-blur-xl border-2 border-blue-500/30 mb-8 overflow-hidden shadow-lg shadow-blue-500/10">
+                        <CardHeader className="bg-blue-500/10 border-b border-blue-500/20">
+                            <CardTitle className="text-xl text-white flex items-center gap-2">
+                                <Activity className="w-5 h-5 text-blue-400" />
+                                Referral Performance
+                            </CardTitle>
+                            <CardDescription className="text-gray-400">
+                                Tracking sales attributed to specific promoters via referral codes
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="border-gray-700 bg-black/40 hover:bg-black/40">
+                                            <TableHead className="text-gray-300">Promoter</TableHead>
+                                            <TableHead className="text-gray-300">Code</TableHead>
+                                            <TableHead className="text-gray-300 text-right">Orders</TableHead>
+                                            <TableHead className="text-gray-300 text-right">Tickets</TableHead>
+                                            <TableHead className="text-gray-300 text-right">Revenue</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {stats.referralSales.map((sale) => (
+                                            <TableRow key={sale.promoterId} className="border-gray-700 hover:bg-white/5">
+                                                <TableCell className="font-bold text-white">
+                                                    {sale.promoterName}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30 font-mono">
+                                                        {sale.referralCode}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right text-gray-300">{sale.orderCount}</TableCell>
+                                                <TableCell className="text-right text-gray-300">{sale.ticketCount}</TableCell>
+                                                <TableCell className="text-right font-black text-green-400">
+                                                    ${(sale.totalRevenue / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Attendee List */}
                 <Card className="bg-black/60 backdrop-blur-xl border-2 border-gray-700/50">

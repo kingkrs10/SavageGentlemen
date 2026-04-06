@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { GlitchTransition } from "@/components/effects/GlitchTransition";
 import { RealityToggle } from "@/components/layout/RealityToggle";
+import { useReferral } from "@/hooks/use-referral";
 import LandingPage from "@/pages/LandingPage";
 import SocaNoirSplash from "@/pages/SocaNoirSplash";
 
@@ -93,7 +94,7 @@ function Router() {
         <Route path="/checkout" component={Checkout} />
         <Route path="/payment-success" component={PaymentSuccess} />
         <Route path="/admin" component={Admin} />
-        <Route path="/admin/media" component={AdminMedia} />
+        <Route path="/admin/media" component={(props: any) => <AdminMedia {...props} />} />
         <Route path="/password-reset" component={PasswordReset} />
         <Route path="/analytics" component={AnalyticsDashboard} />
         <Route path="/my-tickets" component={MyTickets} />
@@ -126,6 +127,7 @@ function AppContent() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user, login, logout } = useUser();
   const [location] = useLocation();
+  useReferral(); // Initialize referral tracking
 
   const isSocaPassportRoute = () => {
     return location.startsWith('/socapassport') ||
@@ -217,7 +219,7 @@ function AppContent() {
             isOpen={showAuthModal}
             onClose={() => setShowAuthModal(false)}
             onAuthSuccess={handleAuthSuccess}
-            onGuestLogin={() => guestLoginMutation.mutate()}
+            onGuestLogin={() => guestLoginMutation.mutate({})}
           />
         )}
         
@@ -255,7 +257,7 @@ function AppContent() {
               isOpen={showAuthModal}
               onClose={() => setShowAuthModal(false)}
               onAuthSuccess={handleAuthSuccess}
-              onGuestLogin={() => guestLoginMutation.mutate()}
+              onGuestLogin={() => guestLoginMutation.mutate({})}
             />
           )}
 

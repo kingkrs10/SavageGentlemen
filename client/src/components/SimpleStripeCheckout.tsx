@@ -4,6 +4,7 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from 'wouter';
+import { useReferral } from '@/hooks/use-referral';
 import { User } from '@/lib/types';
 import { apiRequest } from "@/lib/queryClient";
 
@@ -184,6 +185,7 @@ export default function SimpleStripeCheckout({
   userData?: User | null;
 }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const { getReferralCode } = useReferral();
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   
@@ -237,7 +239,8 @@ export default function SimpleStripeCheckout({
           eventId: eventId,   // Required for server pricing validation
           eventTitle: eventTitle,
           ticketId: ticketId, // Required for ticket-specific pricing
-          ticketName: ticketName
+          ticketName: ticketName,
+          referralCode: getReferralCode() // Include referral code for promoter tracking
           // REMOVED: amount - server validates pricing from database
           // REMOVED: items - server generates from validated data
         });
@@ -249,7 +252,8 @@ export default function SimpleStripeCheckout({
             eventId: eventId,   // Required for server pricing validation
             eventTitle: eventTitle,
             ticketId: ticketId, // Required for ticket-specific pricing
-            ticketName: ticketName
+            ticketName: ticketName,
+            referralCode: getReferralCode() // Include referral code for promoter tracking
             // REMOVED: amount - server validates pricing from database
             // REMOVED: items - server generates from validated data
           });

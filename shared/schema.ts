@@ -667,6 +667,7 @@ export const orders = pgTable("orders", {
   paymentMethod: text("payment_method"), // stripe, paypal, bitcoin
   paymentId: text("payment_id"), // ID from payment provider
   discountCodeId: integer("discount_code_id"),
+  promoterId: integer("promoter_id").references(() => promoters.id, { onDelete: "set null" }), // Track sales by promoter
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -678,6 +679,7 @@ export const insertOrderSchema = createInsertSchema(orders).pick({
   paymentMethod: true,
   paymentId: true,
   discountCodeId: true,
+  promoterId: true,
 });
 
 // Order Items schema
@@ -1752,6 +1754,7 @@ export const promoters = pgTable("promoters", {
   locationCountry: text("location_country"), // ISO country code (e.g., "US", "TT", "CA")
   websiteOrSocial: text("website_or_social"),
   eventTypes: text("event_types"), // Comma-separated or JSON string
+  referralCode: text("referral_code").unique(), // Unique code for link tracking (e.g. SAVAGE10)
   status: text("status").notNull().default("PENDING"), // PENDING, APPROVED, REJECTED
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -1877,6 +1880,7 @@ export const insertPromoterSchema = createInsertSchema(promoters)
     locationCountry: z.string().length(2, 'Country code must be 2 characters').optional(),
     websiteOrSocial: z.string().max(255).optional(),
     eventTypes: z.string().max(255).optional(),
+    referralCode: z.string().max(30).optional(),
   });
 
 // Event Passport Billing Insert Schema

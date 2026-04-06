@@ -22,6 +22,7 @@ import { User } from '@/lib/types';
 import { AlertCircle, Mail } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getAuthHeaders, getCurrentUser as getAuthUserData, storeUserData } from '@/lib/auth-utils';
+import { useReferral } from '@/hooks/use-referral';
 
 // Stripe implementation has been moved to SimpleStripeCheckout component
 
@@ -44,6 +45,7 @@ export default function Checkout() {
   const [emailError, setEmailError] = useState('');
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { getReferralCode } = useReferral();
 
   // Guest login mutation
   const guestLoginMutation = useMutation({
@@ -604,7 +606,8 @@ export default function Checkout() {
                         ticketId: ticketId,
                         ticketName: ticketName,
                         // Include guest email for ticket delivery
-                        guestEmail: user.isGuest ? (guestEmail || user.email) : undefined
+                        guestEmail: user.isGuest ? (guestEmail || user.email) : undefined,
+                        referralCode: getReferralCode() // Include referral code for promoter tracking
                       };
                       
                       // Get standardized authentication headers from our utility

@@ -163,6 +163,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register promoter dashboard routes
   router.use("/passport/promoter", promoterDashboardRouter);
 
+  // Look up promoter if referral code is provided helper function for create-intent
+  const getPromoterIdFromReferralCode = async (code: string) => {
+    if (!code) return null;
+    try {
+      const promoter = await storage.getPromoterByReferralCode(code);
+      return promoter ? promoter.id : null;
+    } catch (error) {
+      console.error('Error looking up promoter by referral code helper:', error);
+      return null;
+    }
+  };
+
   // Promoter Subscription Routes
   router.get("/promoter-subscriptions/plans", getAvailablePlans);
   router.get("/promoter-subscriptions/status", verifyFirebaseToken, getPromoterSubscriptionStatus);
@@ -4672,7 +4684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Request body:", req.body);
       console.log("Request headers:", req.headers);
 
-      const { eventId, eventTitle, guestEmail } = req.body;
+      const { eventId, eventTitle, guestEmail, referralCode } = req.body;
 
       // More flexible authentication for free tickets
       let user = null;
@@ -4801,7 +4813,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalAmount: 0,
         status: 'completed',
         paymentMethod: 'free',
-        paymentId: `free-${Date.now()}`
+        paymentId: `free-${Date.now()}`,
+        promoterId: await getPromoterIdFromReferralCode(referralCode)
       });
 
       // Check if ticketId was provided in the request
@@ -4940,7 +4953,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Request body:", req.body);
       console.log("Request headers:", req.headers);
 
-      const { eventId, eventTitle, guestEmail } = req.body;
+      const { eventId, eventTitle, guestEmail, referralCode } = req.body;
 
       // More flexible authentication for free tickets
       let user = null;
@@ -5051,7 +5064,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalAmount: 0,
         status: 'completed',
         paymentMethod: 'free',
-        paymentId: `free-${Date.now()}`
+        paymentId: `free-${Date.now()}`,
+        promoterId: await getPromoterIdFromReferralCode(referralCode)
       });
 
       // Check if ticketId was provided in the request
@@ -5201,7 +5215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         eventId,
         eventTitle,
         ticketId,
-        ticketName,
+        ticketName, referralCode,
         // DO NOT ACCEPT CLIENT AMOUNTS - SECURITY FIX
         currency = "usd"
       } = req.body;
@@ -5316,6 +5330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ticketName: finalTicketName || '',
           userId: user.id.toString(),
           userEmail: user.email,
+          promoterId: (await getPromoterIdFromReferralCode(referralCode))?.toString() || '',
           // Add server validation timestamp for security audit
           serverValidatedAt: new Date().toISOString(),
           authoritativeAmount: authoritativeAmount.toString()
@@ -5350,7 +5365,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         eventId,
         eventTitle,
         ticketId,
-        ticketName,
+        ticketName, referralCode,
         // DO NOT ACCEPT CLIENT AMOUNTS - SECURITY FIX
         currency = "usd"
       } = req.body;
@@ -5465,6 +5480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ticketName: finalTicketName || '',
           userId: user.id.toString(),
           userEmail: user.email,
+          promoterId: (await getPromoterIdFromReferralCode(referralCode))?.toString() || '',
           // Add server validation timestamp for security audit
           serverValidatedAt: new Date().toISOString(),
           authoritativeAmount: authoritativeAmount.toString()
@@ -5586,6 +5602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const eventTitle = paymentIntent.metadata?.eventTitle || null;
           const ticketId = paymentIntent.metadata?.ticketId ? parseInt(paymentIntent.metadata.ticketId) : null;
           const ticketName = paymentIntent.metadata?.ticketName || 'General Admission';
+          const promoterId = paymentIntent.metadata?.promoterId ? parseInt(paymentIntent.metadata.promoterId) : null;
 
           let user = null;
           let email = payerEmail;
@@ -5634,7 +5651,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               totalAmount: Math.round(amount * 100), // Convert back to cents for storage
               status: 'completed',
               paymentMethod: 'stripe',
-              paymentId: paymentIntent.id
+              paymentId: paymentIntent.id,
+              promoterId: promoterId
             });
 
             // If this is an event ticket purchase, create a ticket record

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from './db';
-import { events, passportQrCheckins, users, passportCreditTransactions } from '@shared/schema';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { events, passportQrCheckins, users, promoters, orders, orderItems, tickets } from '@shared/schema';
+import { eq, and, desc, sql, inArray } from 'drizzle-orm';
 import { asyncHandler, AppError } from './middleware/error-handler';
 import { z } from 'zod';
 
@@ -78,6 +78,23 @@ router.get(
             .orderBy(desc(passportQrCheckins.checkedInAt))
             .limit(50); // Limit to last 50 check-ins
 
+        // 4. Get referral sales stats for this event
+        const referralSales = await db
+            .select({
+                promoterId: promoters.id,
+                promoterName: promoters.name,
+                referralCode: promoters.referralCode,
+                orderCount: sql<number>`count(distinct ${orders.id})::int`,
+                totalRevenue: sql<number>`sum(${orderItems.subtotal})::int`,
+                ticketCount: sql<number>`sum(${orderItems.quantity})::int`
+            })
+            .from(orders)
+            .innerJoin(promoters, eq(orders.promoterId, promoters.id))
+            .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+            .innerJoin(tickets, eq(orderItems.ticketId, tickets.id))
+            .where(eq(tickets.eventId, event.id))
+            .groupBy(promoters.id, promoters.name, promoters.referralCode);
+
         res.json({
             event: {
                 id: event.id,
@@ -94,6 +111,7 @@ router.get(
                 totalCheckins: totalCheckins || 0,
                 todayCheckins: todayCheckins || 0,
                 totalCreditsAwarded: totalCredits || 0,
+                referralSales: referralSales || [],
             },
             checkins: recentCheckins.map(c => ({
                 id: c.id,
