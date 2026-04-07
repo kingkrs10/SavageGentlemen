@@ -2,19 +2,21 @@ import type { Config } from "tailwindcss";
 
 export default {
   darkMode: ["class"],
-  content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
+  content: ["./src/pages/**/*.{js,ts,jsx,tsx,mdx}", "./src/components/**/*.{js,ts,jsx,tsx,mdx}", "./src/app/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
       fontFamily: {
-        body: ["var(--font-body)", "sans-serif"],
-        heading: ["var(--font-heading)", "sans-serif"],
+        body: ["Poppins", "sans-serif"],
+        heading: ["Bebas Neue", "sans-serif"],
         accent: ["Dancing Script", "cursive"],
-        mono: ["var(--font-mono)", "monospace"],
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        neon: "var(--shadow-neon)",
       },
       colors: {
         background: "hsl(var(--background))",
