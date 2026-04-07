@@ -132,7 +132,10 @@ const upload = multer({
 // Firebase Admin is already initialized in server/firebase.ts
 // Import the configured admin instance from there
 
+import { registerAffiliatesRoutes } from "./affiliates-routes";
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  registerAffiliatesRoutes(app);
   // Add performance monitoring middleware
   app.use(performanceMiddleware);
 

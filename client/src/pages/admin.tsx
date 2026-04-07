@@ -194,12 +194,14 @@ import {
   Search,
   Filter,
   Plus,
-  Trash
+  Trash,
+  DollarSign
 } from "lucide-react";
 import AdminMediaPage from "./admin-media";
 import LivestreamManager from "@/components/admin/LivestreamManager";
 import TicketScanner from "@/components/admin/TicketScanner";
 import PassportManager from "@/components/admin/PassportManager";
+import { AffiliateManager } from "@/components/admin/AffiliateManager";
 
 export default function AdminPage() {
   const { toast } = useToast();
@@ -1808,12 +1810,15 @@ export default function AdminPage() {
         <Separator />
 
         <Tabs value={activeDashboardTab} onValueChange={setActiveDashboardTab} className="w-full" data-testid="admin-tabs">
-          <TabsList className="grid grid-cols-10 mb-8 bg-[#141e2e] border border-slate-700">
+          <TabsList className="grid grid-cols-11 mb-8 bg-[#141e2e] border border-slate-700">
             <TabsTrigger value="products" className="flex items-center gap-2">
               <PackageOpen className="h-4 w-4" /> Products
             </TabsTrigger>
             <TabsTrigger value="events" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" /> AdminEvents
+            </TabsTrigger>
+            <TabsTrigger value="affiliates" className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" /> Affiliates
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" /> Users
@@ -3846,6 +3851,9 @@ export default function AdminPage() {
                 <AdminMediaPage embedded />
               </CardContent>
             </Card>
+          </TabsContent>
+          <TabsContent value="affiliates">
+            <AffiliateManager />
           </TabsContent>
         </Tabs>
 

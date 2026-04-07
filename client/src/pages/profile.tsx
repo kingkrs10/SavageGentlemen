@@ -18,7 +18,10 @@ import {
   Trophy,
   Settings,
   Heart,
-  MessageSquare
+  MessageSquare,
+  DollarSign,
+  Copy,
+  CheckCircle2
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { formatEventPrice } from "@/lib/currency";
@@ -125,6 +128,30 @@ const ProfilePage = () => {
     queryKey: [`/api/users/${user?.id}/tickets`],
     enabled: !!user?.id,
   });
+
+  // Get user's affiliate program status
+  const { data: affiliateData, refetch: refetchAffiliate, isLoading: affiliateLoading } = useQuery<any>({
+    queryKey: [`/api/users/${user?.id}/affiliate`],
+    enabled: !!user?.id,
+  });
+
+  const [copied, setCopied] = useState(false);
+
+  const joinAffiliate = async () => {
+    if (!user?.id) return;
+    try {
+      await fetch(`/api/users/${user.id}/affiliate`, { method: 'POST' });
+      refetchAffiliate();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   if (profileLoading) {
     return (
@@ -257,7 +284,7 @@ const ProfilePage = () => {
 
         {/* Profile Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="attendance">
               <Calendar className="h-4 w-4 mr-2" />
               Events
@@ -273,6 +300,10 @@ const ProfilePage = () => {
             <TabsTrigger value="tickets">
               <Ticket className="h-4 w-4 mr-2" />
               Tickets
+            </TabsTrigger>
+            <TabsTrigger value="affiliate">
+              <DollarSign className="h-4 w-4 mr-2" />
+              Affiliate
             </TabsTrigger>
           </TabsList>
 
@@ -492,6 +523,73 @@ const ProfilePage = () => {
                     <p className="mt-1 text-sm text-gray-500">Purchase tickets to upcoming events</p>
                     <Button className="mt-4" asChild>
                       <Link href="/events">Browse Events</Link>
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="affiliate" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  Affiliate Program
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {affiliateLoading ? (
+                  <div className="text-center py-8">
+                    <BrandLoader />
+                  </div>
+                ) : affiliateData?.affiliate ? (
+                  <div className="space-y-6">
+                    <div className="p-6 border rounded-lg">
+                      <h3 className="font-semibold text-lg mb-2">Your Referral Link</h3>
+                      <p className="text-sm text-muted-foreground mb-4">Share this link to earn commission on Soca Noir Rosé purchases.</p>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 p-3 bg-muted border rounded-lg text-primary text-sm break-all">
+                          {window.location.origin}/api/ref?a={affiliateData.affiliate.id}&redirect=/products/soca-noir-rose
+                        </code>
+                        <Button 
+                          variant="secondary" 
+                          onClick={() => copyToClipboard(`${window.location.origin}/api/ref?a=${affiliateData.affiliate.id}&redirect=/products/soca-noir-rose`)}
+                          className="shrink-0"
+                        >
+                          {copied ? <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" /> : <Copy className="h-4 w-4 mr-2" />}
+                          {copied ? 'Copied' : 'Copy'}
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <Card>
+                        <CardContent className="pt-4 text-center">
+                          <div className="text-2xl font-bold">{affiliateData.clicks || 0}</div>
+                          <div className="text-sm text-muted-foreground">Total Clicks</div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="pt-4 text-center">
+                          <div className="text-2xl font-bold">{affiliateData.conversions || 0}</div>
+                          <div className="text-sm text-muted-foreground">Conversions</div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="pt-4 text-center">
+                          <div className="text-2xl font-bold">${affiliateData.revenue || 0}</div>
+                          <div className="text-sm text-muted-foreground">Revenue</div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <DollarSign className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium">Join the Affiliate Program</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">Earn commission by referring customers to Soca Noir Rosé.</p>
+                    <Button onClick={joinAffiliate} className="mt-4">
+                      Generate Referral Link
                     </Button>
                   </div>
                 )}

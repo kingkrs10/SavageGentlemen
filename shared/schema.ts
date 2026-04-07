@@ -2462,3 +2462,28 @@ export type InsertPassportSocialShare = z.infer<typeof insertPassportSocialShare
 
 export type PassportQrCheckin = typeof passportQrCheckins.$inferSelect;
 export type InsertPassportQrCheckin = z.infer<typeof insertPassportQrCheckinSchema>;
+
+export const affiliates = pgTable("affiliates", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  referralCode: text("referral_code").notNull().unique(),
+  status: text("status").notNull().default("active"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const affiliateClicks = pgTable("affiliate_clicks", {
+  id: serial("id").primaryKey(),
+  affiliateId: integer("affiliate_id").notNull().references(() => affiliates.id),
+  ipAddress: text("ip_address"),
+  clickedAt: timestamp("clicked_at").defaultNow()
+});
+
+
+export const insertAffiliateSchema = createInsertSchema(affiliates).omit({ id: true, createdAt: true, updatedAt: true });
+export type Affiliate = typeof affiliates.$inferSelect;
+export type InsertAffiliate = z.infer<typeof insertAffiliateSchema>;
+
+export const insertAffiliateClickSchema = createInsertSchema(affiliateClicks).omit({ id: true, clickedAt: true });
+export type AffiliateClick = typeof affiliateClicks.$inferSelect;
+export type InsertAffiliateClick = z.infer<typeof insertAffiliateClickSchema>;
