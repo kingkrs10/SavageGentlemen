@@ -698,3 +698,32 @@ export const ads = pgTable("ads", {
 export const insertAdSchema = createInsertSchema(ads);
 export type InsertAd = z.infer<typeof insertAdSchema>;
 export type Ad = typeof ads.$inferSelect;
+
+// ============================================================
+// AFFILIATE SYSTEM
+// ============================================================
+export const affiliates = pgTable("affiliates", {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id").notNull(),
+    referralCode: text("referral_code").notNull().unique(),
+    campaignName: text("campaign_name").default("Soca Noir"),
+    salesCount: integer("sales_count").default(0),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const affiliateClicks = pgTable("affiliate_clicks", {
+    id: serial("id").primaryKey(),
+    affiliateId: integer("affiliate_id").notNull(),
+    ipAddress: text("ip_address"),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertAffiliateSchema = createInsertSchema(affiliates);
+export type InsertAffiliate = z.infer<typeof insertAffiliateSchema>;
+export type Affiliate = typeof affiliates.$inferSelect;
+
+export const insertAffiliateClickSchema = createInsertSchema(affiliateClicks);
+export type InsertAffiliateClick = z.infer<typeof insertAffiliateClickSchema>;
+export type AffiliateClick = typeof affiliateClicks.$inferSelect;
+

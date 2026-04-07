@@ -16,7 +16,10 @@ import {
     Camera,
     Ticket,
     Settings,
-    Heart
+    Heart,
+    DollarSign,
+    Copy,
+    CheckCircle2
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { formatEventPrice } from "@/lib/currency";
@@ -99,6 +102,30 @@ export default function ProfilePage() {
         queryKey: [`/api/users/${user?.id}/tickets`],
         enabled: !!user?.id,
     });
+
+    // Get user's affiliate program status
+    const { data: affiliateData, refetch: refetchAffiliate, isLoading: affiliateLoading } = useQuery<any>({
+        queryKey: [`/api/users/${user?.id}/affiliate`],
+        enabled: !!user?.id,
+    });
+
+    const [copied, setCopied] = useState(false);
+    
+    const joinAffiliate = async () => {
+        if (!user?.id) return;
+        try {
+            await fetch(`/api/users/${user.id}/affiliate`, { method: 'POST' });
+            refetchAffiliate();
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
 
     if (profileLoading) {
         return (
@@ -246,6 +273,10 @@ export default function ProfilePage() {
                         <TabsTrigger value="tickets" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                             <Ticket className="h-4 w-4 mr-2 hidden sm:inline" />
                             Tickets
+                        </TabsTrigger>
+                        <TabsTrigger value="affiliate" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                            <DollarSign className="h-4 w-4 mr-2 hidden sm:inline" />
+                            Affiliate
                         </TabsTrigger>
                     </TabsList>
 
@@ -471,6 +502,54 @@ export default function ProfilePage() {
                                         <p className="mt-1 text-xs text-zinc-500 mb-6">You haven't purchased any tickets yet.</p>
                                         <Button variant="outline" className="border-primary text-primary hover:bg-primary/10" asChild>
                                             <Link href="/events">Find Events</Link>
+                                        </Button>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="affiliate" className="mt-8">
+                        <Card className="bg-zinc-900/40 border-zinc-800">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-xl">
+                                    <DollarSign className="h-5 w-5 text-primary" />
+                                    Affiliate Program
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {affiliateLoading ? (
+                                    <div className="flex justify-center py-12">
+                                        <BrandLoader />
+                                    </div>
+                                ) : affiliateData?.affiliate ? (
+                                    <div className="space-y-6">
+                                        <div className="p-6 bg-zinc-900/60 border border-zinc-800/50 rounded-xl">
+                                            <h3 className="font-semibold text-lg mb-2">Your Referral Link</h3>
+                                            <p className="text-sm text-zinc-400 mb-4">Share this link to earn commission on Soca Noir Rosé purchases.</p>
+                                            
+                                            <div className="flex items-center gap-2">
+                                                <code className="flex-1 p-3 bg-black border border-zinc-800 rounded-lg text-primary text-sm break-all">
+                                                    {typeof window !== 'undefined' ? window.location.origin : ''}/api/ref?code={affiliateData.affiliate.referralCode}
+                                                </code>
+                                                <Button 
+                                                    variant="secondary" 
+                                                    onClick={() => copyToClipboard(`${window.location.origin}/api/ref?code=${affiliateData.affiliate.referralCode}`)}
+                                                    className="shrink-0"
+                                                >
+                                                    {copied ? <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" /> : <Copy className="h-4 w-4 mr-2" />}
+                                                    {copied ? 'Copied' : 'Copy'}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12 border-2 border-dashed border-zinc-800 rounded-xl">
+                                        <DollarSign className="mx-auto h-12 w-12 text-zinc-800 mb-3" />
+                                        <h3 className="text-sm font-medium text-white uppercase tracking-widest">Join the Affiliate Program</h3>
+                                        <p className="mt-1 text-xs text-zinc-500 mb-6">Earn {affiliateData?.affiliate?.commissionRate || '10%'} commission on referrals.</p>
+                                        <Button onClick={joinAffiliate} className="bg-primary text-white hover:bg-primary/90">
+                                            Generate Referral Link
                                         </Button>
                                     </div>
                                 )}

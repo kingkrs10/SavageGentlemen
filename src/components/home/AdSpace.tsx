@@ -120,7 +120,7 @@ const AdSpace = () => {
       eventDate: "July 4, 2025",
       location: "Convention Center"
     },
-    // Soca Noir Rose Referral
+    // Soca Noir Rose Promotion
     {
       id: "soca-noir-rose",
       type: "banner",
@@ -130,7 +130,7 @@ const AdSpace = () => {
       backgroundColor: "bg-gradient-to-r from-rose-900/80 to-pink-900/80 border border-rose-500/20",
       textColor: "text-white",
       ctaText: "Get Yours Now",
-      linkUrl: "#REFERRAL_LINK_REQUIRED"
+      linkUrl: "/products/soca-noir-rose"
     }
   ];
 

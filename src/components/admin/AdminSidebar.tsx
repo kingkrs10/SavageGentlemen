@@ -25,7 +25,8 @@ import {
   Scan,
   CreditCard,
   Target,
-  FileText
+  FileText,
+  DollarSign
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -89,6 +90,7 @@ const navGroups: NavGroup[] = [
     label: "Commerce",
     items: [
       { label: "Orders", icon: CreditCard, href: "/admin/orders", tab: "orders" },
+      { label: "Affiliates", icon: DollarSign, href: "/admin/affiliates", tab: "affiliates" },
     ]
   }
 ];
