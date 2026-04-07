@@ -234,22 +234,24 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
               >
                 {/* Background image */}
                 <div className="absolute inset-0">
-                  {event.imageUrl ? (
+                  {/* Fallback gradient — always rendered behind the image */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/80 via-orange-600/60 to-red-900/80" />
+
+                  {event.imageUrl && (
                     <img
                       src={getNormalizedImageUrl(event.imageUrl)}
                       alt={event.title}
-                      className="w-full h-full object-cover"
+                      className="absolute inset-0 w-full h-full object-cover"
                       onError={(e) => {
+                        // On error, hide the img so the fallback gradient shows
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
                       }}
                     />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-primary via-orange-600 to-red-700" />
                   )}
 
-                  {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                  {/* Gradient overlay — lightened so the flyer image is visible */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
 
                   {/* Default content (always visible) */}
                   <div className="absolute inset-0 flex items-center justify-center text-center px-8">

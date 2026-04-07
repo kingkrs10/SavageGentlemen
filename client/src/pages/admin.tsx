@@ -200,6 +200,8 @@ import AdminMediaPage from "./admin-media";
 import LivestreamManager from "@/components/admin/LivestreamManager";
 import TicketScanner from "@/components/admin/TicketScanner";
 import PassportManager from "@/components/admin/PassportManager";
+import { DesktopSidebar, MobileSidebar } from "@/components/admin/AdminSidebar";
+import AdminOverview from "@/components/admin/AdminOverview";
 
 export default function AdminPage() {
   const { toast } = useToast();
@@ -209,7 +211,8 @@ export default function AdminPage() {
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
-  const [activeDashboardTab, setActiveDashboardTab] = useState("products");
+  const [activeDashboardTab, setActiveDashboardTab] = useState("overview");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Ad management state
   const [isCreateAdModalOpen, setIsCreateAdModalOpen] = useState(false);
@@ -331,7 +334,7 @@ export default function AdminPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/events"] }); // If exists
-      toast({ title: "Success", description: "AdminEvent deleted successfully" });
+      toast({ title: "Success", description: "Event deleted successfully" });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message || "Failed to delete event", variant: "destructive" });
@@ -352,7 +355,7 @@ export default function AdminPage() {
       }
 
       toast({
-        title: "AdminEvent Deleted",
+        title: "Event Deleted",
         description: `"${event.title}" and all related records have been successfully removed.`,
       });
 
@@ -360,7 +363,7 @@ export default function AdminPage() {
     } catch (error: any) {
       console.error("Failed to delete event:", error);
       toast({
-        title: "Error Deleting AdminEvent",
+        title: "Error Deleting Event",
         description: error.message || "Failed to delete event. Please ensure all dependent records can be removed.",
         variant: "destructive"
       });
@@ -1095,7 +1098,7 @@ export default function AdminPage() {
     }
   };
 
-  // AdminEvent edit handler
+  // Event edit handler
   const handleEditEvent = (event: AdminEvent) => {
     setEditingEvent(event);
     const eventDate = new Date(event.date);
@@ -1128,7 +1131,7 @@ export default function AdminPage() {
     setEventDialogOpen(true);
   };
 
-  // AdminEvent update handler
+  // Event update handler
   const handleUpdateEvent = async () => {
     if (!editingEvent) return;
 
@@ -1149,7 +1152,7 @@ export default function AdminPage() {
 
       if (!response.ok) throw new Error('Failed to update event');
 
-      toast({ title: "AdminEvent Updated", description: `AdminEvent "${eventForm.title}" updated successfully` });
+      toast({ title: "Event Updated", description: `Event "${eventForm.title}" updated successfully` });
       setEventDialogOpen(false);
       setEditingEvent(null);
       resetEventFormState();
@@ -1241,7 +1244,7 @@ export default function AdminPage() {
     return headers;
   };
 
-  // AdminEvent creation handler
+  // Event creation handler
   const handleCreateEvent = async () => {
     try {
       if (!eventForm.title || !eventForm.date || !eventForm.location) {
@@ -1261,7 +1264,7 @@ export default function AdminPage() {
       if (!response.ok) throw new Error('Failed to create event');
       await response.json();
 
-      toast({ title: "AdminEvent Created", description: `AdminEvent "${eventForm.title}" created successfully` });
+      toast({ title: "Event Created", description: `Event "${eventForm.title}" created successfully` });
       setEventDialogOpen(false);
       resetEventFormState();
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
@@ -1799,62 +1802,67 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="container mx-auto py-6 px-4 md:px-6 bg-[#0a0e17] text-white min-h-screen">
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">Admin Dashboard</h1>
-            <p className="text-slate-400">
-              Manage your products, events, users, and more.
-            </p>
+    <div className="bg-[#0a0e17] text-white min-h-screen">
+      {/* Top header bar */}
+      <div className="sticky top-0 z-30 bg-[#0a0e17]/95 backdrop-blur-sm border-b border-slate-800">
+        <div className="flex items-center justify-between px-4 md:px-6 py-3">
+          <div className="flex items-center gap-4">
+            <MobileSidebar activeTab={activeDashboardTab} onTabChange={setActiveDashboardTab} />
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white">Admin Dashboard</h1>
+              <p className="text-xs text-slate-500 hidden md:block">Manage your platform</p>
+            </div>
           </div>
           {currentUser && currentUser.username && (
             <div className="flex items-center gap-2">
-              <span className="text-sm hidden md:inline">Logged in as: <span className="font-medium">{currentUser.username}</span></span>
-              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white text-sm">
+              <span className="text-sm hidden md:inline text-slate-400">Logged in as: <span className="font-medium text-white">{currentUser.username}</span></span>
+              <div className="h-8 w-8 rounded-full bg-orange-500/20 border border-orange-500/30 flex items-center justify-center text-orange-400 text-sm font-semibold">
                 {currentUser.username.charAt(0).toUpperCase()}
               </div>
             </div>
           )}
         </div>
-        <Separator />
+      </div>
 
-        <Tabs value={activeDashboardTab} onValueChange={setActiveDashboardTab} className="w-full" data-testid="admin-tabs">
-          <TabsList className="grid grid-cols-10 mb-8 bg-[#141e2e] border border-slate-700">
-            <TabsTrigger value="products" className="flex items-center gap-2">
-              <PackageOpen className="h-4 w-4" /> Products
-            </TabsTrigger>
-            <TabsTrigger value="events" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" /> AdminEvents
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" /> Users
-            </TabsTrigger>
-            <TabsTrigger value="tickets" className="flex items-center gap-2">
-              <TicketIcon className="h-4 w-4" /> Tickets
-            </TabsTrigger>
-            <TabsTrigger value="orders" className="flex items-center gap-2">
-              <ShoppingCart className="h-4 w-4" /> Orders
-            </TabsTrigger>
-            <TabsTrigger value="livestreams" className="flex items-center gap-2">
-              <Radio className="h-4 w-4" /> Livestreams
-            </TabsTrigger>
-            <TabsTrigger value="musicmixes" className="flex items-center gap-2">
-              <Music className="h-4 w-4" /> Music Mixes
-            </TabsTrigger>
-            <TabsTrigger value="passport" className="flex items-center gap-2">
-              <Stamp className="h-4 w-4" /> Passport
-            </TabsTrigger>
-            <TabsTrigger value="scanner" className="flex items-center gap-2">
-              <ScanLine className="h-4 w-4" /> Scanner
-            </TabsTrigger>
-            <TabsTrigger value="ads" className="flex items-center gap-2">
-              <Megaphone className="h-4 w-4" /> Ads
-            </TabsTrigger>
-            <TabsTrigger value="media" className="flex items-center gap-2">
-              <ImageIcon className="h-4 w-4" /> Media
-            </TabsTrigger>
+      {/* Sidebar + Content layout */}
+      <div className="flex">
+        <DesktopSidebar
+          activeTab={activeDashboardTab}
+          onTabChange={setActiveDashboardTab}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
+
+        {/* Main content area */}
+        <main className="flex-1 min-w-0 p-4 md:p-6 lg:p-8">
+          <Tabs value={activeDashboardTab} onValueChange={setActiveDashboardTab} className="w-full" data-testid="admin-tabs">
+          {/* TabsList is now hidden — navigation is handled by sidebar */}
+          <TabsList className="hidden">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="events">Events</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="tickets">Tickets</TabsTrigger>
+            <TabsTrigger value="orders">Orders</TabsTrigger>
+            <TabsTrigger value="livestreams">Livestreams</TabsTrigger>
+            <TabsTrigger value="musicmixes">Music Mixes</TabsTrigger>
+            <TabsTrigger value="passport">Passport</TabsTrigger>
+            <TabsTrigger value="scanner">Scanner</TabsTrigger>
+            <TabsTrigger value="ads">Ads</TabsTrigger>
+            <TabsTrigger value="media">Media</TabsTrigger>
           </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview">
+            <AdminOverview
+              usersCount={users?.length || 0}
+              eventsCount={events?.length || 0}
+              ordersCount={orders?.length || 0}
+              ticketsCount={allTickets?.length || 0}
+              productsCount={products?.length || 0}
+              onNavigate={setActiveDashboardTab}
+            />
+          </TabsContent>
 
           {/* Products Tab */}
           <TabsContent value="products" className="space-y-4">
@@ -1925,16 +1933,16 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
 
-          {/* AdminEvents Tab */}
+          {/* Events Tab */}
           <TabsContent value="events" className="space-y-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>AdminEvents</CardTitle>
+                  <CardTitle>Events</CardTitle>
                   <CardDescription>Manage events and performances</CardDescription>
                 </div>
                 <Button className="sg-btn" onClick={() => { setEditingEvent(null); resetEventFormState(); setEventDialogOpen(true); }}>
-                  <Calendar className="h-4 w-4 mr-2" /> Add AdminEvent
+                  <Calendar className="h-4 w-4 mr-2" /> Add Event
                 </Button>
               </CardHeader>
               <CardContent>
@@ -2058,14 +2066,14 @@ export default function AdminPage() {
                     <Calendar className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                     <h3 className="text-lg font-medium">No events found</h3>
                     <p className="text-sm text-gray-500">
-                      Create your first event by clicking the "Add AdminEvent" button above.
+                      Create your first event by clicking the "Add Event" button above.
                     </p>
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* AdminEvent Dialog */}
+            {/* Event Dialog */}
             <Dialog open={eventDialogOpen} onOpenChange={(open) => {
               setEventDialogOpen(open);
               if (!open) {
@@ -2092,7 +2100,7 @@ export default function AdminPage() {
               <DialogContent className="sm:max-w-[600px] bg-[#141e2e] text-white max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="text-white text-xl">
-                    {editingEvent ? 'Edit AdminEvent' : 'Create new event'}
+                    {editingEvent ? 'Edit Event' : 'Create new event'}
                   </DialogTitle>
                   <DialogDescription className="text-slate-400">
                     {editingEvent ? 'Update event details and media below.' : 'Add a new event to the system with appropriate details.'}
@@ -2101,13 +2109,13 @@ export default function AdminPage() {
 
                 <Tabs defaultValue="details" className="w-full">
                   <TabsList className="grid w-full grid-cols-2 bg-slate-800 border border-slate-700 mb-4">
-                    <TabsTrigger value="details">AdminEvent Details</TabsTrigger>
+                    <TabsTrigger value="details">Event Details</TabsTrigger>
                     <TabsTrigger value="media">Multimedia & Gallery</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="details" className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="title" className="text-white">AdminEvent Title</Label>
+                      <Label htmlFor="title" className="text-white">Event Title</Label>
                       <Input
                         id="title"
                         placeholder="Enter event title"
@@ -2203,7 +2211,7 @@ export default function AdminPage() {
                         <div className="relative rounded-lg overflow-hidden border border-slate-600">
                           <img
                             src={imagePreview || getNormalizedImageUrl(eventForm.imageUrl)}
-                            alt="AdminEvent preview"
+                            alt="Event preview"
                             className="w-full h-40 object-cover"
                           />
                           <button
@@ -2347,7 +2355,7 @@ export default function AdminPage() {
                   <TabsContent value="media" className="space-y-6">
                     {/* Main Video Section */}
                     <div className="space-y-4">
-                      <Label className="text-white flex items-center gap-2 text-lg"><Video className="h-5 w-5" /> Main AdminEvent Video</Label>
+                      <Label className="text-white flex items-center gap-2 text-lg"><Video className="h-5 w-5" /> Main Event Video</Label>
                       <Card className="bg-slate-800 border-slate-700">
                         <CardContent className="p-4 space-y-4">
                           {(eventVideoPreview || eventForm.videoUrl) ? (
@@ -2517,7 +2525,7 @@ export default function AdminPage() {
                     onClick={editingEvent ? handleUpdateEvent : handleCreateEvent}
                     className="sg-btn"
                   >
-                    {editingEvent ? 'Update AdminEvent' : 'Create AdminEvent'}
+                    {editingEvent ? 'Update Event' : 'Create Event'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -2844,7 +2852,7 @@ export default function AdminPage() {
                         </DialogDescription>
                       </DialogHeader>
 
-                      {/* AdminEvent Selection */}
+                      {/* Event Selection */}
                       <div className="mb-4">
                         <select
                           id="event"
@@ -3270,7 +3278,7 @@ export default function AdminPage() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Name</TableHead>
-                          <TableHead>AdminEvent</TableHead>
+                          <TableHead>Event</TableHead>
                           <TableHead>Price</TableHead>
                           <TableHead>Sold</TableHead>
                           <TableHead>Remaining</TableHead>
@@ -3285,7 +3293,7 @@ export default function AdminPage() {
 
                           // Find the event name instead of just showing the ID
                           const event = events?.find(e => e.id === ticket.eventId);
-                          const eventName = event ? event.title : `AdminEvent #${ticket.eventId}`;
+                          const eventName = event ? event.title : `Event #${ticket.eventId}`;
 
                           return (
                             <TableRow key={ticket.id}>
@@ -3893,7 +3901,7 @@ export default function AdminPage() {
                       <SelectItem value="standard">Standard</SelectItem>
                       <SelectItem value="banner">Banner</SelectItem>
                       <SelectItem value="product">Product</SelectItem>
-                      <SelectItem value="event">AdminEvent</SelectItem>
+                      <SelectItem value="event">Event</SelectItem>
                       <SelectItem value="video">Video</SelectItem>
                     </SelectContent>
                   </Select>
@@ -3971,7 +3979,7 @@ export default function AdminPage() {
                   {adFormData.type === 'event' && (
                     <>
                       <div className="space-y-2">
-                        <Label htmlFor="ad-event-date">AdminEvent Date</Label>
+                        <Label htmlFor="ad-event-date">Event Date</Label>
                         <Input
                           id="ad-event-date"
                           value={adFormData.eventDate}
@@ -4142,7 +4150,8 @@ export default function AdminPage() {
           </DialogContent>
         </Dialog>
 
+        </main>
       </div>
-    </div >
+    </div>
   );
 }
