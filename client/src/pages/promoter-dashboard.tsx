@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, Calendar, MapPin, Trophy, ArrowLeft, Clock, Activity } from "lucide-react";
+import { Users, Calendar, MapPin, Trophy, ArrowLeft, Clock, Activity, Search, ExternalLink } from "lucide-react";
 import { Helmet } from "react-helmet";
+import { useToast } from "@/hooks/use-toast";
 
 interface EventData {
     id: number;
@@ -43,12 +44,18 @@ interface DashboardResponse {
             ticketCount: number;
         }>;
     };
+    myPromoter?: {
+        id: number;
+        referralCode: string;
+        name: string;
+    } | null;
     checkins: CheckinData[];
 }
 
 export default function PromoterDashboard() {
     const { code } = useParams<{ code: string }>();
     const [, setLocation] = useLocation();
+    const { toast } = useToast();
 
     // Fetch dashboard data
     const { data, isLoading, error } = useQuery<DashboardResponse>({
@@ -167,6 +174,44 @@ export default function PromoterDashboard() {
                     </div>
                 </div>
 
+                {/* Referral Link Section */}
+                {data?.myPromoter?.referralCode && (
+                    <Card className="mb-8 bg-gradient-to-r from-green-900/40 to-emerald-900/40 backdrop-blur-xl border-green-500/30 overflow-hidden shadow-lg shadow-green-500/10">
+                        <CardHeader className="pb-2">
+                            <div className="flex items-center gap-2">
+                                <Trophy className="w-5 h-5 text-green-400" />
+                                <CardTitle className="text-lg text-green-200 uppercase tracking-wider font-black">My Referral Program</CardTitle>
+                            </div>
+                            <CardDescription className="text-gray-300">
+                                Share your personal link to track ticket sales and earn rewards.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex flex-col md:flex-row gap-3">
+                                <div className="flex-1 px-4 py-3 rounded-lg bg-black/40 border border-green-500/20 font-mono text-green-400 text-sm flex items-center justify-between">
+                                    <span className="truncate">{window.location.origin}/events?ref={data.myPromoter.referralCode}</span>
+                                    <code className="ml-2 px-2 py-1 bg-green-500/20 rounded text-xs select-all">
+                                        {data.myPromoter.referralCode}
+                                    </code>
+                                </div>
+                                <Button 
+                                    className="bg-green-500 hover:bg-green-600 text-black font-bold uppercase"
+                                    onClick={() => {
+                                        const link = `${window.location.origin}/events?ref=${data.myPromoter?.referralCode}`;
+                                        navigator.clipboard.writeText(link);
+                                        toast({
+                                            title: "Link Copied!",
+                                            description: "Your referral link is ready to share.",
+                                        });
+                                    }}
+                                >
+                                    Copy Link
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <Card className="bg-black/60 backdrop-blur-xl border-2 border-green-500/30 shadow-lg shadow-green-500/10">
@@ -232,9 +277,9 @@ export default function PromoterDashboard() {
                                     </TableHeader>
                                     <TableBody>
                                         {stats.referralSales.map((sale) => (
-                                            <TableRow key={sale.promoterId} className="border-gray-700 hover:bg-white/5">
+                                            <TableRow key={sale.promoterId} className={`border-gray-700 hover:bg-white/5 ${sale.promoterId === data.myPromoter?.id ? "bg-green-500/10" : ""}`}>
                                                 <TableCell className="font-bold text-white">
-                                                    {sale.promoterName}
+                                                    {sale.promoterName} {sale.promoterId === data.myPromoter?.id && "(Me)"}
                                                 </TableCell>
                                                 <TableCell>
                                                     <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30 font-mono">

@@ -293,6 +293,7 @@ export class AdminPassportService {
           locationCountry: promoters.locationCountry,
           websiteOrSocial: promoters.websiteOrSocial,
           eventTypes: promoters.eventTypes,
+          referralCode: promoters.referralCode,
           status: promoters.status,
           createdAt: promoters.createdAt,
           username: users.username,
@@ -324,6 +325,7 @@ export class AdminPassportService {
         locationCountry: r.locationCountry || undefined,
         websiteOrSocial: r.websiteOrSocial || undefined,
         eventTypes: r.eventTypes || undefined,
+        referralCode: r.referralCode || undefined,
         status: r.status,
         createdAt: r.createdAt,
         username: r.username || undefined,
@@ -385,6 +387,23 @@ export class AdminPassportService {
       return promoter || null;
     } catch (error) {
       console.error('Error updating promoter status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update promoter details
+   */
+  async updatePromoter(id: number, data: Partial<Promoter>): Promise<Promoter | null> {
+    try {
+      const [updated] = await db
+        .update(promoters)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(promoters.id, id))
+        .returning();
+      return updated || null;
+    } catch (error) {
+      console.error('Error updating promoter:', error);
       throw error;
     }
   }

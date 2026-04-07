@@ -57,4 +57,37 @@ router.patch(
   })
 );
 
+/**
+ * PATCH /api/admin/promoters/:id
+ * Update promoter details (name, organization, referralCode, etc.)
+ */
+router.patch(
+  '/:id',
+  asyncHandler(async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      throw new AppError('Invalid promoter ID', 400, 'INVALID_PROMOTER_ID');
+    }
+
+    const schema = z.object({
+      name: z.string().optional(),
+      organization: z.string().optional(),
+      email: z.string().email().optional(),
+      referralCode: z.string().optional(),
+      locationCity: z.string().optional(),
+      locationCountry: z.string().optional(),
+    });
+
+    const data = schema.parse(req.body);
+
+    const promoter = await adminPassportService.updatePromoter(id, data);
+    if (!promoter) {
+      throw new AppError('Promoter not found', 404, 'PROMOTER_NOT_FOUND');
+    }
+
+    console.log(`ADMIN: ${req.user?.username} updated promoter ${id} details`);
+    res.json(promoter);
+  })
+);
+
 export { router as adminPromotersRouter };

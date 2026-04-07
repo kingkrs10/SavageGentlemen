@@ -74,6 +74,7 @@ interface Promoter {
   organization?: string;
   locationCity?: string;
   locationCountry?: string;
+  referralCode?: string;
   status: string;
   createdAt: Date;
   username?: string;
@@ -93,6 +94,15 @@ export default function PassportManager() {
     totalCountries: 0,
   });
 
+  // Promoter edit state
+  const [selectedPromoter, setSelectedPromoter] = useState<Promoter | null>(null);
+  const [promoterEditDialogOpen, setPromoterEditDialogOpen] = useState(false);
+  const [promoterFormData, setPromoterFormData] = useState({
+    name: "",
+    organization: "",
+    referralCode: "",
+  });
+
   // Fetch passport profiles
   const buildProfilesUrl = () => {
     const params = new URLSearchParams();
@@ -103,7 +113,7 @@ export default function PassportManager() {
     return `/api/admin/passport/profiles?${params.toString()}`;
   };
 
-  const { data: profilesData, isLoading: profilesLoading } = useQuery({
+  const { data: profilesData, isLoading: profilesLoading } = useQuery<{ profiles: PassportProfile[]; total: number }>({
     queryKey: [buildProfilesUrl(), searchTerm, tierFilter],
     enabled: activeTab === "users",
   });
@@ -115,7 +125,7 @@ export default function PassportManager() {
   });
 
   // Fetch promoters
-  const { data: promotersData, isLoading: promotersLoading } = useQuery({
+  const { data: promotersData, isLoading: promotersLoading } = useQuery<{ promoters: Promoter[]; total: number }>({
     queryKey: ["/api/admin/promoters"],
     enabled: activeTab === "promoters",
   });
@@ -167,20 +177,56 @@ export default function PassportManager() {
     },
   });
 
-  // Update promoter status
+  // Update promoter
   const updatePromoterMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const res = await apiRequest("PATCH", `/api/admin/promoters/${id}/status`, { status });
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const res = await apiRequest("PATCH", `/api/admin/promoters/${id}`, data);
       return res.json();
     },
     onSuccess: () => {
       toast({
         title: "Promoter Updated",
-        description: "Promoter status has been successfully updated.",
+        description: "Promoter details have been successfully updated.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/promoters"] });
+      setPromoterEditDialogOpen(false);
+      setSelectedPromoter(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update Failed",
+        description: error.message || "Failed to update promoter.",
+        variant: "destructive",
+      });
     },
   });
+
+  const handleEditPromoter = (promoter: Promoter) => {
+    setSelectedPromoter(promoter);
+    setPromoterFormData({
+      name: promoter.name,
+      organization: promoter.organization || "",
+      referralCode: promoter.referralCode || "",
+    });
+    setPromoterEditDialogOpen(true);
+  };
+
+  const handlePromoterSubmit = () => {
+    if (!selectedPromoter) return;
+    updatePromoterMutation.mutate({
+      id: selectedPromoter.id,
+      data: promoterFormData,
+    });
+  };
+
+  const copyReferralLink = (code: string) => {
+    const link = `${window.location.origin}/events?ref=${code}`;
+    navigator.clipboard.writeText(link);
+    toast({
+      title: "Link Copied",
+      description: `Referral link for ${code} copied to clipboard.`,
+    });
+  };
 
   const handleViewDetails = (profile: PassportProfile) => {
     fetchProfileDetails.mutate(profile.userId);
@@ -414,9 +460,8 @@ export default function PassportManager() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
                         <TableHead>Organization</TableHead>
-                        <TableHead>Location</TableHead>
+                        <TableHead>Referral Code</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -424,20 +469,43 @@ export default function PassportManager() {
                     <TableBody>
                       {promotersData?.promoters?.map((promoter: Promoter) => (
                         <TableRow key={promoter.id}>
-                          <TableCell className="font-medium">{promoter.name}</TableCell>
-                          <TableCell>{promoter.email}</TableCell>
+                          <TableCell className="font-medium">
+                            <div>{promoter.name}</div>
+                            <div className="text-xs text-muted-foreground">{promoter.email}</div>
+                          </TableCell>
                           <TableCell>{promoter.organization || "-"}</TableCell>
                           <TableCell>
-                            {promoter.locationCity && promoter.locationCountry
-                              ? `${promoter.locationCity}, ${promoter.locationCountry}`
-                              : "-"}
+                            {promoter.referralCode ? (
+                              <div className="flex items-center gap-2">
+                                <code className="bg-muted px-1 rounded text-sm">{promoter.referralCode}</code>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-6 w-6" 
+                                  onClick={() => copyReferralLink(promoter.referralCode!)}
+                                >
+                                  <Search className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-xs italic">No code set</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Badge className={getStatusColor(promoter.status)}>
                               {promoter.status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right space-x-2">
+                           <TableCell className="text-right space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditPromoter(promoter)}
+                              data-testid={`button-edit-promoter-${promoter.id}`}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
                             {promoter.status === "PENDING" && (
                               <>
                                 <Button
@@ -446,7 +514,7 @@ export default function PassportManager() {
                                   onClick={() =>
                                     updatePromoterMutation.mutate({
                                       id: promoter.id,
-                                      status: "APPROVED",
+                                      data: { status: "APPROVED" },
                                     })
                                   }
                                   data-testid={`button-approve-promoter-${promoter.id}`}
@@ -460,7 +528,7 @@ export default function PassportManager() {
                                   onClick={() =>
                                     updatePromoterMutation.mutate({
                                       id: promoter.id,
-                                      status: "REJECTED",
+                                      data: { status: "REJECTED" },
                                     })
                                   }
                                   data-testid={`button-reject-promoter-${promoter.id}`}
@@ -635,6 +703,62 @@ export default function PassportManager() {
               data-testid="button-save-passport-changes"
             >
               {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Promoter Dialog */}
+      <Dialog open={promoterEditDialogOpen} onOpenChange={setPromoterEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Promoter Details</DialogTitle>
+            <DialogDescription>
+              Update promoter profile and referral information.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedPromoter && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="promoterName">Name</Label>
+                <Input
+                  id="promoterName"
+                  value={promoterFormData.name}
+                  onChange={(e) => setPromoterFormData({ ...promoterFormData, name: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="promoterOrg">Organization</Label>
+                <Input
+                  id="promoterOrg"
+                  value={promoterFormData.organization}
+                  onChange={(e) => setPromoterFormData({ ...promoterFormData, organization: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="referralCode">Referral Code</Label>
+                <Input
+                  id="referralCode"
+                  placeholder="e.g. SAVAGE10"
+                  value={promoterFormData.referralCode}
+                  onChange={(e) => setPromoterFormData({ ...promoterFormData, referralCode: e.target.value.toUpperCase().replace(/\s+/g, '') })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  This code will be used in referral links: {window.location.origin}/events?ref={promoterFormData.referralCode || "CODE"}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPromoterEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handlePromoterSubmit} disabled={updatePromoterMutation.isPending}>
+              {updatePromoterMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>

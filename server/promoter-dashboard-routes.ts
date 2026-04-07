@@ -95,6 +95,14 @@ router.get(
             .where(eq(tickets.eventId, event.id))
             .groupBy(promoters.id, promoters.name, promoters.referralCode);
 
+        // 5. If user is logged in, find their own promoter record
+        let myPromoter = null;
+        if ((req as any).user) {
+            myPromoter = await db.query.promoters.findFirst({
+                where: eq(promoters.userId, (req as any).user.id)
+            });
+        }
+
         res.json({
             event: {
                 id: event.id,
@@ -113,6 +121,11 @@ router.get(
                 totalCreditsAwarded: totalCredits || 0,
                 referralSales: referralSales || [],
             },
+            myPromoter: myPromoter ? {
+                id: myPromoter.id,
+                referralCode: myPromoter.referralCode,
+                name: myPromoter.name
+            } : null,
             checkins: recentCheckins.map(c => ({
                 id: c.id,
                 displayName: c.displayName || c.username || 'Unknown User',
