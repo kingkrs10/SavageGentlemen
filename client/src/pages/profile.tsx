@@ -140,7 +140,7 @@ const ProfilePage = () => {
   const joinAffiliate = async () => {
     if (!user?.id) return;
     try {
-      await fetch(`/api/users/${user.id}/affiliate`, { method: 'POST' });
+      await apiRequest('POST', `/api/users/${user.id}/affiliate`);
       refetchAffiliate();
     } catch (e) {
       console.error(e);

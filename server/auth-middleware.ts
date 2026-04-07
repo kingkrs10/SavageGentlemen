@@ -173,7 +173,7 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
 
   // SECURITY: For non-sensitive routes only, allow user-id fallback
   // In production, also allow for profile routes (not payment/ticket/admin)
-  const isProfileRoute = /\/users\/\d+\/(profile|payment|follow)/.test(req.path);
+  const isProfileRoute = /\/users\/\d+\/(profile|payment|follow|affiliate)/.test(req.path);
   if (!user && !isPaymentRoute && !isTicketRoute && !isAdminRoute && (process.env.NODE_ENV === 'development' || isProfileRoute) && userId) {
     try {
       const id = parseInt(userId as string);
