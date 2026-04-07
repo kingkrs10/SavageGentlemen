@@ -12,12 +12,14 @@ import {
   Activity,
   Zap,
   TrendingUp,
-  Scan
+  Scan,
+  Target
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface StatCardProps {
   title: string;
@@ -76,12 +78,12 @@ export function AdminOverview() {
         const [usersRes, eventsRes, ordersRes] = await Promise.all([
           fetch("/api/admin/users"),
           fetch("/api/events"),
-          fetch("/api/admin/orders").catch(() => ({ json: () => [] })) // Fallback if route missing
+          fetch("/api/admin/orders").catch(() => ({ ok: false, json: async () => [] } as any)) // Fallback if route missing
         ]);
 
         const usersData = await usersRes.json();
         const eventsData = await eventsRes.json();
-        const ordersData = ordersRes.ok ? await ordersRes.json() : [];
+        const ordersData = ('ok' in ordersRes && ordersRes.ok) ? await ordersRes.json() : [];
 
         setStats({
           users: usersData.length || 0,

@@ -119,6 +119,18 @@ const AdSpace = () => {
       linkUrl: "/events",
       eventDate: "July 4, 2025",
       location: "Convention Center"
+    },
+    // Soca Noir Rose Referral
+    {
+      id: "soca-noir-rose",
+      type: "banner",
+      title: "Soca Noir Rosé",
+      description: "Experience the premium taste of Soca Noir Rosé.",
+      imageUrl: "https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=800&h=400&fit=crop",
+      backgroundColor: "bg-gradient-to-r from-rose-900/80 to-pink-900/80 border border-rose-500/20",
+      textColor: "text-white",
+      ctaText: "Get Yours Now",
+      linkUrl: "#REFERRAL_LINK_REQUIRED"
     }
   ];
 
