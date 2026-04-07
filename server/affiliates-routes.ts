@@ -3,9 +3,10 @@ import { db } from "./db";
 import { affiliates, affiliateClicks } from "../shared/schema";
 import { eq, count, sql, desc, and } from "drizzle-orm";
 import { randomBytes } from "crypto";
+import { authenticateUser, requireAdmin } from "./auth-middleware";
 
 export function registerAffiliatesRoutes(app: Express) {
-  // 1. Redirect Endpoint /api/ref
+  // 1. Redirect Endpoint /api/ref (public - no auth needed)
   app.get("/api/ref", async (req: Request, res: Response) => {
     try {
       const affiliateId = req.query.a ? parseInt(req.query.a as string, 10) : null;
@@ -37,7 +38,7 @@ export function registerAffiliatesRoutes(app: Express) {
   });
 
   // 2. User Specific Affiliate Endpoints /api/users/:id/affiliate
-  app.get("/api/users/:id/affiliate", async (req: Request, res: Response) => {
+  app.get("/api/users/:id/affiliate", authenticateUser, async (req: Request, res: Response) => {
     try {
       const userId = parseInt(req.params.id, 10);
       if (isNaN(userId)) return res.status(400).json({ error: "Invalid user ID" });
@@ -72,7 +73,7 @@ export function registerAffiliatesRoutes(app: Express) {
     }
   });
 
-  app.post("/api/users/:id/affiliate", async (req: Request, res: Response) => {
+  app.post("/api/users/:id/affiliate", authenticateUser, async (req: Request, res: Response) => {
     try {
       const userId = parseInt(req.params.id, 10);
       if (isNaN(userId)) return res.status(400).json({ error: "Invalid user ID" });
@@ -103,12 +104,8 @@ export function registerAffiliatesRoutes(app: Express) {
   });
 
   // 3. Admin endpoints /api/admin/affiliates
-  app.get("/api/admin/affiliates", async (req: Request, res: Response) => {
+  app.get("/api/admin/affiliates", authenticateUser, requireAdmin, async (req: Request, res: Response) => {
     try {
-      if (!req.user || req.user.role !== "admin") {
-        return res.status(403).json({ error: "Unauthorized" });
-      }
-
       const performanceRecords = await db.execute(sql`
         SELECT 
           a.id, 
