@@ -198,7 +198,7 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
 
   return (
     <div
-      className={cn("relative w-full h-screen overflow-hidden", className)}
+      className={cn("relative w-full h-[calc(100vh-120px)] overflow-hidden", className)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onFocus={handleFocus}

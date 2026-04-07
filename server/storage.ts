@@ -2586,86 +2586,119 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log(`Starting cascade deletion for user ID ${id}`);
       
-      // Delete user's related data to prevent foreign key constraints
-       // 1. Authentication & Security
-      await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, id));
-      
-      // 2. Communications
-      await db.delete(emailSubscribers).where(eq(emailSubscribers.userId, id));
-      
-      // 3. AI Features
-      await db.delete(aiAssistantConfigs).where(eq(aiAssistantConfigs.userId, id));
-      const userSessions = await db.select().from(aiChatSessions).where(eq(aiChatSessions.userId, id));
-      const sessionIds = userSessions.map(s => s.id);
-      if (sessionIds.length > 0) {
-        await db.delete(aiChatMessages).where(inArray(aiChatMessages.sessionId, sessionIds));
-        await db.delete(aiChatSessions).where(eq(aiChatSessions.userId, id));
+      // Use a transaction so either everything succeeds or nothing changes
+      return await db.transaction(async (tx) => {
+        // Helper to log & suppress per-step errors so we can continue cleanup
+        const safeDelete = async (label: string, fn: () => Promise<any>) => {
+          try { await fn(); } catch (e: any) {
+            console.warn(`[deleteUser] ${label} failed for user ${id}:`, e.message);
+          }
+        };
+
+        // ── 1. Authentication & Security ──
+        await safeDelete('passwordResetTokens', () => tx.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, id)));
+        
+        // ── 2. Communications ──
+        await safeDelete('emailSubscribers', () => tx.delete(emailSubscribers).where(eq(emailSubscribers.userId, id)));
+        
+        // ── 3. AI Features ──
+        await safeDelete('aiAssistantConfigs', () => tx.delete(aiAssistantConfigs).where(eq(aiAssistantConfigs.userId, id)));
+        const userSessions = await tx.select().from(aiChatSessions).where(eq(aiChatSessions.userId, id));
+        const sessionIds = userSessions.map(s => s.id);
+        if (sessionIds.length > 0) {
+          await safeDelete('aiChatMessages', () => tx.delete(aiChatMessages).where(inArray(aiChatMessages.sessionId, sessionIds)));
+          await safeDelete('aiChatSessions', () => tx.delete(aiChatSessions).where(eq(aiChatSessions.userId, id)));
+        }
+        
+        // ── 4. Social & Follows ──
+        await safeDelete('userFollows', () => tx.delete(userFollows).where(sql`${userFollows.followerId} = ${id} OR ${userFollows.followingId} = ${id}`));
+        await safeDelete('eventCheckins', () => tx.delete(eventCheckins).where(eq(eventCheckins.userId, id)));
+        await safeDelete('eventReviews', () => tx.delete(eventReviews).where(eq(eventReviews.userId, id)));
+        await safeDelete('eventPhotos', () => tx.delete(eventPhotos).where(eq(eventPhotos.userId, id)));
+        
+        // ── 5. Passport: Social shares first (may reference achievements) ──
+        await safeDelete('passportSocialShares', () => tx.delete(passportSocialShares).where(eq(passportSocialShares.userId, id)));
+        
+        // ── 6. Passport: QR check-ins (may reference stamps and credit transactions) ──
+        await safeDelete('passportQrCheckins', () => tx.delete(passportQrCheckins).where(eq(passportQrCheckins.userId, id)));
+        
+        // ── 7. Passport: Redemptions (references credit transactions) ──
+        // First nullify redeemedBy references from OTHER users' redemptions that this user validated
+        await safeDelete('passportUserRedemptions.redeemedBy nullify', () => 
+          tx.update(passportUserRedemptions).set({ redeemedBy: null }).where(eq(passportUserRedemptions.redeemedBy, id)));
+        // Then delete this user's own redemptions
+        await safeDelete('passportUserRedemptions', () => tx.delete(passportUserRedemptions).where(eq(passportUserRedemptions.userId, id)));
+        
+        // ── 8. Passport: Achievements ──
+        await safeDelete('passportUserAchievements', () => tx.delete(passportUserAchievements).where(eq(passportUserAchievements.userId, id)));
+        
+        // ── 9. Passport: Credit transactions ──
+        // Nullify createdBy references (admin adjustments created by this user for OTHER users)
+        await safeDelete('passportCreditTransactions.createdBy nullify', () => 
+          tx.update(passportCreditTransactions).set({ createdBy: null }).where(eq(passportCreditTransactions.createdBy, id)));
+        // Delete this user's own credit transactions
+        await safeDelete('passportCreditTransactions', () => tx.delete(passportCreditTransactions).where(eq(passportCreditTransactions.userId, id)));
+        
+        // ── 10. Passport: Core records ──
+        await safeDelete('passportStamps', () => tx.delete(passportStamps).where(eq(passportStamps.userId, id)));
+        await safeDelete('passportRewards', () => tx.delete(passportRewards).where(eq(passportRewards.userId, id)));
+        await safeDelete('passportMemberships', () => tx.delete(passportMemberships).where(eq(passportMemberships.userId, id)));
+        await safeDelete('passportProfiles', () => tx.delete(passportProfiles).where(eq(passportProfiles.userId, id)));
+        
+        // ── 11. Purchases, Orders & Financial ──
+        await safeDelete('musicMixPurchases', () => tx.delete(musicMixPurchases).where(eq(musicMixPurchases.userId, id)));
+        await safeDelete('ticketRefunds', () => tx.delete(ticketRefunds).where(eq(ticketRefunds.userId, id)));
+        await safeDelete('ticketTransfers', () => tx.delete(ticketTransfers).where(sql`${ticketTransfers.fromUserId} = ${id} OR ${ticketTransfers.toUserId} = ${id}`));
+        await safeDelete('ticketScans', () => tx.delete(ticketScans).where(eq(ticketScans.userId, id)));
+        await safeDelete('ticketPurchases', () => tx.delete(ticketPurchases).where(eq(ticketPurchases.userId, id)));
+        
+        // Delete order items then orders
+        const userOrders = await tx.select().from(orders).where(eq(orders.userId, id));
+        const orderIds = userOrders.map(o => o.id);
+        if (orderIds.length > 0) {
+          await safeDelete('orderItems', () => tx.delete(orderItems).where(inArray(orderItems.orderId, orderIds)));
+          await safeDelete('orders', () => tx.delete(orders).where(eq(orders.userId, id)));
+        }
+        
+        // ── 12. Content & Media ──
+        await safeDelete('comments', () => tx.delete(comments).where(eq(comments.userId, id)));
+        await safeDelete('chatMessages', () => tx.delete(chatMessages).where(eq(chatMessages.userId, id)));
+        await safeDelete('posts', () => tx.delete(posts).where(eq(posts.userId, id)));
+        await safeDelete('mediaUploads', () => tx.delete(mediaUploads).where(eq(mediaUploads.userId, id)));
+        // Nullify musicMixes.uploadedBy instead of deleting (preserve mixes)
+        await safeDelete('musicMixes.uploadedBy nullify', () => tx.update(musicMixes).set({ uploadedBy: null }).where(eq(musicMixes.uploadedBy, id)));
+        // Nullify sponsoredContent.createdBy instead of deleting (preserve ad content)
+        await safeDelete('sponsoredContent.createdBy nullify', () => tx.update(sponsoredContent).set({ createdBy: null }).where(eq(sponsoredContent.createdBy, id)));
+        // Delete media assets/collections owned by user (createdBy is NOT NULL, no FK constraint)
+        await safeDelete('mediaAssets', () => tx.delete(mediaAssets).where(eq(mediaAssets.createdBy, id)));
+        await safeDelete('mediaCollections', () => tx.delete(mediaCollections).where(eq(mediaCollections.createdBy, id)));
+        
+        // ── 13. Analytics & Logs ──
+        await safeDelete('pageViews', () => tx.delete(pageViews).where(eq(pageViews.userId, id)));
+        await safeDelete('userEvents', () => tx.delete(userEvents).where(eq(userEvents.userId, id)));
+        await safeDelete('mediaAccessLogs', () => tx.delete(mediaAccessLogs).where(eq(mediaAccessLogs.userId, id)));
+        // Nullify inventoryHistory.userId (nullable FK - preserve history)
+        await safeDelete('inventoryHistory.userId nullify', () => tx.update(inventoryHistory).set({ userId: null }).where(eq(inventoryHistory.userId, id)));
+
+        // ── 14. Promoter Access ──
+        await safeDelete('promoterSubscriptions', () => tx.delete(promoterSubscriptions).where(eq(promoterSubscriptions.userId, id)));
+        await safeDelete('promoterProfiles', () => tx.delete(promoterProfiles).where(eq(promoterProfiles.userId, id)));
+        await safeDelete('promoters.userId nullify', () => tx.update(promoters).set({ userId: null }).where(eq(promoters.userId, id)));
+
+        // ── 15. Finally delete the user ──
+        const result = await tx
+          .delete(users)
+          .where(eq(users.id, id));
+
+        console.log(`User ID ${id} and all related data deleted successfully`);
+        return result.rowCount > 0;
+      });
+    } catch (error: any) {
+      console.error(`Error deleting user with ID ${id}:`, error?.message || error);
+      // Log the specific constraint that failed
+      if (error?.constraint) {
+        console.error(`Failed FK constraint: ${error.constraint}`);
       }
-      
-      // 4. Social, Passport & Loyalty
-      await db.delete(userFollows).where(sql`${userFollows.followerId} = ${id} OR ${userFollows.followingId} = ${id}`);
-      await db.delete(eventCheckins).where(eq(eventCheckins.userId, id));
-      await db.delete(eventReviews).where(eq(eventReviews.userId, id));
-      await db.delete(eventPhotos).where(eq(eventPhotos.userId, id));
-      await db.delete(passportSocialShares).where(eq(passportSocialShares.userId, id));
-      await db.delete(passportStamps).where(eq(passportStamps.userId, id));
-      await db.delete(passportRewards).where(eq(passportRewards.userId, id));
-      await db.delete(passportMemberships).where(eq(passportMemberships.userId, id));
-      await db.delete(passportUserAchievements).where(eq(passportUserAchievements.userId, id));
-      await db.delete(passportUserRedemptions).where(eq(passportUserRedemptions.userId, id));
-      await db.delete(passportQrCheckins).where(eq(passportQrCheckins.userId, id));
-      await db.delete(passportCreditTransactions).where(eq(passportCreditTransactions.userId, id));
-      await db.delete(passportProfiles).where(eq(passportProfiles.userId, id));
-      
-      // 5. Purchases, Orders & Financial
-      await db.delete(musicMixPurchases).where(eq(musicMixPurchases.userId, id));
-      await db.delete(ticketRefunds).where(eq(ticketRefunds.userId, id));
-      await db.delete(ticketTransfers).where(sql`${ticketTransfers.fromUserId} = ${id} OR ${ticketTransfers.toUserId} = ${id}`);
-      
-      // Delete ticket scans first (references ticketId/userId)
-      await db.delete(ticketScans).where(eq(ticketScans.userId, id));
-      
-      // Delete ticket purchases (references user)
-      await db.delete(ticketPurchases).where(eq(ticketPurchases.userId, id));
-      
-      // Delete order items then orders (references user)
-      const userOrders = await db.select().from(orders).where(eq(orders.userId, id));
-      const orderIds = userOrders.map(o => o.id);
-      if (orderIds.length > 0) {
-        await db.delete(orderItems).where(inArray(orderItems.orderId, orderIds));
-        await db.delete(orders).where(eq(orders.userId, id));
-      }
-      
-      // 6. Content & Media
-      await db.delete(comments).where(eq(comments.userId, id));
-      await db.delete(chatMessages).where(eq(chatMessages.userId, id));
-      await db.delete(posts).where(eq(posts.userId, id));
-      await db.delete(mediaUploads).where(eq(mediaUploads.userId, id));
-      await db.delete(musicMixes).where(eq(musicMixes.uploadedBy, id));
-      await db.delete(sponsoredContent).where(eq(sponsoredContent.createdBy, id));
-      await db.delete(mediaAssets).where(eq(mediaAssets.createdBy, id));
-      await db.delete(mediaCollections).where(eq(mediaCollections.createdBy, id));
-      
-      // 7. Analytics & Logs
-      await db.delete(pageViews).where(eq(pageViews.userId, id));
-      await db.delete(userEvents).where(eq(userEvents.userId, id));
-      await db.delete(mediaAccessLogs).where(eq(mediaAccessLogs.userId, id));
-      await db.delete(inventoryHistory).where(eq(inventoryHistory.userId, id));
-
-      // 8. Promoter Access
-      await db.delete(promoterSubscriptions).where(eq(promoterSubscriptions.userId, id));
-      await db.delete(promoterProfiles).where(eq(promoterProfiles.userId, id));
-      await db.update(promoters).set({ userId: null }).where(eq(promoters.userId, id));
-
-      // 9. Finally delete the user
-      const result = await db
-        .delete(users)
-        .where(eq(users.id, id));
-
-      console.log(`User ID ${id} and all related data deleted successfully`);
-      return result.rowCount > 0;
-    } catch (error) {
-      console.error(`Error deleting user with ID ${id}:`, error);
       return false;
     }
   }
