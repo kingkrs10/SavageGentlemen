@@ -87,6 +87,29 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   }
 });
 
+// Helper for extracting affiliate ID from cookies without cookie-parser
+const getAffiliateIdFromCookie = (req: Request): number | null => {
+  try {
+    const cookieHeader = req.headers.cookie;
+    if (!cookieHeader) return null;
+    
+    const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+      const [name, ...value] = cookie.split('=');
+      if (name) acc[name.trim()] = value.join('=');
+      return acc;
+    }, {} as Record<string, string>);
+    
+    const affiliateIdStr = cookies['sg_affiliate_id'];
+    if (affiliateIdStr) {
+      const id = parseInt(affiliateIdStr, 10);
+      return isNaN(id) ? null : id;
+    }
+  } catch (error) {
+    console.error("Error parsing affiliate cookie:", error);
+  }
+  return null;
+};
+
 // Multer storage configuration for file uploads
 const storage_config = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -135,6 +158,9 @@ const upload = multer({
 import { registerAffiliatesRoutes } from "./affiliates-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Retroactive fix for old affiliate links pointing to non-existent product page
+  app.get("/products/soca-noir-rose", (req, res) => res.redirect("/"));
+
   registerAffiliatesRoutes(app);
   // Add performance monitoring middleware
   app.use(performanceMiddleware);
@@ -873,6 +899,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Change password for authenticated users
+  router.post(
+    "/auth/change-password",
+    authenticateUser,
+    async (req: Request, res: Response) => {
+      try {
+        const { currentPassword, newPassword } = req.body;
+        const userId = req.user?.id;
+
+        if (!userId) {
+          return res.status(401).json({ message: "Not authenticated" });
+        }
+
+        if (!currentPassword || !newPassword) {
+          return res.status(400).json({ message: "Current and new passwords are required" });
+        }
+
+        if (newPassword.length < 8) {
+          return res.status(400).json({ message: "New password must be at least 8 characters long" });
+        }
+
+        const isValid = await storage.verifyPassword(userId, currentPassword);
+        if (!isValid) {
+          return res.status(400).json({ message: "Invalid current password" });
+        }
+
+        await storage.updateUserPassword(userId, newPassword);
+        
+        // Log the password change for security
+        console.log(`[AUTH] User ${req.user?.username} changed their password.`);
+
+        return res.status(200).json({ message: "Password updated successfully" });
+      } catch (err) {
+        console.error("Change password error:", err);
+        return res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  // Update security and privacy settings
+  router.put(
+    "/users/:id/security",
+    authenticateUser,
+    async (req: Request, res: Response) => {
+      try {
+        const id = parseInt(req.params.id);
+        const { twoFactorEnabled, isPrivate } = req.body;
+
+        // Ensure user can only update their own settings unless they are admin
+        if (req.user?.id !== id && req.user?.role !== 'admin') {
+          return res.status(403).json({ message: "Forbidden" });
+        }
+
+        const user = await storage.updateSecuritySettings(id, { twoFactorEnabled, isPrivate });
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        return res.status(200).json({
+          status: 'success',
+          data: {
+            twoFactorEnabled: user.twoFactorEnabled,
+            isPrivate: user.isPrivate
+          }
+        });
+      } catch (err) {
+        console.error("Update security settings error:", err);
+        return res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
   // Events routes
   router.get("/events", async (req: Request, res: Response) => {
     try {
@@ -1126,13 +1224,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Event not found" });
       }
 
-      // Create an order first
+      // Create an order first with affiliate tracking if present
+      const affiliateId = getAffiliateIdFromCookie(req);
       const order = await storage.createOrder({
         userId: user.id,
         totalAmount: amount || event.price || 0,
         status: 'completed',
         paymentMethod: paymentMethod,
-        paymentId: payment_intent || `manual-${Date.now()}`
+        paymentId: payment_intent || `manual-${Date.now()}`,
+        affiliateId: affiliateId
       });
 
       console.log(`Created order #${order.id} for user ${user.id}, event ${eventId}, ticket ${ticketId || 'default'}`);
@@ -4488,13 +4588,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Event not found" });
       }
 
-      // Create order record
+      // Create order record with affiliate tracking if present
+      const affiliateId = getAffiliateIdFromCookie(req);
       const order = await storage.createOrder({
         userId: user.id,
         totalAmount: amount || 0,
         status: 'completed',
         paymentMethod: 'manual',
-        paymentId: `manual-${Date.now()}`
+        paymentId: `manual-${Date.now()}`,
+        affiliateId: affiliateId
       });
 
       // Generate QR code data
@@ -4798,13 +4900,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Create order record for the free ticket
+      // Create order record for the free ticket with affiliate tracking
+      const affiliateId = getAffiliateIdFromCookie(req);
       const order = await storage.createOrder({
         userId: user.id,
         totalAmount: 0,
         status: 'completed',
         paymentMethod: 'free',
-        paymentId: `free-${Date.now()}`
+        paymentId: `free-${Date.now()}`,
+        affiliateId: affiliateId
       });
 
       // Check if ticketId was provided in the request
@@ -5048,13 +5152,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Create order record for the free ticket
+      // Create order record for the free ticket with affiliate tracking
+      const affiliateId = getAffiliateIdFromCookie(req);
       const order = await storage.createOrder({
         userId: user.id,
         totalAmount: 0,
         status: 'completed',
         paymentMethod: 'free',
-        paymentId: `free-${Date.now()}`
+        paymentId: `free-${Date.now()}`,
+        affiliateId: affiliateId
       });
 
       // Check if ticketId was provided in the request
@@ -5631,13 +5737,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           if (user && email) {
-            // Create order record
+            // Create order record with affiliate tracking if present
+            const affiliateId = getAffiliateIdFromCookie(req);
             const order = await storage.createOrder({
               userId: user.id,
               totalAmount: Math.round(amount * 100), // Convert back to cents for storage
               status: 'completed',
               paymentMethod: 'stripe',
-              paymentId: paymentIntent.id
+              paymentId: paymentIntent.id,
+              affiliateId: affiliateId
             });
 
             // If this is an event ticket purchase, create a ticket record

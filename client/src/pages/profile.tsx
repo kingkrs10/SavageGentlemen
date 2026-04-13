@@ -550,11 +550,11 @@ const ProfilePage = () => {
                       <p className="text-sm text-muted-foreground mb-4">Share this link to earn commission on Soca Noir Rosé purchases.</p>
                       <div className="flex items-center gap-2">
                         <code className="flex-1 p-3 bg-muted border rounded-lg text-primary text-sm break-all">
-                          {window.location.origin}/api/ref?a={affiliateData.affiliate.id}&redirect=/products/soca-noir-rose
+                          {window.location.origin}/ref/{affiliateData.affiliate.referralCode}
                         </code>
                         <Button 
                           variant="secondary" 
-                          onClick={() => copyToClipboard(`${window.location.origin}/api/ref?a=${affiliateData.affiliate.id}&redirect=/products/soca-noir-rose`)}
+                          onClick={() => copyToClipboard(`${window.location.origin}/ref/${affiliateData.affiliate.referralCode}`)}
                           className="shrink-0"
                         >
                           {copied ? <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" /> : <Copy className="h-4 w-4 mr-2" />}

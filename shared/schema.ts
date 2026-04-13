@@ -21,6 +21,8 @@ export const users = pgTable("users", {
   paypalCustomerId: text("paypal_customer_id"),
   email: text("email"),
   firebaseId: text("firebase_id"),
+  twoFactorEnabled: boolean("two_factor_enabled").default(false),
+  isPrivate: boolean("is_private").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -42,6 +44,8 @@ export const insertUserSchema = createInsertSchema(users)
     firebaseId: true,
     stripeCustomerId: true,
     paypalCustomerId: true,
+    twoFactorEnabled: true,
+    isPrivate: true,
   })
   .extend({
     username: z.string()
@@ -667,6 +671,7 @@ export const orders = pgTable("orders", {
   paymentMethod: text("payment_method"), // stripe, paypal, bitcoin
   paymentId: text("payment_id"), // ID from payment provider
   discountCodeId: integer("discount_code_id"),
+  affiliateId: integer("affiliate_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -678,6 +683,7 @@ export const insertOrderSchema = createInsertSchema(orders).pick({
   paymentMethod: true,
   paymentId: true,
   discountCodeId: true,
+  affiliateId: true,
 });
 
 // Order Items schema

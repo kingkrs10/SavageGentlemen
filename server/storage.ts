@@ -219,6 +219,7 @@ export interface IStorage {
   deleteUser(id: number): Promise<boolean>;
   setUserPro(userId: number): Promise<void>;
   getUserProStatus(userId: number): Promise<boolean>;
+  updateSecuritySettings(userId: number, settings: { twoFactorEnabled?: boolean; isPrivate?: boolean }): Promise<User | undefined>;
 
   // Password reset operations
   storePasswordResetToken(userId: number, token: string, expiresAt: Date): Promise<void>;
@@ -731,6 +732,18 @@ export class MemStorage implements IStorage {
 
     user.password = newPassword;
     this.users.set(id, user);
+    return user;
+  }
+
+  async updateSecuritySettings(userId: number, settings: { twoFactorEnabled?: boolean; isPrivate?: boolean }): Promise<User | undefined> {
+    const user = await this.getUser(userId);
+    if (!user) return undefined;
+
+    if (settings.twoFactorEnabled !== undefined) user.twoFactorEnabled = settings.twoFactorEnabled;
+    if (settings.isPrivate !== undefined) user.isPrivate = settings.isPrivate;
+
+    user.updatedAt = new Date();
+    this.users.set(userId, user);
     return user;
   }
 
@@ -1450,7 +1463,12 @@ export class MemStorage implements IStorage {
       ...orderData,
       id,
       createdAt,
-      status: 'processing'
+      updatedAt: createdAt,
+      status: 'processing',
+      affiliateId: orderData.affiliateId || null,
+      discountCodeId: orderData.discountCodeId || null,
+      paymentMethod: orderData.paymentMethod || null,
+      paymentId: orderData.paymentId || null
     };
     this.orders.set(id, order);
     return order;
@@ -2386,6 +2404,18 @@ export class DatabaseStorage implements IStorage {
       .update(users)
       .set({ role, updatedAt: new Date() })
       .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async updateSecuritySettings(userId: number, settings: { twoFactorEnabled?: boolean; isPrivate?: boolean }): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({
+        ...settings,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId))
       .returning();
     return user;
   }

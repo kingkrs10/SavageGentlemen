@@ -6,34 +6,84 @@ import { randomBytes } from "crypto";
 import { authenticateUser, requireAdmin } from "./auth-middleware";
 
 export function registerAffiliatesRoutes(app: Express) {
-  // 1. Redirect Endpoint /api/ref (public - no auth needed)
+  // Helper for tracking and cookie setting
+  const trackAffiliateClick = async (res: Response, affiliateId: number, ip: string) => {
+    // 1. Record the click
+    await db.insert(affiliateClicks).values({
+      affiliateId,
+      ipAddress: ip,
+    });
+
+    // 2. Set the 30-day tracking cookie
+    res.cookie('sg_affiliate_id', affiliateId.toString(), {
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
+  };
+
+  // 1. Redirect Endpoint /api/ref (legacy supports ?a=ID)
   app.get("/api/ref", async (req: Request, res: Response) => {
     try {
       const affiliateId = req.query.a ? parseInt(req.query.a as string, 10) : null;
-      const redirectTo = (req.query.redirect as string) || "/";
+      let redirectTo = (req.query.redirect as string) || "/";
       
-      const ip = (req.headers["x-forwarded-for"] as string) || "127.0.0.1";
+      // Retroactive fix: if old link points to broken product page, redirect to home
+      if (redirectTo.includes("/products/soca-noir-rose")) {
+        redirectTo = "/";
+      }
+
+      const ip = (req.headers["x-forwarded-for"] as string) || req.ip || "127.0.0.1";
       
       if (affiliateId && !isNaN(affiliateId)) {
-        // Track the click
-        await db.insert(affiliateClicks).values({
-          affiliateId,
-          ipAddress: ip,
-        });
+        await trackAffiliateClick(res, affiliateId, ip);
+      }
+      res.redirect(redirectTo);
+    } catch (error: any) {
+      console.error("Affiliate tracking error:", error);
+      res.redirect("/");
+    }
+  });
 
-        // Store active affiliate info in cookie
-        res.cookie('sg_affiliate_id', affiliateId.toString(), {
-          maxAge: 30 * 24 * 60 * 60 * 1000, 
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          path: '/',
-        });
+  // 1b. Pretty Redirect Endpoint /ref/:code
+  app.get("/ref/:code", async (req: Request, res: Response) => {
+    try {
+      const { code } = req.params;
+      const redirectTo = (req.query.redirect as string) || "/";
+      const ip = (req.headers["x-forwarded-for"] as string) || req.ip || "127.0.0.1";
+
+      const [affiliate] = await db
+        .select()
+        .from(affiliates)
+        .where(eq(affiliates.referralCode, code.toUpperCase()));
+
+      if (affiliate) {
+        await trackAffiliateClick(res, affiliate.id, ip);
       }
 
       res.redirect(redirectTo);
     } catch (error: any) {
-      console.error("Affiliate tracking error:", error);
-      res.redirect((req.query.redirect as string) || "/");
+      console.error("Affiliate code redirect error:", error);
+      res.redirect("/");
+    }
+  });
+
+  // 1c. Short ID Redirect Endpoint /a/:id
+  app.get("/a/:id", async (req: Request, res: Response) => {
+    try {
+      const affiliateId = parseInt(req.params.id, 10);
+      const redirectTo = (req.query.redirect as string) || "/";
+      const ip = (req.headers["x-forwarded-for"] as string) || req.ip || "127.0.0.1";
+
+      if (!isNaN(affiliateId)) {
+        await trackAffiliateClick(res, affiliateId, ip);
+      }
+      res.redirect(redirectTo);
+    } catch (error: any) {
+      console.error("Affiliate ID redirect error:", error);
+      res.redirect("/");
     }
   });
 
@@ -60,11 +110,22 @@ export function registerAffiliatesRoutes(app: Express) {
         .from(affiliateClicks)
         .where(eq(affiliateClicks.affiliateId, affiliate.id));
       
+      // Fetch actual conversions from orders table
+      const conversionStats = await db.execute(sql`
+        SELECT 
+          COUNT(*)::int as "count",
+          COALESCE(SUM(total_amount), 0)::int as "revenue"
+        FROM orders
+        WHERE affiliate_id = ${affiliate.id} AND status = 'completed'
+      `);
+      
+      const stats = conversionStats.rows[0] as { count: number, revenue: number };
+      
       return res.json({
         affiliate,
         clicks: clickCount,
-        conversions: 0,
-        revenue: 0,
+        conversions: stats.count,
+        revenue: stats.revenue,
       });
 
     } catch (error: any) {
@@ -106,6 +167,7 @@ export function registerAffiliatesRoutes(app: Express) {
   // 3. Admin endpoints /api/admin/affiliates
   app.get("/api/admin/affiliates", authenticateUser, requireAdmin, async (req: Request, res: Response) => {
     try {
+      // Improved query to get real stats
       const performanceRecords = await db.execute(sql`
         SELECT 
           a.id, 
@@ -115,13 +177,11 @@ export function registerAffiliatesRoutes(app: Express) {
           a.created_at as "createdAt",
           u.username,
           u.email,
-          COUNT(ac.id) as "totalClicks",
-          0 as "totalConversions",
-          0 as "totalRevenueGenerated"
+          (SELECT COUNT(*) FROM affiliate_clicks WHERE affiliate_id = a.id)::int as "totalClicks",
+          (SELECT COUNT(*) FROM orders WHERE affiliate_id = a.id AND status = 'completed')::int as "totalConversions",
+          (SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE affiliate_id = a.id AND status = 'completed')::int as "totalRevenueGenerated"
         FROM affiliates a
         LEFT JOIN users u ON a.user_id = u.id
-        LEFT JOIN affiliate_clicks ac ON ac.affiliate_id = a.id
-        GROUP BY a.id, u.username, u.email
         ORDER BY "totalClicks" DESC
       `);
 
@@ -129,11 +189,21 @@ export function registerAffiliatesRoutes(app: Express) {
         .select({ overallClicks: count() })
         .from(affiliateClicks);
 
+      const overallStats = await db.execute(sql`
+        SELECT 
+          COUNT(*)::int as "count",
+          COALESCE(SUM(total_amount), 0)::int as "revenue"
+        FROM orders
+        WHERE affiliate_id IS NOT NULL AND status = 'completed'
+      `);
+      
+      const stats = overallStats.rows[0] as { count: number, revenue: number };
+
       return res.json({
         performance: performanceRecords.rows,
         overallClicks,
-        overallConversions: 0,
-        overallRevenue: 0,
+        overallConversions: stats.count,
+        overallRevenue: stats.revenue,
       });
 
     } catch (error: any) {
