@@ -3,6 +3,7 @@ import { useRoute, Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { API_ROUTES } from "@/lib/constants";
 import { Event } from "@/types";
+import { getAuthHeaders } from "@/lib/auth-utils";
 import { Button } from "@/components/ui/button";
 import { parseEventId, getEventUrl, createSlug } from "@/lib/utils/url-utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -62,6 +63,7 @@ const EventDetail = () => {
   const [globalCodeInput, setGlobalCodeInput] = useState('');
   const [globalCodeError, setGlobalCodeError] = useState('');
   const [ticketCodes, setTicketCodes] = useState<Record<number, string>>({}); // store the code used for each unlocked ticket
+  const [claimingTicketId, setClaimingTicketId] = useState<number | null>(null); // track which free ticket is being claimed
 
   // Verify a secret code against the server
   const verifySecretCode = useCallback(async (code: string): Promise<{ticketId: number; ticketName: string} | null> => {
@@ -711,8 +713,8 @@ const EventDetail = () => {
 
                               <Button
                                 className="w-full mt-2"
-                                disabled={isEventPast}
-                                onClick={() => {
+                                disabled={isEventPast || claimingTicketId === ticket.id}
+                                onClick={async () => {
                                   // Check if event is past
                                   if (isEventPast) {
                                     toast({
@@ -742,6 +744,75 @@ const EventDetail = () => {
                                     return;
                                   }
 
+                                  // FREE TICKETS: Claim directly from event page (no redirect)
+                                  if (ticket.price === 0) {
+                                    setClaimingTicketId(ticket.id);
+                                    try {
+                                      const headers: Record<string, string> = {
+                                        ...getAuthHeaders(),
+                                        'Content-Type': 'application/json',
+                                      };
+
+                                      const payload = {
+                                        eventId: event.id,
+                                        eventTitle: event.title,
+                                        ticketId: ticket.id,
+                                        ticketName: ticket.name,
+                                        secretCode: ticketCodes[ticket.id] || undefined,
+                                      };
+
+                                      const response = await fetch('/api/tickets/free', {
+                                        method: 'POST',
+                                        headers,
+                                        body: JSON.stringify(payload),
+                                        credentials: 'include',
+                                      });
+
+                                      const responseText = await response.text();
+                                      let responseData;
+                                      try {
+                                        responseData = JSON.parse(responseText);
+                                      } catch {
+                                        throw new Error('Server returned an invalid response');
+                                      }
+
+                                      if (!response.ok) {
+                                        throw new Error(responseData?.message || 'Failed to claim ticket');
+                                      }
+
+                                      if (responseData.success) {
+                                        toast({
+                                          title: "🎉 Free Ticket Claimed!",
+                                          description: "Your ticket has been claimed successfully. Check your email for details.",
+                                        });
+
+                                        // Redirect to success page
+                                        const redirectParams = new URLSearchParams();
+                                        redirectParams.append('eventId', event.id.toString());
+                                        redirectParams.append('eventTitle', encodeURIComponent(event.title));
+                                        redirectParams.append('ticketId', ticket.id.toString());
+                                        redirectParams.append('ticketName', encodeURIComponent(ticket.name));
+
+                                        setTimeout(() => {
+                                          setLocation(`/payment-success?${redirectParams.toString()}`);
+                                        }, 1500);
+                                      } else {
+                                        throw new Error(responseData.message || 'Failed to claim ticket');
+                                      }
+                                    } catch (error) {
+                                      console.error('Error claiming free ticket:', error);
+                                      toast({
+                                        title: "Error",
+                                        description: error instanceof Error ? error.message : 'Could not claim ticket. Please try again.',
+                                        variant: "destructive",
+                                      });
+                                    } finally {
+                                      setClaimingTicketId(null);
+                                    }
+                                    return;
+                                  }
+
+                                  // PAID TICKETS: Redirect to checkout
                                   toast({
                                     title: "Processing",
                                     description: "Redirecting to secure checkout..."
@@ -753,7 +824,12 @@ const EventDetail = () => {
                                   window.location.href = `/checkout?eventId=${event.id}&ticketId=${ticket.id}&amount=${ticket.price / 100}&currency=${currency}&title=${encodeURIComponent(event.title)}${codeParam}`;
                                 }}
                               >
-                                {isEventPast ? 'Event Ended' : (ticket.price === 0 ? 'Claim Free Ticket' : 'Purchase Ticket')}
+                                {claimingTicketId === ticket.id ? (
+                                  <>
+                                    <span className="animate-pulse">Claiming...</span>
+                                    <span className="ml-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                                  </>
+                                ) : isEventPast ? 'Event Ended' : (ticket.price === 0 ? 'Claim Free Ticket' : 'Purchase Ticket')}
                               </Button>
                             </div>
                           )
