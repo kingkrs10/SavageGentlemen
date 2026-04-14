@@ -10,11 +10,6 @@ import { DollarSign, MousePointerClick, Users } from "lucide-react";
 export function AffiliateManager() {
     const { data, isLoading } = useQuery({
         queryKey: ["/api/admin/affiliates"],
-        queryFn: async () => {
-            const res = await fetch("/api/admin/affiliates");
-            if (!res.ok) throw new Error("Failed to fetch affiliates");
-            return res.json();
-        }
     });
 
     if (isLoading) {
