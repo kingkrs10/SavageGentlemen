@@ -1123,8 +1123,8 @@ export default function AdminPage() {
     if (!editingEvent) return;
 
     try {
-      if (!eventForm.title || !eventForm.date || !eventForm.location) {
-        toast({ title: "Missing fields", description: "Title, date, and location are required", variant: "destructive" });
+      if (!eventForm.title || !eventForm.date) {
+        toast({ title: "Missing fields", description: "Title and date are required", variant: "destructive" });
         return;
       }
 
@@ -1159,7 +1159,7 @@ export default function AdminPage() {
 
     formData.append('title', eventForm.title);
     formData.append('date', eventDate.toISOString());
-    formData.append('location', eventForm.location);
+    formData.append('location', eventForm.location || 'TBD');
     formData.append('price', priceInCents.toString());
     if (eventForm.description) formData.append('description', eventForm.description);
     formData.append('category', eventForm.category || 'party');
@@ -1234,8 +1234,8 @@ export default function AdminPage() {
   // AdminEvent creation handler
   const handleCreateEvent = async () => {
     try {
-      if (!eventForm.title || !eventForm.date || !eventForm.location) {
-        toast({ title: "Missing fields", description: "Title, date, and location are required", variant: "destructive" });
+      if (!eventForm.title || !eventForm.date) {
+        toast({ title: "Missing fields", description: "Title and date are required", variant: "destructive" });
         return;
       }
 

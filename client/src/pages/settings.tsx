@@ -24,6 +24,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const SettingsPage = () => {
   const { user, updateUser, logout } = useUser();
@@ -50,6 +59,19 @@ const SettingsPage = () => {
     stripeCustomerId: user?.stripeCustomerId || "",
     paypalCustomerId: user?.paypalCustomerId || "",
   });
+  
+  const [securitySettings, setSecuritySettings] = useState({
+    twoFactorEnabled: user?.twoFactorEnabled || false,
+    isPrivate: user?.isPrivate || false,
+  });
+
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
 
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -138,6 +160,61 @@ const SettingsPage = () => {
       toast({
         title: "Error",
         description: "Failed to update payment information. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", "/api/auth/change-password", data);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to change password");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Password updated",
+        description: "Your password has been successfully changed.",
+      });
+      setIsPasswordDialogOpen(false);
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to change password. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateSecurityMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("PUT", `/api/users/${user?.id}/security`, data);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update security settings");
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      updateUser(data.data);
+      toast({
+        title: "Security settings updated",
+        description: "Your security settings have been successfully updated.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update security settings. Please try again.",
         variant: "destructive",
       });
     },
@@ -521,15 +598,100 @@ const SettingsPage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button variant="outline" className="w-full justify-start">
-                Change Password
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                Two-Factor Authentication
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                Privacy Settings
-              </Button>
+              <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start gap-2">
+                    <Shield className="h-4 w-4" />
+                    Change Password
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Change Password</DialogTitle>
+                    <DialogDescription>
+                      Enter your current password and a new password below.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="current-password">Current Password</Label>
+                      <Input
+                        id="current-password"
+                        type="password"
+                        value={passwordForm.currentPassword}
+                        onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-password">New Password</Label>
+                      <Input
+                        id="new-password"
+                        type="password"
+                        value={passwordForm.newPassword}
+                        onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-password">Confirm New Password</Label>
+                      <Input
+                        id="confirm-password"
+                        type="password"
+                        value={passwordForm.confirmPassword}
+                        onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>Cancel</Button>
+                    <Button 
+                      onClick={() => {
+                        if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+                          toast({ title: "Error", description: "Passwords do not match", variant: "destructive" });
+                          return;
+                        }
+                        changePasswordMutation.mutate({
+                          currentPassword: passwordForm.currentPassword,
+                          newPassword: passwordForm.newPassword
+                        });
+                      }}
+                      disabled={changePasswordMutation.isPending}
+                    >
+                      {changePasswordMutation.isPending ? "Updating..." : "Update Password"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="2fa">Two-Factor Authentication</Label>
+                  <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
+                </div>
+                <Switch
+                  id="2fa"
+                  checked={securitySettings.twoFactorEnabled}
+                  onCheckedChange={(checked) => {
+                    setSecuritySettings(prev => ({ ...prev, twoFactorEnabled: checked }));
+                    updateSecurityMutation.mutate({ twoFactorEnabled: checked });
+                  }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="private-profile">Private Profile</Label>
+                  <p className="text-sm text-muted-foreground">Only allow people you follow to see your content</p>
+                </div>
+                <Switch
+                  id="private-profile"
+                  checked={securitySettings.isPrivate}
+                  onCheckedChange={(checked) => {
+                    setSecuritySettings(prev => ({ ...prev, isPrivate: checked }));
+                    updateSecurityMutation.mutate({ isPrivate: checked });
+                  }}
+                />
+              </div>
+
               <Separator />
               <AlertDialog>
                 <AlertDialogTrigger asChild>

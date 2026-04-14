@@ -14,6 +14,8 @@ export interface User {
   stripeCustomerId?: string;
   paypalCustomerId?: string;
   firebaseId?: string;
+  twoFactorEnabled?: boolean;
+  isPrivate?: boolean;
   createdAt?: string | Date;
   updatedAt?: string | Date;
 }
