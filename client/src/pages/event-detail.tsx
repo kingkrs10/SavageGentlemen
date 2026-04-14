@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRoute, Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { API_ROUTES } from "@/lib/constants";
@@ -6,9 +6,10 @@ import { Event } from "@/types";
 import { Button } from "@/components/ui/button";
 import { parseEventId, getEventUrl, createSlug } from "@/lib/utils/url-utils";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import SEOHead from "@/components/SEOHead";
-import { Calendar, MapPin, Clock, ArrowLeft, CalendarClock, Share2 } from "lucide-react";
+import { Calendar, MapPin, Clock, ArrowLeft, CalendarClock, Share2, Lock, Unlock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getNormalizedImageUrl, normalizeAdditionalImages } from "@/lib/utils/image-utils";
 import { format } from "date-fns";
@@ -52,6 +53,34 @@ const EventDetail = () => {
   // Get the event ID from either URL format
   const eventIdParam = matchWithSlug ? paramsWithSlug?.id : paramsSimple?.id;
   const eventId = eventIdParam ? parseEventId(eventIdParam) : null;
+
+  // Secret code gating for comp/hidden tickets
+  const [unlockedTicketIds, setUnlockedTicketIds] = useState<Set<number>>(new Set());
+  const [secretCodeInputs, setSecretCodeInputs] = useState<Record<number, string>>({});
+  const [secretCodeErrors, setSecretCodeErrors] = useState<Record<number, string>>({});
+  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [globalCodeInput, setGlobalCodeInput] = useState('');
+  const [globalCodeError, setGlobalCodeError] = useState('');
+  const [ticketCodes, setTicketCodes] = useState<Record<number, string>>({}); // store the code used for each unlocked ticket
+
+  // Verify a secret code against the server
+  const verifySecretCode = useCallback(async (code: string): Promise<{ticketId: number; ticketName: string} | null> => {
+    if (!eventId || !code.trim()) return null;
+    try {
+      const res = await fetch(`/api/events/${eventId}/verify-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code.trim() }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return { ticketId: data.ticketId, ticketName: data.ticketName };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }, [eventId]);
 
   // Query to fetch event details
   const {
@@ -466,8 +495,113 @@ const EventDetail = () => {
                   if (availableTickets.length > 0) {
                     return (
                       <>
-                        <h3 className="text-xl font-bold mb-3">Available Tickets</h3>
-                        {availableTickets.map((ticket) => {
+                         <h3 className="text-xl font-bold mb-3">Available Tickets</h3>
+
+                        {/* Global secret code entry for hidden comp tickets */}
+                        {(() => {
+                          const hasHiddenTickets = availableTickets.some(
+                            (t: any) => t.requiresCode && !unlockedTicketIds.has(t.id)
+                          );
+                          if (!hasHiddenTickets) return null;
+
+                          return (
+                            <div className="mb-4 p-4 border border-dashed border-primary/40 rounded-lg bg-primary/5">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Lock className="h-4 w-4 text-primary" />
+                                <span className="text-sm font-medium text-primary">Have a comp code?</span>
+                              </div>
+                              {!showCodeInput ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full border-primary/30 text-primary hover:bg-primary/10"
+                                  onClick={() => setShowCodeInput(true)}
+                                >
+                                  Enter Access Code
+                                </Button>
+                              ) : (
+                                <div className="space-y-2">
+                                  <Input
+                                    placeholder="Enter your access code"
+                                    value={globalCodeInput}
+                                    onChange={(e) => {
+                                      setGlobalCodeInput(e.target.value.toUpperCase());
+                                      setGlobalCodeError('');
+                                    }}
+                                    onKeyDown={async (e) => {
+                                      if (e.key === 'Enter') {
+                                        const result = await verifySecretCode(globalCodeInput);
+                                        if (result) {
+                                          setUnlockedTicketIds(prev => new Set([...prev, result.ticketId]));
+                                          setTicketCodes(prev => ({ ...prev, [result.ticketId]: globalCodeInput.trim() }));
+                                          setGlobalCodeInput('');
+                                          setGlobalCodeError('');
+                                          setShowCodeInput(false);
+                                          toast({
+                                            title: '🔓 Code Accepted!',
+                                            description: `Comp ticket "${result.ticketName}" has been unlocked.`,
+                                          });
+                                        } else {
+                                          setGlobalCodeError('Invalid code. Please try again.');
+                                        }
+                                      }
+                                    }}
+                                    className={`bg-black/20 border-primary/30 text-white placeholder:text-gray-500 uppercase tracking-widest ${globalCodeError ? 'border-red-500' : ''}`}
+                                  />
+                                  {globalCodeError && (
+                                    <p className="text-xs text-red-400">{globalCodeError}</p>
+                                  )}
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      className="flex-1"
+                                      onClick={async () => {
+                                        const result = await verifySecretCode(globalCodeInput);
+                                        if (result) {
+                                          setUnlockedTicketIds(prev => new Set([...prev, result.ticketId]));
+                                          setTicketCodes(prev => ({ ...prev, [result.ticketId]: globalCodeInput.trim() }));
+                                          setGlobalCodeInput('');
+                                          setGlobalCodeError('');
+                                          setShowCodeInput(false);
+                                          toast({
+                                            title: '🔓 Code Accepted!',
+                                            description: `Comp ticket "${result.ticketName}" has been unlocked.`,
+                                          });
+                                        } else {
+                                          setGlobalCodeError('Invalid code. Please try again.');
+                                        }
+                                      }}
+                                      disabled={!globalCodeInput.trim()}
+                                    >
+                                      <Unlock className="h-3 w-3 mr-1" /> Unlock
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setShowCodeInput(false);
+                                        setGlobalCodeInput('');
+                                        setGlobalCodeError('');
+                                      }}
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+
+                        {availableTickets
+                          .filter((ticket: any) => {
+                            // Hide tickets with a secret code unless the user has unlocked them
+                            if (ticket.requiresCode && !unlockedTicketIds.has(ticket.id)) {
+                              return false;
+                            }
+                            return true;
+                          })
+                          .map((ticket: any) => {
                           const tierColors = {
                             'standard': 'bg-gray-100 text-gray-800',
                             'premium': 'bg-yellow-100 text-yellow-800',
@@ -615,7 +749,8 @@ const EventDetail = () => {
 
                                   // Redirect to checkout page with ticket details
                                   const currency = getCurrencyFromLocation(event.location);
-                                  window.location.href = `/checkout?eventId=${event.id}&ticketId=${ticket.id}&amount=${ticket.price / 100}&currency=${currency}&title=${encodeURIComponent(event.title)}`;
+                                  const codeParam = ticket.requiresCode && ticketCodes[ticket.id] ? `&secretCode=${encodeURIComponent(ticketCodes[ticket.id])}` : '';
+                                  window.location.href = `/checkout?eventId=${event.id}&ticketId=${ticket.id}&amount=${ticket.price / 100}&currency=${currency}&title=${encodeURIComponent(event.title)}${codeParam}`;
                                 }}
                               >
                                 {isEventPast ? 'Event Ended' : (ticket.price === 0 ? 'Claim Free Ticket' : 'Purchase Ticket')}

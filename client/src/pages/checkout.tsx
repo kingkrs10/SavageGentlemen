@@ -42,6 +42,7 @@ export default function Checkout() {
   const [guestEmail, setGuestEmail] = useState('');
   const [showGuestEmailForm, setShowGuestEmailForm] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [secretCode, setSecretCode] = useState<string>('');
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -233,6 +234,12 @@ export default function Checkout() {
       const ticketNameParam = searchParams.get('ticketName');
       if (ticketNameParam) {
         setTicketName(decodeURIComponent(ticketNameParam));
+      }
+
+      // Get secret code (optional, for comp tickets)
+      const secretCodeParam = searchParams.get('secretCode');
+      if (secretCodeParam) {
+        setSecretCode(decodeURIComponent(secretCodeParam));
       }
     };
     
@@ -603,6 +610,8 @@ export default function Checkout() {
                         eventTitle: eventTitle,
                         ticketId: ticketId,
                         ticketName: ticketName,
+                        // Include secret code for comp ticket validation
+                        secretCode: secretCode || undefined,
                         // Include guest email for ticket delivery
                         guestEmail: user.isGuest ? (guestEmail || user.email) : undefined
                       };

@@ -1026,12 +1026,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tickets = await storage.getPublicTicketsByEventId(id);
 
       // Return event with its tickets
+      // SECURITY: Don't expose secretCode values to the client.
+      // Replace with a boolean flag so the frontend knows to show the code input.
+      const sanitizedTickets = (tickets || []).map((t: any) => ({
+        ...t,
+        requiresCode: !!t.secretCode,
+        secretCode: undefined, // strip the actual code
+      }));
+
       return res.status(200).json({
         ...event,
-        tickets: tickets || []
+        tickets: sanitizedTickets
       });
     } catch (err) {
       console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Verify a secret/comp code for a specific event's tickets
+  router.post("/events/:id/verify-code", async (req: Request, res: Response) => {
+    try {
+      const eventId = parseInt(req.params.id);
+      const { code } = req.body;
+
+      if (!code || typeof code !== 'string') {
+        return res.status(400).json({ message: "Code is required" });
+      }
+
+      // Get all tickets for this event (including those with secret codes)
+      const tickets = await storage.getTicketsByEventId(eventId);
+      if (!tickets || tickets.length === 0) {
+        return res.status(404).json({ message: "Invalid code" });
+      }
+
+      // Find a ticket whose secretCode matches (case-insensitive)
+      const matched = tickets.find(
+        (t: any) => t.secretCode && t.secretCode.toUpperCase() === code.trim().toUpperCase()
+      );
+
+      if (!matched) {
+        return res.status(404).json({ message: "Invalid code" });
+      }
+
+      // Return only the ticket ID and name — never the secret code itself
+      return res.status(200).json({
+        ticketId: matched.id,
+        ticketName: matched.name,
+      });
+    } catch (err) {
+      console.error("Error verifying secret code:", err);
       return res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -4930,6 +4974,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               return res.status(400).json({
                 message: "This endpoint is only for free tickets. Use payment endpoints for paid tickets."
               });
+            }
+
+            // SECURITY: If the ticket has a secret code, verify it was provided
+            if (selectedTicket.secretCode) {
+              const providedCode = req.body.secretCode || req.body.code;
+              if (!providedCode || providedCode.trim().toUpperCase() !== selectedTicket.secretCode.toUpperCase()) {
+                return res.status(403).json({
+                  message: "A valid access code is required to claim this ticket."
+                });
+              }
             }
 
             // CRITICAL: Check if ticket is sold out or not available for sale
