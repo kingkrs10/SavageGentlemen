@@ -748,36 +748,100 @@ const EventDetail = () => {
                                   if (ticket.price === 0) {
                                     setClaimingTicketId(ticket.id);
                                     try {
-                                      // Build auth headers explicitly from the user context
-                                      // (more reliable than getAuthHeaders() which reads from localStorage)
+                                      // Build auth headers - try EVERY possible source for user data
                                       const headers: Record<string, string> = {
                                         'Content-Type': 'application/json',
                                       };
                                       
-                                      // Always include user-id from context (most reliable auth method)
+                                      // Try to get user ID from multiple sources
+                                      let resolvedUserId: string | null = null;
+                                      let resolvedToken: string | null = null;
+                                      let resolvedUsername: string | null = null;
+                                      let resolvedRole: string | null = null;
+                                      
+                                      // Source 1: React user context
                                       if (user?.id) {
-                                        headers['user-id'] = user.id.toString();
+                                        resolvedUserId = user.id.toString();
+                                        resolvedUsername = user.username || null;
+                                        resolvedRole = user.role || null;
+                                      }
+                                      if (user?.token) {
+                                        resolvedToken = user.token;
                                       }
                                       
-                                      // Include token if available
-                                      if (user?.token) {
-                                        headers['Authorization'] = `Bearer ${user.token}`;
-                                      } else {
-                                        // Fallback: try localStorage tokens
-                                        const authToken = localStorage.getItem('authToken') || localStorage.getItem('firebaseToken');
-                                        if (authToken) {
-                                          headers['Authorization'] = `Bearer ${authToken}`;
+                                      // Source 2: getCurrentUser() from auth-utils (reads localStorage differently)
+                                      if (!resolvedUserId) {
+                                        try {
+                                          const { getCurrentUser: getStoredUser } = await import('@/lib/auth-utils');
+                                          const storedUser = getStoredUser();
+                                          if (storedUser?.id) {
+                                            resolvedUserId = storedUser.id.toString();
+                                            resolvedUsername = storedUser.username || resolvedUsername;
+                                            resolvedRole = storedUser.role || resolvedRole;
+                                          }
+                                          if (storedUser?.token && !resolvedToken) {
+                                            resolvedToken = storedUser.token;
+                                          }
+                                        } catch (e) {
+                                          console.warn('getCurrentUser fallback failed:', e);
                                         }
                                       }
                                       
-                                      // Include x-user-data for additional auth fallback
-                                      if (user) {
+                                      // Source 3: Direct localStorage parsing with all possible formats
+                                      if (!resolvedUserId) {
+                                        try {
+                                          const raw = localStorage.getItem('user');
+                                          if (raw) {
+                                            const parsed = JSON.parse(raw);
+                                            // Try: {data: {id}}, {data: {data: {id}}}, {id}, {status, data: {id}}
+                                            const u = parsed?.data?.data || parsed?.data || parsed;
+                                            if (u?.id) {
+                                              resolvedUserId = u.id.toString();
+                                              resolvedUsername = u.username || resolvedUsername;
+                                              resolvedRole = u.role || resolvedRole;
+                                              if (u.token) resolvedToken = u.token;
+                                            }
+                                          }
+                                        } catch (e) {
+                                          console.warn('localStorage user parse failed:', e);
+                                        }
+                                      }
+                                      
+                                      // Source 4: Standalone userId key
+                                      if (!resolvedUserId) {
+                                        const standaloneId = localStorage.getItem('userId');
+                                        if (standaloneId) {
+                                          resolvedUserId = standaloneId;
+                                        }
+                                      }
+                                      
+                                      // Source 5: Standalone token
+                                      if (!resolvedToken) {
+                                        resolvedToken = localStorage.getItem('authToken') || localStorage.getItem('firebaseToken') || null;
+                                      }
+                                      
+                                      // Apply resolved values to headers
+                                      if (resolvedUserId) {
+                                        headers['user-id'] = resolvedUserId;
+                                      }
+                                      if (resolvedToken) {
+                                        headers['Authorization'] = `Bearer ${resolvedToken}`;
+                                      }
+                                      if (resolvedUserId || resolvedUsername) {
                                         headers['x-user-data'] = JSON.stringify({
-                                          id: user.id,
-                                          username: user.username,
-                                          role: user.role,
+                                          id: resolvedUserId ? parseInt(resolvedUserId) : undefined,
+                                          username: resolvedUsername,
+                                          role: resolvedRole,
                                         });
                                       }
+
+                                      console.log('Free ticket claim - resolved auth:', {
+                                        'user-id': resolvedUserId,
+                                        'has-token': !!resolvedToken,
+                                        'username': resolvedUsername,
+                                        'context-user-id': user?.id,
+                                        'context-user-keys': user ? Object.keys(user) : 'no user',
+                                      });
 
                                       console.log('Free ticket claim - auth headers being sent:', {
                                         'user-id': headers['user-id'],
@@ -793,7 +857,7 @@ const EventDetail = () => {
                                         ticketName: ticket.name,
                                         secretCode: ticketCodes[ticket.id] || undefined,
                                         // Include userId in body as additional auth fallback
-                                        userId: user?.id,
+                                        userId: resolvedUserId ? parseInt(resolvedUserId) : user?.id,
                                       };
 
                                       console.log('Free ticket claim - payload:', payload);
