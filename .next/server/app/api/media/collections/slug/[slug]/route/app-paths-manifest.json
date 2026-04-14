@@ -1,0 +1,3 @@
+{
+  "/api/media/collections/slug/[slug]/route": "app/api/media/collections/slug/[slug]/route.js"
+}

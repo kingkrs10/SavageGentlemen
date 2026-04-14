@@ -4826,38 +4826,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // More flexible authentication for free tickets
       let user = null;
 
-      // 1. Try user-id header first
-      const userId = req.headers['user-id'];
-      if (userId) {
+      // 1. Try user-id header first (most reliable)
+      const userIdHeader = req.headers['user-id'];
+      console.log("Free ticket auth - user-id header:", userIdHeader);
+      if (userIdHeader) {
         try {
-          const id = parseInt(userId as string);
-          user = await storage.getUser(id);
-          if (user) {
-            console.log("User found via user-id header for free ticket:", user.id);
+          const id = parseInt(userIdHeader as string);
+          if (!isNaN(id)) {
+            user = await storage.getUser(id);
+            if (user) {
+              console.log("User found via user-id header for free ticket:", user.id, user.username);
+            } else {
+              console.log("No user found for user-id:", id);
+            }
           }
         } catch (e) {
           console.error("Error retrieving user by ID:", e);
         }
       }
 
-      // 2. Try token authentication if user-id failed
+      // 2. Try HMAC-signed login token
       if (!user) {
         const authHeader = req.headers['authorization'];
+        console.log("Free ticket auth - authorization header present:", !!authHeader);
         if (authHeader && authHeader.startsWith('Bearer ')) {
           const token = authHeader.split(' ')[1];
 
           if (token && token !== 'undefined' && token !== 'null') {
+            // Try HMAC token first (our login system uses these)
             try {
-              // Try Firebase token
-              const decodedToken = await admin.auth().verifyIdToken(token);
-              const userByFirebase = await storage.getUserByFirebaseId(decodedToken.uid);
+              const [payload, signature] = token.split('.');
+              if (payload && signature) {
+                const TOKEN_SECRET = process.env.TOKEN_SECRET || 'sg-prod-token-secret-2026-savagegentlemen';
+                const expectedSignature = require('crypto')
+                  .createHmac('sha256', TOKEN_SECRET)
+                  .update(payload)
+                  .digest('base64url');
 
-              if (userByFirebase) {
-                user = userByFirebase;
-                console.log("User found via Firebase token for free ticket:", user.id);
+                if (expectedSignature === signature) {
+                  const decoded = Buffer.from(payload, 'base64url').toString('utf-8');
+                  const [userId, username, timestamp] = decoded.split(':');
+                  if (userId && username && timestamp) {
+                    const tokenAge = Date.now() - parseInt(timestamp);
+                    const maxAge = 24 * 60 * 60 * 1000;
+                    if (tokenAge < maxAge) {
+                      const hmacUser = await storage.getUser(parseInt(userId));
+                      if (hmacUser && hmacUser.username === username) {
+                        user = hmacUser;
+                        console.log("User found via HMAC token for free ticket:", user.id, user.username);
+                      }
+                    } else {
+                      console.log("HMAC token expired for free ticket");
+                    }
+                  }
+                }
               }
             } catch (e) {
-              console.error("Error verifying Firebase token:", e);
+              console.log("HMAC token validation failed, trying Firebase:", e);
+            }
+
+            // Try Firebase token as fallback
+            if (!user) {
+              try {
+                const decodedToken = await admin.auth().verifyIdToken(token);
+                const userByFirebase = await storage.getUserByFirebaseId(decodedToken.uid);
+
+                if (userByFirebase) {
+                  user = userByFirebase;
+                  console.log("User found via Firebase token for free ticket:", user.id);
+                }
+              } catch (e) {
+                console.log("Firebase token also failed for free ticket");
+              }
             }
           }
         }
@@ -4865,6 +4905,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // 3. Try x-user-data as a last resort
       if (!user && req.headers['x-user-data']) {
+        console.log("Free ticket auth - trying x-user-data header");
         try {
           const userData = JSON.parse(req.headers['x-user-data'] as string);
 
@@ -4882,9 +4923,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // 4. Try userId from request body as final fallback
+      if (!user && req.body.userId) {
+        console.log("Free ticket auth - trying userId from request body:", req.body.userId);
+        try {
+          const bodyUser = await storage.getUser(Number(req.body.userId));
+          if (bodyUser) {
+            user = bodyUser;
+            console.log("User found via request body userId for free ticket:", user.id, user.username);
+          }
+        } catch (e) {
+          console.error("Error retrieving user from body userId:", e);
+        }
+      }
+
       // If no user found through any method, return authentication failure
       if (!user) {
-        console.log("Authentication failed for free ticket request");
+        console.log("Authentication failed for free ticket request. Headers present:", {
+          'user-id': !!req.headers['user-id'],
+          'authorization': !!req.headers['authorization'],
+          'x-user-data': !!req.headers['x-user-data'],
+          'body-userId': !!req.body.userId,
+        });
         return res.status(401).json({ message: "Authentication required" });
       }
 

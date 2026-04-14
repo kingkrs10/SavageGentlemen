@@ -1,0 +1,3 @@
+{
+  "/api/tickets/transfer/[transferCode]/complete/route": "app/api/tickets/transfer/[transferCode]/complete/route.js"
+}

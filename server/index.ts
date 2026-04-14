@@ -29,7 +29,7 @@ const corsOptions = {
     : true, // Allow all origins in development
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'user-id', 'X-Firebase-Token'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'user-id', 'x-user-data', 'X-Firebase-Token'],
   exposedHeaders: ['Content-Length', 'Date'],
   maxAge: 86400 // 24 hours
 };

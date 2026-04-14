@@ -748,10 +748,43 @@ const EventDetail = () => {
                                   if (ticket.price === 0) {
                                     setClaimingTicketId(ticket.id);
                                     try {
+                                      // Build auth headers explicitly from the user context
+                                      // (more reliable than getAuthHeaders() which reads from localStorage)
                                       const headers: Record<string, string> = {
-                                        ...getAuthHeaders(),
                                         'Content-Type': 'application/json',
                                       };
+                                      
+                                      // Always include user-id from context (most reliable auth method)
+                                      if (user?.id) {
+                                        headers['user-id'] = user.id.toString();
+                                      }
+                                      
+                                      // Include token if available
+                                      if (user?.token) {
+                                        headers['Authorization'] = `Bearer ${user.token}`;
+                                      } else {
+                                        // Fallback: try localStorage tokens
+                                        const authToken = localStorage.getItem('authToken') || localStorage.getItem('firebaseToken');
+                                        if (authToken) {
+                                          headers['Authorization'] = `Bearer ${authToken}`;
+                                        }
+                                      }
+                                      
+                                      // Include x-user-data for additional auth fallback
+                                      if (user) {
+                                        headers['x-user-data'] = JSON.stringify({
+                                          id: user.id,
+                                          username: user.username,
+                                          role: user.role,
+                                        });
+                                      }
+
+                                      console.log('Free ticket claim - auth headers being sent:', {
+                                        'user-id': headers['user-id'],
+                                        'has-auth': !!headers['Authorization'],
+                                        'has-x-user-data': !!headers['x-user-data'],
+                                        'user-context-id': user?.id,
+                                      });
 
                                       const payload = {
                                         eventId: event.id,
@@ -759,7 +792,11 @@ const EventDetail = () => {
                                         ticketId: ticket.id,
                                         ticketName: ticket.name,
                                         secretCode: ticketCodes[ticket.id] || undefined,
+                                        // Include userId in body as additional auth fallback
+                                        userId: user?.id,
                                       };
+
+                                      console.log('Free ticket claim - payload:', payload);
 
                                       const response = await fetch('/api/tickets/free', {
                                         method: 'POST',
