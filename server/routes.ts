@@ -110,6 +110,34 @@ const getAffiliateIdFromCookie = (req: Request): number | null => {
   return null;
 };
 
+// Helper to authenticate user from HttpOnly auth cookie (sg_auth_token)
+// This provides auth that survives localStorage corruption
+const getUserFromAuthCookie = async (req: Request): Promise<any | null> => {
+  try {
+    const cookieHeader = req.headers.cookie;
+    if (!cookieHeader) return null;
+    
+    const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+      const [name, ...value] = cookie.split('=');
+      if (name) acc[name.trim()] = value.join('=');
+      return acc;
+    }, {} as Record<string, string>);
+    
+    const authToken = cookies['sg_auth_token'];
+    if (!authToken) return null;
+    
+    // Validate the HMAC token from the cookie
+    const user = await validateSecureLoginTokenPublic(authToken);
+    if (user) {
+      console.log("User authenticated via auth cookie:", user.id, user.username);
+    }
+    return user;
+  } catch (error) {
+    console.error("Error parsing auth cookie:", error);
+  }
+  return null;
+};
+
 // Multer storage configuration for file uploads
 const storage_config = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -373,6 +401,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // REMOVED: Insecure x-user-data fallback - only use secure HMAC/Firebase authentication
 
+      // Try auth cookie as fallback (survives localStorage corruption)
+      if (!user) {
+        user = await getUserFromAuthCookie(req);
+      }
+
       // If no user found through any method, return authentication failure
       if (!user) {
         return res.status(401).json({ message: "Not authenticated" });
@@ -470,6 +503,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Generate a secure HMAC-signed token for authentication
         const token = generateSecureLoginToken(user);
+
+        // Set auth token as HttpOnly cookie for server-side auth
+        // This survives localStorage corruption
+        const isProduction = process.env.NODE_ENV === 'production';
+        res.cookie('sg_auth_token', token, {
+          httpOnly: true,
+          secure: isProduction,
+          sameSite: 'lax',
+          maxAge: 24 * 60 * 60 * 1000, // 24 hours (matches token expiry)
+          path: '/',
+        });
 
         return res.status(200).json({
           status: 'success',
@@ -4937,13 +4981,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // 5. Try auth cookie (survives localStorage corruption)
+      if (!user) {
+        user = await getUserFromAuthCookie(req);
+      }
+
       // If no user found through any method, return authentication failure
       if (!user) {
-        console.log("Authentication failed for free ticket request. Headers present:", {
-          'user-id': !!req.headers['user-id'],
-          'authorization': !!req.headers['authorization'],
-          'x-user-data': !!req.headers['x-user-data'],
+        console.log("Authentication failed for free ticket request. Methods tried:", {
+          'user-id-header': !!req.headers['user-id'],
+          'authorization-header': !!req.headers['authorization'],
+          'x-user-data-header': !!req.headers['x-user-data'],
           'body-userId': !!req.body.userId,
+          'auth-cookie': !!req.headers.cookie?.includes('sg_auth_token'),
         });
         return res.status(401).json({ message: "Authentication required" });
       }

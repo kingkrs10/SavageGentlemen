@@ -99,7 +99,23 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess, onGuestLogin }: AuthModalPr
   const loginMutation = useMutation({
     mutationFn: async (data: LoginFormValues) => {
       const res = await apiRequest("POST", "/api/auth/login", data);
-      return res.json();
+      const responseData = await res.json();
+      
+      // CRITICAL: Check for error responses before returning as "success"
+      // apiRequest doesn't throw for auth routes, so we must check manually
+      if (!res.ok || responseData.status === 'error') {
+        throw new Error(responseData.message || 'Login failed');
+      }
+      
+      // Extract user data - handle both {data: {...}} and direct {...} formats
+      const userData = responseData.data || responseData;
+      
+      // Validate that we actually got user data with an id
+      if (!userData || !userData.id) {
+        throw new Error('Invalid response from server');
+      }
+      
+      return userData;
     },
     onSuccess: (data) => {
       toast({

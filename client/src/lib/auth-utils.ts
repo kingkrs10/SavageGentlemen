@@ -95,6 +95,17 @@ export function getAuthHeaders(): Record<string, string> {
  */
 export function storeUserData(userData: User): void {
   try {
+    // GUARD: Never store error responses or invalid data as user data
+    const dataAsAny = userData as any;
+    if (!userData || !userData.id) {
+      console.error('storeUserData: Refusing to store user data without id:', userData);
+      return;
+    }
+    if (dataAsAny.status === 'error' || dataAsAny.message === 'Invalid username or password') {
+      console.error('storeUserData: Refusing to store error response as user data:', userData);
+      return;
+    }
+    
     // Make sure user has token
     if (userData && !userData.token) {
       console.warn('User data has no token - this might cause authentication issues');

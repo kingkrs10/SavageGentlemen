@@ -37,9 +37,26 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           const parsedUser = JSON.parse(storedUser);
           console.log("Parsed user:", parsedUser);
           
+          // CRITICAL: Validate the stored data is actually user data, not an error response
+          // Bug: Login errors like {status: "error", message: "Invalid username..."} 
+          // were being stored and treated as user objects
+          if (parsedUser.status === 'error' || parsedUser.message === 'Invalid username or password') {
+            console.warn("Corrupted user data detected in localStorage (error response stored as user). Clearing...");
+            clearAuthData();
+            return; // Don't try to validate - there's no valid session
+          }
+          
           // Temporarily set the user from localStorage
           // Handle both formats: { data: { ... } } and direct { ... }
           const userData = parsedUser.data || parsedUser;
+          
+          // Validate userData has required fields (at minimum, an id)
+          if (!userData || !userData.id) {
+            console.warn("Invalid user data in localStorage (no id field). Clearing...");
+            clearAuthData();
+            return;
+          }
+          
           setUser(userData);
           
           // Validate the session with the server
