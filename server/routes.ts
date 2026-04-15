@@ -489,9 +489,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // expose whether a username exists or not
         await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 100));
 
+        // Try to get user (storage layer now handles case-insensitive lookup)
         const user = await storage.getUserByUsername(username);
 
         if (!user || user.password !== password) {
+          console.log(`[AUTH] Login failed for username: "${username}" - ${!user ? 'user not found' : 'wrong password'}`);
           return res.status(401).json({
             status: 'error',
             message: "Invalid username or password"

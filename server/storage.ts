@@ -2271,10 +2271,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
+    // Case-insensitive username lookup using LOWER()
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.username, username));
+      .where(sql`LOWER(${users.username}) = LOWER(${username})`);
     return user;
   }
 
