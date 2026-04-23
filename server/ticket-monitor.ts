@@ -1,5 +1,5 @@
 import { storage } from './storage';
-import { sendTicketEmail } from './email';
+import { sendTicketEmail } from './email-provider';
 
 interface TicketDeliveryStatus {
   ticketId: number;

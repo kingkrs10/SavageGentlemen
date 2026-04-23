@@ -46,7 +46,13 @@ app.use(sanitizeInput);
 app.use(auditLogger);
 
 // Parse JSON and URL-encoded bodies
-app.use(express.json());
+// Exclude Stripe webhook paths — they need raw body for signature verification
+app.use((req, res, next) => {
+  if (req.originalUrl.includes('stripe-webhook')) {
+    return next();
+  }
+  express.json()(req, res, next);
+});
 app.use(express.urlencoded({ extended: false }));
 
 // Static file serving for uploads directory with proper MIME types and caching
