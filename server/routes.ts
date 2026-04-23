@@ -5593,7 +5593,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userEmail: user.email,
           // Add server validation timestamp for security audit
           serverValidatedAt: new Date().toISOString(),
-          authoritativeAmount: authoritativeAmount.toString()
+          authoritativeAmount: authoritativeAmount.toString(),
+          affiliateId: getAffiliateIdFromCookie(req)?.toString() || ''
         },
       });
 
@@ -5742,7 +5743,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userEmail: user.email,
           // Add server validation timestamp for security audit
           serverValidatedAt: new Date().toISOString(),
-          authoritativeAmount: authoritativeAmount.toString()
+          authoritativeAmount: authoritativeAmount.toString(),
+          affiliateId: getAffiliateIdFromCookie(req)?.toString() || ''
         },
       });
 
@@ -5904,7 +5906,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           if (user && email) {
             // Create order record with affiliate tracking if present
-            const affiliateId = getAffiliateIdFromCookie(req);
+            let affiliateId = getAffiliateIdFromCookie(req);
+            if (!affiliateId && paymentIntent.metadata && paymentIntent.metadata.affiliateId) {
+              const parsed = parseInt(paymentIntent.metadata.affiliateId, 10);
+              if (!isNaN(parsed)) affiliateId = parsed;
+            }
             const order = await storage.createOrder({
               userId: user.id,
               totalAmount: Math.round(amount * 100), // Convert back to cents for storage
