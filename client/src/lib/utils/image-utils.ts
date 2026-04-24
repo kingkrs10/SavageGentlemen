@@ -6,10 +6,14 @@
  * Converts various image URL formats to usable direct URLs
  * Handles special cases like Google Drive links and local uploads
  */
-export function getNormalizedImageUrl(url: string | null): string {
+export function getNormalizedImageUrl(url: string | null | undefined): string {
   if (!url) {
-    // Use a placeholder image from a reliable source
-    return 'https://placehold.co/600x400/222222/FF4136?text=No+Image';
+    return '';
+  }
+
+  // If it's already a full URL, return it as is
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
   }
 
   // Handle local upload URLs (containing uploads/)

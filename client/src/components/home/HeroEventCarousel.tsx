@@ -238,7 +238,7 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
                 <div className="absolute inset-0 bg-black">
                   {/* Prioritize hero image with direct img tag for maximum reliability */}
                   <img
-                    src={event.imageUrl || SGFlyerLogoPng}
+                    src={getNormalizedImageUrl(event.imageUrl) || SGFlyerLogoPng}
                     alt={event.title}
                     className="w-full h-full object-cover opacity-100 transition-opacity duration-700"
                     onError={(e) => {

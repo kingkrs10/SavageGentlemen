@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getNormalizedImageUrl } from "@/lib/utils/image-utils";
 
 interface LazyImageProps {
   src: string;
@@ -49,12 +50,7 @@ export function LazyImage({
   }
 
   // Determine the final source URL to use
-  let finalSrc = currentSrc || src || '';
-
-  // Fix uploads URLs to ensure proper leading slash
-  if (finalSrc && finalSrc.includes('uploads/') && !finalSrc.startsWith('/')) {
-    finalSrc = `/${finalSrc}`;
-  }
+  let finalSrc = getNormalizedImageUrl(currentSrc || src || '');
 
   // Use Intersection Observer to detect when image is in viewport
   useEffect(() => {
