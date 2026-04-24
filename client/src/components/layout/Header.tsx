@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import LogoImage from "@/assets/SGFLYERLOGO.png";
 import { useUser } from "@/context/UserContext";
+import { cn } from "@/lib/utils";
 
 interface HeaderProps {
   user: UserType | null;
