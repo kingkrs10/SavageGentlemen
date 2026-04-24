@@ -6175,6 +6175,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Soca Noir Rose Ticket Recovery Endpoint
+  router.post("/admin/recover-soca-noir-tickets", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    console.log('[RECOVERY] Starting Soca Noir Rose ticket recovery process...');
+    
+    const recoveryData = [
+      { email: 'siarrah.rajpaul@icloud.com', userId: 97, eventId: 2, amount: '10.00', ticketName: 'Soca Noir Rose Early Bird female', pi: 'pi_3TP7kIRYYQixBBH20vMM2ArO' },
+      { email: 'passanah@jcboe.org', userId: 86, eventId: 2, amount: '15.00', ticketName: 'Soca Noir Rose Early Bird female 2 for 1', pi: 'pi_3TO55lRYYQixBBH20RvVkmi9' },
+      { email: 'pemonemo3@gmail.com', userId: 77, eventId: 2, amount: '10.00', ticketName: 'Soca Noir Rose Early Bird female', pi: 'pi_3TMPnyRYYQixBBH211hq0IHS' },
+      { email: 'pemonemo3@gmail.com', userId: 77, eventId: 2, amount: '15.00', ticketName: 'Soca Noir Rose Early Bird Men', pi: 'pi_3TMPjKRYYQixBBH21zzQHyGR' },
+      { email: 'sobers34@gmail.com', userId: 68, eventId: 2, amount: '15.00', ticketName: 'Soca Noir Rose Early Bird female 2 for 1', pi: 'pi_3TLpQ3RYYQixBBH206vDLIIa' },
+      { email: 'natashapeters65@yahoo.com', userId: 60, eventId: 2, amount: '10.00', ticketName: 'Soca Noir Rose Early Bird female', pi: 'pi_3TKjPjRYYQixBBH20xI48Flc' },
+      { email: 'Bill11225@yahoo.com', userId: 54, eventId: 2, amount: '10.00', ticketName: 'Soca Noir Rose Early Bird female', pi: 'pi_3TK8DfRYYQixBBH20Lee4mee' },
+      { email: 'Bill11225@yahoo.com', userId: 54, eventId: 2, amount: '15.00', ticketName: 'Soca Noir Rose Early Bird Men', pi: 'pi_3TK8C5RYYQixBBH21aCANVxg' }
+    ];
+
+    const results = {
+      total: recoveryData.length,
+      generated: 0,
+      sent: 0,
+      errors: [] as string[]
+    };
+
+    try {
+      for (const item of recoveryData) {
+        try {
+          console.log(`[RECOVERY] Processing ${item.email}...`);
+
+          // 1. Check if ticket already exists
+          const existingTickets = await db.select().from(ticketPurchases).where(
+            and(
+              eq(ticketPurchases.eventId, item.eventId),
+              eq(ticketPurchases.attendeeEmail, item.email),
+              eq(ticketPurchases.ticketType, item.ticketName)
+            )
+          );
+
+          let ticket;
+          if (existingTickets.length > 0) {
+            ticket = existingTickets[0];
+            console.log(`   🔎 Found existing ticket: ${ticket.id}`);
+          } else {
+            // 2. Ensure order exists
+            let orderId;
+            const existingOrders = await db.select().from(orders).where(eq(orders.paymentId, item.pi)).limit(1);
+            
+            if (existingOrders.length > 0) {
+              orderId = existingOrders[0].id;
+            } else {
+              const newOrder = await db.insert(orders).values({
+                userId: item.userId,
+                totalAmount: Math.round(parseFloat(item.amount) * 100),
+                status: 'completed',
+                paymentMethod: 'stripe',
+                paymentId: item.pi
+              }).returning({ id: orders.id });
+              orderId = newOrder[0].id;
+            }
+
+            // 3. Create ticket
+            const qrCodeData = `EVENT-${item.eventId}-ORDER-${orderId}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            const inserted = await db.insert(ticketPurchases).values({
+              userId: item.userId,
+              eventId: item.eventId,
+              orderId: orderId,
+              qrCodeData: qrCodeData,
+              ticketType: item.ticketName,
+              price: item.amount,
+              attendeeEmail: item.email,
+              attendeeName: item.email.split('@')[0],
+              status: 'valid'
+            }).returning();
+            
+            ticket = inserted[0];
+            results.generated++;
+            console.log(`   ✅ Generated new ticket: ${ticket.id}`);
+          }
+
+          // 4. Send Email
+          const eventRecords = await db.select().from(events).where(eq(events.id, item.eventId));
+          if (eventRecords.length > 0) {
+            const event = eventRecords[0];
+            const ticketData = {
+              ticketId: ticket.qrCodeData,
+              qrCodeDataUrl: ticket.qrCodeData,
+              eventName: event.title,
+              eventLocation: event.location || 'TBA',
+              eventDate: new Date(event.date),
+              ticketType: ticket.ticketType || 'Standard Ticket',
+              ticketPrice: ticket.price ? Number(ticket.price) : 0,
+              purchaseDate: ticket.purchaseDate || new Date()
+            };
+
+            const emailSent = await sendTicketEmail(ticketData, item.email);
+            if (emailSent) {
+              results.sent++;
+              console.log(`   📧 Email sent successfully`);
+            } else {
+              results.errors.push(`Email failed for ${item.email}`);
+            }
+          }
+        } catch (itemErr: any) {
+          console.error(`[RECOVERY] Error processing ${item.email}:`, itemErr);
+          results.errors.push(`${item.email}: ${itemErr.message}`);
+        }
+      }
+
+      res.json({
+        status: 'success',
+        message: 'Recovery process completed',
+        results
+      });
+    } catch (err: any) {
+      console.error('[RECOVERY] Critical failure:', err);
+      res.status(500).json({ status: 'error', message: err.message });
+    }
+  });
+
   // Enhanced image proxy for external images (Etsy, etc.) with permanent fix
   router.get('/proxy-image', async (req: Request, res: Response) => {
     try {
