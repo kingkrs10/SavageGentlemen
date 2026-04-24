@@ -244,7 +244,7 @@ function AppContent() {
             />
           )}
 
-          <main className={isSocaPassportRoute() ? "" : "container mx-auto px-4 py-8"}>
+          <main className={isSocaPassportRoute() || location === '/home' ? "" : "container mx-auto px-4 py-8"}>
             <Router />
           </main>
 

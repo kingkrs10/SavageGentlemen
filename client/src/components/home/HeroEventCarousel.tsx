@@ -251,23 +251,38 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
                   {/* Gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
 
-                  {/* Default content (always visible) */}
-                  <div className="absolute inset-0 flex items-center justify-center text-center px-8">
-                    <div className="max-w-4xl space-y-6">
-                      <Badge
-                        variant="secondary"
-                        className="bg-orange-500 text-white text-sm font-semibold px-3 py-1 mb-4"
-                      >
-                        {event.category || "FEATURED EVENT"}
-                      </Badge>
+                  {/* Default content (Bottom-left positioning) */}
+                  <div className="absolute bottom-0 left-0 w-full p-8 md:p-16 flex items-end justify-start text-left z-10 pointer-events-none">
+                    <div className="max-w-2xl space-y-4 animate-fade-in">
+                      <div className="bg-black/20 backdrop-blur-sm p-4 rounded-lg inline-block border border-white/10">
+                        <Badge
+                          variant="secondary"
+                          className="bg-orange-500 text-white text-xs font-bold px-3 py-1 mb-3 uppercase tracking-widest"
+                        >
+                          {event.category || "FEATURED EVENT"}
+                        </Badge>
 
-                      <h1 className="text-5xl md:text-8xl font-bold text-white mb-4 tracking-tight drop-shadow-2xl">
-                        {event.title}
-                      </h1>
+                        <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 tracking-tight drop-shadow-2xl uppercase">
+                          {event.title}
+                        </h1>
 
-                      <p className="text-xl md:text-3xl text-orange-400 font-medium drop-shadow-lg">
-                        {event.description?.split('\n')[0] || "Special Performance"}
-                      </p>
+                        <p className="text-lg md:text-xl text-orange-400 font-medium drop-shadow-lg">
+                          {event.description?.split('\n')[0] || "Special Performance"}
+                        </p>
+                        
+                        <div className="mt-4 flex items-center space-x-4 text-white/80 text-sm">
+                          <div className="flex items-center">
+                            <Calendar className="h-4 w-4 mr-1 text-orange-400" />
+                            {new Date(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </div>
+                          {event.location && (
+                            <div className="flex items-center">
+                              <MapPin className="h-4 w-4 mr-1 text-orange-400" />
+                              {event.location.split(',')[0]}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
 

@@ -69,10 +69,9 @@ const Home = () => {
         <HeroEventCarousel
           events={featuredEvents}
           onGetTicket={handleGetTicket}
-          className="-mx-3"
         />
       ) : eventsLoading ? (
-        <div className="relative w-full h-screen bg-background flex items-center justify-center -mx-3">
+        <div className="relative w-full h-screen bg-background flex items-center justify-center">
           <div className="text-center space-y-4">
             <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary mx-auto"></div>
             <p className="text-foreground text-lg">Loading events...</p>
@@ -80,7 +79,7 @@ const Home = () => {
         </div>
       ) : (
         // Fallback hero with video for when no events are available
-        <div className="relative w-full h-[100vh] overflow-hidden -mx-3">
+        <div className="relative w-full h-[100vh] overflow-hidden">
           <div className="relative h-full">
             <div className="h-full w-full bg-background">
               <video

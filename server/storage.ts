@@ -2846,15 +2846,17 @@ export class DatabaseStorage implements IStorage {
           return eventEndDateTime >= now;
         }
 
-        // If no time specified, compare just the date
-        const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
-        const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        return eventDateOnly >= todayDateOnly;
+        // Always show events that are today or in the future
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const eventDayStart = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+        return eventDayStart >= todayStart;
       } catch (error) {
         console.error('Database: Error determining if featured event is upcoming:', error);
         return true; // Default to showing if there's an error
       }
     });
+
+    console.log(`Featured Events: Found ${featuredEvents.length} total, showing ${upcomingFeaturedEvents.length} upcoming.`);
 
     // Get all tickets for these events in a single query
     const featuredEventIds = upcomingFeaturedEvents.map((e) => e.id);
