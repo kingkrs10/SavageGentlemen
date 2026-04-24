@@ -18,9 +18,10 @@ interface HeaderProps {
   user: UserType | null;
   onProfileClick: () => void;
   onLogout: () => void;
+  transparent?: boolean;
 }
 
-const Header = ({ user: propUser, onProfileClick, onLogout }: HeaderProps) => {
+const Header = ({ user: propUser, onProfileClick, onLogout, transparent }: HeaderProps) => {
   // Get user from context if not provided as prop
   const { user: contextUser, logout } = useUser();
   // Use prop user if available, otherwise use context user
@@ -35,7 +36,12 @@ const Header = ({ user: propUser, onProfileClick, onLogout }: HeaderProps) => {
     }
   };
   return (
-    <header className="sticky top-0 z-50 bg-black border-b border-white/10 dark:bg-black dark:border-white/10 light:bg-white light:border-black/10">
+    <header className={cn(
+      "sticky top-0 z-50 transition-all duration-300",
+      transparent 
+        ? "bg-transparent border-transparent" 
+        : "bg-black border-b border-white/10 dark:bg-black dark:border-white/10 light:bg-white light:border-black/10"
+    )}>
       <div className="container mx-auto px-4 flex flex-col">
         {/* Desktop Menu Above Logo - Hidden on Mobile */}
         <div className="hidden md:flex justify-center py-4 text-sm">

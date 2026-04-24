@@ -237,11 +237,14 @@ function AppContent() {
       <TooltipProvider>
         <div className="min-h-screen bg-background text-foreground">
           {!isSocaPassportRoute() && (
-            <Header
-              user={user}
-              onLogout={logout}
-              onProfileClick={() => setShowAuthModal(true)}
-            />
+            <div className={location === '/home' ? "absolute top-0 left-0 right-0 z-50 bg-transparent" : ""}>
+              <Header
+                user={user}
+                onLogout={logout}
+                onProfileClick={() => setShowAuthModal(true)}
+                transparent={location === '/home'}
+              />
+            </div>
           )}
 
           <main className={isSocaPassportRoute() || location === '/home' ? "" : "container mx-auto px-4 py-8"}>

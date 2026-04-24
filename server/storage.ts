@@ -2857,6 +2857,9 @@ export class DatabaseStorage implements IStorage {
     });
 
     console.log(`Featured Events: Found ${featuredEvents.length} total, showing ${upcomingFeaturedEvents.length} upcoming.`);
+    upcomingFeaturedEvents.forEach(e => {
+      console.log(`- Event: "${e.title}" (ID: ${e.id}), Image: "${e.imageUrl || 'NULL'}"`);
+    });
 
     // Get all tickets for these events in a single query
     const featuredEventIds = upcomingFeaturedEvents.map((e) => e.id);

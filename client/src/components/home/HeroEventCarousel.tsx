@@ -11,6 +11,8 @@ import {
 import { Event } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { getNormalizedImageUrl } from "@/lib/utils/image-utils";
+import { LazyImage } from "@/components/ui/LazyImage";
+import SGFlyerLogoPng from "@/assets/SGFLYERLOGO.png";
 
 interface HeroEventCarouselProps {
   events: Event[];
@@ -198,7 +200,7 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
 
   return (
     <div
-      className={cn("relative w-full h-screen overflow-hidden", className)}
+      className={cn("relative w-full h-[100dvh] overflow-hidden", className)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onFocus={handleFocus}
@@ -232,56 +234,84 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
                 aria-label={`${event.title} event details. Press Enter or Space to ${showDetails === index ? 'hide' : 'show'} more information.`}
                 data-testid={`carousel-slide-${event.id}`}
               >
-                {/* Background image */}
-                <div className="absolute inset-0">
-                  {event.imageUrl ? (
-                    <img
-                      src={getNormalizedImageUrl(event.imageUrl)}
-                      alt={event.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-primary via-orange-600 to-red-700" />
-                  )}
+                {/* Background area with gradient fallback */}
+                <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-black">
+                  {/* The actual image using LazyImage for robustness */}
+                  <LazyImage
+                    src={event.imageUrl || ""}
+                    alt={event.title}
+                    className="w-full h-full"
+                    objectFit="cover"
+                    fallbackSrc={SGFlyerLogoPng}
+                    placeholderColor="bg-black"
+                  />
 
-                  {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                  {/* High-quality gradient overlay for text readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent z-10" />
+                </div>
 
                   {/* Default content (Bottom-left positioning) */}
-                  <div className="absolute bottom-0 left-0 w-full p-8 md:p-16 flex items-end justify-start text-left z-10 pointer-events-none">
-                    <div className="max-w-2xl space-y-4 animate-fade-in">
-                      <div className="bg-black/20 backdrop-blur-sm p-4 rounded-lg inline-block border border-white/10">
+                  <div className="absolute bottom-24 left-0 w-full p-8 md:p-16 flex items-end justify-start text-left z-20 pointer-events-none">
+                    <div className="max-w-3xl space-y-5 animate-fade-in">
+                      <div className="space-y-2">
                         <Badge
                           variant="secondary"
-                          className="bg-orange-500 text-white text-xs font-bold px-3 py-1 mb-3 uppercase tracking-widest"
+                          className="bg-orange-600 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg"
                         >
                           {event.category || "FEATURED EVENT"}
                         </Badge>
 
-                        <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 tracking-tight drop-shadow-2xl uppercase">
+                        <h1 className="text-4xl md:text-7xl font-bold text-white leading-tight tracking-tighter drop-shadow-2xl uppercase font-heading">
                           {event.title}
                         </h1>
 
-                        <p className="text-lg md:text-xl text-orange-400 font-medium drop-shadow-lg">
+                        <p className="text-xl md:text-2xl text-orange-400 font-medium drop-shadow-lg tracking-wide">
                           {event.description?.split('\n')[0] || "Special Performance"}
                         </p>
-                        
-                        <div className="mt-4 flex items-center space-x-4 text-white/80 text-sm">
-                          <div className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-1 text-orange-400" />
-                            {new Date(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                          </div>
-                          {event.location && (
-                            <div className="flex items-center">
-                              <MapPin className="h-4 w-4 mr-1 text-orange-400" />
-                              {event.location.split(',')[0]}
-                            </div>
-                          )}
+                      </div>
+                      
+                      <div className="flex flex-wrap items-center gap-6 text-white/90">
+                        <div className="flex items-center bg-black/30 backdrop-blur-md px-4 py-2 rounded-lg border border-white/10 shadow-xl">
+                          <Calendar className="h-5 w-5 mr-3 text-orange-500" />
+                          <span className="font-semibold text-lg">
+                            {new Date(event.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                          </span>
                         </div>
+                        
+                        {event.location && (
+                          <div className="flex items-center bg-black/30 backdrop-blur-md px-4 py-2 rounded-lg border border-white/10 shadow-xl">
+                            <MapPin className="h-5 w-5 mr-3 text-orange-500" />
+                            <span className="font-semibold text-lg">
+                              {event.location.split(',')[0]}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Explicitly show CTAs here instead of just waiting for click */}
+                      <div className="pt-4 flex items-center gap-4 pointer-events-auto">
+                        <Button
+                          size="lg"
+                          className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-10 py-7 text-xl uppercase tracking-widest transition-all duration-300 transform hover:scale-105 shadow-2xl"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onGetTicket(event.id);
+                          }}
+                        >
+                          Get Tickets
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          className="border-white/30 text-white hover:bg-white/10 px-10 py-7 text-xl uppercase tracking-widest backdrop-blur-sm transition-all duration-300"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDetails(showDetails === index ? null : index);
+                          }}
+                        >
+                          View Details
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -293,8 +323,7 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
                     isVisible={showDetails === index}
                   />
                 </div>
-              </div>
-            </CarouselItem>
+              </CarouselItem>
           ))}
         </CarouselContent>
 
