@@ -40,12 +40,15 @@ const Header = ({ user: propUser, onProfileClick, onLogout, transparent }: Heade
     <header className={cn(
       "sticky top-0 z-50 transition-all duration-300",
       transparent 
-        ? "bg-transparent border-transparent" 
+        ? "bg-transparent border-transparent shadow-none" 
         : "bg-black border-b border-white/10 dark:bg-black dark:border-white/10 light:bg-white light:border-black/10"
     )}>
       <div className="container mx-auto px-4 flex flex-col">
         {/* Desktop Menu Above Logo - Hidden on Mobile */}
-        <div className="hidden md:flex justify-center py-4 text-sm">
+        <div className={cn(
+          "hidden md:flex justify-center py-4 text-sm",
+          transparent ? "border-none" : ""
+        )}>
           <nav className="flex space-x-8">
             <a href="/" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Home</a>
             <a href="/events" className="uppercase dark:text-white light:text-foreground hover:text-primary font-semibold tracking-widest">Events</a>
@@ -59,7 +62,10 @@ const Header = ({ user: propUser, onProfileClick, onLogout, transparent }: Heade
         </div>
 
         {/* Logo and User Controls */}
-        <div className="py-3 flex justify-between items-center border-t dark:border-white/10 light:border-black/10">
+        <div className={cn(
+          "py-3 flex justify-between items-center",
+          transparent ? "border-none" : "border-t dark:border-white/10 light:border-black/10"
+        )}>
           <div className="flex items-center">
             <img src={LogoImage} alt="Savage Gentlemen Logo" className="h-12 w-auto" />
             <h1 className="ml-2 text-xl md:text-2xl font-heading dark:text-white light:text-foreground tracking-widest truncate max-w-[180px] sm:max-w-none">

@@ -200,7 +200,7 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
 
   return (
     <div
-      className={cn("relative w-full h-[100dvh] overflow-hidden", className)}
+      className={cn("relative w-full h-screen overflow-hidden bg-black", className)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onFocus={handleFocus}
@@ -235,20 +235,20 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
                 data-testid={`carousel-slide-${event.id}`}
               >
                 {/* Background area with gradient fallback */}
-                <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-black">
-                  {/* The actual image using LazyImage for robustness */}
-                  <LazyImage
-                    src={event.imageUrl || ""}
+                <div className="absolute inset-0 bg-black">
+                  {/* Prioritize hero image with direct img tag for maximum reliability */}
+                  <img
+                    src={event.imageUrl || SGFlyerLogoPng}
                     alt={event.title}
-                    className="w-full h-full"
-                    objectFit="cover"
-                    fallbackSrc={SGFlyerLogoPng}
-                    placeholderColor="bg-black"
+                    className="w-full h-full object-cover opacity-100 transition-opacity duration-700"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = SGFlyerLogoPng;
+                    }}
                   />
 
                   {/* High-quality gradient overlay for text readability */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent z-10" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent z-10" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent z-10" />
                 </div>
 
                   {/* Default content (Bottom-left positioning) */}
