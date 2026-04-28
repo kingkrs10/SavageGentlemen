@@ -7,8 +7,8 @@ const BREVO_CONFIG = {
   port: 587,
   secure: false,
   auth: {
-    user: process.env.BREVO_SMTP_LOGIN || '91b965002@smtp-brevo.com',
-    pass: process.env.BREVO_SMTP_KEY || 'RdmcHLWBP7tKSA61',
+    user: process.env.BREVO_SMTP_LOGIN || '',
+    pass: process.env.BREVO_SMTP_KEY || '',
   },
 };
 
