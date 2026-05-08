@@ -36,7 +36,7 @@ interface MediaCollection {
   slug: string;
   visibility: 'public' | 'private';
   isActive: boolean;
-  coverImageUrl: string | null;
+  thumbnailUrl: string | null;
   assetCount: number;
   createdAt: string;
   createdBy: number;
@@ -579,9 +579,9 @@ const MediaPage = () => {
                     data-testid={`collection-card-${collection.id}`}
                   >
                     <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center relative overflow-hidden">
-                      {collection.coverImageUrl ? (
+                      {collection.thumbnailUrl ? (
                         <img 
-                          src={collection.coverImageUrl} 
+                          src={collection.thumbnailUrl} 
                           alt={collection.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 select-none pointer-events-none"
                           draggable={false}

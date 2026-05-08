@@ -57,7 +57,7 @@ interface MediaCollection {
   slug: string;
   visibility: 'public' | 'private';
   isActive: boolean;
-  coverImageUrl: string | null;
+  thumbnailUrl: string | null;
   assetCount: number;
   createdAt: string;
   createdBy: number;
@@ -95,7 +95,7 @@ const AdminMediaPage = ({ embedded = false }: AdminMediaProps) => {
     slug: '',
     visibility: 'public' as 'public' | 'private',
     isActive: true,
-    coverImageUrl: ''
+    thumbnailUrl: ''
   });
 
   const [assetForm, setAssetForm] = useState({
@@ -274,7 +274,7 @@ const AdminMediaPage = ({ embedded = false }: AdminMediaProps) => {
       slug: '',
       visibility: 'public',
       isActive: true,
-      coverImageUrl: ''
+      thumbnailUrl: ''
     });
   };
 
@@ -295,7 +295,7 @@ const AdminMediaPage = ({ embedded = false }: AdminMediaProps) => {
       slug: collection.slug,
       visibility: collection.visibility,
       isActive: collection.isActive,
-      coverImageUrl: collection.coverImageUrl || ''
+      thumbnailUrl: collection.thumbnailUrl || ''
     });
     setShowCollectionDialog(true);
   };
@@ -573,10 +573,10 @@ const AdminMediaPage = ({ embedded = false }: AdminMediaProps) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {collections.map((collection) => (
                 <Card key={collection.id} className="overflow-hidden">
-                  <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center relative">
-                    {collection.coverImageUrl ? (
-                      <img
-                        src={collection.coverImageUrl}
+                  <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center relative overflow-hidden group">
+                    {collection.thumbnailUrl ? (
+                      <img 
+                        src={collection.thumbnailUrl}
                         alt={collection.title}
                         className="w-full h-full object-cover"
                       />
@@ -848,11 +848,11 @@ const AdminMediaPage = ({ embedded = false }: AdminMediaProps) => {
               />
             </div>
             <div>
-              <Label htmlFor="coverImage">Cover Image URL</Label>
+              <Label htmlFor="thumbnailUrl">Cover Image URL</Label>
               <Input
-                id="coverImage"
-                value={collectionForm.coverImageUrl}
-                onChange={(e) => setCollectionForm(prev => ({ ...prev, coverImageUrl: e.target.value }))}
+                id="thumbnailUrl"
+                value={collectionForm.thumbnailUrl}
+                onChange={(e) => setCollectionForm(prev => ({ ...prev, thumbnailUrl: e.target.value }))}
                 placeholder="https://example.com/image.jpg"
                 data-testid="collection-cover-input"
               />
