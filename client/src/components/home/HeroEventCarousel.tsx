@@ -200,7 +200,7 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
 
   return (
     <div
-      className={cn("relative w-full h-screen overflow-hidden bg-black", className)}
+      className={cn("relative w-full h-screen overflow-hidden bg-transparent", className)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onFocus={handleFocus}
@@ -235,7 +235,7 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
                 data-testid={`carousel-slide-${event.id}`}
               >
                 {/* Background area with gradient fallback */}
-                <div className="absolute inset-0 bg-black">
+                <div className="absolute inset-0 bg-transparent">
                   {/* Prioritize hero image with direct img tag for maximum reliability */}
                   <img
                     src={getNormalizedImageUrl(event.imageUrl) || SGFlyerLogoPng}

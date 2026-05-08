@@ -81,7 +81,7 @@ const Home = () => {
         // Fallback hero with video for when no events are available
         <div className="relative w-full h-[100vh] overflow-hidden">
           <div className="relative h-full">
-            <div className="h-full w-full bg-background">
+            <div className="h-full w-full bg-transparent">
               <video
                 className="w-full h-full object-cover absolute inset-0 opacity-75"
                 autoPlay

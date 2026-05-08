@@ -1,0 +1,21 @@
+ffmpeg version 8.1.1 Copyright (c) 2000-2026 the FFmpeg developers
+  built with Apple clang version 16.0.0 (clang-1600.0.26.6)
+  configuration: --prefix=/usr/local/Cellar/ffmpeg/8.1.1 --enable-shared --enable-pthreads --enable-version3 --cc=clang --host-cflags= --host-ldflags= --enable-ffplay --enable-gpl --enable-libsvtav1 --enable-libopus --enable-libx264 --enable-libmp3lame --enable-libdav1d --enable-libvmaf --enable-libvpx --enable-libx265 --enable-openssl --enable-videotoolbox --enable-audiotoolbox
+  libavutil      60. 26.101 / 60. 26.101
+  libavcodec     62. 28.101 / 62. 28.101
+  libavformat    62. 12.101 / 62. 12.101
+  libavdevice    62.  3.101 / 62.  3.101
+  libavfilter    11. 14.101 / 11. 14.101
+  libswscale      9.  5.101 /  9.  5.101
+  libswresample   6.  3.101 /  6.  3.101
+Input #0, concat, from '/Users/sg/SavageGentlemen/uploads/lyric-jobs/8baa275c-1430-4ddc-895b-eae2e11c02b6/concat.txt':
+  Duration: N/A, start: 0.000000, bitrate: N/A
+  Stream #0:0: Video: mjpeg (Progressive), yuvj420p(pc, bt470bg/unknown/unknown), 1200x627 [SAR 72:72 DAR 400:209], 25 fps, 25 tbr, 25 tbn
+Input #1, mp3, from '/Users/sg/SavageGentlemen/uploads/lyric-jobs/8baa275c-1430-4ddc-895b-eae2e11c02b6/audio.mp3':
+  Metadata:
+    encoder         : Lavf60.16.100
+  Duration: 00:00:10.00, start: 0.025057, bitrate: 32 kb/s
+  Stream #1:0: Audio: mp3 (mp3float), 44100 Hz, mono, fltp, 32 kb/s, start 0.025057
+[AVFilterGraph @ 0x7fa407c0a980] No such filter: 'drawtext'
+Error opening output file /Users/sg/SavageGentlemen/uploads/lyric-jobs/8baa275c-1430-4ddc-895b-eae2e11c02b6/output.mp4.
+Error opening output files: Filter not found

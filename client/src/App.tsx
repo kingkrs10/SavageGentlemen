@@ -239,7 +239,7 @@ function AppContent() {
         description="Caribbean-American event and lifestyle brand. Explore events, shop for merchandise, watch live streams, and connect with the community."
       />
       <TooltipProvider>
-        <div className="min-h-screen bg-background text-foreground relative z-[1]">
+        <div className={cn("min-h-screen text-foreground relative z-[1]", isSplashPage ? "bg-[#050005]" : "bg-background/80 backdrop-blur-[2px]")}>
           {!isSocaPassportRoute() && (
             <div className={location === '/home' ? "absolute top-0 left-0 right-0 z-50 bg-transparent" : ""}>
               <Header
