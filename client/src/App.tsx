@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { GlitchTransition } from "@/components/effects/GlitchTransition";
 import { RealityToggle } from "@/components/layout/RealityToggle";
+import ParticleBackground3D from "@/components/effects/ParticleBackground3D";
 import LandingPage from "@/pages/LandingPage";
 import SocaNoirSplash from "@/pages/SocaNoirSplash";
 
@@ -31,6 +32,7 @@ const Shop = lazy(() => import("@/pages/shop"));
 const Apps = lazy(() => import("@/pages/apps"));
 const AppsLanguageSensei = lazy(() => import("@/pages/apps-language-sensei"));
 const AppsSavagePhysics = lazy(() => import("@/pages/apps-savage-physics"));
+const IslandLyricBot = lazy(() => import("@/pages/island-lyric-bot"));
 const Media = lazy(() => import("@/pages/media"));
 const Live = lazy(() => import("@/pages/live"));
 const Checkout = lazy(() => import("@/pages/checkout"));
@@ -88,6 +90,8 @@ function Router() {
         <Route path="/apps" component={Apps} />
         <Route path="/apps/language-sensei" component={AppsLanguageSensei} />
         <Route path="/apps/savage-physics" component={AppsSavagePhysics} />
+        <Route path="/apps/island-lyric-bot" component={IslandLyricBot} />
+        <Route path="/IslandLyricBot">{() => { window.location.href = '/apps/island-lyric-bot'; return null; }}</Route>
         <Route path="/media" component={Media} />
         <Route path="/live" component={Live} />
         <Route path="/checkout" component={Checkout} />
@@ -235,7 +239,7 @@ function AppContent() {
         description="Caribbean-American event and lifestyle brand. Explore events, shop for merchandise, watch live streams, and connect with the community."
       />
       <TooltipProvider>
-        <div className="min-h-screen bg-background text-foreground">
+        <div className="min-h-screen bg-background text-foreground relative z-[1]">
           {!isSocaPassportRoute() && (
             <div className={location === '/home' ? "absolute top-0 left-0 right-0 z-50 bg-transparent" : ""}>
               <Header
@@ -288,6 +292,7 @@ function AppWrapper() {
 
   return (
     <>
+      {!isSplash && <ParticleBackground3D />}
       {!isSplash && <GlitchTransition />}
       {!isSplash && <RealityToggle />}
       <AppContent />

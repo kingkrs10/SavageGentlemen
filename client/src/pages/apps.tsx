@@ -4,6 +4,18 @@ import SEOHead from "@/components/SEOHead";
 
 const apps = [
     {
+        id: "island-lyric-bot",
+        name: "IslandLyric.bot",
+        icon: "🎶",
+        description: "Generate a Soca/Dancehall lyric video in minutes. Upload your MP3 + lyrics, pay $15, get a full HD video delivered to your inbox.",
+        tags: ["Video", "Soca", "Dancehall"],
+        path: "/apps/island-lyric-bot",
+        external: false,
+        gradient: "from-yellow-900/40 to-green-900/30",
+        accentColor: "text-yellow-400",
+        borderColor: "border-yellow-800/30",
+    },
+    {
         id: "language-sensei",
         name: "Language Sensei",
         icon: "⛩️",

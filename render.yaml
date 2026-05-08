@@ -40,3 +40,9 @@ services:
         sync: false
       - key: SENDGRID_API_KEY
         sync: false
+      - key: PEXELS_API_KEY
+        sync: false
+      - key: ISLAND_LYRIC_STRIPE_PRICE_ID
+        sync: false
+      - key: ISLAND_LYRIC_STRIPE_WEBHOOK_SECRET
+        sync: false

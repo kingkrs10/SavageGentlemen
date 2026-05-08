@@ -920,3 +920,17 @@ select {
   background-clip: content-box, border-box;
   box-shadow: 0 0 15px rgba(255, 77, 0, 0.4);
 }
+
+/* ── 3D Particle Background ─────────────────────────────────── */
+.particle-bg-3d {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  will-change: contents;
+}
+
+/* Let particles bleed subtly through the tactical theme wrapper */
+.theme-tactical .min-h-screen.bg-background {
+  background-color: rgba(8, 9, 12, 0.92);
+}

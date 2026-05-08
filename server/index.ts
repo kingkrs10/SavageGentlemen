@@ -48,7 +48,7 @@ app.use(auditLogger);
 // Parse JSON and URL-encoded bodies
 // Exclude Stripe webhook paths — they need raw body for signature verification
 app.use((req, res, next) => {
-  if (req.originalUrl.includes('stripe-webhook')) {
+  if (req.originalUrl.includes('stripe-webhook') || req.originalUrl.includes('island-lyric/stripe-webhook')) {
     return next();
   }
   express.json()(req, res, next);

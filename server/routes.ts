@@ -73,6 +73,7 @@ import {
   getProStatus,
   handleChat
 } from "./language-sensei";
+import { islandLyricRouter } from "./island-lyric-routes";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -232,6 +233,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   router.post("/language-sensei/stripe-webhook", express.raw({ type: 'application/json' }), handleLanguageSenseiWebhook);
   router.get("/language-sensei/pro-status", getProStatus);
   router.post("/language-sensei/chat", handleChat);
+
+  // IslandLyric.bot Routes
+  router.use("/island-lyric", islandLyricRouter);
 
   // Register social and enhanced ticketing routes
   registerSocialRoutes(app);
