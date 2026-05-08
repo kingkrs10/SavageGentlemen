@@ -16,6 +16,7 @@ import { UserProvider, useUser } from "@/context/UserContext";
 import { initGA } from "@/lib/ga-analytics";
 import { trackPageView } from "@/lib/analytics";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { GlitchTransition } from "@/components/effects/GlitchTransition";
