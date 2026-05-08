@@ -1810,7 +1810,7 @@ export default function AdminPage() {
         <Separator />
 
         <Tabs value={activeDashboardTab} onValueChange={setActiveDashboardTab} className="w-full" data-testid="admin-tabs">
-          <TabsList className="grid grid-cols-11 mb-8 bg-[#141e2e] border border-slate-700">
+          <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-12 h-auto w-full mb-8 bg-[#141e2e] border border-slate-700 p-1 gap-1">
             <TabsTrigger value="products" className="flex items-center gap-2">
               <PackageOpen className="h-4 w-4" /> Products
             </TabsTrigger>
