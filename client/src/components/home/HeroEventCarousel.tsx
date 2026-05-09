@@ -262,11 +262,10 @@ const HeroEventCarousel = ({ events, onGetTicket, className }: HeroEventCarousel
                           {event.category || "FEATURED EVENT"}
                         </Badge>
 
-                        <h1 className="text-4xl md:text-7xl font-bold text-white leading-tight tracking-tighter drop-shadow-2xl uppercase font-heading">
+                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-tight tracking-tighter drop-shadow-2xl uppercase font-heading line-clamp-2">
                           {event.title}
                         </h1>
-
-                        <p className="text-xl md:text-2xl text-orange-400 font-medium drop-shadow-lg tracking-wide">
+                        <p className="text-xl md:text-2xl text-orange-400 font-medium drop-shadow-lg tracking-wide line-clamp-2">
                           {event.description?.split('\n')[0] || "Special Performance"}
                         </p>
                       </div>

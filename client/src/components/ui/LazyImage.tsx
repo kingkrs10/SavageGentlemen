@@ -40,7 +40,7 @@ export function LazyImage({
   const [attemptedFallback, setAttemptedFallback] = useState(false);
   const [currentSrc, setCurrentSrc] = useState<string | null>(null);
 
-  // Guard against null/undefined src
+  // Guard against null/undefined src and no fallback
   if (!src && !fallbackSrc) {
     return (
       <div className={`relative w-full h-full ${placeholderColor}`}>
@@ -50,7 +50,7 @@ export function LazyImage({
   }
 
   // Determine the final source URL to use
-  let finalSrc = getNormalizedImageUrl(currentSrc || src || '');
+  let finalSrc = getNormalizedImageUrl(currentSrc || src || fallbackSrc || '');
 
   // Use Intersection Observer to detect when image is in viewport
   useEffect(() => {
@@ -149,17 +149,38 @@ export function LazyImage({
           className={`absolute inset-0 ${placeholderColor} ${loadingClassName}`}
         />
       )}
+      
+      {/* Show placeholder if error and NO fallback available */}
+      {error && !fallbackSrc && (
+        <div className={`absolute inset-0 ${placeholderColor} flex items-center justify-center`}>
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900" />
+        </div>
+      )}
 
-      {/* The actual image */}
-      <img
-        ref={imgRef}
-        src={error && fallbackSrc ? fallbackSrc : (inView ? finalSrc : "")}
-        alt={alt}
-        className={`${className} ${objectFitClass} ${isLoaded ? "opacity-100" : "opacity-0"} transition-opacity duration-300`}
-        onLoad={onLoad}
-        onError={onError}
-        loading="lazy"
-      />
+      {/* Show fallback image if error and fallback available */}
+      {error && fallbackSrc ? (
+        <img
+          ref={imgRef}
+          src={fallbackSrc}
+          alt={alt || "Fallback image"}
+          className={`w-full h-full ${objectFitClass} ${className} transition-opacity duration-300 ${
+            isLoaded ? "opacity-100" : "opacity-0"
+          }`}
+          loading="lazy"
+          onLoad={onLoad}
+        />
+      ) : !error ? (
+        /* The actual image */
+        <img
+          ref={imgRef}
+          src={inView ? finalSrc : ""}
+          alt={alt}
+          className={`${className} ${objectFitClass} ${isLoaded ? "opacity-100" : "opacity-0"} transition-opacity duration-300`}
+          onLoad={onLoad}
+          onError={onError}
+          loading="lazy"
+        />
+      ) : null}
     </div>
   );
 }

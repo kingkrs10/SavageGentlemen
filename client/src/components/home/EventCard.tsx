@@ -107,7 +107,7 @@ const EventCard = ({
             <div className="flex justify-between items-start">
               <div>
                 <Link href={`/events/${id}`} className="hover:underline">
-                  <h3 className={`text-xl font-heading transition-colors ${isPastEvent ? 'text-gray-400' : ''
+                  <h3 className={`text-xl font-heading line-clamp-2 transition-colors ${isPastEvent ? 'text-gray-400' : ''
                     }`}>{title}</h3>
                 </Link>
                 <p className={`text-sm flex items-center mt-1 transition-colors ${isPastEvent ? 'text-gray-500' : 'text-gray-300'
@@ -124,7 +124,7 @@ const EventCard = ({
                 {formatEventPrice(event)}
               </Badge>
             </div>
-            <p className={`text-sm mt-3 transition-colors ${isPastEvent ? 'text-gray-500' : ''
+            <p className={`text-sm mt-3 line-clamp-3 transition-colors ${isPastEvent ? 'text-gray-500' : ''
               }`}>{description}</p>
           </div>
           <div className="flex flex-col space-y-3 mt-4">
@@ -217,7 +217,7 @@ const EventCard = ({
         <div className="flex justify-between items-start mb-3">
           <div className="flex-1">
             <Link href={`/events/${id}`} className="hover:underline block">
-              <h3 className={`heading-modern text-xl group-hover:text-primary transition-colors ${isPastEvent ? 'text-muted-foreground' : 'text-foreground/90'
+              <h3 className={`heading-modern text-xl line-clamp-2 group-hover:text-primary transition-colors ${isPastEvent ? 'text-muted-foreground' : 'text-foreground/90'
                 }`}>{title}</h3>
             </Link>
             <p className={`text-sm flex items-center mt-2 transition-colors ${isPastEvent ? 'text-muted-foreground' : 'text-foreground/60'

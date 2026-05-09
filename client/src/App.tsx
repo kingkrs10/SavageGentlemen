@@ -299,7 +299,7 @@ function AppWrapper() {
 
   return (
     <>
-      {!isSplash && <ParticleBackground3D />}
+      <ParticleBackground3D />
       {!isSplash && <GlitchTransition />}
       {!isSplash && <RealityToggle />}
       <AppContent />

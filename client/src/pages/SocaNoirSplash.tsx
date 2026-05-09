@@ -45,7 +45,7 @@ const SocaNoirSplash = () => {
             <div className="absolute inset-0 z-0">
                 {/* Main Sunset Motion Background */}
                 <div 
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-[30s] ease-linear scale-105"
+                    className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[30s] ease-linear scale-105"
                     style={{ 
                         backgroundImage: `url('/soca-sunset.png'), radial-gradient(circle at 50% 50%, #2e1065 0%, #050005 100%)`, 
                         backgroundColor: 'transparent'

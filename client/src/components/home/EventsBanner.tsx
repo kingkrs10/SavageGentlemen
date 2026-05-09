@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Event } from "@/lib/types";
 import { API_ROUTES } from "@/lib/constants";
 import { LazyImage } from "@/components/ui/LazyImage";
+import SGFlyerLogoPng from "@/assets/SGFLYERLOGO.png";
 
 const EventsBanner = () => {
   const { data: events, isLoading } = useQuery<Event[]>({
@@ -64,6 +65,7 @@ const EventsBanner = () => {
                     src={event.imageUrl}
                     alt={event.title}
                     className="w-full h-full"
+                    fallbackSrc={SGFlyerLogoPng}
                     context="card"
                     adaptive={true}
                   />
