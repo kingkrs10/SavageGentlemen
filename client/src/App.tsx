@@ -23,7 +23,6 @@ import { GlitchTransition } from "@/components/effects/GlitchTransition";
 import { RealityToggle } from "@/components/layout/RealityToggle";
 import ParticleBackground3D from "@/components/effects/ParticleBackground3D";
 import LandingPage from "@/pages/LandingPage";
-import SocaNoirSplash from "@/pages/SocaNoirSplash";
 
 // Lazily load pages for code splitting
 const Home = lazy(() => import("@/pages/home"));
@@ -82,8 +81,8 @@ function Router() {
       </div>
     }>
       <Switch>
-        <Route path="/" component={SocaNoirSplash} />
-        <Route path="/home" component={Home} />
+        <Route path="/" component={Home} />
+        <Route path="/home">{() => { window.location.href = '/'; return null; }}</Route>
         <Route path="/events" component={Events} />
         <Route path="/events/:id" component={EventDetail} />
         <Route path="/events/:id/:slug" component={EventDetail} />
@@ -205,32 +204,6 @@ function AppContent() {
     }
   };
 
-  const isSplashPage = location === '/';
-
-  // SPLASH SCREEN MODE (Universal Landing)
-  if (isSplashPage) {
-    return (
-      <div className="fixed inset-0 z-[40] bg-[#050005]">
-        <SEOHead
-          title="SOCA NÓIR | Savage Gentlemen"
-          description="Secure your early bird tickets for the ultimate Caribbean experience."
-        />
-        <SocaNoirSplash />
-        
-        {showAuthModal && (
-          <AuthModal
-            isOpen={showAuthModal}
-            onClose={() => setShowAuthModal(false)}
-            onAuthSuccess={handleAuthSuccess}
-            onGuestLogin={() => guestLoginMutation.mutate()}
-          />
-        )}
-        
-        <Toaster />
-      </div>
-    );
-  }
-
   // THE VOID MODE (Tactical/App)
   // Full application with Navigation, Header, Auth, etc.
   return (
@@ -243,22 +216,22 @@ function AppContent() {
         <div
           className="min-h-screen text-foreground relative z-[1]"
           style={{
-            backgroundColor: isSplashPage ? '#050005' : 'rgba(8, 9, 12, 0.82)',
-            backdropFilter: isSplashPage ? 'none' : 'blur(2px)',
+            backgroundColor: 'rgba(8, 9, 12, 0.82)',
+            backdropFilter: 'blur(2px)',
           }}
         >
           {!isSocaPassportRoute() && (
-            <div className={location === '/home' ? "absolute top-0 left-0 right-0 z-50 bg-transparent" : ""}>
+            <div className={location === '/' || location === '/home' ? "absolute top-0 left-0 right-0 z-50 bg-transparent" : ""}>
               <Header
                 user={user}
                 onLogout={logout}
                 onProfileClick={() => setShowAuthModal(true)}
-                transparent={location === '/home'}
+                transparent={location === '/' || location === '/home'}
               />
             </div>
           )}
 
-          <main className={isSocaPassportRoute() || location === '/home' ? "" : "container mx-auto px-4 py-8"}>
+          <main className={isSocaPassportRoute() || location === '/' || location === '/home' ? "" : "container mx-auto px-4 py-8"}>
             <Router />
           </main>
 
@@ -294,14 +267,12 @@ export default function App() {
 
 function AppWrapper() {
   const { theme } = useTheme();
-  const [location] = useLocation();
-  const isSplash = location === '/';
 
   return (
     <>
       <ParticleBackground3D />
-      {!isSplash && <GlitchTransition />}
-      {!isSplash && <RealityToggle />}
+      <GlitchTransition />
+      <RealityToggle />
       <AppContent />
     </>
   );
