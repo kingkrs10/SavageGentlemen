@@ -198,6 +198,206 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const router = express.Router();
   app.use("/api", router);
 
+  // Shared handler for free ticket claims to ensure consistent logic across endpoints
+  const handleFreeTicketClaim = async (req: Request, res: Response, source: string) => {
+    try {
+      console.log(`=== FREE TICKET REQUEST (${source}) ===`);
+      const { eventId, guestEmail, ticketId, secretCode, code } = req.body;
+      const providedSecretCode = (secretCode || code || '').toString().trim();
+
+      // Authentication logic (consolidated)
+      let user = null;
+
+      // 1. Try user-id header
+      const userIdHeader = req.headers['user-id'];
+      if (userIdHeader) {
+        try {
+          const id = parseInt(userIdHeader as string);
+          if (!isNaN(id)) {
+            user = await storage.getUser(id);
+          }
+        } catch (e) {
+          console.error("Error retrieving user by ID:", e);
+        }
+      }
+
+      // 2. Try HMAC or Firebase token
+      if (!user) {
+        const authHeader = req.headers['authorization'];
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          const token = authHeader.split(' ')[1];
+          if (token && token !== 'undefined' && token !== 'null') {
+            // Try HMAC
+            try {
+              const [payload, signature] = token.split('.');
+              if (payload && signature) {
+                const TOKEN_SECRET = process.env.TOKEN_SECRET || 'sg-prod-token-secret-2026-savagegentlemen';
+                const expectedSignature = crypto.createHmac('sha256', TOKEN_SECRET)
+                  .update(payload)
+                  .digest('base64url');
+
+                if (expectedSignature === signature) {
+                  const decoded = Buffer.from(payload, 'base64url').toString('utf-8');
+                  const [uId, uName, uTime] = decoded.split(':');
+                  if (uId && uName && uTime) {
+                    const tokenAge = Date.now() - parseInt(uTime);
+                    if (tokenAge < 24 * 60 * 60 * 1000) {
+                      const hmacUser = await storage.getUser(parseInt(uId));
+                      if (hmacUser && hmacUser.username === uName) user = hmacUser;
+                    }
+                  }
+                }
+              }
+            } catch (e) {
+              console.log("HMAC token validation failed, trying Firebase:", e);
+            }
+
+            // Try Firebase
+            if (!user) {
+              try {
+                const decodedToken = await admin.auth().verifyIdToken(token);
+                user = await storage.getUserByFirebaseId(decodedToken.uid);
+              } catch (e) {
+                console.log("Firebase token failed");
+              }
+            }
+          }
+        }
+      }
+
+      // 3. Try legacy fallbacks
+      if (!user && req.headers['x-user-data']) {
+        try {
+          const userData = JSON.parse(req.headers['x-user-data'] as string);
+          if (userData?.id) user = await storage.getUser(userData.id);
+        } catch (e) {}
+      }
+      if (!user && req.body.userId) {
+        try {
+          user = await storage.getUser(Number(req.body.userId));
+        } catch (e) {}
+      }
+      if (!user) user = await getUserFromAuthCookie(req);
+
+      if (!user) {
+        console.log(`Auth failed for ${source}`);
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      // Claim logic
+      if (!eventId) return res.status(400).json({ message: "Event ID is required" });
+
+      const event = await storage.getEvent(Number(eventId));
+      if (!event) return res.status(404).json({ message: "Event not found" });
+
+      // Availability check
+      const eventDate = new Date(event.date);
+      const eventEndTime = event.endTime ?
+        new Date(`${event.date.split('T')[0]}T${event.endTime}:00`) :
+        new Date(eventDate.getTime() + 24 * 60 * 60 * 1000);
+      if (new Date() > eventEndTime) {
+        return res.status(400).json({ message: "This event has already ended." });
+      }
+
+      // Resolve Ticket Type
+      let selectedTicket = null;
+      if (ticketId) {
+        selectedTicket = await storage.getTicket(Number(ticketId));
+        if (!selectedTicket || selectedTicket.eventId !== event.id) {
+          return res.status(400).json({ message: "Invalid ticket type for this event" });
+        }
+      }
+
+      // PRICE VALIDATION
+      if (selectedTicket) {
+        if (selectedTicket.price > 0) {
+          return res.status(400).json({ message: "This ticket type is not free. Please use the checkout process." });
+        }
+        
+        if (selectedTicket.secretCode) {
+          if (!providedSecretCode || providedSecretCode.toUpperCase() !== selectedTicket.secretCode.toUpperCase()) {
+            return res.status(403).json({ message: "A valid access code is required to claim this ticket." });
+          }
+        }
+
+        if (selectedTicket.status === 'sold_out') return res.status(400).json({ message: "Ticket is sold out." });
+        if (selectedTicket.status === 'off_sale') return res.status(400).json({ message: "Ticket is off sale." });
+        if (selectedTicket.status === 'staff_only') return res.status(400).json({ message: "Ticket is restricted." });
+        if (selectedTicket.status === 'hidden' && (!providedSecretCode || providedSecretCode.toUpperCase() !== selectedTicket.secretCode?.toUpperCase())) {
+          return res.status(400).json({ message: "Ticket is not available." });
+        }
+        if (selectedTicket.remainingQuantity !== null && selectedTicket.remainingQuantity <= 0) {
+          return res.status(400).json({ message: "Ticket is at capacity." });
+        }
+      } else {
+        if (event.price && event.price > 0) {
+          return res.status(400).json({ message: "This event is not free. Please select a ticket type." });
+        }
+      }
+
+      // Email setup
+      let deliveryEmail = user.email;
+      if (user.isGuest && (!user.email || user.email.trim() === '')) {
+        if (!guestEmail?.trim()) {
+          return res.status(400).json({ message: "Email required for guest tickets.", requiresEmail: true, isGuest: true });
+        }
+        deliveryEmail = guestEmail.trim();
+      } else if (!user.email?.trim()) {
+        return res.status(400).json({ message: "Email required for ticket delivery.", requiresEmail: true });
+      }
+
+      // Create Order
+      const order = await storage.createOrder({
+        userId: user.id,
+        totalAmount: 0,
+        status: 'completed',
+        paymentMethod: 'free',
+        paymentId: `free-${Date.now()}`,
+        affiliateId: getAffiliateIdFromCookie(req)
+      });
+
+      // Create Ticket Purchase
+      const ticket = await storage.createTicketPurchase({
+        orderId: order.id,
+        eventId: event.id,
+        ticketId: selectedTicket?.id || null,
+        status: 'valid',
+        userId: user.id,
+        purchaseDate: new Date(),
+        qrCodeData: `EVENT-${event.id}-ORDER-${order.id}-${Date.now()}`,
+        ticketType: selectedTicket?.name || 'General Admission',
+        price: 0,
+        attendeeEmail: deliveryEmail,
+        attendeeName: user.displayName || user.username || null
+      });
+
+      // Email & Analytics
+      if (deliveryEmail) {
+        sendTicketEmail({
+          ticketId: ticket.id.toString(),
+          qrCodeDataUrl: ticket.qrCodeData,
+          eventName: event.title,
+          eventLocation: event.location,
+          eventDate: event.date,
+          ticketType: selectedTicket?.name || 'General Admission',
+          ticketPrice: 0,
+          purchaseDate: new Date()
+        }, deliveryEmail).catch(e => console.error("Email failed:", e));
+      }
+
+      storage.incrementEventTicketSales(event.id).catch(e => console.error("Analytics failed:", e));
+
+      return res.status(200).json({
+        success: true,
+        ticket: { id: ticket.id, eventId: ticket.eventId, eventTitle: event.title, status: ticket.status, qrCodeData: ticket.qrCodeData },
+        message: "Free ticket successfully claimed"
+      });
+    } catch (error) {
+      console.error(`ERROR IN FREE TICKET CLAIM (${source}):`, error);
+      return res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  };
+
   // Health check endpoint
   router.get('/health', (req: Request, res: Response) => {
     res.json(getHealthStatus());
@@ -4866,601 +5066,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Special endpoint for free tickets (0.00) - no payment processing required
   // API prefixed endpoint
   router.post("/tickets/free", async (req: Request, res: Response) => {
-    try {
-      console.log("=== FREE TICKET REQUEST (API) ===");
-      console.log("Request body:", req.body);
-      console.log("Request headers:", req.headers);
-
-      const { eventId, eventTitle, guestEmail } = req.body;
-
-      // More flexible authentication for free tickets
-      let user = null;
-
-      // 1. Try user-id header first (most reliable)
-      const userIdHeader = req.headers['user-id'];
-      console.log("Free ticket auth - user-id header:", userIdHeader);
-      if (userIdHeader) {
-        try {
-          const id = parseInt(userIdHeader as string);
-          if (!isNaN(id)) {
-            user = await storage.getUser(id);
-            if (user) {
-              console.log("User found via user-id header for free ticket:", user.id, user.username);
-            } else {
-              console.log("No user found for user-id:", id);
-            }
-          }
-        } catch (e) {
-          console.error("Error retrieving user by ID:", e);
-        }
-      }
-
-      // 2. Try HMAC-signed login token
-      if (!user) {
-        const authHeader = req.headers['authorization'];
-        console.log("Free ticket auth - authorization header present:", !!authHeader);
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-          const token = authHeader.split(' ')[1];
-
-          if (token && token !== 'undefined' && token !== 'null') {
-            // Try HMAC token first (our login system uses these)
-            try {
-              const [payload, signature] = token.split('.');
-              if (payload && signature) {
-                const TOKEN_SECRET = process.env.TOKEN_SECRET || 'sg-prod-token-secret-2026-savagegentlemen';
-                const expectedSignature = require('crypto')
-                  .createHmac('sha256', TOKEN_SECRET)
-                  .update(payload)
-                  .digest('base64url');
-
-                if (expectedSignature === signature) {
-                  const decoded = Buffer.from(payload, 'base64url').toString('utf-8');
-                  const [userId, username, timestamp] = decoded.split(':');
-                  if (userId && username && timestamp) {
-                    const tokenAge = Date.now() - parseInt(timestamp);
-                    const maxAge = 24 * 60 * 60 * 1000;
-                    if (tokenAge < maxAge) {
-                      const hmacUser = await storage.getUser(parseInt(userId));
-                      if (hmacUser && hmacUser.username === username) {
-                        user = hmacUser;
-                        console.log("User found via HMAC token for free ticket:", user.id, user.username);
-                      }
-                    } else {
-                      console.log("HMAC token expired for free ticket");
-                    }
-                  }
-                }
-              }
-            } catch (e) {
-              console.log("HMAC token validation failed, trying Firebase:", e);
-            }
-
-            // Try Firebase token as fallback
-            if (!user) {
-              try {
-                const decodedToken = await admin.auth().verifyIdToken(token);
-                const userByFirebase = await storage.getUserByFirebaseId(decodedToken.uid);
-
-                if (userByFirebase) {
-                  user = userByFirebase;
-                  console.log("User found via Firebase token for free ticket:", user.id);
-                }
-              } catch (e) {
-                console.log("Firebase token also failed for free ticket");
-              }
-            }
-          }
-        }
-      }
-
-      // 3. Try x-user-data as a last resort
-      if (!user && req.headers['x-user-data']) {
-        console.log("Free ticket auth - trying x-user-data header");
-        try {
-          const userData = JSON.parse(req.headers['x-user-data'] as string);
-
-          if (userData && userData.id) {
-            // Get the user from storage to ensure this is a real user
-            const userFromStorage = await storage.getUser(userData.id);
-
-            if (userFromStorage) {
-              user = userFromStorage;
-              console.log("User found via x-user-data header for free ticket:", user.id);
-            }
-          }
-        } catch (e) {
-          console.error("Error parsing x-user-data:", e);
-        }
-      }
-
-      // 4. Try userId from request body as final fallback
-      if (!user && req.body.userId) {
-        console.log("Free ticket auth - trying userId from request body:", req.body.userId);
-        try {
-          const bodyUser = await storage.getUser(Number(req.body.userId));
-          if (bodyUser) {
-            user = bodyUser;
-            console.log("User found via request body userId for free ticket:", user.id, user.username);
-          }
-        } catch (e) {
-          console.error("Error retrieving user from body userId:", e);
-        }
-      }
-
-      // 5. Try auth cookie (survives localStorage corruption)
-      if (!user) {
-        user = await getUserFromAuthCookie(req);
-      }
-
-      // If no user found through any method, return authentication failure
-      if (!user) {
-        console.log("Authentication failed for free ticket request. Methods tried:", {
-          'user-id-header': !!req.headers['user-id'],
-          'authorization-header': !!req.headers['authorization'],
-          'x-user-data-header': !!req.headers['x-user-data'],
-          'body-userId': !!req.body.userId,
-          'auth-cookie': !!req.headers.cookie?.includes('sg_auth_token'),
-        });
-        return res.status(401).json({ message: "Authentication required" });
-      }
-
-      // Store authenticated user in request
-      (req as any).user = user;
-
-      // Determine email for ticket delivery (support guest emails)
-      let deliveryEmail = user.email;
-
-      // For guest users, use provided guest email if user doesn't have email
-      if (user.isGuest && (!user.email || user.email.trim() === '')) {
-        if (!guestEmail || guestEmail.trim() === '') {
-          return res.status(400).json({
-            message: "Email address is required to receive tickets.",
-            requiresEmail: true,
-            isGuest: true
-          });
-        }
-        deliveryEmail = guestEmail.trim();
-        console.log("Using guest email for ticket delivery:", deliveryEmail);
-      } else if (!user.email || user.email.trim() === '') {
-        return res.status(400).json({
-          message: "Email address is required to receive tickets. Please update your profile with a valid email address.",
-          requiresEmail: true
-        });
-      }
-
-      // Handle free ticket claim logic
-      if (!eventId) {
-        return res.status(400).json({ message: "Event ID is required" });
-      }
-
-      // Get the event to verify it exists and is free
-      const event = await storage.getEvent(Number(eventId));
-
-      // Check if event is in the past
-      const eventDate = new Date(event.date);
-      const eventEndTime = event.endTime ?
-        new Date(`${event.date.split('T')[0]}T${event.endTime}:00`) :
-        new Date(eventDate.getTime() + 24 * 60 * 60 * 1000); // Default to 24 hours after event start
-      const now = new Date();
-
-      if (now > eventEndTime) {
-        return res.status(400).json({
-          message: "This event has already ended and tickets are no longer available."
-        });
-      }
-
-      if (!event) {
-        return res.status(404).json({ message: "Event not found" });
-      }
-
-      // Make sure the event price is actually zero or null (free)
-      if (event.price && event.price > 0) {
-        return res.status(400).json({
-          message: "This endpoint is only for free tickets. Use payment endpoints for paid tickets."
-        });
-      }
-
-      // Create order record for the free ticket with affiliate tracking
-      const affiliateId = getAffiliateIdFromCookie(req);
-      const order = await storage.createOrder({
-        userId: user.id,
-        totalAmount: 0,
-        status: 'completed',
-        paymentMethod: 'free',
-        paymentId: `free-${Date.now()}`,
-        affiliateId: affiliateId
-      });
-
-      // Check if ticketId was provided in the request
-      let ticketType = 'standard';
-      let ticketName = 'General Admission';
-      let ticketPrice = 0;
-      let selectedTicket = null;
-
-      if (req.body.ticketId) {
-        try {
-          selectedTicket = await storage.getTicket(Number(req.body.ticketId));
-          if (selectedTicket) {
-            ticketType = selectedTicket.name;
-            ticketName = selectedTicket.name;
-            ticketPrice = selectedTicket.price;
-
-            // Make sure the ticket is actually free
-            if (ticketPrice > 0) {
-              return res.status(400).json({
-                message: "This endpoint is only for free tickets. Use payment endpoints for paid tickets."
-              });
-            }
-
-            // SECURITY: If the ticket has a secret code, verify it was provided
-            if (selectedTicket.secretCode) {
-              const providedCode = req.body.secretCode || req.body.code;
-              if (!providedCode || providedCode.trim().toUpperCase() !== selectedTicket.secretCode.toUpperCase()) {
-                return res.status(403).json({
-                  message: "A valid access code is required to claim this ticket."
-                });
-              }
-            }
-
-            // CRITICAL: Check if ticket is sold out or not available for sale
-            if (selectedTicket.status === 'sold_out') {
-              return res.status(400).json({
-                message: "This ticket type is sold out and no longer available."
-              });
-            }
-
-            if (selectedTicket.status === 'off_sale') {
-              return res.status(400).json({
-                message: "This ticket type is not currently available for purchase."
-              });
-            }
-
-            if (selectedTicket.status === 'staff_only') {
-              return res.status(400).json({
-                message: "This ticket type is restricted and not available for public purchase."
-              });
-            }
-
-            if (selectedTicket.status === 'hidden') {
-              return res.status(400).json({
-                message: "This ticket type is not available for purchase."
-              });
-            }
-
-            // Check remaining quantity if available
-            if (selectedTicket.remainingQuantity !== undefined && selectedTicket.remainingQuantity <= 0) {
-              return res.status(400).json({
-                message: "This ticket type has no remaining capacity."
-              });
-            }
-          }
-        } catch (err) {
-          console.error("Error fetching ticket:", err);
-          // Continue with default ticket type if there's an error
-        }
-      }
-
-      // Create ticket record
-      const ticketData = {
-        orderId: order.id,
-        eventId: event.id,
-        ticketId: selectedTicket ? selectedTicket.id : null,
-        status: 'valid',
-        userId: user.id,
-        purchaseDate: new Date(),
-        qrCodeData: `EVENT-${event.id}-ORDER-${order.id}-${Date.now()}`,
-        ticketType: ticketType,
-        price: 0,
-        attendeeEmail: deliveryEmail || null,
-        attendeeName: user.displayName || user.username || null
-      };
-
-      const ticket = await storage.createTicketPurchase(ticketData);
-
-      // If user has email, send ticket confirmation
-      if (deliveryEmail) {
-        try {
-          await sendTicketEmail({
-            ticketId: ticket.id.toString(),
-            qrCodeDataUrl: ticket.qrCodeData,
-            eventName: event.title,
-            eventLocation: event.location,
-            eventDate: event.date,
-            ticketType: ticketName,
-            ticketPrice: 0,
-            purchaseDate: new Date()
-          }, deliveryEmail);
-        } catch (emailError) {
-          console.error("Failed to send ticket email:", emailError);
-          // Continue despite email failure
-        }
-      }
-
-      // Track analytics - count as ticket sale for free event
-      try {
-        // Use the proper event analytics function
-        await storage.incrementEventTicketSales(event.id);
-      } catch (analyticsError) {
-        console.error("Error updating analytics:", analyticsError);
-        // Continue despite analytics failure
-      }
-
-      return res.status(200).json({
-        success: true,
-        ticket: {
-          id: ticket.id,
-          eventId: ticket.eventId,
-          eventTitle: event.title,
-          status: ticket.status,
-          qrCodeData: ticket.qrCodeData
-        },
-        message: "Free ticket successfully claimed"
-      });
-    } catch (error) {
-      console.error("=== FREE TICKET ERROR (API) ===");
-      console.error("Error details:", error);
-      console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
-
-      const errorMessage = error instanceof Error ? error.message : "Failed to claim free ticket";
-      return res.status(500).json({
-        success: false,
-        message: errorMessage,
-        error: "INTERNAL_SERVER_ERROR"
-      });
-    }
+    return handleFreeTicketClaim(req, res);
   });
+
 
   // Non-prefixed endpoint (for backward compatibility)
-  router.post("/tickets/free", async (req: Request, res: Response) => {
-    try {
-      console.log("=== FREE TICKET REQUEST (NON-PREFIXED) ===");
-      console.log("Request body:", req.body);
-      console.log("Request headers:", req.headers);
-
-      const { eventId, eventTitle, guestEmail } = req.body;
-
-      // More flexible authentication for free tickets
-      let user = null;
-
-      // 1. Try user-id header first
-      const userId = req.headers['user-id'];
-      if (userId) {
-        try {
-          const id = parseInt(userId as string);
-          user = await storage.getUser(id);
-          if (user) {
-            console.log("User found via user-id header for free ticket (non-prefixed):", user.id);
-          }
-        } catch (e) {
-          console.error("Error retrieving user by ID:", e);
-        }
-      }
-
-      // 2. Try token authentication if user-id failed
-      if (!user) {
-        const authHeader = req.headers['authorization'];
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-          const token = authHeader.split(' ')[1];
-
-          if (token && token !== 'undefined' && token !== 'null') {
-            try {
-              // Try Firebase token
-              const decodedToken = await admin.auth().verifyIdToken(token);
-              const userByFirebase = await storage.getUserByFirebaseId(decodedToken.uid);
-
-              if (userByFirebase) {
-                user = userByFirebase;
-                console.log("User found via Firebase token for free ticket (non-prefixed):", user.id);
-              }
-            } catch (e) {
-              console.error("Error verifying Firebase token:", e);
-            }
-          }
-        }
-      }
-
-      // REMOVED: Insecure x-user-data fallback - only use secure HMAC/Firebase authentication
-
-      // If no user found through any method, return authentication failure
-      if (!user) {
-        console.log("Authentication failed for free ticket request (non-prefixed)");
-        return res.status(401).json({ message: "Authentication required" });
-      }
-
-      // Store authenticated user in request
-      (req as any).user = user;
-
-      // Determine email for ticket delivery (support guest emails)  
-      let deliveryEmail = user.email;
-
-      // For guest users, use provided guest email if user doesn't have email
-      if (user.isGuest && (!user.email || user.email.trim() === '')) {
-        if (!guestEmail || guestEmail.trim() === '') {
-          return res.status(400).json({
-            message: "Email address is required to receive tickets.",
-            requiresEmail: true,
-            isGuest: true
-          });
-        }
-        deliveryEmail = guestEmail.trim();
-        console.log("Using guest email for ticket delivery (non-prefixed):", deliveryEmail);
-      } else if (!user.email || user.email.trim() === '') {
-        return res.status(400).json({
-          message: "Email address is required to receive tickets. Please update your profile with a valid email address.",
-          requiresEmail: true
-        });
-      }
-
-      if (!eventId) {
-        return res.status(400).json({ message: "Event ID is required" });
-      }
-
-      // Get the event to verify it exists and is free
-      const event = await storage.getEvent(Number(eventId));
-
-      // Check if event is in the past
-      const eventDate = new Date(event.date);
-      const eventEndTime = event.endTime ?
-        new Date(`${event.date.split('T')[0]}T${event.endTime}:00`) :
-        new Date(eventDate.getTime() + 24 * 60 * 60 * 1000); // Default to 24 hours after event start
-      const now = new Date();
-
-      if (now > eventEndTime) {
-        return res.status(400).json({
-          message: "This event has already ended and tickets are no longer available."
-        });
-      }
-
-      if (!event) {
-        return res.status(404).json({ message: "Event not found" });
-      }
-
-      // Make sure the event price is actually zero or null (free)
-      if (event.price && event.price > 0) {
-        return res.status(400).json({
-          message: "This endpoint is only for free tickets. Use payment endpoints for paid tickets."
-        });
-      }
-
-      // Create order record for the free ticket with affiliate tracking
-      const affiliateId = getAffiliateIdFromCookie(req);
-      const order = await storage.createOrder({
-        userId: user.id,
-        totalAmount: 0,
-        status: 'completed',
-        paymentMethod: 'free',
-        paymentId: `free-${Date.now()}`,
-        affiliateId: affiliateId
-      });
-
-      // Check if ticketId was provided in the request
-      let ticketType = 'standard';
-      let ticketName = 'General Admission';
-      let ticketPrice = 0;
-      let selectedTicket = null;
-
-      if (req.body.ticketId) {
-        try {
-          selectedTicket = await storage.getTicket(Number(req.body.ticketId));
-          if (selectedTicket) {
-            ticketType = selectedTicket.name;
-            ticketName = selectedTicket.name;
-            ticketPrice = selectedTicket.price;
-
-            // Make sure the ticket is actually free
-            if (ticketPrice > 0) {
-              return res.status(400).json({
-                message: "This endpoint is only for free tickets. Use payment endpoints for paid tickets."
-              });
-            }
-
-            // CRITICAL: Check if ticket is sold out or not available for sale
-            if (selectedTicket.status === 'sold_out') {
-              return res.status(400).json({
-                message: "This ticket type is sold out and no longer available."
-              });
-            }
-
-            if (selectedTicket.status === 'off_sale') {
-              return res.status(400).json({
-                message: "This ticket type is not currently available for purchase."
-              });
-            }
-
-            if (selectedTicket.status === 'staff_only') {
-              return res.status(400).json({
-                message: "This ticket type is restricted and not available for public purchase."
-              });
-
-              if (selectedTicket.status === 'hidden') {
-                return res.status(400).json({
-                  message: "This ticket type is not available for purchase."
-                });
-              }
-            }
-
-            // Check remaining quantity if available
-            if (selectedTicket.remainingQuantity !== undefined && selectedTicket.remainingQuantity <= 0) {
-              return res.status(400).json({
-                message: "This ticket type has no remaining capacity."
-              });
-            }
-          }
-        } catch (err) {
-          console.error("Error fetching ticket:", err);
-          // Continue with default ticket type if there's an error
-        }
-      }
-
-      // Create ticket record
-      const ticketData = {
-        orderId: order.id,
-        eventId: event.id,
-        ticketId: selectedTicket ? selectedTicket.id : null,
-        status: 'valid',
-        userId: user.id,
-        purchaseDate: new Date(),
-        qrCodeData: `EVENT-${event.id}-ORDER-${order.id}-${Date.now()}`,
-        ticketType: ticketType,
-        price: 0,
-        attendeeEmail: deliveryEmail || null,
-        attendeeName: user.displayName || user.username || null
-      };
-
-      const ticket = await storage.createTicketPurchase(ticketData);
-
-      // If user has email, send ticket confirmation
-      if (deliveryEmail) {
-        try {
-          await sendTicketEmail({
-            ticketId: ticket.id.toString(),
-            qrCodeDataUrl: ticket.qrCodeData,
-            eventName: event.title,
-            eventLocation: event.location,
-            eventDate: event.date,
-            ticketType: ticketName,
-            ticketPrice: 0,
-            purchaseDate: new Date()
-          }, deliveryEmail);
-        } catch (emailError) {
-          console.error("Failed to send ticket email:", emailError);
-          // Continue despite email failure
-        }
-      }
-
-      // Track analytics - count as ticket sale for free event
-      try {
-        // Use the proper event analytics function
-        await storage.incrementEventTicketSales(event.id);
-      } catch (analyticsError) {
-        console.error("Error updating analytics:", analyticsError);
-        // Continue despite analytics failure
-      }
-
-      return res.status(200).json({
-        success: true,
-        ticket: {
-          id: ticket.id,
-          eventId: ticket.eventId,
-          eventTitle: event.title,
-          status: ticket.status,
-          qrCodeData: ticket.qrCodeData
-        },
-        message: "Free ticket successfully claimed"
-      });
-    } catch (error) {
-      console.error("=== FREE TICKET ERROR (NON-PREFIXED) ===");
-      console.error("Error details:", error);
-      console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
-
-      const errorMessage = error instanceof Error ? error.message : "Failed to claim free ticket";
-      return res.status(500).json({
-        success: false,
-        message: errorMessage,
-        error: "INTERNAL_SERVER_ERROR"
-      });
-    }
+  app.post("/tickets/free", async (req: Request, res: Response) => {
+    return handleFreeTicketClaim(req, res);
   });
+
 
   // Stripe payment routes
   // Since router is mounted on /api, this will be /api/payment/create-intent

@@ -14,7 +14,7 @@ MARGIN_Y = (PAGE_HEIGHT - (TICKET_HEIGHT * 4)) // 2
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMP_DIR = os.path.join(BASE_DIR, 'tickets_temp')
 MAPPING_FILE = os.path.join(BASE_DIR, 'ticket_mapping.json')
-FLYER_PATH = os.path.join(BASE_DIR, 'elysium_flyer.png')
+FLYER_PATH = os.path.join(BASE_DIR, 'elysium_flyer.jpeg')
 FONT_PATH = '/System/Library/Fonts/Supplemental/Arial.ttf'
 OUTPUT_FILE = os.path.join(BASE_DIR, 'Elysium_Tickets_Batch_Updated.pdf')
 

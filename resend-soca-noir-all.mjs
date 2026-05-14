@@ -83,8 +83,8 @@ async function main() {
       const qrData = ticket.qr_code_data;
       const price = ticket.price;
       const eventTitle = ticket.event_title;
-      const eventDateRaw = ticket.event_date || new Date('2026-06-21T21:00:00');
-      const eventLocation = ticket.event_location || 'Newark, NJ';
+      const eventDateRaw = ticket.event_date || new Date('2026-05-17T22:00:00.000Z');
+      const eventLocation = ticket.event_location || 'AINSWORTH HOBOKEN NJ';
 
       console.log(`Processing ticket for: ${email} | ${ticketName}`);
 
