@@ -92,8 +92,8 @@ export const sendTicketEmail = async (
   try {
     console.log(`[MAILERSEND] Generating QR code for ticket: ${ticketInfo.ticketId}`);
     
-    // Generate QR code as base64 image
-    const qrCodeDataUrl = await QRCode.toDataURL(ticketInfo.qrCodeDataUrl, {
+    // Generate QR code as buffer for email attachment
+    const qrCodeBuffer = await QRCode.toBuffer(ticketInfo.qrCodeDataUrl, {
       width: 300,
       margin: 2,
       color: {
@@ -156,7 +156,7 @@ export const sendTicketEmail = async (
           <div class="qr-section">
             <h3>Your QR Code</h3>
             <p>Present this QR code at the event entrance:</p>
-            <img src="${qrCodeDataUrl}" alt="QR Code" style="max-width: 300px; height: auto;">
+            <img src="cid:qrcode" alt="QR Code" style="max-width: 300px; height: auto;">
             <p style="font-size: 12px; color: #666; margin-top: 10px;">
               QR Code: ${ticketInfo.qrCodeDataUrl}
             </p>
@@ -211,7 +211,16 @@ Questions? Contact us at: info@savgent.com
       subject,
       text: textContent,
       html: htmlContent,
-      from: DEFAULT_FROM_EMAIL
+      from: DEFAULT_FROM_EMAIL,
+      attachments: [
+        {
+          content: qrCodeBuffer,
+          filename: 'qrcode.png',
+          type: 'image/png',
+          disposition: 'inline',
+          cid: 'qrcode'
+        }
+      ]
     });
     
     if (result) {
