@@ -38,7 +38,7 @@ async function main() {
     const price = 0.0;
     const eventTitle = 'SOCA NOIŘ ROSE';
     // Event date from database: SOCA NOIŘ ROSE is May 17, 2026 at 10pm UTC (6pm ET)
-    const eventDateRaw = new Date('2026-05-17T14:00:00.000Z');
+    const eventDateRaw = new Date('2026-05-17T22:00:00.000Z');
     const eventLocation = 'AINSWORTH HOBOKEN NJ';
 
     console.log(`Processing ticket for: ${email}`);

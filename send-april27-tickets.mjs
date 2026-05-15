@@ -61,7 +61,7 @@ async function sendTicketEmail(purchase) {
     color: { dark: '#000000', light: '#FFFFFF' }
   });
 
-  const eventDate = new Date('2026-05-17T14:00:00.000Z');
+  const eventDate = new Date('2026-05-17T22:00:00.000Z');
   const formattedDate = eventDate.toLocaleDateString('en-US', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });

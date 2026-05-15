@@ -83,7 +83,7 @@ async function main() {
       const qrData = ticket.qr_code_data;
       const price = ticket.price;
       const eventTitle = ticket.event_title;
-      const eventDateRaw = ticket.event_date || new Date('2026-05-17T14:00:00.000Z');
+      const eventDateRaw = ticket.event_date || new Date('2026-05-17T18:00:00.000Z');
       const eventTimeRaw = ticket.event_time;
       const eventLocation = ticket.event_location || 'AINSWORTH HOBOKEN NJ';
 
