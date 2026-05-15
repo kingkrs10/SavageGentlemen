@@ -208,6 +208,31 @@ const cleanupOldDeletedEvents = () => {
   });
 };
 
+/**
+ * Robustly parses a time string in formats like "14:00", "14:00:00", "2:00 PM", "2:00PM"
+ */
+function parseTimeString(timeStr: string | null | undefined): { hours: number, minutes: number } | null {
+  if (!timeStr) return null;
+  
+  // Handle HH:mm or HH:mm:ss with optional AM/PM
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?$/i);
+  if (match) {
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const ampm = match[3]?.toUpperCase();
+    
+    if (ampm === 'PM' && hours < 12) hours += 12;
+    if (ampm === 'AM' && hours === 12) hours = 0;
+    
+    // Safety check for valid hour/minute ranges
+    if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
+      return { hours, minutes };
+    }
+  }
+  
+  return null;
+}
+
 export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
@@ -834,29 +859,35 @@ export class MemStorage implements IStorage {
 
           // If we have an end time, use that for comparison
           if (event.endTime) {
-            const [hours, minutes] = event.endTime.split(':').map(Number);
-            const eventEndDateTime = new Date(eventDate);
-            eventEndDateTime.setHours(hours, minutes, 0, 0);
-            return eventEndDateTime >= now; // Event is still ongoing or in the future
+            const parsedEndTime = parseTimeString(event.endTime);
+            if (parsedEndTime) {
+              const eventEndDateTime = new Date(eventDate);
+              eventEndDateTime.setHours(parsedEndTime.hours, parsedEndTime.minutes, 0, 0);
+              return eventEndDateTime >= now; // Event is still ongoing or in the future
+            }
           }
 
           // If we have a duration and start time, calculate end time
           if (event.duration && event.time) {
-            const [hours, minutes] = event.time.split(':').map(Number);
-            const eventStartDateTime = new Date(eventDate);
-            eventStartDateTime.setHours(hours, minutes, 0, 0);
-            const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
-            return eventEndDateTime >= now;
+            const parsedTime = parseTimeString(event.time);
+            if (parsedTime) {
+              const eventStartDateTime = new Date(eventDate);
+              eventStartDateTime.setHours(parsedTime.hours, parsedTime.minutes, 0, 0);
+              const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
+              return eventEndDateTime >= now;
+            }
           }
 
           // If we have a start time but no end time/duration
           if (event.time) {
-            const [hours, minutes] = event.time.split(':').map(Number);
-            const eventStartDateTime = new Date(eventDate);
-            eventStartDateTime.setHours(hours, minutes, 0, 0);
-            // Add 4 hours as default event duration
-            const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
-            return eventEndDateTime >= now;
+            const parsedTime = parseTimeString(event.time);
+            if (parsedTime) {
+              const eventStartDateTime = new Date(eventDate);
+              eventStartDateTime.setHours(parsedTime.hours, parsedTime.minutes, 0, 0);
+              // Add 4 hours as default event duration
+              const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
+              return eventEndDateTime >= now;
+            }
           }
 
           // If no time specified, compare just the date
@@ -896,29 +927,35 @@ export class MemStorage implements IStorage {
 
           // If we have an end time, use that for comparison
           if (event.endTime) {
-            const [hours, minutes] = event.endTime.split(':').map(Number);
-            const eventEndDateTime = new Date(eventDate);
-            eventEndDateTime.setHours(hours, minutes, 0, 0);
-            return eventEndDateTime >= now;
+            const parsedEndTime = parseTimeString(event.endTime);
+            if (parsedEndTime) {
+              const eventEndDateTime = new Date(eventDate);
+              eventEndDateTime.setHours(parsedEndTime.hours, parsedEndTime.minutes, 0, 0);
+              return eventEndDateTime >= now;
+            }
           }
 
           // If we have a duration and start time, calculate end time
           if (event.duration && event.time) {
-            const [hours, minutes] = event.time.split(':').map(Number);
-            const eventStartDateTime = new Date(eventDate);
-            eventStartDateTime.setHours(hours, minutes, 0, 0);
-            const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
-            return eventEndDateTime >= now;
+            const parsedTime = parseTimeString(event.time);
+            if (parsedTime) {
+              const eventStartDateTime = new Date(eventDate);
+              eventStartDateTime.setHours(parsedTime.hours, parsedTime.minutes, 0, 0);
+              const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
+              return eventEndDateTime >= now;
+            }
           }
 
           // If we have a start time but no end time/duration
           if (event.time) {
-            const [hours, minutes] = event.time.split(':').map(Number);
-            const eventStartDateTime = new Date(eventDate);
-            eventStartDateTime.setHours(hours, minutes, 0, 0);
-            // Add 4 hours as default event duration
-            const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
-            return eventEndDateTime >= now;
+            const parsedTime = parseTimeString(event.time);
+            if (parsedTime) {
+              const eventStartDateTime = new Date(eventDate);
+              eventStartDateTime.setHours(parsedTime.hours, parsedTime.minutes, 0, 0);
+              // Add 4 hours as default event duration
+              const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
+              return eventEndDateTime >= now;
+            }
           }
 
           // If no time specified, compare just the date
@@ -951,29 +988,35 @@ export class MemStorage implements IStorage {
 
           // If we have an end time, use that for comparison
           if (event.endTime) {
-            const [hours, minutes] = event.endTime.split(':').map(Number);
-            const eventEndDateTime = new Date(eventDate);
-            eventEndDateTime.setHours(hours, minutes, 0, 0);
-            return eventEndDateTime < now;
+            const parsedEndTime = parseTimeString(event.endTime);
+            if (parsedEndTime) {
+              const eventEndDateTime = new Date(eventDate);
+              eventEndDateTime.setHours(parsedEndTime.hours, parsedEndTime.minutes, 0, 0);
+              return eventEndDateTime < now;
+            }
           }
 
           // If we have a duration and start time, calculate end time
           if (event.duration && event.time) {
-            const [hours, minutes] = event.time.split(':').map(Number);
-            const eventStartDateTime = new Date(eventDate);
-            eventStartDateTime.setHours(hours, minutes, 0, 0);
-            const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
-            return eventEndDateTime < now;
+            const parsedTime = parseTimeString(event.time);
+            if (parsedTime) {
+              const eventStartDateTime = new Date(eventDate);
+              eventStartDateTime.setHours(parsedTime.hours, parsedTime.minutes, 0, 0);
+              const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
+              return eventEndDateTime < now;
+            }
           }
 
           // If we have a start time but no end time/duration
           if (event.time) {
-            const [hours, minutes] = event.time.split(':').map(Number);
-            const eventStartDateTime = new Date(eventDate);
-            eventStartDateTime.setHours(hours, minutes, 0, 0);
-            // Add 4 hours as default event duration
-            const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
-            return eventEndDateTime < now;
+            const parsedTime = parseTimeString(event.time);
+            if (parsedTime) {
+              const eventStartDateTime = new Date(eventDate);
+              eventStartDateTime.setHours(parsedTime.hours, parsedTime.minutes, 0, 0);
+              // Add 4 hours as default event duration
+              const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
+              return eventEndDateTime < now;
+            }
           }
 
           // If no time specified, compare just the date
@@ -2822,8 +2865,8 @@ export class DatabaseStorage implements IStorage {
       // Filter tickets that are active, within their sales period and have remaining quantity
       const now = new Date();
       const activeTickets = eventTickets.filter(ticket => {
-        // Check if ticket is active
-        if (ticket.status !== 'active') return false;
+        // Check if ticket is active or on sale
+        if (ticket.status !== 'active' && ticket.status !== 'on_sale') return false;
 
         // Check remaining quantity
         if (ticket.remainingQuantity <= 0) return false;
@@ -2831,9 +2874,9 @@ export class DatabaseStorage implements IStorage {
         // Check if sales have ended
         if (ticket.salesEndDate) {
           const endDate = new Date(ticket.salesEndDate);
-          if (ticket.salesEndTime) {
-            const [hours, minutes] = ticket.salesEndTime.split(':');
-            endDate.setHours(parseInt(hours), parseInt(minutes));
+          const parsedTime = parseTimeString(ticket.salesEndTime);
+          if (parsedTime) {
+            endDate.setHours(parsedTime.hours, parsedTime.minutes, 0, 0);
           }
           if (now > endDate) return false;
         }
@@ -2841,9 +2884,9 @@ export class DatabaseStorage implements IStorage {
         // Check if sales have started
         if (ticket.salesStartDate) {
           const startDate = new Date(ticket.salesStartDate);
-          if (ticket.salesStartTime) {
-            const [hours, minutes] = ticket.salesStartTime.split(':');
-            startDate.setHours(parseInt(hours), parseInt(minutes));
+          const parsedTime = parseTimeString(ticket.salesStartTime);
+          if (parsedTime) {
+            startDate.setHours(parsedTime.hours, parsedTime.minutes, 0, 0);
           }
           if (now < startDate) return false;
         }
@@ -2882,29 +2925,35 @@ export class DatabaseStorage implements IStorage {
 
         // If we have an end time, use that for comparison
         if (event.endTime) {
-          const [hours, minutes] = event.endTime.split(':').map(Number);
-          const eventEndDateTime = new Date(eventDate);
-          eventEndDateTime.setHours(hours, minutes, 0, 0);
-          return eventEndDateTime >= now; // Event is still ongoing or in the future
+          const parsedEndTime = parseTimeString(event.endTime);
+          if (parsedEndTime) {
+            const eventEndDateTime = new Date(eventDate);
+            eventEndDateTime.setHours(parsedEndTime.hours, parsedEndTime.minutes, 0, 0);
+            return eventEndDateTime >= now; // Event is still ongoing or in the future
+          }
         }
 
         // If we have a duration and start time, calculate end time
         if (event.duration && event.time) {
-          const [hours, minutes] = event.time.split(':').map(Number);
-          const eventStartDateTime = new Date(eventDate);
-          eventStartDateTime.setHours(hours, minutes, 0, 0);
-          const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
-          return eventEndDateTime >= now;
+          const parsedTime = parseTimeString(event.time);
+          if (parsedTime) {
+            const eventStartDateTime = new Date(eventDate);
+            eventStartDateTime.setHours(parsedTime.hours, parsedTime.minutes, 0, 0);
+            const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
+            return eventEndDateTime >= now;
+          }
         }
 
         // If we have a start time but no end time/duration
         if (event.time) {
-          const [hours, minutes] = event.time.split(':').map(Number);
-          const eventStartDateTime = new Date(eventDate);
-          eventStartDateTime.setHours(hours, minutes, 0, 0);
-          // Add 4 hours as default event duration
-          const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
-          return eventEndDateTime >= now;
+          const parsedTime = parseTimeString(event.time);
+          if (parsedTime) {
+            const eventStartDateTime = new Date(eventDate);
+            eventStartDateTime.setHours(parsedTime.hours, parsedTime.minutes, 0, 0);
+            // Add 4 hours as default event duration
+            const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
+            return eventEndDateTime >= now;
+          }
         }
 
         // Always show events that are today or in the future
@@ -2912,8 +2961,8 @@ export class DatabaseStorage implements IStorage {
         const eventDayStart = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
         return eventDayStart >= todayStart;
       } catch (error) {
-        console.error('Database: Error determining if featured event is upcoming:', error);
-        return true; // Default to showing if there's an error
+        console.error('Error determining if event is featured/upcoming:', error);
+        return true; // Default to featured if there's an error
       }
     });
 
@@ -2935,8 +2984,8 @@ export class DatabaseStorage implements IStorage {
 
       // Filter tickets that are active, within their sales period and have remaining quantity
       const activeTickets = eventTickets.filter(ticket => {
-        // Check if ticket is active
-        if (ticket.status !== 'active') return false;
+        // Check if ticket is active or on sale
+        if (ticket.status !== 'active' && ticket.status !== 'on_sale') return false;
 
         // Check remaining quantity
         if (ticket.remainingQuantity <= 0) return false;
@@ -2989,29 +3038,35 @@ export class DatabaseStorage implements IStorage {
 
         // If we have an end time, use that for comparison
         if (event.endTime) {
-          const [hours, minutes] = event.endTime.split(':').map(Number);
-          const eventEndDateTime = new Date(eventDate);
-          eventEndDateTime.setHours(hours, minutes, 0, 0);
-          return eventEndDateTime >= now;
+          const parsedEndTime = parseTimeString(event.endTime);
+          if (parsedEndTime) {
+            const eventEndDateTime = new Date(eventDate);
+            eventEndDateTime.setHours(parsedEndTime.hours, parsedEndTime.minutes, 0, 0);
+            return eventEndDateTime >= now;
+          }
         }
 
         // If we have a duration and start time, calculate end time
         if (event.duration && event.time) {
-          const [hours, minutes] = event.time.split(':').map(Number);
-          const eventStartDateTime = new Date(eventDate);
-          eventStartDateTime.setHours(hours, minutes, 0, 0);
-          const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
-          return eventEndDateTime >= now;
+          const parsedTime = parseTimeString(event.time);
+          if (parsedTime) {
+            const eventStartDateTime = new Date(eventDate);
+            eventStartDateTime.setHours(parsedTime.hours, parsedTime.minutes, 0, 0);
+            const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
+            return eventEndDateTime >= now;
+          }
         }
 
         // If we have a start time but no end time/duration
         if (event.time) {
-          const [hours, minutes] = event.time.split(':').map(Number);
-          const eventStartDateTime = new Date(eventDate);
-          eventStartDateTime.setHours(hours, minutes, 0, 0);
-          // Add 4 hours as default event duration
-          const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
-          return eventEndDateTime >= now;
+          const parsedTime = parseTimeString(event.time);
+          if (parsedTime) {
+            const eventStartDateTime = new Date(eventDate);
+            eventStartDateTime.setHours(parsedTime.hours, parsedTime.minutes, 0, 0);
+            // Add 4 hours as default event duration
+            const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
+            return eventEndDateTime >= now;
+          }
         }
 
         // If no time specified, compare just the date
@@ -3035,29 +3090,35 @@ export class DatabaseStorage implements IStorage {
 
         // If we have an end time, use that for comparison
         if (event.endTime) {
-          const [hours, minutes] = event.endTime.split(':').map(Number);
-          const eventEndDateTime = new Date(eventDate);
-          eventEndDateTime.setHours(hours, minutes, 0, 0);
-          return eventEndDateTime < now;
+          const parsedEndTime = parseTimeString(event.endTime);
+          if (parsedEndTime) {
+            const eventEndDateTime = new Date(eventDate);
+            eventEndDateTime.setHours(parsedEndTime.hours, parsedEndTime.minutes, 0, 0);
+            return eventEndDateTime < now;
+          }
         }
 
         // If we have a duration and start time, calculate end time
         if (event.duration && event.time) {
-          const [hours, minutes] = event.time.split(':').map(Number);
-          const eventStartDateTime = new Date(eventDate);
-          eventStartDateTime.setHours(hours, minutes, 0, 0);
-          const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
-          return eventEndDateTime < now;
+          const parsedTime = parseTimeString(event.time);
+          if (parsedTime) {
+            const eventStartDateTime = new Date(eventDate);
+            eventStartDateTime.setHours(parsedTime.hours, parsedTime.minutes, 0, 0);
+            const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
+            return eventEndDateTime < now;
+          }
         }
 
         // If we have a start time but no end time/duration
         if (event.time) {
-          const [hours, minutes] = event.time.split(':').map(Number);
-          const eventStartDateTime = new Date(eventDate);
-          eventStartDateTime.setHours(hours, minutes, 0, 0);
-          // Add 4 hours as default event duration
-          const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
-          return eventEndDateTime < now;
+          const parsedTime = parseTimeString(event.time);
+          if (parsedTime) {
+            const eventStartDateTime = new Date(eventDate);
+            eventStartDateTime.setHours(parsedTime.hours, parsedTime.minutes, 0, 0);
+            // Add 4 hours as default event duration
+            const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
+            return eventEndDateTime < now;
+          }
         }
 
         // If no time specified, compare just the date
@@ -3888,6 +3949,7 @@ export class DatabaseStorage implements IStorage {
             tp.price,
             e.title as "eventTitle",
             e.date as "eventDate",
+            e.time as "eventTime",
             e.location as "eventLocation",
             t.name as "ticketName"
           FROM ticket_purchases tp
@@ -4768,7 +4830,8 @@ export class DatabaseStorage implements IStorage {
           price: ticketPurchases.price,
           event_title: events.title,
           event_location: events.location,
-          event_date: events.date
+          event_date: events.date,
+          event_time: events.time
         })
         .from(ticketPurchases)
         .leftJoin(users, eq(ticketPurchases.userId, users.id))

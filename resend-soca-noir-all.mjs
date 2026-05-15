@@ -58,7 +58,7 @@ async function main() {
     // 2. Fetch ALL valid ticket_purchases for these events
     console.log('\nFetching ticket purchases...');
     const ticketsRes = await client.query(`
-      SELECT tp.*, e.title as event_title, e.date as event_date, e.location as event_location
+      SELECT tp.*, e.title as event_title, e.date as event_date, e.location as event_location, e.time as event_time
       FROM ticket_purchases tp
       JOIN events e ON tp.event_id = e.id
       WHERE tp.event_id = ANY($1) 
@@ -83,7 +83,8 @@ async function main() {
       const qrData = ticket.qr_code_data;
       const price = ticket.price;
       const eventTitle = ticket.event_title;
-      const eventDateRaw = ticket.event_date || new Date('2026-05-17T22:00:00.000Z');
+      const eventDateRaw = ticket.event_date || new Date('2026-05-17T14:00:00.000Z');
+      const eventTimeRaw = ticket.event_time;
       const eventLocation = ticket.event_location || 'AINSWORTH HOBOKEN NJ';
 
       console.log(`Processing ticket for: ${email} | ${ticketName}`);
@@ -99,9 +100,25 @@ async function main() {
         const formattedDate = eventDate.toLocaleDateString('en-US', {
           weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
         });
-        const formattedTime = eventDate.toLocaleTimeString('en-US', {
-          hour: 'numeric', minute: '2-digit', hour12: true
-        });
+        
+        let formattedTime = '';
+        if (eventTimeRaw) {
+          const timeParts = eventTimeRaw.match(/^(\d{1,2}):(\d{2})/);
+          if (timeParts) {
+            let hours = parseInt(timeParts[1], 10);
+            const minutes = timeParts[2];
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            formattedTime = `${hours}:${minutes} ${ampm}`;
+          } else {
+            formattedTime = eventTimeRaw;
+          }
+        } else {
+          formattedTime = eventDate.toLocaleTimeString('en-US', {
+            hour: 'numeric', minute: '2-digit', hour12: true
+          });
+        }
 
         const qrCodeBase64 = qrCodeDataUrl.replace(/^data:image\/png;base64,/, '');
 

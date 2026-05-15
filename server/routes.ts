@@ -4605,6 +4605,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email,
         eventName,
         eventDate,
+        eventTime,
         eventLocation,
         ticketName,
         ticketPrice,
@@ -4625,6 +4626,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ticketInfo = {
         eventName,
         eventDate: eventDate ? new Date(eventDate) : new Date(),
+        eventTime: eventTime || undefined,
         eventLocation: eventLocation || "Venue to be announced",
         ticketId,
         ticketType: ticketName || "General Admission",
@@ -4742,6 +4744,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const emailSent = await sendTicketEmail({
             eventName: ticket.eventTitle || 'Event',
             eventDate: ticket.eventDate ? new Date(ticket.eventDate) : new Date(),
+            eventTime: ticket.eventTime || undefined,
             eventLocation: ticket.eventLocation || 'Location TBA',
             ticketId: ticket.id.toString(),
             ticketType: ticket.ticketName || 'Ticket',
@@ -4926,7 +4929,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         event.location,
         event.date,
         ticketType || 'General Admission',
-        amount || 0
+        amount || 0,
+        event.time || undefined
       );
 
       res.json({
@@ -4969,6 +4973,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             eventName: ticket.event_title,
             eventLocation: ticket.event_location || 'Event Venue',
             eventDate: new Date(ticket.event_date),
+            eventTime: ticket.event_time || undefined,
             ticketType: ticket.ticket_type,
             ticketPrice: parseFloat(ticket.price) || 0,
             purchaseDate: new Date(ticket.purchase_date)
@@ -5033,7 +5038,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             event.location,
             event.date,
             ticket.ticketType || 'General Admission',
-            typeof ticket.price === 'string' ? parseFloat(ticket.price) : ticket.price || 0
+            typeof ticket.price === 'string' ? parseFloat(ticket.price) : ticket.price || 0,
+            event.time || undefined
           );
 
           retryResults.push({
@@ -5882,6 +5888,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               eventName: event.title,
               eventLocation: event.location || 'TBA',
               eventDate: new Date(event.date),
+              eventTime: event.time || undefined,
               ticketType: ticket.ticketType || 'Standard Ticket',
               ticketPrice: ticket.price ? Number(ticket.price) : 0,
               purchaseDate: ticket.purchaseDate || new Date()
