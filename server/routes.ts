@@ -381,7 +381,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           eventDate: event.date,
           ticketType: selectedTicket?.name || 'General Admission',
           ticketPrice: 0,
-          purchaseDate: new Date()
+          purchaseDate: new Date(),
+          eventTime: event.time || undefined
         }, deliveryEmail).catch(e => console.error("Email failed:", e));
       }
 
@@ -5575,7 +5576,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       event.location,
                       event.date,
                       ticketName,
-                      amount
+                      amount,
+                      event.time || undefined
                     );
 
                     console.log(`Ticket email delivery initiated for ${email} for Stripe payment ${paymentIntent.id}`);

@@ -28,7 +28,8 @@ class TicketDeliveryMonitor {
     eventLocation: string,
     eventDate: Date,
     ticketType: string,
-    ticketPrice: number
+    ticketPrice: number,
+    eventTime?: string
   ): Promise<boolean> {
     const deliveryKey = `${ticketId}-${orderId}`;
     
@@ -43,7 +44,8 @@ class TicketDeliveryMonitor {
         eventDate,
         ticketType,
         ticketPrice,
-        purchaseDate: new Date()
+        purchaseDate: new Date(),
+        eventTime
       }, email);
 
       if (result) {
@@ -115,7 +117,8 @@ class TicketDeliveryMonitor {
         event.location,
         event.date,
         ticket.ticketType,
-        typeof ticket.price === 'string' ? parseFloat(ticket.price) : ticket.price || 0
+        typeof ticket.price === 'string' ? parseFloat(ticket.price) : ticket.price || 0,
+        event.time || undefined
       );
     } catch (error) {
       console.error(`Retry failed for ${status.email}:`, error);

@@ -79,6 +79,7 @@ export const sendTicketEmail = async (
     ticketType: string;
     ticketPrice: number;
     purchaseDate: Date;
+    eventTime?: string;
   },
   recipientEmail: string
 ): Promise<boolean> => {
@@ -103,7 +104,7 @@ export const sendTicketEmail = async (
       month: 'long',
       day: 'numeric'
     });
-    const formattedTime = eventDate.toLocaleTimeString('en-US', {
+    const formattedTime = ticketInfo.eventTime || eventDate.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true
