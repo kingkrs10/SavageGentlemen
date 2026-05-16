@@ -182,6 +182,7 @@ export default function SimpleStripeCheckout({
   ticketId?: number | null;
   ticketName?: string;
   userData?: User | null;
+  quantity?: number;
 }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -237,7 +238,8 @@ export default function SimpleStripeCheckout({
           eventId: eventId,   // Required for server pricing validation
           eventTitle: eventTitle,
           ticketId: ticketId, // Required for ticket-specific pricing
-          ticketName: ticketName
+          ticketName: ticketName,
+          quantity: quantity || 1
           // REMOVED: amount - server validates pricing from database
           // REMOVED: items - server generates from validated data
         });
@@ -249,7 +251,8 @@ export default function SimpleStripeCheckout({
             eventId: eventId,   // Required for server pricing validation
             eventTitle: eventTitle,
             ticketId: ticketId, // Required for ticket-specific pricing
-            ticketName: ticketName
+            ticketName: ticketName,
+            quantity: quantity || 1
             // REMOVED: amount - server validates pricing from database
             // REMOVED: items - server generates from validated data
           });

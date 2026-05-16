@@ -29,6 +29,7 @@ import { getAuthHeaders, getCurrentUser as getAuthUserData, storeUserData } from
 export default function Checkout() {
   // State for controlling the checkout process
   const [amount, setAmount] = useState(29.99);
+  const [quantity, setQuantity] = useState(1);
   const [currency, setCurrency] = useState('USD');
   const [isLoading, setIsLoading] = useState(false);
   const [eventId, setEventId] = useState<number | null>(null);
@@ -821,7 +822,7 @@ export default function Checkout() {
                     <p className="font-medium">{eventTitle}</p>
                     {ticketName && <p className="text-sm text-muted-foreground">{ticketName}</p>}
                   </div>
-                  <p className="font-bold">${amount.toFixed(2)}</p>
+                  <p className="font-bold">${(amount * quantity).toFixed(2)}</p>
                 </div>
               </div>
             </div>
@@ -833,18 +834,38 @@ export default function Checkout() {
             {eventTitle && (
               <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-md my-2">
                 <h4 className="font-medium">{eventTitle}</h4>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  1 × {ticketName || 'Event Ticket'}
+                <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  {quantity} × {ticketName || 'Event Ticket'} (@ ${amount.toFixed(2)} each)
+                </div>
+                <div className="flex items-center mt-2">
+                  <span className="mr-3 text-sm font-medium">Quantity:</span>
+                  <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-md">
+                    <button 
+                      type="button"
+                      className="px-3 py-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-l-md transition-colors"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    >
+                      -
+                    </button>
+                    <span className="px-4 py-1 text-center min-w-[40px] font-medium">{quantity}</span>
+                    <button 
+                      type="button"
+                      className="px-3 py-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-r-md transition-colors"
+                      onClick={() => setQuantity(Math.min(10, quantity + 1))}
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
-            <div className="flex justify-between mt-2">
+            <div className="flex justify-between mt-4">
               <span>Subtotal:</span>
-              <span>{currency === 'CAD' ? 'C$' : '$'}{amount.toFixed(2)}</span>
+              <span>{currency === 'CAD' ? 'C$' : '$'}{(amount * quantity).toFixed(2)}</span>
             </div>
             <div className="flex justify-between mt-1 text-lg font-bold">
               <span>Total:</span>
-              <span>{currency === 'CAD' ? 'C$' : '$'}{amount.toFixed(2)}</span>
+              <span>{currency === 'CAD' ? 'C$' : '$'}{(amount * quantity).toFixed(2)}</span>
             </div>
             {currency === 'CAD' && (
               <div className="text-sm text-gray-500 mt-1">
@@ -949,6 +970,7 @@ export default function Checkout() {
               <div className="mt-4">
                 <SimpleStripeCheckout
                   amount={amount}
+                  quantity={quantity}
                   eventId={eventId}
                   eventTitle={eventTitle}
                   ticketId={ticketId}
@@ -1017,7 +1039,7 @@ export default function Checkout() {
                     `
                   }} />
                   <PayPalButton 
-                    amount={amount.toString()} 
+                    amount={(amount * quantity).toString()} 
                     currency={currency.toLowerCase()} 
                     intent="CAPTURE"
                     eventId={eventId}
@@ -1063,7 +1085,7 @@ export default function Checkout() {
                       </div>
                     </div>
                     <div className="border-t border-b border-border py-4 mb-4">
-                      <p className="font-medium">Total Amount: ${amount.toFixed(2)} {currency}</p>
+                      <p className="font-medium">Total Amount: ${(amount * quantity).toFixed(2)} {currency}</p>
                       <p className="text-sm text-muted-foreground mt-1">Send payment to: <span className="font-medium">$SavageGentlem3n</span></p>
                     </div>
                     <div className="space-y-4">
@@ -1071,7 +1093,7 @@ export default function Checkout() {
                         <h4 className="text-sm font-medium mb-1">How to pay:</h4>
                         <ol className="text-sm list-decimal pl-5 space-y-1">
                           <li>Open Cash App on your phone</li>
-                          <li>Tap the $ icon and enter ${amount.toFixed(2)}</li>
+                          <li>Tap the $ icon and enter ${(amount * quantity).toFixed(2)}</li>
                           <li>In the "To" field, enter: $SavageGentlem3n</li>
                           <li>Add note: "{eventTitle} - {ticketName || 'Ticket'}"</li>
                           <li>Tap "Pay"</li>

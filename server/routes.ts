@@ -5102,6 +5102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         eventTitle,
         ticketId,
         ticketName,
+        quantity = 1,
         // DO NOT ACCEPT CLIENT AMOUNTS - SECURITY FIX
         currency = "usd"
       } = req.body;
@@ -5203,7 +5204,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // SECURITY: Create PaymentIntent with SERVER-VALIDATED pricing
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: authoritativeAmount, // Already in cents from database
+        amount: authoritativeAmount * quantity, // Already in cents from database
         currency: authoritativeCurrency,
         automatic_payment_methods: {
           enabled: true,
@@ -5214,6 +5215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           eventTitle: event.title,
           ticketId: ticketId ? ticketId.toString() : '',
           ticketName: finalTicketName || '',
+          quantity: quantity.toString(),
           userId: user.id.toString(),
           userEmail: user.email,
           // Add server validation timestamp for security audit
@@ -5252,6 +5254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         eventTitle,
         ticketId,
         ticketName,
+        quantity = 1,
         // DO NOT ACCEPT CLIENT AMOUNTS - SECURITY FIX
         currency = "usd"
       } = req.body;
@@ -5353,7 +5356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // SECURITY: Create PaymentIntent with SERVER-VALIDATED pricing
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: authoritativeAmount, // Already in cents from database
+        amount: authoritativeAmount * quantity, // Already in cents from database
         currency: authoritativeCurrency,
         automatic_payment_methods: {
           enabled: true,
@@ -5364,6 +5367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           eventTitle: event.title,
           ticketId: ticketId ? ticketId.toString() : '',
           ticketName: finalTicketName || '',
+          quantity: quantity.toString(),
           userId: user.id.toString(),
           userEmail: user.email,
           // Add server validation timestamp for security audit
@@ -5488,6 +5492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const eventTitle = paymentIntent.metadata?.eventTitle || null;
           const ticketId = paymentIntent.metadata?.ticketId ? parseInt(paymentIntent.metadata.ticketId) : null;
           const ticketName = paymentIntent.metadata?.ticketName || 'General Admission';
+          const quantity = paymentIntent.metadata?.quantity ? parseInt(paymentIntent.metadata.quantity, 10) : 1;
 
           let user = null;
           // Fallback to metadata email which is set during create-intent
@@ -5570,46 +5575,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const event = await storage.getEvent(eventId);
 
                 if (event) {
-                  // Create ticket record
-                  const ticketData = {
-                    orderId: order.id,
-                    eventId: eventId,
-                    ticketId: ticketId,
-                    status: 'valid',
-                    userId: user.id,
-                    purchaseDate: new Date(),
-                    qrCodeData: `EVENT-${eventId}-ORDER-${order.id}-${Date.now()}`,
-                    ticketType: ticketName,
-                    price: Math.round(amount * 100).toString(), // Convert to cents and stringify
-                    attendeeEmail: email,
-                    attendeeName: customerName
-                  };
+                  const unitPrice = Math.round((amount / quantity) * 100).toString();
+                  const unitAmount = amount / quantity;
+                  const { ticketMonitor } = await import('./ticket-monitor');
 
-                  const ticket = await storage.createTicketPurchase(ticketData);
+                  for (let i = 0; i < quantity; i++) {
+                    // Create ticket record
+                    const ticketData = {
+                      orderId: order.id,
+                      eventId: eventId,
+                      ticketId: ticketId,
+                      status: 'valid',
+                      userId: user.id,
+                      purchaseDate: new Date(),
+                      qrCodeData: `EVENT-${eventId}-ORDER-${order.id}-TKT-${i}-${Date.now()}`,
+                      ticketType: ticketName,
+                      price: unitPrice,
+                      attendeeEmail: email,
+                      attendeeName: customerName
+                    };
 
-                  // Send ticket email with QR code automatically using delivery monitoring
-                  try {
-                    const { ticketMonitor } = await import('./ticket-monitor');
-                    await ticketMonitor.ensureTicketDelivery(
-                      ticket.id,
-                      order.id,
-                      user.id,
-                      email,
-                      event.title,
-                      ticket.qrCodeData,
-                      event.location,
-                      event.date,
-                      ticketName,
-                      amount,
-                      event.time || undefined
-                    );
+                    const ticket = await storage.createTicketPurchase(ticketData);
 
-                    console.log(`Ticket email delivery initiated for ${email} for Stripe payment ${paymentIntent.id}`);
-                  } catch (emailError) {
-                    console.error('Failed to initiate ticket email delivery:', emailError);
+                    // Send ticket email with QR code automatically using delivery monitoring
+                    try {
+                      await ticketMonitor.ensureTicketDelivery(
+                        ticket.id,
+                        order.id,
+                        user.id,
+                        email,
+                        event.title,
+                        ticket.qrCodeData,
+                        event.location,
+                        event.date,
+                        ticketName,
+                        unitAmount,
+                        event.time || undefined
+                      );
+
+                      console.log(`Ticket ${i + 1}/${quantity} email delivery initiated for ${email} for Stripe payment ${paymentIntent.id}`);
+                    } catch (emailError) {
+                      console.error(`Failed to initiate ticket ${i + 1} email delivery:`, emailError);
+                    }
                   }
 
-                  console.log(`Successfully processed Stripe payment and created ticket for event ${eventId}: ${eventTitle} - Amount: $${amount}`);
+                  console.log(`Successfully processed Stripe payment and created ${quantity} ticket(s) for event ${eventId}: ${eventTitle} - Total Amount: $${amount}`);
                 }
               } catch (err) {
                 console.error('Error creating ticket record:', err);

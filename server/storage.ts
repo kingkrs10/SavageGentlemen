@@ -3867,6 +3867,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTicketPurchasesByUserId(userId: number): Promise<TicketPurchase[]> {
+    const user = await this.getUser(userId);
+    
+    if (user && user.email) {
+      return await db
+        .select()
+        .from(ticketPurchases)
+        .where(
+          or(
+            eq(ticketPurchases.userId, userId),
+            eq(ticketPurchases.attendeeEmail, user.email)
+          )
+        )
+        .orderBy(desc(ticketPurchases.purchaseDate));
+    }
+    
     return await db
       .select()
       .from(ticketPurchases)
