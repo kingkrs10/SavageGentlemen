@@ -84,10 +84,11 @@ export const sendTicketEmail = async (
     ticketPrice: number;
     purchaseDate: Date;
     qrCodeDataUrl: string;
+    eventTime?: string;
   }, 
   userEmail: string
 ): Promise<boolean> => {
-  const { eventName, eventDate, eventLocation, ticketId, ticketType, ticketPrice, purchaseDate, qrCodeDataUrl } = ticketInfo;
+  const { eventName, eventDate, eventLocation, ticketId, ticketType, ticketPrice, purchaseDate, qrCodeDataUrl, eventTime } = ticketInfo;
   
   // Generate QR code as buffer for email attachment
   let qrCodeBuffer: Buffer;
@@ -109,10 +110,30 @@ export const sendTicketEmail = async (
     weekday: 'long',
     year: 'numeric',
     month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+    day: 'numeric'
   });
+
+  let formattedTime = '';
+  if (eventTime) {
+    // Handle "HH:mm:ss" or "HH:mm" format to "h:mm AM/PM"
+    const timeParts = eventTime.match(/^(\d{1,2}):(\d{2})/);
+    if (timeParts) {
+      let hours = parseInt(timeParts[1], 10);
+      const minutes = timeParts[2];
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12; // the hour '0' should be '12'
+      formattedTime = `${hours}:${minutes} ${ampm}`;
+    } else {
+      formattedTime = eventTime;
+    }
+  } else {
+    formattedTime = new Date(eventDate).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  }
   
   const formattedPurchaseDate = new Date(purchaseDate).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -191,7 +212,8 @@ export const sendTicketEmail = async (
         <div class="event-name">${eventName}</div>
         
         <div class="ticket-details">
-          <div><strong>Date & Time:</strong> ${formattedDate}</div>
+          <div><strong>Date:</strong> ${formattedDate}</div>
+          <div><strong>Time:</strong> ${formattedTime}</div>
           <div><strong>Location:</strong> ${eventLocation}</div>
           <div><strong>Ticket Type:</strong> ${ticketType}</div>
           <div><strong>Price:</strong> ${formattedPrice}</div>

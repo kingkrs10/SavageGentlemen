@@ -345,7 +345,8 @@ export async function capturePaypalOrder(req: Request, res: Response) {
                 event.location,
                 event.date,
                 ticketName || 'General Admission',
-                amount
+                amount,
+                event.time || undefined
               );
               
               console.log(`Ticket email delivery initiated for ${payerEmail} for PayPal order ${orderID}`);

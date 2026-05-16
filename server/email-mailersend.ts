@@ -111,11 +111,27 @@ export const sendTicketEmail = async (
       month: 'long',
       day: 'numeric'
     });
-    const formattedTime = ticketInfo.eventTime || eventDate.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
+    let formattedTime = '';
+    if (ticketInfo.eventTime) {
+      // Handle "HH:mm:ss" or "HH:mm" format to "h:mm AM/PM"
+      const timeParts = ticketInfo.eventTime.match(/^(\d{1,2}):(\d{2})/);
+      if (timeParts) {
+        let hours = parseInt(timeParts[1], 10);
+        const minutes = timeParts[2];
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12; // the hour '0' should be '12'
+        formattedTime = `${hours}:${minutes} ${ampm}`;
+      } else {
+        formattedTime = ticketInfo.eventTime;
+      }
+    } else {
+      formattedTime = eventDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
     
     const subject = `Your ticket for ${ticketInfo.eventName}`;
     

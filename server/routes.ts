@@ -5490,27 +5490,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const ticketName = paymentIntent.metadata?.ticketName || 'General Admission';
 
           let user = null;
-          let email = payerEmail;
+          // Fallback to metadata email which is set during create-intent
+          let email = payerEmail || paymentIntent.metadata?.userEmail || null;
           let customerName = 'Guest User';
 
-          // Try to get customer details if customer ID exists
+          // 1. Primary lookup: Use userId from paymentIntent metadata
+          if (paymentIntent.metadata?.userId) {
+            try {
+              user = await storage.getUser(parseInt(paymentIntent.metadata.userId));
+              if (user && !email) {
+                email = user.email; // Fallback to user's registered email
+              }
+            } catch (err) {
+              console.error("Error fetching user from metadata userId:", err);
+            }
+          }
+
+          // 2. Try to get customer details if customer ID exists (and we still need email or user)
           if (customerId) {
             try {
               const customer = await stripe.customers.retrieve(customerId as string);
               if (customer && !customer.deleted) {
-                email = customer.email || payerEmail;
-                customerName = customer.name || customerName;
+                if (!email && customer.email) email = customer.email;
+                if (customer.name) customerName = customer.name;
 
-                // Try to find existing user by customer metadata or email
-                if (customer.metadata?.userId) {
+                // Try to find existing user by customer metadata if not found yet
+                if (!user && customer.metadata?.userId) {
                   user = await storage.getUser(parseInt(customer.metadata.userId));
-                } else if (email) {
+                } else if (!user && email) {
                   user = await storage.getUserByEmail(email);
                 }
               }
             } catch (customerError) {
               console.error('Error retrieving Stripe customer:', customerError);
             }
+          }
+
+          // 3. Last resort lookup by email if user still not found
+          if (!user && email) {
+            user = await storage.getUserByEmail(email);
           }
 
           // If no user found and we have an email, create a guest user

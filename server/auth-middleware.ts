@@ -132,6 +132,28 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
     }
   }
 
+  // If we don't have a user from the auth header, try the cookie
+  if (!user && req.headers.cookie) {
+    try {
+      const cookies = req.headers.cookie.split(';').reduce((acc, cookie) => {
+        const [name, ...value] = cookie.split('=');
+        if (name) acc[name.trim()] = value.join('=');
+        return acc;
+      }, {} as Record<string, string>);
+      
+      const authToken = cookies['sg_auth_token'];
+      if (authToken) {
+        const validatedUser = await validateSecureLoginToken(authToken);
+        if (validatedUser) {
+          user = validatedUser;
+          console.log("User authenticated via sg_auth_token cookie in middleware:", user.id);
+        }
+      }
+    } catch (cookieError) {
+      console.error("Error processing auth cookie in middleware:", cookieError);
+    }
+  }
+
   // SECURITY: Check if this is a payment-related or sensitive route requiring strict authentication
   const isPaymentRoute = req.path.includes('/payment') || req.path.includes('create-intent') || req.path.includes('paypal');
   const isTicketRoute = req.path.includes('/ticket') && !req.path.startsWith('/api/admin');
