@@ -286,7 +286,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Any size</SelectItem>
-                    <SelectItem value="small">Small (< 50)</SelectItem>
+                    <SelectItem value="small">Small (&lt; 50)</SelectItem>
                     <SelectItem value="medium">Medium (50-200)</SelectItem>
                     <SelectItem value="large">Large (200-1000)</SelectItem>
                     <SelectItem value="xl">Extra Large (1000+)</SelectItem>

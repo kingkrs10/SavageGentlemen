@@ -110,7 +110,9 @@ export default function AdminSimplePage() {
     date: new Date().toISOString().split('T')[0],
     time: '19:00',
     location: '',
-    imageUrl: ''
+    imageUrl: '',
+    organizerName: '',
+    organizerEmail: ''
   });
 
   // Event Queries
@@ -266,7 +268,9 @@ export default function AdminSimplePage() {
                     date: new Date().toISOString().split('T')[0],
                     time: '19:00',
                     location: '',
-                    imageUrl: ''
+                    imageUrl: '',
+                    organizerName: '',
+                    organizerEmail: ''
                   });
                   setIsCreateEventModalOpen(true);
                   toast({
@@ -354,7 +358,9 @@ export default function AdminSimplePage() {
                                   date: event.date,
                                   time: event.time || '19:00',
                                   location: event.location || '',
-                                  imageUrl: event.imageUrl || ''
+                                  imageUrl: event.imageUrl || '',
+                                  organizerName: (event as any).organizerName || '',
+                                  organizerEmail: (event as any).organizerEmail || ''
                                 });
                                 setIsEditEventModalOpen(true);
                                 toast({
@@ -459,7 +465,8 @@ export default function AdminSimplePage() {
                   <p>Loading tickets...</p>
                 </div>
               ) : tickets.length > 0 ? (
-                <div className="hidden sm:block overflow-x-auto rounded-md border">
+                <>
+                  <div className="hidden sm:block overflow-x-auto rounded-md border">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b bg-muted/50">
@@ -705,7 +712,7 @@ export default function AdminSimplePage() {
                       </Button>
                     </div>
                   )}
-                </div>
+                </>
               ) : (
                 <div className="text-center py-16">
                   <Ticket className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -1090,8 +1097,6 @@ export default function AdminSimplePage() {
                   </div>
                 </div>
               </div>
-            </TabsContent>
-          </Tabs>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -1286,7 +1291,6 @@ export default function AdminSimplePage() {
                     <Label htmlFor="hidePriceIfSoldOut">Hide the ticket type price when the available quantity is 0</Label>
                   </div>
                 </div>
-              </div>
             </TabsContent>
           </Tabs>
           

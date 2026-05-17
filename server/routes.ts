@@ -15,6 +15,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import WebSocket from "ws";
 import { storage } from "./storage";
+import { admin } from "./firebase";
 import {
   insertUserSchema,
   registrationSchema,
@@ -180,6 +181,27 @@ const upload = multer({
     cb(null, true);
   }
 });
+
+// Helper function to upload files to Firebase Storage
+async function uploadToFirebase(filePath: string, filename: string): Promise<string> {
+  const bucketName = process.env.VITE_FIREBASE_STORAGE_BUCKET;
+  if (!bucketName) {
+    throw new Error("VITE_FIREBASE_STORAGE_BUCKET is not set");
+  }
+  const bucket = admin.storage().bucket(bucketName);
+  
+  await bucket.upload(filePath, {
+    destination: `uploads/${filename}`,
+    metadata: {
+      cacheControl: 'public, max-age=31536000',
+    },
+  });
+
+  const file = bucket.file(`uploads/${filename}`);
+  await file.makePublic();
+  
+  return `https://storage.googleapis.com/${bucketName}/uploads/${filename}`;
+}
 
 // Firebase Admin is already initialized in server/firebase.ts
 // Import the configured admin instance from there
@@ -1385,10 +1407,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let videoUrl = req.body.videoUrl || null;
 
       if (files && files['image'] && files['image'][0]) {
-        imageUrl = `/uploads/${files['image'][0].filename}`;
+        const filePath = files['image'][0].path;
+        imageUrl = await uploadToFirebase(filePath, files['image'][0].filename);
+        try { fs.unlinkSync(filePath); } catch (e) { console.error('Failed to delete local file:', e); }
       }
       if (files && files['video'] && files['video'][0]) {
-        videoUrl = `/uploads/${files['video'][0].filename}`;
+        const filePath = files['video'][0].path;
+        videoUrl = await uploadToFirebase(filePath, files['video'][0].filename);
+        try { fs.unlinkSync(filePath); } catch (e) { console.error('Failed to delete local file:', e); }
       }
 
       const sponsoredContentData = insertSponsoredContentSchema.parse({
@@ -1429,12 +1455,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Add image URL if new image uploaded
       if (files && files['image'] && files['image'][0]) {
-        updateData.imageUrl = `/uploads/${files['image'][0].filename}`;
+        const filePath = files['image'][0].path;
+        updateData.imageUrl = await uploadToFirebase(filePath, files['image'][0].filename);
+        try { fs.unlinkSync(filePath); } catch (e) { console.error('Failed to delete local file:', e); }
       }
 
       // Add video URL if new video uploaded
       if (files && files['video'] && files['video'][0]) {
-        updateData.videoUrl = `/uploads/${files['video'][0].filename}`;
+        const filePath = files['video'][0].path;
+        updateData.videoUrl = await uploadToFirebase(filePath, files['video'][0].filename);
+        try { fs.unlinkSync(filePath); } catch (e) { console.error('Failed to delete local file:', e); }
       }
 
       const sponsoredContentData = insertSponsoredContentSchema.partial().parse(updateData);
@@ -1943,8 +1973,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Collection not found" });
       }
 
-      // Generate storage key (relative path from uploads directory)
-      const storageKey = req.file.filename;
+      // Upload to Firebase Storage
+      const storageKey = await uploadToFirebase(req.file.path, req.file.filename);
+      try { fs.unlinkSync(req.file.path); } catch (e) { console.error('Failed to delete local file:', e); }
 
       // Create media asset data
       const assetData = {
@@ -2880,8 +2911,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         console.log('Profile picture uploaded:', file.originalname, 'by user ID:', id);
 
-        // Create a relative URL to the file
-        const fileUrl = `/uploads/${file.filename}`;
+        // Upload to Firebase Storage
+        const fileUrl = await uploadToFirebase(file.path, file.filename);
+        try { fs.unlinkSync(file.path); } catch (e) { console.error('Failed to delete local file:', e); }
 
         // Update user's avatar in the database
         const updatedUser = await storage.updateUser(id, { avatar: fileUrl });
@@ -2945,8 +2977,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         console.log('File uploaded:', file.originalname, 'by user ID:', id);
 
-        // Create a relative URL to the file
-        const fileUrl = `/uploads/${file.filename}`;
+        // Upload to Firebase Storage
+        const fileUrl = await uploadToFirebase(file.path, file.filename);
+        try { fs.unlinkSync(file.path); } catch (e) { console.error('Failed to delete local file:', e); }
 
         // Create a record in the database
         const mediaUpload = await storage.createMediaUpload({
@@ -6316,9 +6349,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const collectionId = parseInt(req.body.collectionId);
     if (isNaN(collectionId)) throw new ValidationError("Invalid collection ID");
 
-    const storageKey = req.file.filename;
-    // URL serves from /uploads or /api/uploads
-    const url = `/uploads/${storageKey}`;
+    // Upload to Firebase Storage
+    const storageKey = await uploadToFirebase(req.file.path, req.file.filename);
+    try { fs.unlinkSync(req.file.path); } catch (e) { console.error('Failed to delete local file:', e); }
+    const url = storageKey;
 
     // Determine type from mimetype
     const type = req.body.type || (req.file.mimetype.startsWith('video/') ? 'video' : 'image');
