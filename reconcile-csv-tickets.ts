@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import { ticketMonitor } from "./server/ticket-monitor.js";
 
 async function reconcileFromCsv() {
-  const csvPath = "./unified_payments1415.csv";
+  const csvPath = "/Users/sg/Downloads/unified_payments1415.csv";
   
   if (!fs.existsSync(csvPath)) {
     console.error(`CSV file not found at ${csvPath}`);

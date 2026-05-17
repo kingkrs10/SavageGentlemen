@@ -5130,7 +5130,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const [hours, minutes] = event.endTime.split(':').map(Number);
           const eventEndDateTime = new Date(eventDate);
           eventEndDateTime.setHours(hours, minutes, 0, 0);
-          isEventPast = eventEndDateTime < now;
+          // Add a 12 hour buffer after the official end time for late purchases
+          const bufferedEndDateTime = new Date(eventEndDateTime.getTime() + 12 * 60 * 60 * 1000);
+          isEventPast = bufferedEndDateTime < now;
         }
         // If we have a duration and start time, calculate end time
         else if (event.duration && event.time) {
@@ -5138,22 +5140,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const eventStartDateTime = new Date(eventDate);
           eventStartDateTime.setHours(hours, minutes, 0, 0);
           const eventEndDateTime = new Date(eventStartDateTime.getTime() + event.duration * 60 * 1000);
-          isEventPast = eventEndDateTime < now;
+          // Add a 12 hour buffer after duration
+          const bufferedEndDateTime = new Date(eventEndDateTime.getTime() + 12 * 60 * 60 * 1000);
+          isEventPast = bufferedEndDateTime < now;
         }
         // If we have a start time but no end time/duration
         else if (event.time) {
           const [hours, minutes] = event.time.split(':').map(Number);
           const eventStartDateTime = new Date(eventDate);
           eventStartDateTime.setHours(hours, minutes, 0, 0);
-          // Add 4 hours as default event duration
-          const eventEndDateTime = new Date(eventStartDateTime.getTime() + 4 * 60 * 60 * 1000);
+          // Add 24 hours as generous event duration to allow late purchases
+          const eventEndDateTime = new Date(eventStartDateTime.getTime() + 24 * 60 * 60 * 1000);
           isEventPast = eventEndDateTime < now;
         }
-        // If no time specified, compare just the date
+        // If no time specified, allow purchases until 24 hours after the start of that day
         else {
           const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
-          const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-          isEventPast = eventDateOnly < todayDateOnly;
+          const eventEndDateTime = new Date(eventDateOnly.getTime() + 48 * 60 * 60 * 1000); // 48 hours to cover the whole day + next day
+          isEventPast = eventEndDateTime < now;
         }
 
         if (isEventPast) {
