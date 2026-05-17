@@ -174,7 +174,8 @@ export default function SimpleStripeCheckout({
   eventTitle,
   ticketId,
   ticketName,
-  userData
+  userData,
+  quantity
 }: { 
   amount: number; 
   eventId?: number | null;
