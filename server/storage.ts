@@ -2894,10 +2894,11 @@ export class DatabaseStorage implements IStorage {
         return true;
       });
 
-      // Find the lowest price among active tickets
+      // Find the lowest price among active tickets (excluding secret tickets)
       let lowestActivePrice = null;
-      if (activeTickets.length > 0) {
-        lowestActivePrice = Math.min(...activeTickets.map(t => t.price || 0));
+      const publicActiveTickets = activeTickets.filter(t => !t.secretCode);
+      if (publicActiveTickets.length > 0) {
+        lowestActivePrice = Math.min(...publicActiveTickets.map(t => t.price || 0));
       }
 
       return {
@@ -3013,10 +3014,11 @@ export class DatabaseStorage implements IStorage {
         return true;
       });
 
-      // Find the lowest price among active tickets
+      // Find the lowest price among active tickets (excluding secret tickets)
       let lowestActivePrice = null;
-      if (activeTickets.length > 0) {
-        lowestActivePrice = Math.min(...activeTickets.map(t => t.price || 0));
+      const publicActiveTickets = activeTickets.filter(t => !t.secretCode);
+      if (publicActiveTickets.length > 0) {
+        lowestActivePrice = Math.min(...publicActiveTickets.map(t => t.price || 0));
       }
 
       return {
