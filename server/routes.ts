@@ -5590,6 +5590,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           if (user && email) {
+            // Check for existing order to prevent duplicates on retry
+            const existingOrders = await db.select().from(orders).where(eq(orders.paymentId, paymentIntent.id)).limit(1);
+            if (existingOrders.length > 0) {
+              console.log(`Order already exists for payment ${paymentIntent.id}. Skipping.`);
+              return res.json({ received: true });
+            }
+
             // Create order record with affiliate tracking if present
             let affiliateId = getAffiliateIdFromCookie(req);
             if (!affiliateId && paymentIntent.metadata && paymentIntent.metadata.affiliateId) {
@@ -5691,6 +5698,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } catch (error) {
           console.error('Error handling payment success webhook:', error);
+          return res.status(500).send('Webhook processing failed');
         }
         break;
 
@@ -5719,6 +5727,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } catch (error) {
           console.error('Error handling subscription payment success webhook:', error);
+          return res.status(500).send('Webhook processing failed');
         }
         break;
 
@@ -5747,6 +5756,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } catch (error) {
           console.error('Error handling subscription update webhook:', error);
+          return res.status(500).send('Webhook processing failed');
         }
         break;
 
