@@ -15,12 +15,25 @@ magazineRouter.get("/articles", async (req: Request, res: Response) => {
     const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
     const isPublished = true;
 
-    const articles = await storage.getAllArticles({
+    let articles = await storage.getAllArticles({
       category,
       isPublished,
       limit,
       offset,
     });
+
+    if (articles.length === 0 && (!category || category === "all")) {
+      console.log("[Magazine] DB has 0 articles. Seeding starter stories immediately...");
+      await magazineBot.seedInitialArticlesIfEmpty();
+      magazineBot.syncFeeds().catch(err => console.error("[Magazine] Auto-sync error:", err));
+
+      articles = await storage.getAllArticles({
+        category,
+        isPublished,
+        limit,
+        offset,
+      });
+    }
 
     res.json(articles);
   } catch (error: any) {
@@ -69,6 +82,21 @@ magazineRouter.post("/articles/:id/like", async (req: Request, res: Response) =>
     res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({ error: "Failed to like article" });
+  }
+});
+
+// Trigger instant RSS crawl and AI editorial generation (Public / Webhook / Admin)
+magazineRouter.post("/sync", async (req: Request, res: Response) => {
+  try {
+    const result = await magazineBot.syncFeeds();
+    res.json({
+      success: true,
+      message: `Sync complete. ${result.createdCount} new articles ingested.`,
+      ...result,
+    });
+  } catch (error: any) {
+    console.error("Error running magazine sync:", error);
+    res.status(500).json({ error: error.message || "Failed to trigger sync" });
   }
 });
 

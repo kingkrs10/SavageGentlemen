@@ -6,6 +6,7 @@ import cors from 'cors';
 import path from 'path';
 import { securityHeaders, auditLogger, sanitizeInput } from './security/middleware';
 import { syncUsersFromFirebase } from './services/user-sync';
+import { initializeDatabaseTables } from './services/db-init';
 
 const app = express();
 
@@ -158,6 +159,9 @@ app.use((req, res, next) => {
 
 (async () => {
   const server = await registerRoutes(app);
+
+  // Initialize and verify database tables & start autonomous magazine engine
+  await initializeDatabaseTables();
 
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
