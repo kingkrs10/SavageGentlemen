@@ -5,6 +5,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import cors from 'cors';
 import path from 'path';
 import { securityHeaders, auditLogger, sanitizeInput } from './security/middleware';
+import { syncUsersFromFirebase } from './services/user-sync';
 
 const app = express();
 
@@ -217,5 +218,10 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
     console.log(`✅ Server is running and accessible on all interfaces at port ${port}`);
     console.log(`🔥 Application ready for deployment at http://${host}:${port}`);
+
+    // Automatically sync historical users from Firebase Auth into PostgreSQL
+    syncUsersFromFirebase().catch((err) => {
+      console.error("[UserSync] Background sync error:", err);
+    });
   });
 })();

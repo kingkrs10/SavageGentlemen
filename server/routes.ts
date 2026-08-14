@@ -16,6 +16,7 @@ import { WebSocketServer } from "ws";
 import WebSocket from "ws";
 import { storage } from "./storage";
 import { admin } from "./firebase";
+import { syncUsersFromFirebase } from "./services/user-sync";
 import {
   insertUserSchema,
   registrationSchema,
@@ -3582,6 +3583,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err) {
       console.error("Error restoring deleted event:", err);
       return res.status(500).json({ message: "Failed to restore deleted event" });
+    }
+  });
+
+  // Historical user synchronization endpoint
+  router.post(["/admin/sync-users", "/api/admin/sync-users"], authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+    try {
+      console.log(`[Admin] User ${req.user?.id} triggered Firebase historical user synchronization...`);
+      const stats = await syncUsersFromFirebase();
+      return res.status(200).json({
+        success: true,
+        message: "Historical user sync completed successfully",
+        stats,
+      });
+    } catch (err: any) {
+      console.error("Error running user sync:", err);
+      return res.status(500).json({ message: "Failed to sync historical users", error: err.message });
     }
   });
 
