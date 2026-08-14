@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/context/ThemeContext';
 import { LaptopIcon, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,28 +28,16 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
 
-  // useEffect only runs on the client, so now we can safely show the UI
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Load the theme from localStorage or set to system preference initially
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('sg-theme-preference');
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-  }, [setTheme]);
-
-  const handleThemeChange = (newTheme: string) => {
+  const handleThemeChange = (newTheme: 'tactical' | 'luxury') => {
     setTheme(newTheme);
-    localStorage.setItem('sg-theme-preference', newTheme);
     
-    // Show toast notification
     const themeLabels: Record<string, string> = {
-      'light': 'Light mode activated',
-      'dark': 'Dark mode activated',
-      'system': 'Using system preference for theme'
+      'tactical': 'Tactical Dark mode activated',
+      'luxury': 'Luxury Gold mode activated',
     };
     
     toast({
@@ -58,6 +46,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
       duration: 2000,
     });
   };
+
 
   if (!mounted) {
     // Avoid rendering anything until the component has mounted to prevent hydration errors
@@ -84,11 +73,9 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
     </svg>
   );
 
-  // Determine which icon to show based on the current theme
   const getThemeIcon = () => {
-    if (theme === 'light') return <LightSmiley />;
-    if (theme === 'dark') return <DarkSmiley />;
-    return <LaptopIcon className="h-[1.2rem] w-[1.2rem]" />;
+    if (theme === 'luxury') return <LightSmiley />;
+    return <DarkSmiley />;
   };
 
   return (
@@ -98,49 +85,37 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
           {getThemeIcon()}
           {showLabel && (
             <span className="ml-2">
-              {theme === 'light' ? 'Light' : theme === 'dark' ? 'Dark' : 'Auto'}
+              {theme === 'luxury' ? 'Luxury' : 'Tactical'}
             </span>
           )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem 
-          onClick={() => handleThemeChange('light')}
-          className="flex items-center justify-between cursor-pointer"
-        >
-          <div className="flex items-center">
-            <LightSmiley />
-            <span className="ml-2">Light</span>
-          </div>
-          {theme === 'light' && <Check className="h-4 w-4 ml-2" />}
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem 
-          onClick={() => handleThemeChange('dark')}
+          onClick={() => handleThemeChange('tactical')}
           className="flex items-center justify-between cursor-pointer"
         >
           <div className="flex items-center">
             <DarkSmiley />
-            <span className="ml-2">Dark</span>
+            <span className="ml-2">Tactical Dark</span>
           </div>
-          {theme === 'dark' && <Check className="h-4 w-4 ml-2" />}
+          {theme === 'tactical' && <Check className="h-4 w-4 ml-2" />}
         </DropdownMenuItem>
         
-        <DropdownMenuSeparator />
-        
         <DropdownMenuItem 
-          onClick={() => handleThemeChange('system')}
+          onClick={() => handleThemeChange('luxury')}
           className="flex items-center justify-between cursor-pointer"
         >
           <div className="flex items-center">
-            <LaptopIcon className="h-4 w-4 mr-2" />
-            <span>System</span>
+            <LightSmiley />
+            <span className="ml-2">Luxury Gold</span>
           </div>
-          {theme === 'system' && <Check className="h-4 w-4 ml-2" />}
+          {theme === 'luxury' && <Check className="h-4 w-4 ml-2" />}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 };
+
 
 export default ThemeToggle;

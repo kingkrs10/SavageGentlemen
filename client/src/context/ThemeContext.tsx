@@ -13,12 +13,9 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    // Initialize from localStorage or default to 'luxury'
-    const [theme, setTheme] = useState<Theme>(() => {
-        const saved = localStorage.getItem('theme');
-        return (saved === 'tactical' || saved === 'luxury') ? saved : 'tactical';
-    });
+    const [theme, setTheme] = useState<Theme>('tactical');
     const [isTransitioning, setIsTransitioning] = useState(false);
+
 
     const toggleTheme = () => {
         if (isTransitioning) return;
@@ -32,15 +29,17 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         // Animation cleanup happens in GlitchTransition component
     };
 
+    // Keyboard shortcut for theme toggle disabled on plain Escape to avoid closing modals triggering dark overlays
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
+            if (e.key === 'Escape' && e.altKey) {
                 toggleTheme();
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isTransitioning]);
+
 
     useEffect(() => {
         // Persist theme choice

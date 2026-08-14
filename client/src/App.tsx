@@ -19,13 +19,16 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
+import { AudioPlayerProvider } from "@/context/AudioPlayerContext";
+import { GlobalAudioPlayer } from "@/components/audio/GlobalAudioPlayer";
+import { SavageConcierge } from "@/components/ai/SavageConcierge";
 import { GlitchTransition } from "@/components/effects/GlitchTransition";
 import { RealityToggle } from "@/components/layout/RealityToggle";
 import ParticleBackground3D from "@/components/effects/ParticleBackground3D";
-import LandingPage from "@/pages/LandingPage";
+import Home from "@/pages/home";
+import FeteDecoder from "@/pages/fete-decoder";
 
-// Lazily load pages for code splitting
-const Home = lazy(() => import("@/pages/home"));
+// Lazily load remaining sub-pages for code splitting
 const Events = lazy(() => import("@/pages/events"));
 const EventDetail = lazy(() => import("@/pages/event-detail"));
 const Shop = lazy(() => import("@/pages/shop"));
@@ -88,6 +91,10 @@ function Router() {
         <Route path="/events/:id/:slug" component={EventDetail} />
         <Route path="/shop" component={Shop} />
         <Route path="/apps" component={Apps} />
+        <Route path="/apps/itssoca-decoder" component={FeteDecoder} />
+        <Route path="/itssoca-decoder" component={FeteDecoder} />
+        <Route path="/apps/fete-decoder" component={FeteDecoder} />
+        <Route path="/fete-decoder" component={FeteDecoder} />
         <Route path="/apps/language-sensei" component={AppsLanguageSensei} />
         <Route path="/apps/savage-physics" component={AppsSavagePhysics} />
         <Route path="/apps/island-lyric-bot" component={IslandLyricBot} />
@@ -162,7 +169,6 @@ function AppContent() {
     window.addEventListener("sg:open-auth-modal", handleOpenAuthModal as EventListener);
 
     // Check for URL query params (e.g. ?action=login&redirect=/passport)
-    // This enables deep linking to login/signup modal from any page
     const searchParams = new URLSearchParams(window.location.search);
     const action = searchParams.get('action');
     const redirect = searchParams.get('redirect');
@@ -204,36 +210,36 @@ function AppContent() {
     }
   };
 
-  // THE VOID MODE (Tactical/App)
-  // Full application with Navigation, Header, Auth, etc.
   return (
     <>
       <SEOHead
-        title="Home"
-        description="Caribbean-American event and lifestyle brand. Explore events, shop for merchandise, watch live streams, and connect with the community."
+        title="Savage Gentlemen"
+        description="Caribbean-American event, nightlife, and lifestyle platform. Explore fetes, get Soca Passport stamps, stream music mixes, and explore apps."
       />
       <TooltipProvider>
         <div
-          className="min-h-screen text-foreground relative z-[1]"
+          className="min-h-screen text-foreground relative z-[1] bg-obsidian-dark selection:bg-gold-500 selection:text-black"
           style={{
-            backgroundColor: 'rgba(8, 9, 12, 0.82)',
-            backdropFilter: 'blur(2px)',
+            backgroundColor: 'rgba(8, 9, 13, 0.95)',
           }}
         >
           {!isSocaPassportRoute() && (
-            <div className={location === '/' || location === '/home' ? "absolute top-0 left-0 right-0 z-50 bg-transparent" : ""}>
-              <Header
-                user={user}
-                onLogout={logout}
-                onProfileClick={() => setShowAuthModal(true)}
-                transparent={location === '/' || location === '/home'}
-              />
-            </div>
+            <Header
+              user={user}
+              onLogout={logout}
+              onProfileClick={() => setShowAuthModal(true)}
+            />
           )}
 
-          <main className={isSocaPassportRoute() || location === '/' || location === '/home' ? "" : "container mx-auto px-4 py-8"}>
+          <main className={isSocaPassportRoute() || location === '/' || location === '/home' ? "" : "container mx-auto px-4 py-8 pb-28"}>
             <Router />
           </main>
+
+          {/* Sticky Global Audio Player for DJ Mixes */}
+          <GlobalAudioPlayer />
+
+          {/* Autonomous AI Booking & Nightlife Concierge */}
+          <SavageConcierge />
 
           {!isSocaPassportRoute() && <BottomNavigation />}
 
@@ -258,7 +264,9 @@ export default function App() {
     <ErrorBoundary>
       <UserProvider>
         <ThemeProvider>
-          <AppWrapper />
+          <AudioPlayerProvider>
+            <AppWrapper />
+          </AudioPlayerProvider>
         </ThemeProvider>
       </UserProvider>
     </ErrorBoundary>
@@ -266,13 +274,8 @@ export default function App() {
 }
 
 function AppWrapper() {
-  const { theme } = useTheme();
-
   return (
     <>
-      <ParticleBackground3D />
-      <GlitchTransition />
-      <RealityToggle />
       <AppContent />
     </>
   );

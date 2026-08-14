@@ -32,7 +32,7 @@ function stripSenseiNote(text: string | null): string | null {
     return text.slice(0, idx).trim();
 }
 
-const DEFAULT_GEMINI_KEY = 'AIzaSyBxSi3pk_X6-vWDeeXQE-DG7F6mFG5qVaE';
+const DEFAULT_GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 
 export default function AppsLanguageSensei() {
     const [messages, setMessages] = useState<SenseiMessage[]>([]);

@@ -902,12 +902,19 @@ export class MemStorage implements IStorage {
 
       console.log(`Storage: Retrieved ${featuredEvents.length} upcoming featured events out of ${allEvents.length} total events`);
 
+      // Fallback: if no featured events, return all events to ensure hero carousel renders
+      if (featuredEvents.length === 0 && allEvents.length > 0) {
+        console.log("Storage: No explicit featured events found, falling back to all active events");
+        return allEvents;
+      }
+
       // Log first featured event for debugging if available
       if (featuredEvents.length > 0) {
         console.log("Storage: First upcoming featured event sample:", JSON.stringify(featuredEvents[0]));
       }
 
       return featuredEvents;
+
     } catch (error) {
       console.error("Storage: Error in getFeaturedEvents:", error);
       // Return empty array instead of throwing to prevent API errors

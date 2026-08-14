@@ -131,8 +131,23 @@ const Events = () => {
             </div>
           </>
         ) : (
-          <div className="bg-gray-900 h-64 flex items-center justify-center">
-            <p className="text-gray-400">No featured event available</p>
+          <div className="glass-obsidian-strong border border-gold-500/30 rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
+            <div>
+              <span className="text-[10px] uppercase font-mono tracking-widest text-gold-400 font-bold block mb-1">
+                2026 CARNIVAL SEASON
+              </span>
+              <h2 className="text-2xl md:text-4xl font-heading font-extrabold uppercase text-white tracking-wide">
+                OFFICIAL SCHEDULE <span className="gold-gradient-text">DROPPING SOON</span>
+              </h2>
+              <p className="text-xs md:text-sm text-white/70 max-w-xl mt-2 leading-relaxed">
+                Tickets for our upcoming luxury fete series, sunrise boat rides, and carnival gala will be announced shortly. Soca Passport holders receive 48-hour early presale access.
+              </p>
+            </div>
+            <Link href="/passport">
+              <Button className="bg-gradient-to-r from-gold-500 to-amber-500 hover:from-gold-400 text-black font-bold uppercase tracking-wider text-xs px-6 py-6 rounded-xl shadow-lg shadow-gold-500/20 flex-shrink-0">
+                Unlock Soca Passport VIP
+              </Button>
+            </Link>
           </div>
         )}
       </div>

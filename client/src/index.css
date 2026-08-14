@@ -31,36 +31,36 @@
   --spacing-3xl: 4rem;
 }
 
-/* Luxury Theme Override */
+/* Luxury Theme Override - Dark Gold Aesthetic */
 .theme-luxury {
-  --background: 0 0% 98%;
-  /* Off-white */
-  --foreground: 0 0% 10%;
-  /* Dark charcoal */
+  --background: 220 15% 5%;
+  /* Dark Obsidian */
+  --foreground: 0 0% 98%;
+  /* Crisp White */
 
   /* Gold/Bronze Palette */
   --primary: 43 74% 49%;
   /* #D4AF37 Gold */
   --primary-foreground: 0 0% 100%;
 
-  --void-black: #FAFAFA;
-  /* Map void-black to light for layout background */
+  --void-black: #0A0B10;
+  /* Map void-black to dark obsidian */
   --terminal-green: #D4AF37;
   /* Map terminal-green to Gold */
-  --neon-amber: #8B4513;
-  /* Bronze */
-  --hologram-blue: #A9A9A9;
+  --neon-amber: #D4AF37;
+  /* Gold */
+  --hologram-blue: #C0C0C0;
   /* Silver */
 
   /* Typography Overrides */
   --font-heading: 'Playfair Display', serif;
   --font-mono: 'Inter', sans-serif;
-  /* Cleaner look for data in luxury mode */
 
   /* Glass Override */
-  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-bg: rgba(20, 20, 25, 0.7);
   --glass-border: rgba(212, 175, 55, 0.3);
 }
+
 
 /* Tactical Theme Override - Enforce Dark Mode */
 .theme-tactical {
@@ -941,5 +941,132 @@ select {
 }
 
 body {
-  background-color: #050005; /* Base fallback */
+  background-color: #08090D; /* Cyber Obsidian fallback */
+  color: #FFFFFF;
 }
+
+/* ── Cyber-Gold & Ready Player One Design System ── */
+.glass-obsidian {
+  background: rgba(10, 11, 16, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(229, 169, 60, 0.15);
+}
+
+.glass-obsidian-strong {
+  background: rgba(8, 9, 13, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(229, 169, 60, 0.25);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(229, 169, 60, 0.08);
+}
+
+.glass-gold-glow {
+  border: 1px solid rgba(229, 169, 60, 0.4);
+  box-shadow: 0 0 25px rgba(229, 169, 60, 0.18), inset 0 0 15px rgba(229, 169, 60, 0.05);
+}
+
+.glass-cyan-glow {
+  border: 1px solid rgba(0, 242, 254, 0.4);
+  box-shadow: 0 0 25px rgba(0, 242, 254, 0.18), inset 0 0 15px rgba(0, 242, 254, 0.05);
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #FFF0B3 0%, #E5A93C 50%, #C78E29 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.cyan-gradient-text {
+  background: linear-gradient(135deg, #E0FFFF 0%, #00F2FE 50%, #0099FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Apple-Wallet-Style Ticket Notches ── */
+.ticket-pass {
+  position: relative;
+  background: rgba(14, 16, 23, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.ticket-pass:hover {
+  border-color: rgba(229, 169, 60, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(229, 169, 60, 0.15);
+}
+
+.ticket-pass-active {
+  border-color: rgba(229, 169, 60, 0.8) !important;
+  background: rgba(22, 24, 34, 0.95) !important;
+  box-shadow: 0 0 30px rgba(229, 169, 60, 0.25) !important;
+}
+
+/* Boarding pass circular cutout */
+.ticket-cutout-l {
+  position: absolute;
+  top: 50%;
+  left: -12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #08090D;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+.ticket-cutout-r {
+  position: absolute;
+  top: 50%;
+  right: -12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #08090D;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+/* ── Soca Passport 3D Leather & Gold Foil ── */
+.passport-leather {
+  background: linear-gradient(145deg, #181920 0%, #0d0e13 100%);
+  border: 2px solid #332814;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(229, 169, 60, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.05);
+}
+
+.passport-stamp-gold {
+  border: 2px dashed #E5A93C;
+  color: #E5A93C;
+  text-shadow: 0 0 10px rgba(229, 169, 60, 0.4);
+  box-shadow: inset 0 0 15px rgba(229, 169, 60, 0.1);
+  transform: rotate(-4deg);
+  transition: transform 0.3s ease;
+}
+
+.passport-stamp-gold:hover {
+  transform: rotate(0deg) scale(1.05);
+}
+
+/* ── Audio Waveform Visualizer ── */
+.audio-bar {
+  display: inline-block;
+  width: 3px;
+  border-radius: 9999px;
+  background: #E5A93C;
+  animation: equalizer 1.2s ease-in-out infinite;
+}
+
+.audio-bar:nth-child(2) { animation-delay: 0.15s; }
+.audio-bar:nth-child(3) { animation-delay: 0.3s; }
+.audio-bar:nth-child(4) { animation-delay: 0.45s; }
+.audio-bar:nth-child(5) { animation-delay: 0.2s; }
+.audio-bar:nth-child(6) { animation-delay: 0.35s; }
+.audio-bar:nth-child(7) { animation-delay: 0.5s; }
+.audio-bar:nth-child(8) { animation-delay: 0.1s; }

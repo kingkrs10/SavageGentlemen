@@ -619,32 +619,35 @@ const EventDetail = () => {
                           };
 
                           return (
-                            <div key={ticket.id} className={`border rounded-lg p-4 mb-4 ${ticket.tierLevel !== 'standard' ? 'border-2 border-dashed' : ''}`}>
+                            <div key={ticket.id} className={`ticket-pass p-5 mb-4 relative ${ticket.tierLevel !== 'standard' ? 'ticket-pass-active' : ''}`}>
+                              <div className="ticket-cutout-l" />
+                              <div className="ticket-cutout-r" />
+
                               <div className="flex justify-between items-start mb-2">
                                 <div className="flex items-center gap-2">
-                                  <h4 className="font-semibold text-lg">{ticket.name}</h4>
+                                  <h4 className="font-bold text-lg text-white">{ticket.name}</h4>
                                   {ticket.tierLevel && ticket.tierLevel !== 'standard' && (
-                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${tierColors[ticket.tierLevel]}`}>
+                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-gold-500/20 text-gold-300 border border-gold-500/40">
                                       {tierIcons[ticket.tierLevel]} {ticket.tierLevel.toUpperCase()}
                                     </span>
                                   )}
                                 </div>
                                 <div className="text-right">
                                   {ticket.price > 0 && (
-                                    <p className="font-bold text-primary text-lg">
+                                    <p className="font-extrabold text-gold-400 text-xl font-mono">
                                       {formatPriceFromCents(ticket.price, getCurrencyFromLocation(event.location))}
                                     </p>
                                   )}
                                   {ticket.price === 0 && (
-                                    <span className="px-3 py-1 bg-green-500 text-white rounded-full text-sm font-medium">
-                                      FREE
+                                    <span className="px-3 py-1 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-full text-xs font-bold font-mono">
+                                      FREE COMP
                                     </span>
                                   )}
                                 </div>
                               </div>
 
                               {ticket.description && (
-                                <p className="text-sm text-muted-foreground mb-3">{ticket.description}</p>
+                                <p className="text-sm text-white/70 mb-3">{ticket.description}</p>
                               )}
 
                               {/* Advanced Features Display */}

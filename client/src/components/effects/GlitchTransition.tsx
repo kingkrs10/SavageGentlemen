@@ -8,39 +8,41 @@ export const GlitchTransition = () => {
     const overlayRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (isTransitioning && containerRef.current && overlayRef.current) {
-            const tl = gsap.timeline({
-                onComplete: () => {
-                    setIsTransitioning(false);
-                }
-            });
+        if (!isTransitioning) return;
 
-            // Initial Flash
-            tl.to(containerRef.current, {
-                opacity: 1,
-                duration: 0.1,
-                ease: 'power4.in'
-            })
+        // Safety fallback timer to guarantee transition ends even if GSAP is interrupted
+        const safetyTimer = setTimeout(() => {
+            setIsTransitioning(false);
+        }, 1000);
 
+        if (containerRef.current && overlayRef.current) {
+            try {
+                const tl = gsap.timeline({
+                    onComplete: () => {
+                        setIsTransitioning(false);
+                    }
+                });
+
+                // Initial Flash
+                tl.to(containerRef.current, {
+                    opacity: 1,
+                    duration: 0.1,
+                    ease: 'power4.in'
+                })
                 // Glitch Shake & Distortion
                 .to(containerRef.current, {
-                    clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)', // Full
+                    clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)',
                     duration: 0.1
                 })
                 .to(containerRef.current, {
-                    clipPath: 'polygon(0 15%, 100% 15%, 100% 85%, 0 85%)', // Squeeze
+                    clipPath: 'polygon(0 15%, 100% 15%, 100% 85%, 0 85%)',
                     duration: 0.1
                 })
                 .to(containerRef.current, {
-                    clipPath: 'polygon(10% 0, 90% 0, 90% 100%, 10% 100%)', // Vertical Squeeze
+                    clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)',
                     duration: 0.1
                 })
-                .to(containerRef.current, {
-                    clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)', // Reset
-                    duration: 0.1
-                })
-
-                // Color Flash Overlay (White for Luxury, Green for Tactical)
+                // Color Flash Overlay
                 .to(overlayRef.current, {
                     opacity: 1,
                     duration: 0.1,
@@ -48,17 +50,22 @@ export const GlitchTransition = () => {
                 })
                 .to(overlayRef.current, {
                     opacity: 0,
-                    duration: 0.5,
-                    delay: 0.2
+                    duration: 0.4
                 })
-
                 // Fade Out Container
                 .to(containerRef.current, {
                     opacity: 0,
-                    duration: 0.5
+                    duration: 0.3
                 });
+            } catch (err) {
+                console.error("GlitchTransition error:", err);
+                setIsTransitioning(false);
+            }
         }
+
+        return () => clearTimeout(safetyTimer);
     }, [isTransitioning, setIsTransitioning]);
+
 
     if (!isTransitioning) return null;
 

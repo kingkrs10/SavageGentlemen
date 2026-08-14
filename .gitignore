@@ -4,6 +4,24 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz.env
+
+# Environment files
 .env
 .env.local
-.env.*
+.env.production
+.env.development
+.env*.local
+
+# Secret config files & cache
+.next
+.npm-cache
+.npm-cache2
+GoogleService-Info.plist
+google-services.json
+
+*.pem
+*.key
+*.p12
+*.pfx
+scratch/
+

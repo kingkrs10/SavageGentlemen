@@ -220,6 +220,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const router = express.Router();
   app.use("/api", router);
 
+  // Health and Database Status Endpoint
+  router.get("/health", async (req: Request, res: Response) => {
+    try {
+      const startTime = Date.now();
+      const eventsList = await storage.getAllEvents();
+      const latency = Date.now() - startTime;
+      res.json({
+        status: "healthy",
+        database: "connected",
+        provider: "Neon PostgreSQL",
+        latencyMs: latency,
+        eventsCount: Array.isArray(eventsList) ? eventsList.length : 0,
+        timestamp: new Date().toISOString()
+      });
+    } catch (err: any) {
+      res.status(500).json({
+        status: "unhealthy",
+        database: "error",
+        error: err.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+
+
   // Shared handler for free ticket claims to ensure consistent logic across endpoints
   const handleFreeTicketClaim = async (req: Request, res: Response, source: string) => {
     try {
