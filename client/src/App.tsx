@@ -27,6 +27,7 @@ import { RealityToggle } from "@/components/layout/RealityToggle";
 import ParticleBackground3D from "@/components/effects/ParticleBackground3D";
 import Home from "@/pages/home";
 import FeteDecoder from "@/pages/fete-decoder";
+import MotionFlyerAi from "@/pages/motion-flyer-ai";
 
 // Lazily load remaining sub-pages for code splitting
 const Events = lazy(() => import("@/pages/events"));
@@ -91,6 +92,8 @@ function Router() {
         <Route path="/events/:id/:slug" component={EventDetail} />
         <Route path="/shop" component={Shop} />
         <Route path="/apps" component={Apps} />
+        <Route path="/apps/motion-flyer-ai" component={MotionFlyerAi} />
+        <Route path="/motion-flyer-ai" component={MotionFlyerAi} />
         <Route path="/apps/itssoca-decoder" component={FeteDecoder} />
         <Route path="/itssoca-decoder" component={FeteDecoder} />
         <Route path="/apps/fete-decoder" component={FeteDecoder} />

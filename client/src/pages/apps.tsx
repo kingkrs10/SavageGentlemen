@@ -59,7 +59,7 @@ const creatorBots: CreatorBot[] = [
     description: "Turns static event posters into animated Instagram Reels and TikTok motion video teasers with beat-synced particle glows.",
     status: "AUTONOMOUS",
     features: ["DJ Photo & Lineup Layer Separation", "Custom Particle & Smoke VFX", "Audio Snippet Integration"],
-    path: "/apps/fete-decoder",
+    path: "/apps/motion-flyer-ai",
     accent: "gold",
   },
   {
