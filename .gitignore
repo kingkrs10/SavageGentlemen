@@ -11,6 +11,8 @@ vite.config.ts.*
 .env.production
 .env.development
 .env*.local
+backend_test/.env
+!.env.example
 
 # Secret config files & cache
 .next
@@ -24,4 +26,4 @@ google-services.json
 *.p12
 *.pfx
 scratch/
-
+uploads/

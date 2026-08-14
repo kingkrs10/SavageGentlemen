@@ -169,7 +169,10 @@ import {
   emailSubscribers,
   articles,
   Article,
-  InsertArticle
+  InsertArticle,
+  siteSettings,
+  SiteSetting,
+  InsertSiteSetting
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, gte, sql, lte, lt, isNotNull, not, inArray, or } from "drizzle-orm";
@@ -466,6 +469,10 @@ export interface IStorage {
   incrementArticleViews(id: number): Promise<void>;
   incrementArticleLikes(id: number): Promise<void>;
   getFeaturedArticles(limit?: number): Promise<Article[]>;
+
+  // Site Settings
+  getSiteSetting(key: string): Promise<SiteSetting | undefined>;
+  setSiteSetting(key: string, value: string, updatedBy?: number): Promise<SiteSetting>;
 
   // Passport Profile operations
   getPassportProfile(userId: number): Promise<PassportProfile | undefined>;
@@ -2420,7 +2427,26 @@ export class MemStorage implements IStorage {
     return Array.from(this.mediaCollections.values());
   }
 
+  // Site Settings
+  private siteSettingsMap: Map<string, SiteSetting> = new Map();
 
+  async getSiteSetting(key: string): Promise<SiteSetting | undefined> {
+    return this.siteSettingsMap.get(key);
+  }
+
+  async setSiteSetting(key: string, value: string, updatedBy?: number): Promise<SiteSetting> {
+    const existing = this.siteSettingsMap.get(key);
+    const id = existing ? existing.id : this.siteSettingsMap.size + 1;
+    const setting: SiteSetting = {
+      id,
+      key,
+      value,
+      updatedBy: updatedBy || null,
+      updatedAt: new Date(),
+    };
+    this.siteSettingsMap.set(key, setting);
+    return setting;
+  }
 }
 
 // Database storage implementation
@@ -6364,6 +6390,36 @@ export class DatabaseStorage implements IStorage {
 
     return await query;
   }
+
+  // Site Settings Database Implementation
+  async getSiteSetting(key: string): Promise<SiteSetting | undefined> {
+    const [setting] = await db
+      .select()
+      .from(siteSettings)
+      .where(eq(siteSettings.key, key));
+    return setting;
+  }
+
+  async setSiteSetting(key: string, value: string, updatedBy?: number): Promise<SiteSetting> {
+    const [setting] = await db
+      .insert(siteSettings)
+      .values({
+        key,
+        value,
+        updatedBy: updatedBy || null,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: siteSettings.key,
+        set: {
+          value,
+          updatedBy: updatedBy || null,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return setting;
+  }
 }
 
 export const storage = new DatabaseStorage();
@@ -6560,5 +6616,4 @@ export class TicketDatabaseSync {
       throw error;
     }
   }
-
 }

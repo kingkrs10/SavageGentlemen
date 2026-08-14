@@ -79,6 +79,7 @@ import { islandLyricRouter } from "./island-lyric-routes";
 import { magazineRouter } from "./routes/magazine-routes";
 import { adsRouter } from "./routes/ads-routes";
 import { merchRouter } from "./routes/merch-routes";
+import { settingsRouter } from "./routes/settings-routes";
 import { magazineBot } from "./workers/magazine-bot";
 
 // Initialize Stripe
@@ -491,10 +492,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // IslandLyric.bot Routes
   router.use("/island-lyric", islandLyricRouter);
 
-  // Digital Magazine, Ads, and Merch Routes
+  // Digital Magazine, Ads, Merch, and Site Settings Routes
   router.use("/magazine", magazineRouter);
   router.use("/ads", adsRouter);
   router.use("/merch", merchRouter);
+  router.use("/settings", settingsRouter);
+
+  app.use("/api/magazine", magazineRouter);
+  app.use("/api/ads", adsRouter);
+  app.use("/api/merch", merchRouter);
+  app.use("/api/settings", settingsRouter);
 
   // Initialize Autonomous Magazine Bot
   magazineBot.start().catch(err => console.error("Error starting MagazineBot:", err));

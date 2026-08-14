@@ -20,8 +20,8 @@ export const SAVAGE_MERCH_CATALOG: MerchItem[] = [
     price: 7800, // $78.00
     description: "480 GSM ultra-heavy French Terry cotton hoodie with embossed gold metallic Savage Gentlemen crest and double-lined hood. Built for cool fete nights and global travel.",
     images: [
-      "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&h=1000&fit=crop",
-      "https://images.unsplash.com/photo-1509967419530-da38b4704bc6?w=800&h=1000&fit=crop"
+      "/mockups/sg_luxury_hoodie.jpg",
+      "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&h=1000&fit=crop"
     ],
     sizes: ["S", "M", "L", "XL", "2XL", "3XL"],
     colors: [
@@ -38,8 +38,8 @@ export const SAVAGE_MERCH_CATALOG: MerchItem[] = [
     price: 4200, // $42.00
     description: "Vintage-washed 260 GSM drop-shoulder boxy tee featuring screen-printed retro Caribbean soundclash typography and gold foil accents.",
     images: [
-      "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&h=1000&fit=crop",
-      "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=800&h=1000&fit=crop"
+      "/mockups/sg_soundclash_tee.jpg",
+      "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&h=1000&fit=crop"
     ],
     sizes: ["S", "M", "L", "XL", "2XL"],
     colors: [
@@ -56,6 +56,7 @@ export const SAVAGE_MERCH_CATALOG: MerchItem[] = [
     price: 3600, // $36.00
     description: "Unstructured 6-panel low profile washed cotton twill cap with 3D high-density embroidered Savage Gentlemen crest and antique brass buckle closure.",
     images: [
+      "/mockups/sg_embroidered_cap.jpg",
       "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=800&h=1000&fit=crop"
     ],
     sizes: ["One Size"],
@@ -73,6 +74,7 @@ export const SAVAGE_MERCH_CATALOG: MerchItem[] = [
     price: 4800, // $48.00
     description: "Laser-engraved 8oz food-grade stainless steel liquor flask with 2 matching shot cups and filling funnel in a luxury presentation box. Ideal for premium aged rum.",
     images: [
+      "/mockups/sg_barology_flask.jpg",
       "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800&h=1000&fit=crop"
     ],
     sizes: ["8 oz"],

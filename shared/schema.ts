@@ -2530,3 +2530,20 @@ export const insertArticleSchema = createInsertSchema(articles).omit({
 });
 export type Article = typeof articles.$inferSelect;
 export type InsertArticle = z.infer<typeof insertArticleSchema>;
+
+// Site Settings (Background Video, Brand Configuration, etc.)
+export const siteSettings = pgTable("site_settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(), // e.g. "background_video"
+  value: text("value").notNull(), // JSON string or text value
+  updatedBy: integer("updated_by").references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSiteSettingSchema = createInsertSchema(siteSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+export type SiteSetting = typeof siteSettings.$inferSelect;
+export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
+

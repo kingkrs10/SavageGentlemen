@@ -56,6 +56,19 @@ const Home = () => {
     queryFn: () => fetch("/api/merch/catalog").then(res => res.json()).catch(() => []),
   });
 
+  // Fetch active site background video setting
+  const { data: videoConfig } = useQuery<{
+    videoUrl?: string;
+    posterUrl?: string;
+    opacity?: number;
+    contrast?: number;
+    brightness?: number;
+    isDefault?: boolean;
+  }>({
+    queryKey: ["/api/settings/background-video"],
+    queryFn: () => fetch("/api/settings/background-video").then(res => res.json()).catch(() => null),
+  });
+
   // Real-time countdown timer to next event or next carnival season
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
@@ -134,13 +147,19 @@ const Home = () => {
         {/* Background Cinematic Video with Obsidian & Amber Gradient */}
         <div className="absolute inset-0 z-0">
           <video
-            className="w-full h-full object-cover opacity-45 filter brightness-90 contrast-125"
+            key={videoConfig?.videoUrl || "default-brand-video"}
+            className="w-full h-full object-cover transition-opacity duration-700"
+            style={{
+              opacity: videoConfig?.opacity ?? 0.45,
+              filter: `brightness(${videoConfig?.brightness ?? 90}%) contrast(${videoConfig?.contrast ?? 125}%)`,
+            }}
             autoPlay
             muted
             loop
             playsInline
+            poster={videoConfig?.posterUrl || undefined}
           >
-            <source src={BrandVideo} type="video/mp4" />
+            <source src={videoConfig?.videoUrl || BrandVideo} type="video/mp4" />
           </video>
           {/* Cyber Gradients & Radial Warm Glows */}
           <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/70 to-transparent" />

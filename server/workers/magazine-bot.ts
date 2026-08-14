@@ -13,6 +13,16 @@ interface RssItem {
 
 const CARIBBEAN_FEEDS = [
   {
+    name: "Global Carnivalist",
+    url: "https://globalcarnivalist.com/feed/",
+    defaultCategory: "nightlife",
+  },
+  {
+    name: "TriniJungleJuice Events & Reviews",
+    url: "https://www.trinijunglejuice.com/home/feed/",
+    defaultCategory: "nightlife",
+  },
+  {
     name: "LargeUp Caribbean Culture",
     url: "https://www.largeup.com/feed/",
     defaultCategory: "culture",
@@ -184,16 +194,26 @@ function parseRssXml(xmlText: string, sourceName: string, defaultCategory: strin
   while ((match = itemRegex.exec(xmlText)) !== null) {
     const itemBlock = match[1];
 
-    const titleMatch = itemBlock.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/i) || itemBlock.match(/<title>(.*?)<\/title>/i);
-    const linkMatch = itemBlock.match(/<link><!\[CDATA\[(.*?)\]\]><\/link>/i) || itemBlock.match(/<link>(.*?)<\/link>/i);
-    const descMatch = itemBlock.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/i) || itemBlock.match(/<description>(.*?)<\/description>/i);
+    const titleMatch = itemBlock.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/i) || itemBlock.match(/<title>([\s\S]*?)<\/title>/i);
+    const linkMatch = itemBlock.match(/<link><!\[CDATA\[([\s\S]*?)\]\]><\/link>/i) || itemBlock.match(/<link>([\s\S]*?)<\/link>/i);
+    const descMatch = itemBlock.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/i) || itemBlock.match(/<description>([\s\S]*?)<\/description>/i);
+    const contentMatch = itemBlock.match(/<content:encoded><!\[CDATA\[([\s\S]*?)\]\]><\/content:encoded>/i);
     const pubDateMatch = itemBlock.match(/<pubDate>(.*?)<\/pubDate>/i);
-    const mediaMatch = itemBlock.match(/<media:content[^>]*url="([^"]+)"/i) || itemBlock.match(/<enclosure[^>]*url="([^"]+)"/i);
+
+    // Extract image from media:content, enclosure, media:thumbnail or img tag in description/content
+    const mediaMatch = itemBlock.match(/<media:content[^>]*url=["']([^"']+)["']/i) || 
+                       itemBlock.match(/<enclosure[^>]*url=["']([^"']+)["']/i) ||
+                       itemBlock.match(/<media:thumbnail[^>]*url=["']([^"']+)["']/i) ||
+                       itemBlock.match(/<img[^>]+src=["']([^"']+)["']/i);
 
     const title = titleMatch ? titleMatch[1].replace(/<\/?[^>]+(>|$)/g, "").trim() : "";
     const link = linkMatch ? linkMatch[1].trim() : "";
-    let description = descMatch ? descMatch[1].replace(/<\/?[^>]+(>|$)/g, "").trim() : "";
+    
+    let rawDesc = descMatch ? descMatch[1] : (contentMatch ? contentMatch[1] : "");
+    let description = rawDesc.replace(/<\/?[^>]+(>|$)/g, "").replace(/&#\d+;/g, "").trim();
     if (description.length > 300) description = description.substring(0, 297) + "...";
+
+    let imageUrl = mediaMatch ? mediaMatch[1] : undefined;
 
     if (title && link) {
       items.push({
@@ -202,7 +222,7 @@ function parseRssXml(xmlText: string, sourceName: string, defaultCategory: strin
         description,
         pubDate: pubDateMatch ? pubDateMatch[1] : undefined,
         category: defaultCategory,
-        imageUrl: mediaMatch ? mediaMatch[1] : undefined,
+        imageUrl,
         sourceName,
       });
     }
