@@ -76,6 +76,10 @@ import {
   handleChat
 } from "./language-sensei";
 import { islandLyricRouter } from "./island-lyric-routes";
+import { magazineRouter } from "./routes/magazine-routes";
+import { adsRouter } from "./routes/ads-routes";
+import { merchRouter } from "./routes/merch-routes";
+import { magazineBot } from "./workers/magazine-bot";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -487,6 +491,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // IslandLyric.bot Routes
   router.use("/island-lyric", islandLyricRouter);
 
+  // Digital Magazine, Ads, and Merch Routes
+  router.use("/magazine", magazineRouter);
+  router.use("/ads", adsRouter);
+  router.use("/merch", merchRouter);
+
+  // Initialize Autonomous Magazine Bot
+  magazineBot.start().catch(err => console.error("Error starting MagazineBot:", err));
+
   // Register social and enhanced ticketing routes
   registerSocialRoutes(app);
   registerEnhancedTicketingRoutes(app);
@@ -743,11 +755,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // expose whether a username exists or not
         await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 100));
 
-        // Try to get user (storage layer now handles case-insensitive lookup)
-        const user = await storage.getUserByUsername(username);
+        // Try to get user by username or email (case-insensitive)
+        let user = await storage.getUserByUsername(username);
+        if (!user) {
+          user = await storage.getUserByEmail(username);
+        }
 
         if (!user || user.password !== password) {
-          console.log(`[AUTH] Login failed for username: "${username}" - ${!user ? 'user not found' : 'wrong password'}`);
+          console.log(`[AUTH] Login failed for input: "${username}" - ${!user ? 'user not found' : 'wrong password'}`);
           return res.status(401).json({
             status: 'error',
             message: "Invalid username or password"

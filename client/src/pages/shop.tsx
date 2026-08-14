@@ -1,342 +1,440 @@
-import { useState, useEffect } from "react";
-import { API_ROUTES, PRODUCT_CATEGORIES, EXTERNAL_URLS } from "@/lib/constants";
-import { Product } from "@/lib/types";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  ShoppingBag,
+  ShoppingCart,
+  Sparkles,
+  ShieldCheck,
+  Truck,
+  RotateCcw,
+  Plus,
+  Minus,
+  Trash2,
+  ArrowRight,
+  Check,
+  X,
+  CreditCard,
+  Tag
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingBag, AlertCircle, ShoppingCart } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import SEOHead from "@/components/SEOHead";
+import { AdSpace } from "@/components/home/AdSpace";
 import { useToast } from "@/hooks/use-toast";
-import SGFlyerLogoPng from "@assets/SGFLYERLOGO.png";
+import { apiRequest } from "@/lib/queryClient";
 
-// Enhanced product card component with permanent image processing fix
-const SimpleProductCard = ({ product, onAddToCart }: { 
-  product: Product; 
-  onAddToCart: (id: number) => void;
-}) => {
-  const [imgError, setImgError] = useState(false);
-  const [imgLoaded, setImgLoaded] = useState(false);
-  
-  // Enhanced image URL processing with proper fallback
-  const getImageUrl = (url: string) => {
-    if (!url || url.trim() === '') {
-      return SGFlyerLogoPng; // Fallback to brand logo for empty URLs
-    }
-    // Use the actual Etsy image URL first, fallback to brand logo on error
-    return url;
-  };
-  
-  const imageUrl = getImageUrl(product.imageUrl);
-  
-  console.log('Product rendering:', product.title, 'Image URL:', imageUrl);
-  
-  return (
-    <div className="group bg-black rounded-xl overflow-hidden shadow-xl border border-gray-800 transition-all hover:border-primary hover:shadow-primary/20 h-full flex flex-col">
-      <div className="relative h-72 bg-gray-900 flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-0 group-hover:opacity-50 transition-opacity z-10"></div>
-        
-        {/* Loading skeleton */}
-        {!imgLoaded && !imgError && (
-          <div className="absolute inset-0 bg-gray-800 animate-pulse flex items-center justify-center">
-            <div className="w-16 h-16 bg-gray-700 rounded-full animate-pulse"></div>
-          </div>
-        )}
-        
-        {/* Product image with proper Etsy image display */}
-        <img 
-          src={imgError ? SGFlyerLogoPng : imageUrl} 
-          alt={product.title} 
-          className={`h-full w-full object-contain p-8 transition-all duration-300 ${
-            imgLoaded ? 'opacity-100 scale-100 group-hover:scale-105' : 'opacity-0 scale-95'
-          }`}
-          onLoad={() => {
-            setImgLoaded(true);
-            console.log('Product image loaded for:', product.title);
-          }}
-          onError={() => {
-            console.log('Product image failed to load:', product.title, 'Falling back to brand logo');
-            setImgError(true);
-            setImgLoaded(true);
-          }}
-          loading="lazy"
-        />
-        
-        {/* Product category overlay */}
-        <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs uppercase">
-          {product.category}
-        </div>
-        
-        <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-full group-hover:translate-y-0 transition-transform z-20">
-          <a 
-            href={product.etsyUrl || EXTERNAL_URLS.ETSY_SHOP} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-full block"
-          >
-            <Button 
-              className="w-full bg-primary hover:bg-red-800 text-white font-bold uppercase tracking-wider transition flex items-center justify-center gap-2"
-            >
-              <ShoppingCart className="h-4 w-4" />
-              Buy on Etsy
-            </Button>
-          </a>
-        </div>
-      </div>
-      <div className="p-5 flex-1 flex flex-col justify-between">
-        <div>
-          <h3 className="font-bold text-lg text-white mb-2 group-hover:text-primary transition-colors line-clamp-2">{product.title}</h3>
-          <p className="text-gray-400 text-sm mb-3 line-clamp-2">{product.description}</p>
-        </div>
-        <div className="flex justify-between items-center mt-auto">
-          <span className="text-primary font-bold text-xl">${(product.price / 100).toFixed(2)}</span>
-          <span className="text-sm text-gray-400 uppercase tracking-wider">
-            {product.sizes && product.sizes.length > 0 ? product.sizes.join(" · ") : "Various Sizes"}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-};
+interface MerchItem {
+  id: string;
+  title: string;
+  category: "outerwear" | "tees" | "headwear" | "accessories";
+  price: number; // in cents, e.g. 6800 for $68.00
+  description: string;
+  images: string[];
+  sizes: string[];
+  colors: { name: string; hex: string }[];
+  featured: boolean;
+  inStock: boolean;
+}
 
-const Shop = () => {
-  // Shop is now available
-  const isShopTemporarilyUnavailable = false;
-  
-  const [selectedCategory, setSelectedCategory] = useState("all");
+interface CartItem {
+  id: string;
+  title: string;
+  price: number;
+  size: string;
+  color?: string;
+  image: string;
+  quantity: number;
+}
+
+const CATEGORIES = [
+  { id: "all", label: "All Drops" },
+  { id: "outerwear", label: "Outerwear & Hoodies" },
+  { id: "tees", label: "Graphic Tees" },
+  { id: "headwear", label: "Headwear & Caps" },
+  { id: "accessories", label: "Barware & Accessories" },
+];
+
+export default function Shop() {
   const { toast } = useToast();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  // Direct fetch - no React Query
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(API_ROUTES.PRODUCTS);
-        if (!response.ok) {
-          throw new Error(`HTTP error: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log("Fetched products:", data);
-        setProducts(data);
-      } catch (err) {
-        console.error("Error fetching products:", err);
-        setError(String(err));
-      } finally {
-        setLoading(false);
-      }
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, { size: string; color?: string }>>({});
+
+  const { data: catalog = [], isLoading } = useQuery<MerchItem[]>({
+    queryKey: ["/api/merch/catalog"],
+    queryFn: async () => {
+      const res = await fetch("/api/merch/catalog");
+      if (!res.ok) throw new Error("Failed to load catalog");
+      return res.json();
+    },
+  });
+
+  const filteredCatalog = catalog.filter(item => {
+    if (selectedCategory === "all") return true;
+    return item.category === selectedCategory;
+  });
+
+  const getVariant = (itemId: string, item: MerchItem) => {
+    return selectedVariants[itemId] || {
+      size: item.sizes[0] || "Standard",
+      color: item.colors[0]?.name,
     };
-    
-    fetchProducts();
-  }, []);
-  
-  const filteredProducts = products.filter(
-    (product) => selectedCategory === "all" || product.category === selectedCategory
-  );
-  
-  const handleAddToCart = (productId: number) => {
-    const product = products.find(p => p.id === productId);
-    if (product) {
-      toast({
-        title: "Opening Etsy shop",
-        description: `Redirecting to ${product.title} on Etsy`
+  };
+
+  const handleVariantChange = (itemId: string, size: string, color?: string) => {
+    setSelectedVariants(prev => ({
+      ...prev,
+      [itemId]: { size, color },
+    }));
+  };
+
+  const handleAddToCart = (item: MerchItem) => {
+    const variant = getVariant(item.id, item);
+    const existingIndex = cart.findIndex(
+      c => c.id === item.id && c.size === variant.size && c.color === variant.color
+    );
+
+    if (existingIndex > -1) {
+      const updated = [...cart];
+      updated[existingIndex].quantity += 1;
+      setCart(updated);
+    } else {
+      setCart(prev => [
+        ...prev,
+        {
+          id: item.id,
+          title: item.title,
+          price: item.price,
+          size: variant.size,
+          color: variant.color,
+          image: item.images[0],
+          quantity: 1,
+        },
+      ]);
+    }
+
+    setIsCartOpen(true);
+    toast({
+      title: "Added to Cart",
+      description: `${item.title} (${variant.size}) added to your bag.`,
+    });
+  };
+
+  const updateQuantity = (index: number, delta: number) => {
+    const updated = [...cart];
+    const newQty = updated[index].quantity + delta;
+    if (newQty <= 0) {
+      updated.splice(index, 1);
+    } else {
+      updated[index].quantity = newQty;
+    }
+    setCart(updated);
+  };
+
+  const removeFromCart = (index: number) => {
+    setCart(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const totalCents = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  const handleCheckout = async () => {
+    if (cart.length === 0) return;
+    setIsCheckingOut(true);
+
+    try {
+      const res = await apiRequest("POST", "/api/merch/checkout", {
+        items: cart,
       });
-      window.open(product.etsyUrl || EXTERNAL_URLS.ETSY_SHOP, "_blank");
+      const data = await res.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        toast({
+          title: "Checkout Initiated",
+          description: "Order submitted for fulfillment.",
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: "Checkout Error",
+        description: err.message || "Failed to start checkout",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCheckingOut(false);
     }
   };
-  
-  const handleCategorySelect = (category: string) => {
-    setSelectedCategory(category);
-  };
 
-  // Show temporary unavailable message
-  if (isShopTemporarilyUnavailable) {
-    return (
-      <div className="pb-20">
-        {/* Header section with logo */}
-        <div className="relative overflow-hidden mb-8 shadow-2xl border-b-4 border-primary">
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10"></div>
-          <div className="bg-black h-[300px] flex flex-col items-center justify-center relative">
-            <img 
-              src={SGFlyerLogoPng} 
-              alt="SG Logo" 
-              className="w-40 h-40 object-contain mb-2 relative z-20"
-            />
-            <h1 className="text-5xl md:text-6xl font-bold tracking-wider text-white uppercase text-center relative z-20 mb-0">
-              SAVAGE GENTLEMEN
-            </h1>
-            <p className="text-xl text-gray-300 tracking-wide uppercase mt-2 relative z-20">
-              MERCHANDISE • COLLECTION
-            </p>
-          </div>
-        </div>
-
-        {/* Temporary unavailable message */}
-        <div className="max-w-4xl mx-auto px-4 py-20 text-center">
-          <div className="bg-gray-900/50 backdrop-blur border border-gray-800 rounded-xl p-12">
-            <div className="inline-block mb-6">
-              <ShoppingBag className="h-16 w-16 text-primary mx-auto mb-4" />
-            </div>
-            <h2 className="text-4xl font-bold text-white mb-6 uppercase tracking-wider">
-              Shop Temporarily Unavailable
-            </h2>
-            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
-              We're currently updating our shop to bring you an even better shopping experience. 
-              Thank you for your patience while we make some exciting improvements.
-            </p>
-            <div className="space-y-4">
-              <p className="text-lg text-gray-400">
-                All shopping links are temporarily disabled during this maintenance period. 
-                Please check back soon for updates.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
   return (
-    <div className="pb-20">
-      {/* Featured Collection */}
-      <div className="relative overflow-hidden mb-8 shadow-2xl border-b-4 border-primary">
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10"></div>
-        <div className="bg-black h-[300px] flex flex-col items-center justify-center relative">
-          <img 
-            src={SGFlyerLogoPng} 
-            alt="SG Logo" 
-            className="w-40 h-40 object-contain mb-2 relative z-20"
-          />
-          <h1 className="text-5xl md:text-6xl font-bold tracking-wider text-white uppercase text-center relative z-20 mb-0">
-            SAVAGE GENTLEMEN
-          </h1>
-          <p className="text-xl text-gray-300 tracking-wide uppercase mt-2 relative z-20">
-            MERCHANDISE • COLLECTION
-          </p>
-        </div>
-        
-        <div className="absolute bottom-0 left-0 right-0 p-6 z-20 flex justify-center">
-          <a href={EXTERNAL_URLS.ETSY_SHOP} target="_blank" rel="noopener noreferrer" className="w-full max-w-xs">
-            <Button className="bg-primary hover:bg-red-800 text-white transition w-full text-lg py-6 uppercase tracking-wider font-bold">
-              SHOP ETSY COLLECTION
-            </Button>
-          </a>
-        </div>
-      </div>
+    <div className="min-h-screen space-y-12 pb-24 text-white">
+      <SEOHead
+        title="Official Merch & Luxury Streetwear | Savage Gentlemen"
+        description="Shop official Savage Gentlemen luxury streetwear, heavyweight French Terry hoodies, soundclash tees, and barware."
+      />
 
-      {/* Category Filter */}
-      <div className="max-w-5xl mx-auto mb-10 px-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-2xl font-bold uppercase tracking-wide">Product Categories</h3>
-          <Button 
-            variant="link" 
-            className="text-primary hover:text-red-700 font-medium p-0 h-auto transition-colors uppercase"
-            onClick={() => setSelectedCategory("all")}
+      {/* Top Header Sponsor Ticker */}
+      <AdSpace placement="header_ticker" />
+
+      {/* ── 1. SHOP HERO BANNER ── */}
+      <section className="container mx-auto px-4 pt-6 pb-2">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-gold-500/20 pb-8">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-400 text-xs font-mono font-bold uppercase tracking-widest mb-3">
+              <Sparkles className="w-3.5 h-3.5" />
+              Savage Nocturne Streetwear
+            </div>
+            <h1 className="font-heading text-4xl md:text-6xl font-bold gold-gradient-text uppercase tracking-tight">
+              Official Store
+            </h1>
+            <p className="text-white/60 text-sm md:text-base max-w-2xl mt-2 font-light">
+              Premium 480 GSM French Terry hoodies, sound system graphic tees, and luxury nightlife barware. Manufactured on demand with zero inventory waste.
+            </p>
+          </div>
+
+          {/* Cart Trigger Floating Button */}
+          <Button
+            onClick={() => setIsCartOpen(true)}
+            className="relative bg-gold-500 hover:bg-gold-400 text-obsidian font-bold text-xs uppercase tracking-wider px-6 h-12 gap-2 shadow-[0_0_25px_rgba(229,169,60,0.25)] shrink-0"
           >
-            View All
+            <ShoppingBag className="w-4 h-4 text-obsidian" />
+            View Bag ({cart.reduce((sum, i) => sum + i.quantity, 0)})
+            {cart.length > 0 && (
+              <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-600 text-white text-xs font-mono font-bold flex items-center justify-center border-2 border-obsidian">
+                {cart.reduce((sum, i) => sum + i.quantity, 0)}
+              </span>
+            )}
           </Button>
         </div>
-        <div className="flex flex-wrap gap-3">
-          {PRODUCT_CATEGORIES.map((category) => (
-            <Button
-              key={category.id}
-              variant={selectedCategory === category.id ? "default" : "outline"}
-              className={
-                selectedCategory === category.id 
-                  ? "bg-primary text-white border-primary hover:bg-red-800 transition-colors" 
-                  : "border-gray-600 text-white hover:border-white hover:bg-transparent transition-colors"
-              }
-              onClick={() => handleCategorySelect(category.id)}
+      </section>
+
+      {/* ── 2. CATEGORY SELECTOR ── */}
+      <section className="container mx-auto px-4">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.id)}
+              className={`px-5 py-2 rounded-full text-xs font-mono font-semibold uppercase tracking-wider whitespace-nowrap transition-all duration-200 ${
+                selectedCategory === cat.id
+                  ? "bg-gold-500 text-obsidian font-bold shadow-md"
+                  : "bg-white/5 text-white/70 hover:text-white hover:bg-white/10 border border-white/10"
+              }`}
             >
-              {category.label}
-            </Button>
+              {cat.label}
+            </button>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Debug Info - Hidden in production */}
-      {error && (
-        <div className="max-w-5xl mx-auto px-4 mb-6">
-          <div className="bg-red-900/80 backdrop-blur text-white p-5 rounded-lg border border-red-700">
-            <div className="flex items-center">
-              <AlertCircle className="h-6 w-6 mr-3 text-red-300" />
-              <span className="font-bold text-lg">Unable to load products</span>
-            </div>
-            <p className="mt-2 text-red-200">{error}</p>
-          </div>
-        </div>
-      )}
-      
-      {/* Products Grid */}
-      <div className="max-w-6xl mx-auto px-4 mb-20">
-        {loading ? (
+      {/* ── 3. PRODUCT CATALOG GRID ── */}
+      <section className="container mx-auto px-4">
+        {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Skeleton className="h-[400px] rounded-lg bg-gray-800/50 backdrop-blur" />
-            <Skeleton className="h-[400px] rounded-lg bg-gray-800/50 backdrop-blur" />
-            <Skeleton className="h-[400px] rounded-lg bg-gray-800/50 backdrop-blur" />
-          </div>
-        ) : filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
-            {filteredProducts.map((product) => (
-              <SimpleProductCard 
-                key={product.id} 
-                product={product} 
-                onAddToCart={handleAddToCart}
-              />
+            {[1, 2, 3, 4, 5, 6].map(n => (
+              <div key={n} className="rounded-3xl border border-white/10 bg-obsidian-card p-4 space-y-4">
+                <Skeleton className="w-full h-80 rounded-2xl bg-white/5" />
+                <Skeleton className="w-1/2 h-6 bg-white/5" />
+                <Skeleton className="w-full h-4 bg-white/5" />
+              </div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-16 border border-gray-800 rounded-xl bg-gray-900/50 backdrop-blur">
-            <ShoppingBag className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold mb-3">No Products Found</h3>
-            <p className="text-gray-400 max-w-md mx-auto">
-              {products.length > 0 
-                ? "There are no products matching the selected category. Please try a different category."
-                : "Our product catalog is currently being updated. Please check back soon."
-              }
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredCatalog.map(item => {
+              const currentVariant = getVariant(item.id, item);
+
+              return (
+                <div
+                  key={item.id}
+                  className="rounded-3xl border border-gold-500/15 bg-obsidian-card hover:border-gold-500/40 transition-all duration-300 flex flex-col justify-between overflow-hidden group shadow-xl"
+                >
+                  {/* Product Image Carousel / Hero */}
+                  <div className="relative w-full h-84 md:h-96 overflow-hidden bg-obsidian-dark">
+                    <img
+                      src={item.images[0]}
+                      alt={item.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 filter brightness-95"
+                    />
+                    {item.featured && (
+                      <div className="absolute top-4 left-4">
+                        <Badge className="bg-gold-500 text-obsidian font-mono uppercase font-bold text-xs shadow-md">
+                          VIP Drop
+                        </Badge>
+                      </div>
+                    )}
+                    <div className="absolute bottom-4 right-4 bg-obsidian/90 backdrop-blur-md px-3 py-1 rounded-full border border-gold-500/30">
+                      <span className="font-mono text-base font-bold text-gold-400">
+                        ${(item.price / 100).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Product Details & Variant Selectors */}
+                  <div className="p-6 flex-1 flex flex-col justify-between space-y-6 text-left">
+                    <div className="space-y-3">
+                      <h3 className="font-heading text-xl font-bold text-white group-hover:text-gold-300 transition-colors">
+                        {item.title}
+                      </h3>
+                      <p className="text-xs text-white/60 leading-relaxed line-clamp-3">
+                        {item.description}
+                      </p>
+
+                      {/* Size Picker */}
+                      {item.sizes.length > 1 && (
+                        <div className="space-y-1.5 pt-2">
+                          <span className="text-[10px] font-mono uppercase tracking-widest text-white/50 block">Select Size:</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {item.sizes.map(size => (
+                              <button
+                                key={size}
+                                onClick={() => handleVariantChange(item.id, size, currentVariant.color)}
+                                className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all ${
+                                  currentVariant.size === size
+                                    ? "bg-gold-500 text-obsidian border border-gold-400"
+                                    : "bg-white/5 text-white/70 border border-white/10 hover:bg-white/10"
+                                }`}
+                              >
+                                {size}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Add to Cart Button */}
+                    <div className="pt-4 border-t border-white/10">
+                      <Button
+                        onClick={() => handleAddToCart(item)}
+                        className="w-full bg-gold-500/20 hover:bg-gold-500 text-gold-300 hover:text-obsidian border border-gold-500/40 font-bold uppercase tracking-wider text-xs h-11 gap-2 transition-all"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add to Bag • ${(item.price / 100).toFixed(2)}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* In-Grid Sponsored Card */}
+            <AdSpace placement="shop_feed" />
           </div>
         )}
-      </div>
-      
-      {/* Shop Options */}
-      <div className="bg-black py-20 border-t-4 border-primary relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/70"></div>
-        <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
-          <div className="inline-block mb-6">
-            <img 
-              src={SGFlyerLogoPng}
-              alt="SG Logo" 
-              className="w-20 h-20 mx-auto object-contain"
-            />
+      </section>
+
+      {/* ── 4. BRAND VALUES TRUST BAR ── */}
+      <section className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-8 rounded-3xl border border-gold-500/20 bg-gradient-to-r from-obsidian-card via-obsidian to-obsidian-card text-center">
+          <div className="space-y-2">
+            <ShieldCheck className="w-8 h-8 text-gold-400 mx-auto" />
+            <h4 className="font-bold text-sm text-white">Ethical Print-on-Demand</h4>
+            <p className="text-xs text-white/50">Zero overproduction. Every item is printed exclusively when you order.</p>
           </div>
-          <h3 className="text-3xl font-bold uppercase tracking-wider mb-4">EXCLUSIVE COLLECTION</h3>
-          <p className="text-gray-300 text-lg mb-10 max-w-2xl mx-auto">
-            Discover our complete collection of premium Caribbean-inspired clothing and accessories on our official Printify store.
-          </p>
-          
-          <div className="flex flex-col items-center">
-            <a 
-              href={EXTERNAL_URLS.ETSY_SHOP} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="w-full max-w-sm"
-            >
-              <Button 
-                size="lg" 
-                className="bg-primary hover:bg-red-800 text-white text-lg uppercase tracking-wider font-bold py-7 w-full"
-              >
-                SHOP ETSY COLLECTION
-              </Button>
-            </a>
-            <p className="mt-4 text-gray-400 text-sm">
-              All products are designed exclusively by Savage Gentlemen and available on Etsy
-            </p>
+          <div className="space-y-2">
+            <Truck className="w-8 h-8 text-gold-400 mx-auto" />
+            <h4 className="font-bold text-sm text-white">Global Express Delivery</h4>
+            <p className="text-xs text-white/50">Fast tracked shipping to US, UK, Canada, and across the Caribbean.</p>
+          </div>
+          <div className="space-y-2">
+            <Sparkles className="w-8 h-8 text-gold-400 mx-auto" />
+            <h4 className="font-bold text-sm text-white">Heavyweight 480 GSM Cotton</h4>
+            <p className="text-xs text-white/50">Custom crafted luxury silhouettes engineered for fete durability.</p>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* ── 5. SLIDE-OVER SHOPPING BAG DRAWER ── */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          <div
+            className="absolute inset-0 bg-obsidian/80 backdrop-blur-md transition-opacity"
+            onClick={() => setIsCartOpen(false)}
+          />
+
+          <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            <div className="w-screen max-w-md bg-obsidian border-l border-gold-500/30 flex flex-col justify-between p-6 shadow-2xl">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <div className="flex items-center gap-2">
+                  <ShoppingBag className="w-5 h-5 text-gold-400" />
+                  <h3 className="font-heading text-lg font-bold text-white uppercase tracking-wider">Your Bag</h3>
+                </div>
+                <button
+                  onClick={() => setIsCartOpen(false)}
+                  className="p-1 rounded-full text-white/50 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Cart Line Items */}
+              <div className="flex-1 overflow-y-auto py-6 space-y-4">
+                {cart.length === 0 ? (
+                  <div className="py-20 text-center space-y-3">
+                    <ShoppingBag className="w-12 h-12 text-white/20 mx-auto" />
+                    <p className="text-white/60 text-sm">Your shopping bag is empty.</p>
+                  </div>
+                ) : (
+                  cart.map((item, idx) => (
+                    <div key={idx} className="flex gap-4 p-3 rounded-2xl bg-obsidian-card border border-white/10">
+                      <img src={item.image} alt={item.title} className="w-16 h-20 object-cover rounded-xl shrink-0" />
+                      <div className="flex-1 flex flex-col justify-between text-left">
+                        <div>
+                          <h5 className="font-bold text-sm text-white line-clamp-1">{item.title}</h5>
+                          <span className="text-[11px] font-mono text-gold-400">Size: {item.size}</span>
+                        </div>
+                        <div className="flex items-center justify-between pt-2">
+                          <div className="flex items-center gap-2 bg-obsidian rounded-lg border border-white/10 px-2 py-0.5">
+                            <button onClick={() => updateQuantity(idx, -1)} className="text-white/60 hover:text-white">
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="text-xs font-mono font-bold text-white">{item.quantity}</span>
+                            <button onClick={() => updateQuantity(idx, 1)} className="text-white/60 hover:text-white">
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                          <span className="font-mono text-sm font-bold text-gold-400">
+                            ${((item.price * item.quantity) / 100).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                      <button onClick={() => removeFromCart(idx)} className="text-white/40 hover:text-red-400 self-start p-1">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Footer / Stripe Checkout */}
+              {cart.length > 0 && (
+                <div className="border-t border-white/10 pt-4 space-y-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-white/60">Subtotal:</span>
+                    <span className="font-mono text-xl font-bold text-gold-400">${(totalCents / 100).toFixed(2)}</span>
+                  </div>
+                  <Button
+                    onClick={handleCheckout}
+                    disabled={isCheckingOut}
+                    className="w-full bg-gold-500 hover:bg-gold-400 text-obsidian font-bold uppercase tracking-wider text-xs h-12 gap-2 shadow-lg"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    {isCheckingOut ? "Processing..." : "Proceed to Secure Stripe Checkout"}
+                  </Button>
+                  <p className="text-[10px] text-center text-white/40">
+                    Encrypted 256-Bit SSL Checkout • Automatic Printify Order Routing
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
-
-export default Shop;
+}

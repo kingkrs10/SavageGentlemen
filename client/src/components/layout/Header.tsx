@@ -81,10 +81,12 @@ const Header = ({ user: propUser, onProfileClick, onLogout, transparent }: Heade
         <nav className="hidden lg:flex items-center space-x-1 xl:space-x-2">
           {[
             { href: "/", label: "Home" },
-            { href: "/events", label: "Events" },
-            { href: "/passport", label: "Soca Passport", isSpecial: true },
+            { href: "/magazine", label: "Magazine", isSpecial: true },
+            { href: "/shop", label: "Shop" },
             { href: "/media", label: "Media & Mixes" },
-            { href: "/apps/itssoca-decoder", label: "itsSOCA Decoder", isSpecial: true },
+            { href: "/events", label: "Events" },
+            { href: "/passport", label: "Soca Passport" },
+            { href: "/apps", label: "Apps & AI" },
             { href: "/live", label: "Live Stream" },
           ].map((link) => {
             const isActive = location === link.href || (link.href !== "/" && location.startsWith(link.href));

@@ -33,6 +33,8 @@ import MotionFlyerAi from "@/pages/motion-flyer-ai";
 const Events = lazy(() => import("@/pages/events"));
 const EventDetail = lazy(() => import("@/pages/event-detail"));
 const Shop = lazy(() => import("@/pages/shop"));
+const Magazine = lazy(() => import("@/pages/magazine"));
+const ArticleDetail = lazy(() => import("@/pages/article-detail"));
 const Apps = lazy(() => import("@/pages/apps"));
 const AppsLanguageSensei = lazy(() => import("@/pages/apps-language-sensei"));
 const AppsSavagePhysics = lazy(() => import("@/pages/apps-savage-physics"));
@@ -90,6 +92,8 @@ function Router() {
         <Route path="/events" component={Events} />
         <Route path="/events/:id" component={EventDetail} />
         <Route path="/events/:id/:slug" component={EventDetail} />
+        <Route path="/magazine" component={Magazine} />
+        <Route path="/magazine/:slug" component={ArticleDetail} />
         <Route path="/shop" component={Shop} />
         <Route path="/apps" component={Apps} />
         <Route path="/apps/motion-flyer-ai" component={MotionFlyerAi} />

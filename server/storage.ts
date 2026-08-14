@@ -166,7 +166,10 @@ import {
   affiliateClicks,
   ticketTransfers,
   ticketRefunds,
-  emailSubscribers
+  emailSubscribers,
+  articles,
+  Article,
+  InsertArticle
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, gte, sql, lte, lt, isNotNull, not, inArray, or } from "drizzle-orm";
@@ -453,6 +456,17 @@ export interface IStorage {
   incrementSponsoredContentClicks(id: number): Promise<void>;
   incrementSponsoredContentViews(id: number): Promise<void>;
 
+  // Digital Magazine Articles operations
+  getAllArticles(options?: { category?: string; isPublished?: boolean; limit?: number; offset?: number }): Promise<Article[]>;
+  getArticleBySlug(slug: string): Promise<Article | undefined>;
+  getArticleById(id: number): Promise<Article | undefined>;
+  createArticle(data: InsertArticle): Promise<Article>;
+  updateArticle(id: number, data: Partial<InsertArticle>): Promise<Article>;
+  deleteArticle(id: number): Promise<void>;
+  incrementArticleViews(id: number): Promise<void>;
+  incrementArticleLikes(id: number): Promise<void>;
+  getFeaturedArticles(limit?: number): Promise<Article[]>;
+
   // Passport Profile operations
   getPassportProfile(userId: number): Promise<PassportProfile | undefined>;
   getPassportProfileByHandle(handle: string): Promise<PassportProfile | undefined>;
@@ -581,6 +595,7 @@ export class MemStorage implements IStorage {
   private mediaAssets: Map<number, MediaAsset>;
   private mediaAccessLogs: Map<number, MediaAccessLog>;
   private sponsoredContent: Map<number, SponsoredContent>;
+  private articlesMap: Map<number, Article>;
 
   private userCurrentId: number;
   private eventCurrentId: number;
@@ -618,6 +633,7 @@ export class MemStorage implements IStorage {
     this.mediaAssets = new Map();
     this.mediaAccessLogs = new Map();
     this.sponsoredContent = new Map();
+    this.articlesMap = new Map();
 
     this.userCurrentId = 1;
     this.eventCurrentId = 1;
@@ -2294,6 +2310,103 @@ export class MemStorage implements IStorage {
       content.updatedAt = new Date();
       this.sponsoredContent.set(id, content);
     }
+  }
+
+  async incrementSponsoredContentViews(id: number): Promise<void> {
+    const content = this.sponsoredContent.get(id);
+    if (content) {
+      content.views = (content.views || 0) + 1;
+      content.updatedAt = new Date();
+      this.sponsoredContent.set(id, content);
+    }
+  }
+
+  // Digital Magazine Articles
+  async getAllArticles(options?: { category?: string; isPublished?: boolean; limit?: number; offset?: number }): Promise<Article[]> {
+    let list = Array.from(this.articlesMap.values());
+    if (options?.category && options.category !== 'all') {
+      list = list.filter(a => a.category.toLowerCase() === options.category?.toLowerCase());
+    }
+    if (options?.isPublished !== undefined) {
+      list = list.filter(a => a.isPublished === options.isPublished);
+    }
+    list.sort((a, b) => new Date(b.publishedAt || b.createdAt).getTime() - new Date(a.publishedAt || a.createdAt).getTime());
+    if (options?.offset) list = list.slice(options.offset);
+    if (options?.limit) list = list.slice(0, options.limit);
+    return list;
+  }
+
+  async getArticleBySlug(slug: string): Promise<Article | undefined> {
+    return Array.from(this.articlesMap.values()).find(a => a.slug === slug);
+  }
+
+  async getArticleById(id: number): Promise<Article | undefined> {
+    return this.articlesMap.get(id);
+  }
+
+  async createArticle(data: InsertArticle): Promise<Article> {
+    const id = this.articlesMap.size + 1;
+    const article: Article = {
+      id,
+      slug: data.slug,
+      title: data.title,
+      summary: data.summary,
+      content: data.content,
+      category: data.category || 'nightlife',
+      featuredImage: data.featuredImage || null,
+      sourceUrl: data.sourceUrl || null,
+      sourceName: data.sourceName || null,
+      author: data.author || 'Savage Editorial',
+      tags: data.tags || null,
+      readTime: data.readTime || '3 min read',
+      views: 0,
+      likes: 0,
+      isAiGenerated: data.isAiGenerated ?? true,
+      isPublished: data.isPublished ?? true,
+      isFeatured: data.isFeatured ?? false,
+      igPosted: data.igPosted ?? false,
+      igPostId: data.igPostId || null,
+      publishedAt: data.publishedAt ? new Date(data.publishedAt) : new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.articlesMap.set(id, article);
+    return article;
+  }
+
+  async updateArticle(id: number, data: Partial<InsertArticle>): Promise<Article> {
+    const article = this.articlesMap.get(id);
+    if (!article) throw new Error(`Article ${id} not found`);
+    const updated = { ...article, ...data, updatedAt: new Date() } as Article;
+    this.articlesMap.set(id, updated);
+    return updated;
+  }
+
+  async deleteArticle(id: number): Promise<void> {
+    this.articlesMap.delete(id);
+  }
+
+  async incrementArticleViews(id: number): Promise<void> {
+    const article = this.articlesMap.get(id);
+    if (article) {
+      article.views = (article.views || 0) + 1;
+      this.articlesMap.set(id, article);
+    }
+  }
+
+  async incrementArticleLikes(id: number): Promise<void> {
+    const article = this.articlesMap.get(id);
+    if (article) {
+      article.likes = (article.likes || 0) + 1;
+      this.articlesMap.set(id, article);
+    }
+  }
+
+  async getFeaturedArticles(limit: number = 5): Promise<Article[]> {
+    return Array.from(this.articlesMap.values())
+      .filter(a => a.isPublished && a.isFeatured)
+      .sort((a, b) => new Date(b.publishedAt || b.createdAt).getTime() - new Date(a.publishedAt || a.createdAt).getTime())
+      .slice(0, limit);
   }
 
   // Media Collections
@@ -4805,6 +4918,99 @@ export class DatabaseStorage implements IStorage {
     await db.update(sponsoredContent)
       .set({ views: sql`${sponsoredContent.views} + 1` })
       .where(eq(sponsoredContent.id, id));
+  }
+
+  // Digital Magazine Articles
+  async getAllArticles(options?: { category?: string; isPublished?: boolean; limit?: number; offset?: number }): Promise<Article[]> {
+    try {
+      const conditions = [];
+      if (options?.category && options.category !== 'all') {
+        conditions.push(sql`LOWER(${articles.category}) = LOWER(${options.category})`);
+      }
+      if (options?.isPublished !== undefined) {
+        conditions.push(eq(articles.isPublished, options.isPublished));
+      }
+
+      let query = db.select().from(articles);
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as any;
+      }
+      query = query.orderBy(desc(articles.publishedAt), desc(articles.createdAt)) as any;
+
+      if (options?.limit) {
+        query = query.limit(options.limit) as any;
+      }
+      if (options?.offset) {
+        query = query.offset(options.offset) as any;
+      }
+
+      return await query;
+    } catch (error) {
+      console.error('Error fetching articles:', error);
+      return [];
+    }
+  }
+
+  async getArticleBySlug(slug: string): Promise<Article | undefined> {
+    try {
+      const [article] = await db.select().from(articles).where(eq(articles.slug, slug));
+      return article;
+    } catch (error) {
+      console.error('Error fetching article by slug:', error);
+      return undefined;
+    }
+  }
+
+  async getArticleById(id: number): Promise<Article | undefined> {
+    try {
+      const [article] = await db.select().from(articles).where(eq(articles.id, id));
+      return article;
+    } catch (error) {
+      console.error('Error fetching article by id:', error);
+      return undefined;
+    }
+  }
+
+  async createArticle(data: InsertArticle): Promise<Article> {
+    const [article] = await db.insert(articles).values(data).returning();
+    return article;
+  }
+
+  async updateArticle(id: number, data: Partial<InsertArticle>): Promise<Article> {
+    const [article] = await db.update(articles)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(articles.id, id))
+      .returning();
+    return article;
+  }
+
+  async deleteArticle(id: number): Promise<void> {
+    await db.delete(articles).where(eq(articles.id, id));
+  }
+
+  async incrementArticleViews(id: number): Promise<void> {
+    await db.update(articles)
+      .set({ views: sql`${articles.views} + 1` })
+      .where(eq(articles.id, id));
+  }
+
+  async incrementArticleLikes(id: number): Promise<void> {
+    await db.update(articles)
+      .set({ likes: sql`${articles.likes} + 1` })
+      .where(eq(articles.id, id));
+  }
+
+  async getFeaturedArticles(limit: number = 5): Promise<Article[]> {
+    try {
+      return await db.select()
+        .from(articles)
+        .where(and(eq(articles.isPublished, true), eq(articles.isFeatured, true)))
+        .orderBy(desc(articles.publishedAt), desc(articles.createdAt))
+        .limit(limit);
+    } catch (error) {
+      console.error('Error fetching featured articles:', error);
+      return [];
+    }
   }
 
   async getFreeTicketPurchases(): Promise<any[]> {

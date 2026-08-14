@@ -195,9 +195,11 @@ import {
   Filter,
   Plus,
   Trash,
-  DollarSign
+  DollarSign,
+  BookOpen
 } from "lucide-react";
 import AdminMediaPage from "./admin-media";
+import { MagazineAdminManager } from "@/components/admin/MagazineAdminManager";
 import LivestreamManager from "@/components/admin/LivestreamManager";
 import TicketScanner from "@/components/admin/TicketScanner";
 import PassportManager from "@/components/admin/PassportManager";
@@ -1843,6 +1845,9 @@ export default function AdminPage() {
             </TabsTrigger>
             <TabsTrigger value="ads" className="flex items-center gap-2">
               <Megaphone className="h-4 w-4" /> Ads
+            </TabsTrigger>
+            <TabsTrigger value="magazine" className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4" /> Magazine & IG
             </TabsTrigger>
             <TabsTrigger value="media" className="flex items-center gap-2">
               <ImageIcon className="h-4 w-4" /> Media
@@ -3854,6 +3859,9 @@ export default function AdminPage() {
           </TabsContent>
           <TabsContent value="affiliates">
             <AffiliateManager />
+          </TabsContent>
+          <TabsContent value="magazine">
+            <MagazineAdminManager />
           </TabsContent>
         </Tabs>
 

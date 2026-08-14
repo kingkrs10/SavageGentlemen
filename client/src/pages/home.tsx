@@ -28,6 +28,7 @@ import { useAudioPlayer } from "@/context/AudioPlayerContext";
 import SGFlyerLogoPng from "@/assets/SGFLYERLOGO.png";
 import BrandVideo from "@/assets/videos/brand-video.mp4";
 import EventCard from "@/components/home/EventCard";
+import { AdSpace } from "@/components/home/AdSpace";
 
 const Home = () => {
   const [, navigate] = useLocation();
@@ -42,6 +43,18 @@ const Home = () => {
   });
 
   const nextUpcomingEvent = featuredEvents && featuredEvents.length > 0 ? featuredEvents[0] : null;
+
+  // Fetch latest magazine stories
+  const { data: latestArticles = [] } = useQuery<any[]>({
+    queryKey: ["/api/magazine/articles?limit=3"],
+    queryFn: () => fetch("/api/magazine/articles?limit=3").then(res => res.json()).catch(() => []),
+  });
+
+  // Fetch featured streetwear drops
+  const { data: merchDrops = [] } = useQuery<any[]>({
+    queryKey: ["/api/merch/catalog"],
+    queryFn: () => fetch("/api/merch/catalog").then(res => res.json()).catch(() => []),
+  });
 
   // Real-time countdown timer to next event or next carnival season
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -232,41 +245,39 @@ const Home = () => {
         <div className="relative z-10 pt-6 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="p-4 rounded-2xl glass-obsidian border border-gold-500/30 hover:border-gold-500/60 transition-all flex items-center justify-between group">
             <div>
-              <span className="text-[10px] uppercase font-mono tracking-widest text-gold-400 font-bold">EVENT TICKETING</span>
-              <h3 className="text-sm font-bold text-white group-hover:text-gold-300 transition-colors">
-                {nextUpcomingEvent ? nextUpcomingEvent.title : "UPCOMING SCHEDULE"}
-              </h3>
-              <p className="text-xs text-white/50">{nextUpcomingEvent ? nextUpcomingEvent.location : "Official Fetes & Cruises"}</p>
+              <span className="text-[10px] uppercase font-mono tracking-widest text-gold-400 font-bold">SAVAGE MAGAZINE</span>
+              <h3 className="text-sm font-bold text-white group-hover:text-gold-300 transition-colors">CULTURE DISPATCHES</h3>
+              <p className="text-xs text-white/50">Nightlife, Rum & Sound Riddims</p>
             </div>
             <Button
               size="sm"
-              onClick={() => navigate('/events')}
+              onClick={() => navigate('/magazine')}
               className="bg-gold-500/20 hover:bg-gold-500 text-gold-300 hover:text-black font-bold text-xs uppercase tracking-wider rounded-xl px-3 py-1.5"
             >
-              View Schedule
+              Read Stories
             </Button>
           </div>
 
           <div className="p-4 rounded-2xl glass-obsidian border border-gold-500/30 hover:border-gold-500/60 transition-all flex items-center justify-between group">
             <div>
-              <span className="text-[10px] uppercase font-mono tracking-widest text-gold-400 font-bold">LOYALTY PERKS</span>
-              <h3 className="text-sm font-bold text-white group-hover:text-gold-300 transition-colors">SOCA PASSPORT STAMPS</h3>
-              <p className="text-xs text-white/50">Earn 50-75 credits & unlock VIP perks</p>
+              <span className="text-[10px] uppercase font-mono tracking-widest text-gold-400 font-bold">LUXURY STREETWEAR</span>
+              <h3 className="text-sm font-bold text-white group-hover:text-gold-300 transition-colors">OFFICIAL MERCH STORE</h3>
+              <p className="text-xs text-white/50">Heavyweight Hoodies & Barware</p>
             </div>
             <Button
               size="sm"
-              onClick={() => navigate('/passport')}
+              onClick={() => navigate('/shop')}
               className="bg-gold-500/20 hover:bg-gold-500 text-gold-300 hover:text-black font-bold text-xs uppercase tracking-wider rounded-xl px-3 py-1.5"
             >
-              View Perks
+              Shop Drops
             </Button>
           </div>
 
           <div className="hidden lg:flex p-4 rounded-2xl glass-obsidian border border-cyan-500/30 hover:border-cyan-500/60 transition-all items-center justify-between group">
             <div>
-              <span className="text-[10px] uppercase font-mono tracking-widest text-cyan-400 font-bold">AI AUDIO ENGINE</span>
+              <span className="text-[10px] uppercase font-mono tracking-widest text-cyan-400 font-bold">AUDIO ENGINE</span>
               <h3 className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors">itsSOCA DECODER</h3>
-              <p className="text-xs text-white/50">Isolate Stems & Export DJ Crates</p>
+              <p className="text-xs text-white/50">Isolate Stems & DJ Crates</p>
             </div>
             <Button
               size="sm"
@@ -278,6 +289,130 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* Top Header Sponsor Ticker */}
+      <AdSpace placement="header_ticker" />
+
+      {/* ── 2. LATEST SAVAGE MAGAZINE DISPATCHES ── */}
+      {latestArticles.length > 0 && (
+        <section className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-500/10 text-gold-400 border border-gold-500/20 text-xs font-mono font-bold uppercase tracking-widest mb-2">
+                <Sparkles className="w-3.5 h-3.5 text-gold-400" />
+                AUTONOMOUS DIGITAL EDITORIAL
+              </div>
+              <h2 className="text-3xl md:text-5xl font-heading font-extrabold uppercase tracking-tight text-white">
+                SAVAGE <span className="gold-gradient-text">MAGAZINE</span>
+              </h2>
+            </div>
+            <Link href="/magazine">
+              <Button variant="outline" className="glass-obsidian border-gold-500/30 text-gold-300 hover:text-white rounded-xl uppercase text-xs tracking-wider font-bold">
+                Read All Dispatches
+                <ChevronRight className="w-4 h-4 ml-1.5" />
+              </Button>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {latestArticles.map((art: any) => (
+              <Link key={art.id} href={`/magazine/${art.slug}`}>
+                <div className="h-full rounded-2xl border border-gold-500/15 bg-obsidian-card hover:border-gold-500/40 transition-all p-5 flex flex-col justify-between group cursor-pointer shadow-lg space-y-4">
+                  <div className="relative w-full h-48 rounded-xl overflow-hidden bg-obsidian-dark">
+                    <img
+                      src={art.featuredImage || "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&h=500&fit=crop"}
+                      alt={art.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute top-2 left-2">
+                      <span className="px-2 py-0.5 rounded-full bg-obsidian/85 text-[10px] font-mono font-bold uppercase tracking-wider text-gold-300 border border-gold-500/30">
+                        {art.category}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="font-heading text-lg font-bold text-white group-hover:text-gold-300 transition-colors line-clamp-2">
+                      {art.title}
+                    </h3>
+                    <p className="text-xs text-white/60 line-clamp-2">
+                      {art.summary}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs font-mono text-gold-400">
+                    <span>{art.readTime || "3 min read"}</span>
+                    <span className="inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                      Read Story &rarr;
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── 3. FEATURED STREETWEAR DROPS (PRINT-ON-DEMAND) ── */}
+      {merchDrops.length > 0 && (
+        <section className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-500/10 text-gold-400 border border-gold-500/20 text-xs font-mono font-bold uppercase tracking-widest mb-2">
+                <ShieldCheck className="w-3.5 h-3.5 text-gold-400" />
+                OFFICIAL STREETWEAR DROPS
+              </div>
+              <h2 className="text-3xl md:text-5xl font-heading font-extrabold uppercase tracking-tight text-white">
+                SAVAGE <span className="gold-gradient-text">DROPS</span>
+              </h2>
+            </div>
+            <Link href="/shop">
+              <Button variant="outline" className="glass-obsidian border-gold-500/30 text-gold-300 hover:text-white rounded-xl uppercase text-xs tracking-wider font-bold">
+                View Full Catalog
+                <ChevronRight className="w-4 h-4 ml-1.5" />
+              </Button>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {merchDrops.slice(0, 3).map((item: any) => (
+              <div
+                key={item.id}
+                className="rounded-2xl border border-gold-500/15 bg-obsidian-card hover:border-gold-500/40 transition-all p-5 flex flex-col justify-between group shadow-lg space-y-4"
+              >
+                <div className="relative w-full h-64 rounded-xl overflow-hidden bg-obsidian-dark">
+                  <img
+                    src={item.images[0]}
+                    alt={item.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute bottom-2 right-2 bg-obsidian/90 px-3 py-1 rounded-full border border-gold-500/30 font-mono text-sm font-bold text-gold-400">
+                    ${(item.price / 100).toFixed(2)}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-heading text-lg font-bold text-white group-hover:text-gold-300 transition-colors">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs text-white/60 line-clamp-2 mt-1">
+                    {item.description}
+                  </p>
+                </div>
+
+                <Link href="/shop">
+                  <Button className="w-full bg-gold-500/20 hover:bg-gold-500 text-gold-300 hover:text-obsidian border border-gold-500/40 text-xs font-bold uppercase tracking-wider">
+                    View & Order Drop
+                  </Button>
+                </Link>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* In-Feed Native Sponsor Ad */}
+      <AdSpace placement="article_inline" />
 
       {/* ── 2. FEATURED EVENTS SHOWCASE (LIVE DB DRIVEN) ── */}
       <section className="space-y-8">

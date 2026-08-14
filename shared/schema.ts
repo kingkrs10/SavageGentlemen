@@ -1159,6 +1159,7 @@ export const sponsoredContent = pgTable("sponsored_content", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   type: text("type").notNull().default("standard"), // standard, banner, product, event, video
+  placement: text("placement").notNull().default("header_ticker"), // header_ticker, article_inline, article_sidebar, shop_feed, audio_player
   imageUrl: text("image_url"),
   logoUrl: text("logo_url"),
   linkUrl: text("link_url"),
@@ -2493,3 +2494,39 @@ export type InsertAffiliate = z.infer<typeof insertAffiliateSchema>;
 export const insertAffiliateClickSchema = createInsertSchema(affiliateClicks).omit({ id: true, clickedAt: true });
 export type AffiliateClick = typeof affiliateClicks.$inferSelect;
 export type InsertAffiliateClick = z.infer<typeof insertAffiliateClickSchema>;
+
+// Digital Magazine Articles
+export const articles = pgTable("articles", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  summary: text("summary").notNull(),
+  content: text("content").notNull(), // Markdown / Editorial content
+  category: text("category").notNull().default("nightlife"), // nightlife, music, style, cocktails, culture
+  featuredImage: text("featured_image"),
+  sourceUrl: text("source_url"),
+  sourceName: text("source_name"),
+  author: text("author").default("Savage Editorial"),
+  tags: text("tags").array(),
+  readTime: text("read_time").default("3 min read"),
+  views: integer("views").default(0),
+  likes: integer("likes").default(0),
+  isAiGenerated: boolean("is_ai_generated").default(true),
+  isPublished: boolean("is_published").default(true),
+  isFeatured: boolean("is_featured").default(false),
+  igPosted: boolean("ig_posted").default(false),
+  igPostId: text("ig_post_id"),
+  publishedAt: timestamp("published_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertArticleSchema = createInsertSchema(articles).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true, 
+  views: true, 
+  likes: true 
+});
+export type Article = typeof articles.$inferSelect;
+export type InsertArticle = z.infer<typeof insertArticleSchema>;

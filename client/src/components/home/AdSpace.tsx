@@ -1,13 +1,12 @@
-import { useState } from "react";
-import { Link } from "wouter";
-import { ExternalLink, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ExternalLink, X, Sparkles, Tag, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { cn } from "@/lib/utils";
 
-interface AdData {
-  id: string;
+export interface AdData {
+  id: number | string;
   title: string;
   description: string;
   imageUrl?: string;
@@ -16,296 +15,268 @@ interface AdData {
   textColor?: string;
   ctaText?: string;
   logoUrl?: string;
-  type?: 'standard' | 'banner' | 'product' | 'video' | 'event';
-  videoUrl?: string;
+  type?: "standard" | "banner" | "product" | "video" | "event";
+  placement?: "header_ticker" | "article_inline" | "article_sidebar" | "shop_feed" | "audio_player";
   price?: string;
-  eventDate?: string;
-  location?: string;
 }
 
-const AdSpace = () => {
-  const [dismissedAds, setDismissedAds] = useState<string[]>([]);
+interface AdSpaceProps {
+  placement?: "header_ticker" | "article_inline" | "article_sidebar" | "shop_feed" | "audio_player";
+  className?: string;
+}
 
-  // Fetch active sponsored content from database
-  const { data: sponsoredContent = [], isLoading } = useQuery({
-    queryKey: ['/api/sponsored-content/active'],
-    queryFn: () => apiRequest('GET', '/api/sponsored-content/active').then(res => res.json())
+const FALLBACK_ADS: Record<string, AdData> = {
+  header_ticker: {
+    id: "fallback-ticker",
+    title: "Bumbu XO Artisanal Rum | The Official Spirit of Caribbean Nocturne",
+    description: "Aged in bourbon casks and finished in white oak sherry casks.",
+    linkUrl: "https://bumbu.com",
+    ctaText: "Explore Vintage",
+    backgroundColor: "bg-gradient-to-r from-gold-950/80 via-obsidian to-gold-950/80",
+    textColor: "text-gold-200",
+    placement: "header_ticker",
+  },
+  article_inline: {
+    id: "fallback-inline",
+    title: "Virgin Atlantic x Caribbean Airways: Direct Carnival Fete Routes",
+    description: "Book your non-stop flights to Trinidad, Barbados, and Jamaica with extra baggage allowance for costumes.",
+    imageUrl: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&h=400&fit=crop",
+    linkUrl: "https://virginatlantic.com",
+    ctaText: "Check Flight Deals",
+    backgroundColor: "bg-obsidian-card",
+    textColor: "text-white",
+    placement: "article_inline",
+  },
+  article_sidebar: {
+    id: "fallback-sidebar",
+    title: "Angostura 1824 Aged Rum",
+    description: "Handcrafted master blend from Trinidad & Tobago.",
+    imageUrl: "https://images.unsplash.com/photo-1527061011665-3652c757a4d4?w=400&h=500&fit=crop",
+    linkUrl: "https://angostura.com",
+    ctaText: "Taste The Legend",
+    placement: "article_sidebar",
+  },
+  shop_feed: {
+    id: "fallback-shop",
+    title: "Savage Gentlemen VIP Flask Set",
+    description: "Laser-engraved matte black food-grade stainless steel flask with gold funnel.",
+    imageUrl: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&h=600&fit=crop",
+    linkUrl: "/shop",
+    ctaText: "Order Merch",
+    price: "$48.00",
+    placement: "shop_feed",
+  },
+  audio_player: {
+    id: "fallback-player",
+    title: "Pioneer DJ x Savage Nocturne Sound Lab",
+    description: "Official Sound Equipment Partner",
+    linkUrl: "https://pioneerdj.com",
+    ctaText: "Pro Gear",
+    placement: "audio_player",
+  },
+};
+
+export const AdSpace = ({ placement = "header_ticker", className }: AdSpaceProps) => {
+  const [dismissed, setDismissed] = useState(false);
+
+  // Fetch active sponsored content from API
+  const { data: ads = [] } = useQuery<AdData[]>({
+    queryKey: [`/api/ads/active?placement=${placement}`],
+    queryFn: async () => {
+      try {
+        const res = await apiRequest("GET", `/api/ads/active?placement=${placement}`);
+        return await res.json();
+      } catch {
+        return [];
+      }
+    },
   });
 
-  // Convert database ads to AdData format
-  const ads: AdData[] = sponsoredContent.map((ad: any) => ({
-    id: ad.id.toString(),
-    title: ad.title,
-    description: ad.description,
-    imageUrl: ad.imageUrl,
-    linkUrl: ad.linkUrl,
-    backgroundColor: ad.backgroundColor || 'bg-gray-800',
-    textColor: ad.textColor || 'text-white',
-    ctaText: ad.ctaText || 'Learn More',
-    logoUrl: ad.logoUrl,
-    type: ad.type,
-    videoUrl: ad.videoUrl,
-    price: ad.price,
-    eventDate: ad.eventDate,
-    location: ad.location
-  }));
+  const activeAd = ads.length > 0 ? ads[0] : FALLBACK_ADS[placement];
 
-  // Fallback placeholder ads only if no database content
-  const placeholderAds: AdData[] = [
-    // Standard ad
-    {
-      id: "sponsor-1",
-      type: "standard",
-      title: "Premium Sound Systems",
-      description: "Experience crystal-clear audio at every event. Professional DJ equipment rentals available.",
-      backgroundColor: "bg-gradient-to-r from-blue-600 to-purple-600",
-      textColor: "text-white",
-      ctaText: "Learn More",
-      linkUrl: "#"
-    },
-    // Banner ad with background image
-    {
-      id: "banner-1",
-      type: "banner",
-      title: "Caribbean Food Festival",
-      description: "Join us for authentic flavors and live music this weekend!",
-      imageUrl: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&h=400&fit=crop",
-      backgroundColor: "bg-black/60",
-      textColor: "text-white",
-      ctaText: "Get Tickets",
-      linkUrl: "#",
-      eventDate: "June 15-16, 2025",
-      location: "Downtown Park"
-    },
-    // Product showcase ad
-    {
-      id: "product-1",
-      type: "product",
-      title: "Limited Edition SG Merchandise",
-      description: "Exclusive collection available for a limited time only.",
-      imageUrl: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=300&fit=crop",
-      backgroundColor: "bg-gradient-to-r from-purple-600 to-pink-600",
-      textColor: "text-white",
-      ctaText: "Shop Now",
-      linkUrl: "#",
-      price: "$29.99"
-    },
-    // Event promotion ad
-    {
-      id: "event-1",
-      type: "event",
-      title: "Soca Night 2025",
-      description: "The biggest soca party of the year featuring top Caribbean artists.",
-      imageUrl: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&h=400&fit=crop",
-      backgroundColor: "bg-gradient-to-r from-orange-500 to-red-500",
-      textColor: "text-white",
-      ctaText: "Buy Tickets",
-      linkUrl: "/events",
-      eventDate: "July 4, 2025",
-      location: "Convention Center"
+  // Track impression once
+  useEffect(() => {
+    if (activeAd && typeof activeAd.id === "number") {
+      apiRequest("POST", `/api/ads/${activeAd.id}/view`).catch(() => {});
     }
-  ];
+  }, [activeAd?.id]);
 
-  // Use real ads if available, otherwise show nothing during loading
-  const displayAds = ads.length > 0 ? ads : (isLoading ? [] : placeholderAds.slice(0, 1));
-
-  const visibleAds = displayAds.filter(ad => !dismissedAds.includes(ad.id));
-
-  const dismissAd = (adId: string) => {
-    setDismissedAds(prev => [...prev, adId]);
-  };
-
-  // Track ad clicks
-  const trackAdClick = async (adId: string) => {
-    try {
-      await apiRequest('POST', `/api/sponsored-content/${adId}/click`);
-    } catch (error) {
-      console.error('Failed to track ad click:', error);
+  const handleAdClick = () => {
+    if (activeAd && typeof activeAd.id === "number") {
+      apiRequest("POST", `/api/ads/${activeAd.id}/click`).catch(() => {});
     }
   };
 
-  const renderAdContent = (ad: AdData) => {
-    switch (ad.type) {
-      case 'banner':
-        return (
-          <div className="relative h-48 overflow-hidden rounded-lg">
-            {ad.imageUrl && (
-              <img 
-                src={ad.imageUrl} 
-                alt={ad.title}
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-            )}
-            <div className={`absolute inset-0 ${ad.backgroundColor} flex items-center`}>
-              <div className="p-6 w-full">
-                <h3 className={`font-bold text-2xl mb-2 ${ad.textColor}`}>
-                  {ad.title}
-                </h3>
-                <p className={`text-base mb-3 opacity-90 ${ad.textColor}`}>
-                  {ad.description}
-                </p>
-                {ad.eventDate && (
-                  <p className={`text-sm mb-2 opacity-80 ${ad.textColor}`}>
-                    📅 {ad.eventDate} • 📍 {ad.location}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        );
+  if (dismissed || !activeAd) return null;
 
-      case 'product':
-        return (
-          <div className={`${ad.backgroundColor} rounded-lg overflow-hidden`}>
-            <div className="flex">
-              {ad.imageUrl && (
-                <div className="w-32 h-32 flex-shrink-0">
-                  <img 
-                    src={ad.imageUrl} 
-                    alt={ad.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+  // 1. TOP HEADER TICKER BANNER
+  if (placement === "header_ticker") {
+    return (
+      <div className={cn("relative w-full bg-gradient-to-r from-obsidian-dark via-gold-950/40 to-obsidian-dark border-y border-gold-500/25 px-4 py-2 text-xs backdrop-blur-md z-40 transition-all", className)}>
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 overflow-hidden">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gold-500/20 text-gold-400 font-mono text-[10px] font-bold uppercase tracking-widest border border-gold-500/40 shrink-0">
+              <Sparkles className="w-3 h-3 text-gold-400 animate-pulse" />
+              Sponsor
+            </span>
+            <p className="text-white/90 font-medium truncate">
+              {activeAd.title}
+              {activeAd.description && (
+                <span className="hidden md:inline text-white/50 ml-2">— {activeAd.description}</span>
               )}
-              <div className="p-4 flex-1">
-                <h3 className={`font-bold text-lg mb-2 ${ad.textColor}`}>
-                  {ad.title}
-                </h3>
-                <p className={`text-sm mb-2 opacity-90 ${ad.textColor}`}>
-                  {ad.description}
-                </p>
-                {ad.price && (
-                  <p className={`text-xl font-bold mb-2 ${ad.textColor}`}>
-                    {ad.price}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'event':
-        return (
-          <div className="relative overflow-hidden rounded-lg">
-            {ad.imageUrl && (
-              <div className="h-32 relative">
-                <img 
-                  src={ad.imageUrl} 
-                  alt={ad.title}
-                  className="w-full h-full object-cover"
-                />
-                <div className={`absolute inset-0 ${ad.backgroundColor}`}></div>
-              </div>
-            )}
-            <div className={`${!ad.imageUrl ? ad.backgroundColor : 'bg-gray-900'} p-4`}>
-              <h3 className={`font-bold text-lg mb-2 ${ad.textColor}`}>
-                {ad.title}
-              </h3>
-              <p className={`text-sm mb-3 opacity-90 ${ad.textColor}`}>
-                {ad.description}
-              </p>
-              <div className="flex justify-between text-sm">
-                {ad.eventDate && (
-                  <span className={`opacity-80 ${ad.textColor}`}>
-                    📅 {ad.eventDate}
-                  </span>
-                )}
-                {ad.location && (
-                  <span className={`opacity-80 ${ad.textColor}`}>
-                    📍 {ad.location}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-
-      default: // standard
-        return (
-          <div className={`${ad.backgroundColor} p-6 rounded-lg ${ad.textColor} relative`}>
-            {ad.logoUrl && (
-              <div className="mb-3">
-                <img 
-                  src={ad.logoUrl} 
-                  alt={`${ad.title} logo`}
-                  className="h-8 object-contain"
-                />
-              </div>
-            )}
-            <h3 className={`font-bold text-lg mb-2 ${ad.textColor}`}>
-              {ad.title}
-            </h3>
-            <p className={`text-sm mb-4 opacity-90 ${ad.textColor}`}>
-              {ad.description}
             </p>
           </div>
-        );
-    }
-  };
 
-  if (visibleAds.length === 0) {
-    return null;
+          <div className="flex items-center gap-3 shrink-0">
+            <a
+              href={activeAd.linkUrl || "#"}
+              target={activeAd.linkUrl?.startsWith("http") ? "_blank" : "_self"}
+              rel="noopener noreferrer"
+              onClick={handleAdClick}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-500/20 hover:bg-gold-500/30 text-gold-300 border border-gold-500/40 font-semibold text-[11px] transition-all"
+            >
+              {activeAd.ctaText || "Learn More"}
+              <ArrowRight className="w-3 h-3" />
+            </a>
+            <button
+              onClick={() => setDismissed(true)}
+              className="text-white/40 hover:text-white transition-colors"
+              aria-label="Dismiss announcement"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  return (
-    <div className="space-y-4">
-      {visibleAds.map((ad) => (
-        <Card key={ad.id} className="relative overflow-hidden border-0 bg-transparent">
-          <CardContent className="p-0">
-            <button
-              onClick={() => dismissAd(ad.id)}
-              className="absolute top-2 right-2 z-10 p-1 rounded-full bg-black/30 hover:bg-black/50 transition-colors text-white"
-              aria-label="Dismiss ad"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            
-            {renderAdContent(ad)}
-            
-            {ad.linkUrl && (
-              <div className="p-4 bg-gray-900">
-                {ad.linkUrl.startsWith('http') ? (
-                  <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer">
-                    <Button 
-                      variant="secondary" 
-                      size="sm"
-                      className="bg-white/20 hover:bg-white/30 text-white border-white/30 w-full"
-                      onClick={() => trackAdClick(ad.id)}
-                    >
-                      {ad.ctaText || "Learn More"}
-                      <ExternalLink className="w-4 h-4 ml-2" />
-                    </Button>
-                  </a>
-                ) : (
-                  <Link href={ad.linkUrl}>
-                    <Button 
-                      variant="secondary" 
-                      size="sm"
-                      className="bg-white/20 hover:bg-white/30 text-white border-white/30 w-full"
-                      onClick={() => trackAdClick(ad.id)}
-                    >
-                      {ad.ctaText || "Learn More"}
-                      <ExternalLink className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      ))}
-      
-      {/* Ad space placeholder for future ads */}
-      <Card className="border-2 border-dashed border-gray-600 bg-gray-900/50">
-        <CardContent className="p-6 text-center">
-          <div className="text-gray-400">
-            <div className="text-sm font-medium mb-2">Sponsored Content</div>
-            <div className="text-xs">
-              Advertise your business here
+  // 2. INLINE EDITORIAL ARTICLE BANNER
+  if (placement === "article_inline") {
+    return (
+      <div className={cn("my-8 p-6 rounded-2xl border border-gold-500/20 bg-gradient-to-br from-obsidian-card via-obsidian to-obsidian-card shadow-xl overflow-hidden relative group", className)}>
+        <div className="absolute top-3 right-3">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-gold-400/70 border border-gold-500/20 px-2 py-0.5 rounded-full bg-gold-500/10">
+            Sponsored Feature
+          </span>
+        </div>
+
+        <div className="flex flex-col md:flex-row items-center gap-6">
+          {activeAd.imageUrl && (
+            <div className="w-full md:w-48 h-36 rounded-xl overflow-hidden shrink-0 border border-white/10">
+              <img
+                src={activeAd.imageUrl}
+                alt={activeAd.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+            </div>
+          )}
+
+          <div className="flex-1 space-y-2 text-left">
+            <h4 className="text-lg font-bold text-white group-hover:text-gold-300 transition-colors">
+              {activeAd.title}
+            </h4>
+            <p className="text-sm text-white/70 leading-relaxed">
+              {activeAd.description}
+            </p>
+            <div className="pt-2">
+              <a
+                href={activeAd.linkUrl || "#"}
+                target={activeAd.linkUrl?.startsWith("http") ? "_blank" : "_self"}
+                rel="noopener noreferrer"
+                onClick={handleAdClick}
+              >
+                <Button size="sm" className="bg-gold-500 hover:bg-gold-400 text-obsidian font-bold text-xs gap-1.5 shadow-md">
+                  {activeAd.ctaText || "Check It Out"}
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </Button>
+              </a>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. ARTICLE SIDEBAR CARD
+  if (placement === "article_sidebar") {
+    return (
+      <div className={cn("rounded-2xl border border-gold-500/20 bg-obsidian-card p-4 space-y-4 text-center relative overflow-hidden", className)}>
+        <span className="text-[9px] font-mono uppercase tracking-widest text-gold-400/70 block">
+          Official Partner
+        </span>
+        {activeAd.imageUrl && (
+          <div className="w-full h-40 rounded-xl overflow-hidden border border-white/10">
+            <img src={activeAd.imageUrl} alt={activeAd.title} className="w-full h-full object-cover" />
+          </div>
+        )}
+        <div className="space-y-1">
+          <h5 className="font-bold text-sm text-white">{activeAd.title}</h5>
+          <p className="text-xs text-white/60">{activeAd.description}</p>
+        </div>
+        <a
+          href={activeAd.linkUrl || "#"}
+          target={activeAd.linkUrl?.startsWith("http") ? "_blank" : "_self"}
+          rel="noopener noreferrer"
+          onClick={handleAdClick}
+          className="block w-full"
+        >
+          <Button size="sm" variant="outline" className="w-full border-gold-500/40 text-gold-300 hover:bg-gold-500/10 text-xs">
+            {activeAd.ctaText || "Learn More"}
+          </Button>
+        </a>
+      </div>
+    );
+  }
+
+  // 4. SHOP FEED SPONSORED PRODUCT CARD
+  if (placement === "shop_feed") {
+    return (
+      <div className={cn("rounded-2xl border border-gold-500/30 bg-gradient-to-b from-obsidian-card to-obsidian p-4 flex flex-col justify-between relative group hover:border-gold-500/60 transition-all", className)}>
+        <div className="absolute top-3 left-3 z-10">
+          <span className="px-2 py-0.5 rounded-full bg-gold-500 text-obsidian text-[10px] font-mono font-bold uppercase tracking-wider shadow">
+            Featured Partner
+          </span>
+        </div>
+        {activeAd.imageUrl && (
+          <div className="w-full h-64 rounded-xl overflow-hidden bg-white/5 mb-4">
+            <img src={activeAd.imageUrl} alt={activeAd.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          </div>
+        )}
+        <div className="space-y-2 text-left">
+          <h4 className="font-bold text-white text-base group-hover:text-gold-300 transition-colors">{activeAd.title}</h4>
+          <p className="text-xs text-white/60 line-clamp-2">{activeAd.description}</p>
+          <div className="flex items-center justify-between pt-2">
+            <span className="text-sm font-mono font-bold text-gold-400">{activeAd.price || "Partner Deal"}</span>
+            <a
+              href={activeAd.linkUrl || "#"}
+              target={activeAd.linkUrl?.startsWith("http") ? "_blank" : "_self"}
+              rel="noopener noreferrer"
+              onClick={handleAdClick}
+            >
+              <Button size="sm" className="bg-gold-500/20 hover:bg-gold-500/30 text-gold-300 border border-gold-500/40 text-xs">
+                {activeAd.ctaText || "View Deal"}
+              </Button>
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 5. AUDIO PLAYER COMPANION BADGE
+  return (
+    <div className={cn("inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-gold-500/10 border border-gold-500/30 text-xs text-gold-300", className)}>
+      <span className="text-[9px] font-mono uppercase tracking-widest text-gold-400 font-bold">Partner:</span>
+      <a
+        href={activeAd.linkUrl || "#"}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={handleAdClick}
+        className="hover:underline font-medium text-white text-xs truncate max-w-[140px]"
+      >
+        {activeAd.title}
+      </a>
     </div>
   );
 };
