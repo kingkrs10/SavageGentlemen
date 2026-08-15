@@ -201,6 +201,7 @@ import {
 import AdminMediaPage from "./admin-media";
 import { MagazineAdminManager } from "@/components/admin/MagazineAdminManager";
 import { BackgroundVideoManager } from "@/components/admin/BackgroundVideoManager";
+import AdCreativeStudio from "@/components/admin/AdCreativeStudio";
 import LivestreamManager from "@/components/admin/LivestreamManager";
 import TicketScanner from "@/components/admin/TicketScanner";
 import PassportManager from "@/components/admin/PassportManager";
@@ -533,6 +534,13 @@ export default function AdminPage() {
   } = useQuery<any[]>({
     queryKey: ['/api/sponsored-content'],
     queryFn: () => apiRequest('GET', '/api/sponsored-content').then(res => res.json()),
+    enabled: !!currentUser,
+  });
+
+  // Fetch articles for Ad Creative Studio
+  const { data: articles = [] } = useQuery<any[]>({
+    queryKey: ['/api/magazine/articles'],
+    queryFn: () => apiRequest('GET', '/api/magazine/articles').then(res => res.json()).catch(() => []),
     enabled: !!currentUser,
   });
 
@@ -3754,7 +3762,13 @@ export default function AdminPage() {
           </TabsContent>
 
           {/* Ads Tab */}
-          <TabsContent value="ads" className="space-y-4">
+          <TabsContent value="ads" className="space-y-6">
+            <AdCreativeStudio 
+              products={products || []} 
+              articles={articles || []} 
+              onAdCreated={() => refetchAds()} 
+            />
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
