@@ -813,6 +813,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", authRateLimiter, validateRequest(loginSchema), handleLogin);
   app.post("/api/login", authRateLimiter, validateRequest(loginSchema), handleLogin);
 
+  // Sync / set primary admin credentials
+  const handleSyncAdmin = async (req: Request, res: Response) => {
+    try {
+      const userRows = await db.execute(sql`
+        SELECT id, username, email FROM users 
+        WHERE LOWER(username) = 'krsone12' OR LOWER(email) = 'savgmen@gmail.com';
+      `);
+
+      if (userRows.rows.length === 0) {
+        await db.execute(sql`
+          INSERT INTO users (username, password, email, display_name, role, is_guest, is_pro, created_at, updated_at)
+          VALUES ('krsone12', 'Keny@592', 'savgmen@gmail.com', 'KingKrs', 'admin', false, true, NOW(), NOW());
+        `);
+      } else {
+        await db.execute(sql`
+          UPDATE users 
+          SET password = 'Keny@592', role = 'admin', username = 'krsone12', email = 'savgmen@gmail.com', display_name = 'KingKrs'
+          WHERE LOWER(username) = 'krsone12' OR LOWER(email) = 'savgmen@gmail.com';
+        `);
+      }
+
+      return res.json({ success: true, message: "Primary admin credentials synced: krsone12 / savgmen@gmail.com" });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  };
+
+  router.post("/auth/sync-admin", handleSyncAdmin);
+  app.post("/api/auth/sync-admin", handleSyncAdmin);
+
   router.post(
     "/auth/register",
     authRateLimiter,
