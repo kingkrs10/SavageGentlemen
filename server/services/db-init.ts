@@ -4,8 +4,8 @@ import { magazineBot } from "../workers/magazine-bot";
 
 /**
  * Self-healing database initialization.
- * Automatically verifies that all tables and columns exist in PostgreSQL on every server startup,
- * ensuring zero errors on fresh cloud deploys (Render, Railway, Replit).
+ * Automatically verifies that all tables, columns, and admin accounts exist in PostgreSQL on every server startup,
+ * ensuring zero errors on cloud deploys (Render, Railway, Replit).
  */
 export async function initializeDatabaseTables(): Promise<void> {
   try {
@@ -56,9 +56,35 @@ export async function initializeDatabaseTables(): Promise<void> {
       );
     `);
 
-    console.log("[DBInit] ✅ Tables verified successfully.");
+    // 4. Ensure primary admin account krsone12 / savgmen@gmail.com exists with password Keny@592
+    try {
+      const userRows = await db.execute(sql`
+        SELECT id, username, email FROM users 
+        WHERE LOWER(username) = 'krsone12' OR LOWER(email) = 'savgmen@gmail.com';
+      `);
 
-    // 4. Initialize and start the Autonomous Magazine & Ingestion Bot
+      if (userRows.rows.length === 0) {
+        console.log("[DBInit] 👑 Creating primary admin account krsone12...");
+        await db.execute(sql`
+          INSERT INTO users (username, password, email, display_name, role, is_guest, is_pro, created_at, updated_at)
+          VALUES ('krsone12', 'Keny@592', 'savgmen@gmail.com', 'KingKrs', 'admin', false, true, NOW(), NOW());
+        `);
+      } else {
+        console.log("[DBInit] 👑 Updating primary admin account credentials for krsone12...");
+        await db.execute(sql`
+          UPDATE users 
+          SET password = 'Keny@592', role = 'admin', username = 'krsone12', email = 'savgmen@gmail.com', display_name = 'KingKrs'
+          WHERE LOWER(username) = 'krsone12' OR LOWER(email) = 'savgmen@gmail.com';
+        `);
+      }
+      console.log("[DBInit] ✅ Primary admin account krsone12 verified and active.");
+    } catch (adminErr: any) {
+      console.error("[DBInit] Admin account sync note:", adminErr.message);
+    }
+
+    console.log("[DBInit] ✅ Tables and Admin verified successfully.");
+
+    // 5. Initialize and start the Autonomous Magazine & Ingestion Bot
     await magazineBot.start(6);
   } catch (error: any) {
     console.error("[DBInit] ⚠️ Error during database table initialization:", error.message);
