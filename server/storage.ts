@@ -2465,11 +2465,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    // Case-insensitive username lookup using LOWER()
+    if (!username) return undefined;
+    const clean = username.trim();
     const [user] = await db
       .select()
       .from(users)
-      .where(sql`LOWER(${users.username}) = LOWER(${username})`);
+      .where(sql`LOWER(${users.username}) = LOWER(${clean})`);
     return user;
   }
 
@@ -2490,11 +2491,11 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     if (!email) return undefined;
-
+    const clean = email.trim();
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.email, email));
+      .where(sql`LOWER(${users.email}) = LOWER(${clean})`);
     return user;
   }
 

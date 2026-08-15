@@ -92,15 +92,15 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // Login function - set user in state and localStorage
-  const login = (userData: User) => {
-    // Ensure we don't lose any token data from the user
-    console.log("Login called with userData:", userData);
+  const login = (userData: any) => {
+    const cleanUser: User = (userData && userData.data) ? userData.data : userData;
+    console.log("Login called with cleanUser:", cleanUser);
     
     // Set user in state
-    setUser(userData);
+    setUser(cleanUser);
     
     // Store using centralized utility to ensure all fields are set
-    storeUserData(userData);
+    storeUserData(cleanUser);
   };
 
   // Update user function - merge new data with existing user

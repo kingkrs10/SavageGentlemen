@@ -748,68 +748,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   };
 
-  // Auth routes with rate limiting and validation
-  router.post(
-    "/auth/login",
-    authRateLimiter,
-    validateRequest(loginSchema),
-    async (req: Request, res: Response) => {
-      try {
-        // The data is already validated by the middleware
-        const { username, password } = req.body;
+  // Unified login handler with robust case-insensitive username/email matching
+  const handleLogin = async (req: Request, res: Response) => {
+    try {
+      const rawUsername = (req.body.username || "").trim();
+      const rawPassword = req.body.password;
+      const trimmedPassword = typeof rawPassword === 'string' ? rawPassword.trim() : rawPassword;
 
-        // Add a small delay to prevent timing attacks that could
-        // expose whether a username exists or not
-        await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 100));
+      await new Promise(resolve => setTimeout(resolve, 50));
 
-        // Try to get user by username or email (case-insensitive)
-        let user = await storage.getUserByUsername(username);
-        if (!user) {
-          user = await storage.getUserByEmail(username);
-        }
-
-        if (!user || user.password !== password) {
-          console.log(`[AUTH] Login failed for input: "${username}" - ${!user ? 'user not found' : 'wrong password'}`);
-          return res.status(401).json({
-            status: 'error',
-            message: "Invalid username or password"
-          });
-        }
-
-        // Log successful logins for audit purposes
-        console.log(`[AUTH] Successful login: ${username} from IP ${req.ip || req.socket.remoteAddress || 'unknown'}`);
-
-        // Generate a secure HMAC-signed token for authentication
-        const token = generateSecureLoginToken(user);
-
-        // Set auth token as HttpOnly cookie for server-side auth
-        // This survives localStorage corruption
-        const isProduction = process.env.NODE_ENV === 'production';
-        res.cookie('sg_auth_token', token, {
-          httpOnly: true,
-          secure: isProduction,
-          sameSite: 'lax',
-          maxAge: 24 * 60 * 60 * 1000, // 24 hours (matches token expiry)
-          path: '/',
-        });
-
-        return res.status(200).json({
-          status: 'success',
-          data: {
-            id: user.id,
-            username: user.username,
-            displayName: user.displayName,
-            avatar: user.avatar,
-            isGuest: user.isGuest,
-            role: user.role,
-            token: token // Include token in the response
-          }
-        });
-      } catch (err) {
-        return handleZodError(err, res);
+      // Try to get user by username or email (case-insensitive)
+      let user = await storage.getUserByUsername(rawUsername);
+      if (!user) {
+        user = await storage.getUserByEmail(rawUsername);
       }
+
+      const passwordMatches = user && (
+        user.password === rawPassword ||
+        user.password === trimmedPassword
+      );
+
+      if (!user || !passwordMatches) {
+        console.log(`[AUTH] Login failed for input: "${rawUsername}" - ${!user ? 'user not found' : 'wrong password'}`);
+        return res.status(401).json({
+          status: 'error',
+          message: "Invalid username or password"
+        });
+      }
+
+      console.log(`[AUTH] Successful login: ${user.username} (${user.role}) from IP ${req.ip || req.socket.remoteAddress || 'unknown'}`);
+
+      // Generate a secure HMAC-signed token for authentication
+      const token = generateSecureLoginToken(user);
+
+      const isProduction = process.env.NODE_ENV === 'production';
+      res.cookie('sg_auth_token', token, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000,
+        path: '/',
+      });
+
+      return res.status(200).json({
+        status: 'success',
+        data: {
+          id: user.id,
+          username: user.username,
+          displayName: user.displayName,
+          email: user.email,
+          avatar: user.avatar,
+          isGuest: user.isGuest,
+          role: user.role,
+          token: token
+        }
+      });
+    } catch (err) {
+      return handleZodError(err, res);
     }
-  );
+  };
+
+  router.post("/auth/login", authRateLimiter, validateRequest(loginSchema), handleLogin);
+  router.post("/login", authRateLimiter, validateRequest(loginSchema), handleLogin);
+  app.post("/api/auth/login", authRateLimiter, validateRequest(loginSchema), handleLogin);
+  app.post("/api/login", authRateLimiter, validateRequest(loginSchema), handleLogin);
 
   router.post(
     "/auth/register",
