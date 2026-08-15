@@ -27,7 +27,7 @@ import { apiRequest } from "@/lib/queryClient";
 interface MerchItem {
   id: string;
   title: string;
-  category: "outerwear" | "tees" | "headwear" | "accessories";
+  category: "outerwear" | "bottoms" | "tees" | "headwear" | "accessories";
   price: number; // in cents, e.g. 6800 for $68.00
   description: string;
   images: string[];
@@ -50,6 +50,7 @@ interface CartItem {
 const CATEGORIES = [
   { id: "all", label: "All Drops" },
   { id: "outerwear", label: "Outerwear & Hoodies" },
+  { id: "bottoms", label: "Joggers & Bottoms" },
   { id: "tees", label: "Graphic Tees" },
   { id: "headwear", label: "Headwear & Caps" },
   { id: "accessories", label: "Barware & Accessories" },

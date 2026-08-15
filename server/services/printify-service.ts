@@ -1,8 +1,8 @@
 export interface MerchItem {
   id: string;
   title: string;
-  category: "outerwear" | "tees" | "headwear" | "accessories";
-  price: number; // in cents, e.g. 6800 for $68.00
+  category: "outerwear" | "bottoms" | "tees" | "headwear" | "accessories";
+  price: number; // in cents, e.g. 5255 for $52.55
   description: string;
   images: string[];
   sizes: string[];
@@ -138,18 +138,85 @@ export class PrintifyService {
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data.data) && data.data.length > 0) {
-            return data.data.map((p: any) => ({
-              id: p.id.toString(),
-              title: p.title,
-              category: "outerwear",
-              price: p.variants?.[0]?.price || 4500,
-              description: p.description?.replace(/<\/?[^>]+(>|$)/g, "") || "",
-              images: p.images?.map((img: any) => img.src) || [SAVAGE_MERCH_CATALOG[0].images[0]],
-              sizes: p.variants?.map((v: any) => v.title) || ["Standard"],
-              colors: [{ name: "Standard", hex: "#000000" }],
-              featured: true,
-              inStock: true,
-            }));
+            // ONLY SHOW ACTIVE / PUBLISHED ITEMS THAT ARE NOT DELETED AND HAVE ACTIVE VARIANTS
+            const activeProducts = data.data.filter((p: any) =>
+              !p.is_deleted &&
+              p.variants &&
+              p.variants.some((v: any) => v.is_enabled && v.is_available)
+            );
+
+            if (activeProducts.length > 0) {
+              return activeProducts.map((p: any) => {
+                const enabledVariants = p.variants.filter((v: any) => v.is_enabled && v.is_available);
+                const minPrice = Math.min(...enabledVariants.map((v: any) => v.price));
+
+                // Detect item category
+                const titleLower = p.title.toLowerCase();
+                const tagsLower = (p.tags || []).map((t: string) => t.toLowerCase());
+                let category: "outerwear" | "bottoms" | "tees" | "headwear" | "accessories" = "outerwear";
+                if (titleLower.includes("jogger") || titleLower.includes("pants") || titleLower.includes("sweatpants") || tagsLower.includes("bottoms")) {
+                  category = "bottoms";
+                } else if (titleLower.includes("hoodie") || titleLower.includes("sweatshirt") || titleLower.includes("jacket") || titleLower.includes("pullover")) {
+                  category = "outerwear";
+                } else if (titleLower.includes("tee") || titleLower.includes("t-shirt") || titleLower.includes("shirt")) {
+                  category = "tees";
+                } else if (titleLower.includes("hat") || titleLower.includes("cap") || titleLower.includes("beanie")) {
+                  category = "headwear";
+                } else {
+                  category = "accessories";
+                }
+
+                // Extract valid mockup images
+                const validImages = (p.images || [])
+                  .filter((img: any) => img.src && !img.src.endsWith(".svg"))
+                  .map((img: any) => img.src);
+
+                // Extract active option IDs
+                const activeOptionIds = new Set(enabledVariants.flatMap((v: any) => v.options || []));
+
+                // Parse Colors
+                const colorOpt = (p.options || []).find((o: any) => o.type === "color" || o.name.toLowerCase().includes("color"));
+                let activeColors: { name: string; hex: string }[] = [];
+                if (colorOpt && colorOpt.values) {
+                  activeColors = colorOpt.values
+                    .filter((val: any) => activeOptionIds.has(val.id) || enabledVariants.some((v: any) => v.title.includes(val.title)))
+                    .map((val: any) => ({
+                      name: val.title,
+                      hex: val.colors?.[0] || "#000000"
+                    }));
+                }
+
+                // Parse Sizes
+                const sizeOpt = (p.options || []).find((o: any) => o.type === "size" || o.name.toLowerCase().includes("size"));
+                let activeSizes: string[] = [];
+                if (sizeOpt && sizeOpt.values) {
+                  activeSizes = sizeOpt.values
+                    .filter((val: any) => activeOptionIds.has(val.id) || enabledVariants.some((v: any) => v.title.includes(val.title)))
+                    .map((val: any) => val.title);
+                }
+
+                if (activeSizes.length === 0) {
+                  activeSizes = Array.from(new Set(enabledVariants.map((v: any) => v.title.split(" / ")[0])));
+                }
+                if (activeColors.length === 0) {
+                  activeColors = [{ name: "Standard", hex: "#000000" }];
+                }
+
+                return {
+                  id: p.id.toString(),
+                  title: p.title,
+                  category,
+                  price: minPrice,
+                  description: p.description?.replace(/<\/?[^>]+(>|$)/g, " ").trim() || "Exclusive Savage Gentlemen merchandise.",
+                  images: validImages.length > 0 ? validImages : ["/mockups/sg_luxury_hoodie.jpg"],
+                  sizes: activeSizes,
+                  colors: activeColors,
+                  featured: true,
+                  inStock: true,
+                  printifyBlueprintId: p.blueprint_id,
+                };
+              });
+            }
           }
         }
       } catch (err) {
