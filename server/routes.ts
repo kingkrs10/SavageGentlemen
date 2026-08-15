@@ -3068,11 +3068,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Media uploads - make sure we use router not app
-  router.post("/admin/uploads", upload.single('file'), async (req: Request, res: Response) => {
+  // Media uploads - supports /admin/uploads, /api/admin/uploads, and /api/uploads
+  router.post(["/admin/uploads", "/api/admin/uploads", "/api/uploads"], upload.single('file'), async (req: Request, res: Response) => {
     try {
-      // Check authentication manually since multer needs to run before we access the file
-      const userId = req.headers['user-id'];
+      // Check authentication from req.user, header, or session
+      const userId = req.user?.id || req.headers['user-id'] || (req.session as any)?.user?.id;
 
       if (!userId) {
         return res.status(401).json({ message: "Authentication required - No user ID" });
@@ -3080,7 +3080,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       try {
         const id = parseInt(userId as string);
-        const user = await storage.getUser(id);
+        const user = req.user || await storage.getUser(id);
 
         if (!user) {
           return res.status(401).json({ message: `User not found - ID: ${id}` });
@@ -3130,8 +3130,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reusable admin auth handler supporting session auth, passport JWT, and header fallbacks
+  const eventAdminAuthHandler = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.headers['user-id'];
+      const userData = req.headers['x-user-data'];
+
+      if (userId || userData) {
+        try {
+          let user = null;
+
+          if (userId) {
+            const id = parseInt(userId as string);
+            user = await storage.getUser(id);
+            if (user && user.role === 'admin') {
+              req.user = user;
+              return next();
+            }
+          }
+
+          if (userData && !user) {
+            try {
+              const parsedUserData = JSON.parse(userData as string);
+              if (parsedUserData && parsedUserData.id && parsedUserData.role === 'admin') {
+                user = await storage.getUser(parsedUserData.id);
+                if (user) {
+                  req.user = user;
+                  return next();
+                }
+              }
+            } catch (e) {
+              console.error("Error parsing x-user-data:", e);
+            }
+          }
+        } catch (err) {
+          console.error("Error with header authentication for admin events:", err);
+        }
+      }
+
+      // Fall back to standard authentication
+      return authenticateUser(req, res, () => {
+        if (req.user && req.user.role === 'admin') {
+          return next();
+        } else {
+          return res.status(403).json({ message: "Admin access required" });
+        }
+      });
+    } catch (error) {
+      console.error("Error in admin events auth middleware:", error);
+      return res.status(500).json({ message: "Authentication error" });
+    }
+  };
+
   // Event management
-  router.post("/admin/events", authenticateUser, authorizeAdmin, upload.fields([
+  router.post(["/admin/events", "/api/admin/events"], eventAdminAuthHandler, upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'video', maxCount: 1 },
     { name: 'additionalImages', maxCount: 10 },
@@ -3242,66 +3294,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Modified endpoint for event updates to add fallback authentication
-  // Support both PUT and PATCH methods
-  const eventUpdateHandler = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      // Try to authenticate via headers first - simple header check for admin page
-      const userId = req.headers['user-id'];
-      const userData = req.headers['x-user-data'];
-
-      if (userId || userData) {
-        try {
-          let user = null;
-
-          // Try user-id header first
-          if (userId) {
-            const id = parseInt(userId as string);
-            user = await storage.getUser(id);
-            if (user && user.role === 'admin') {
-              console.log("Admin user authenticated via user-id header:", id);
-              req.user = user;
-              return next();
-            }
-          }
-
-          // Try x-user-data header as fallback
-          if (userData && !user) {
-            try {
-              const parsedUserData = JSON.parse(userData as string);
-              if (parsedUserData && parsedUserData.id && parsedUserData.role === 'admin') {
-                user = await storage.getUser(parsedUserData.id);
-                if (user) {
-                  console.log("Admin user authenticated via x-user-data header:", parsedUserData.id);
-                  req.user = user;
-                  return next();
-                }
-              }
-            } catch (e) {
-              console.error("Error parsing x-user-data:", e);
-            }
-          }
-        } catch (err) {
-          console.error("Error with header authentication for admin events:", err);
-        }
-      }
-
-      // Fall back to standard authentication
-      return authenticateUser(req, res, () => {
-        // Check for admin permission
-        if (req.user && req.user.role === 'admin') {
-          return next();
-        } else {
-          return res.status(403).json({ message: "Admin access required" });
-        }
-      });
-    } catch (error) {
-      console.error("Error in admin events auth middleware:", error);
-      return res.status(500).json({ message: "Authentication error" });
-    }
-  };
-
-  router.put("/admin/events/:id", eventUpdateHandler, upload.fields([
+  router.put(["/admin/events/:id", "/api/admin/events/:id"], eventAdminAuthHandler, upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'video', maxCount: 1 },
     { name: 'additionalImages', maxCount: 10 },
@@ -3454,7 +3447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Also support PATCH method for event updates (for client compatibility)
-  router.patch("/admin/events/:id", eventUpdateHandler, upload.fields([
+  router.patch(["/admin/events/:id", "/api/admin/events/:id"], eventAdminAuthHandler, upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'video', maxCount: 1 },
     { name: 'additionalImages', maxCount: 10 },
@@ -3614,11 +3607,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete event endpoint - using both paths for compatibility
-  router.delete(["/admin/events/:id", "/api/admin/events/:id"], authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+  // Delete event endpoint - using multiple paths for maximum client compatibility
+  router.delete(["/admin/events/:id", "/api/admin/events/:id", "/events/:id", "/api/events/:id"], eventAdminAuthHandler, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      console.log(`Admin user ${req.user?.id} deleting event ID: ${id}`);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid event ID" });
+      }
+
+      console.log(`Admin user ${req.user?.id || req.user?.username} deleting event ID: ${id}`);
 
       // First check if the event exists
       const event = await storage.getEvent(id);
@@ -3626,17 +3623,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Event not found" });
       }
 
-      // Delete event
+      // Delete event with full cascade
       await storage.deleteEvent(id);
 
       // Return success
       return res.status(200).json({
         success: true,
-        message: "Event deleted successfully"
+        message: `Event "${event.title}" and all related data deleted successfully`
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error deleting event:", err);
-      return res.status(500).json({ message: "Failed to delete event" });
+      return res.status(500).json({ 
+        message: err.message || "Failed to delete event",
+        details: err.toString()
+      });
     }
   });
 

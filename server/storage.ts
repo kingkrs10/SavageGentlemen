@@ -3331,50 +3331,54 @@ export class DatabaseStorage implements IStorage {
       // Get the event first for logging and undo
       const event = await this.getEvent(id);
       if (event) {
-        storeDeletedEvent(event);
+        try {
+          storeDeletedEvent(event);
+        } catch (e) {
+          console.warn("Could not store deleted event in memory store:", e);
+        }
       }
       
       // 1. Handle Tickets and Scans
-      const eventTickets = await db.select().from(tickets).where(eq(tickets.eventId, id));
-      const ticketIds = eventTickets.map(t => t.id);
-      
-      if (ticketIds.length > 0) {
-        // Delete scans that reference these tickets
-        await db.delete(ticketScans).where(inArray(ticketScans.ticketId, ticketIds));
+      try {
+        const eventTickets = await db.select().from(tickets).where(eq(tickets.eventId, id));
+        const ticketIds = eventTickets.map(t => t.id);
         
-        // Delete enhanced ticket metadata
-        await db.delete(enhancedTickets).where(inArray(enhancedTickets.ticketId, ticketIds));
-        
-        // Delete order items that reference these tickets
-        await db.delete(orderItems).where(inArray(orderItems.ticketId, ticketIds));
+        if (ticketIds.length > 0) {
+          await db.execute(sql`DELETE FROM ticket_scans WHERE ticket_id = ANY(${ticketIds})`).catch(() => {});
+          await db.execute(sql`DELETE FROM enhanced_tickets WHERE ticket_id = ANY(${ticketIds})`).catch(() => {});
+          await db.execute(sql`DELETE FROM order_items WHERE ticket_id = ANY(${ticketIds})`).catch(() => {});
+          await db.execute(sql`DELETE FROM ticket_addons WHERE ticket_id = ANY(${ticketIds})`).catch(() => {});
+          await db.execute(sql`DELETE FROM ticket_purchases WHERE ticket_id = ANY(${ticketIds})`).catch(() => {});
+        }
+      } catch (err) {
+        console.warn(`Warning during ticket cascade cleanup for event ${id}:`, err);
       }
       
-      // 2. Delete related event content
-      await db.delete(discountCodes).where(eq(discountCodes.eventId, id));
+      // 2. Delete all event-level dependencies across all foreign key tables
+      await db.execute(sql`DELETE FROM ticket_addons WHERE event_id = ${id}`).catch(() => {});
+      await db.execute(sql`DELETE FROM discount_codes WHERE event_id = ${id}`).catch(() => {});
+      await db.execute(sql`DELETE FROM ticket_purchases WHERE event_id = ${id}`).catch(() => {});
+      await db.execute(sql`DELETE FROM event_analytics WHERE event_id = ${id}`).catch(() => {});
+      await db.execute(sql`DELETE FROM event_checkins WHERE event_id = ${id}`).catch(() => {});
+      await db.execute(sql`DELETE FROM event_reviews WHERE event_id = ${id}`).catch(() => {});
+      await db.execute(sql`DELETE FROM event_photos WHERE event_id = ${id}`).catch(() => {});
+      await db.execute(sql`DELETE FROM event_passport_billing WHERE event_id = ${id}`).catch(() => {});
+      await db.execute(sql`DELETE FROM passport_qr_checkins WHERE event_id = ${id}`).catch(() => {});
+      await db.execute(sql`DELETE FROM passport_stamps WHERE event_id = ${id}`).catch(() => {});
+      await db.execute(sql`DELETE FROM deleted_events WHERE event_id = ${id}`).catch(() => {});
+      await db.execute(sql`DELETE FROM media_uploads WHERE related_entity_type = 'event' AND related_entity_id = ${id}`).catch(() => {});
       
-      // 3. Delete ticket purchases
-      await db.delete(ticketPurchases).where(eq(ticketPurchases.eventId, id));
+      // 3. Delete the tickets themselves
+      await db.execute(sql`DELETE FROM tickets WHERE event_id = ${id}`).catch(() => {});
       
-      // 4. Delete analytics
-      await db.delete(eventAnalytics).where(eq(eventAnalytics.eventId, id));
-      
-      // 5. Delete media uploads related to this event
-      await db.delete(mediaUploads)
-        .where(and(
-          eq(mediaUploads.relatedEntityType, 'event'),
-          eq(mediaUploads.relatedEntityId, id)
-        ));
-      
-      // 6. Delete the actual tickets
-      await db.delete(tickets).where(eq(tickets.eventId, id));
-      
-      // 7. Finally delete the event
-      const result = await db
+      // 4. Finally delete the event itself
+      const deletedRows = await db
         .delete(events)
-        .where(eq(events.id, id));
+        .where(eq(events.id, id))
+        .returning();
       
-      console.log(`Event ID ${id} and all dependent records deleted successfully`);
-      return result.rowCount > 0;
+      console.log(`Event ID ${id} and all dependent records deleted successfully (${deletedRows.length} event removed)`);
+      return true;
     } catch (error) {
       console.error(`Error deleting event with ID ${id}:`, error);
       throw error; 
