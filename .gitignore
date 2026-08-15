@@ -27,3 +27,5 @@ google-services.json
 *.pfx
 scratch/
 uploads/
+public/generated-ads/*.mp4
+!public/generated-ads/.gitkeep
