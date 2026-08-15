@@ -15,7 +15,6 @@ import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import WebSocket from "ws";
 import { storage } from "./storage";
-import { admin } from "./firebase";
 import { syncUsersFromFirebase } from "./services/user-sync";
 import {
   insertUserSchema,
@@ -227,18 +226,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const router = express.Router();
   app.use("/api", router);
 
-  // Health and Database Status Endpoint
+  // Comprehensive Health and Database Status Endpoint
   router.get("/health", async (req: Request, res: Response) => {
     try {
       const startTime = Date.now();
       const eventsList = await storage.getAllEvents();
       const latency = Date.now() - startTime;
+      const perfMetrics = getHealthStatus();
       res.json({
         status: "healthy",
         database: "connected",
         provider: "Neon PostgreSQL",
         latencyMs: latency,
         eventsCount: Array.isArray(eventsList) ? eventsList.length : 0,
+        system: perfMetrics,
         timestamp: new Date().toISOString()
       });
     } catch (err: any) {
@@ -246,6 +247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "unhealthy",
         database: "error",
         error: err.message,
+        system: getHealthStatus(),
         timestamp: new Date().toISOString()
       });
     }
@@ -453,11 +455,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ success: false, message: "Internal server error" });
     }
   };
-
-  // Health check endpoint
-  router.get('/health', (req: Request, res: Response) => {
-    res.json(getHealthStatus());
-  });
 
   // Register analytics router
   router.use("/analytics", analyticsRouter);

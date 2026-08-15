@@ -352,10 +352,9 @@ analyticsRouter.put("/daily-stats/:date", async (req: Request, res: Response) =>
 
 // Get daily stats for a date range
 analyticsRouter.get("/daily-stats/range", async (req: Request, res: Response) => {
+  const { startDate, endDate } = req.query;
   try {
     try {
-      const { startDate, endDate } = req.query;
-      
       if (!startDate || !endDate) {
         return res.status(400).json({ message: "Both startDate and endDate are required" });
       }
@@ -509,11 +508,11 @@ analyticsRouter.get("/dashboard", async (req: Request, res: Response) => {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     
     for (const order of allOrders) {
-      const orderAmount = parseFloat(order.total) || 0;
+      const orderAmount = typeof order.totalAmount === 'number' ? order.totalAmount : parseFloat(String(order.totalAmount)) || 0;
       totalRevenue += orderAmount;
       
       // Check if order is within last 7 days
-      const orderDate = new Date(order.createdAt);
+      const orderDate = new Date(order.createdAt || Date.now());
       if (orderDate >= sevenDaysAgo) {
         last7DaysRevenue += orderAmount;
       }
@@ -535,7 +534,7 @@ analyticsRouter.get("/dashboard", async (req: Request, res: Response) => {
     
     // Calculate new users in last 7 days
     const newUsersLast7Days = allUsers.filter(user => {
-      const userDate = new Date(user.createdAt);
+      const userDate = new Date(user.createdAt || Date.now());
       return userDate >= sevenDaysAgo;
     }).length;
     
@@ -562,16 +561,19 @@ analyticsRouter.get("/dashboard", async (req: Request, res: Response) => {
       }).length;
       
       const dailyNewUsers = allUsers.filter(user => {
-        const userDate = new Date(user.createdAt);
+        const userDate = new Date(user.createdAt || Date.now());
         return userDate >= dayStart && userDate <= dayEnd;
       }).length;
       
       const dailyOrders = allOrders.filter(order => {
-        const orderDate = new Date(order.createdAt);
+        const orderDate = new Date(order.createdAt || Date.now());
         return orderDate >= dayStart && orderDate <= dayEnd;
       });
       
-      const dailyRevenue = dailyOrders.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0);
+      const dailyRevenue = dailyOrders.reduce((sum, order) => {
+        const amt = typeof order.totalAmount === 'number' ? order.totalAmount : parseFloat(String(order.totalAmount)) || 0;
+        return sum + amt;
+      }, 0);
       
       // Estimate other daily metrics based on overall patterns
       const dailyEventViews = Math.floor(dailyPageViews * 0.25);

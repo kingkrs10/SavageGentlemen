@@ -218,12 +218,12 @@ router.get(
 );
 
 /**
- * GET /api/passport/landing-info
+ * GET /api/passport/landing-info & /api/passport/landing-stats
  * Get stats for the public landing page
  * Public endpoint - no authentication required
  */
 router.get(
-  '/landing-info',
+  ['/landing-info', '/landing-stats'],
   asyncHandler(async (req: Request, res: Response) => {
     const stats = await storage.getPassportLandingStats();
     res.json(stats);

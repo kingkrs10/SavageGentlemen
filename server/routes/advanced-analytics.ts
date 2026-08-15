@@ -61,7 +61,7 @@ router.get('/advanced', asyncHandler(async (req, res) => {
     const userEngagement = await mockStorage.getUserEngagement(startDate, now);
     
     // Calculate conversion rates
-    const events = await storage.getEvents();
+    const events = await storage.getAllEvents();
     const conversionRates = await Promise.all(
       events.map(async (event) => {
         const views = await mockStorage.getEventViews(event.id, startDate, now);

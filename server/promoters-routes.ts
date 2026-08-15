@@ -3,9 +3,17 @@ import { storage } from './storage';
 import { asyncHandler, AppError } from './middleware/error-handler';
 import { insertPromoterSchema } from '@shared/schema';
 import { authenticateUser } from './auth-middleware';
+import { getAvailablePlans } from './promoter-subscription-stripe';
 import { z } from 'zod';
 
 const router = Router();
+
+/**
+ * GET /api/promoters/plans
+ * Get available promoter subscription plans
+ * Public endpoint
+ */
+router.get('/plans', getAvailablePlans);
 
 /**
  * POST /api/promoters/register

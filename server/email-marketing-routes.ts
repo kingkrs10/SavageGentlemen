@@ -5,6 +5,7 @@ import {
   emailSubscribers, 
   emailListSubscribers, 
   emailCampaigns,
+  emailCampaignStats,
   insertEmailListSchema, 
   insertEmailSubscriberSchema,
   insertEmailCampaignSchema,
@@ -265,25 +266,29 @@ emailMarketingRouter.get("/subscribers", async (req: Request, res: Response) => 
   const { search, status, listId, page = "1", limit = "50" } = req.query;
   
   try {
-    let query = db.select().from(emailSubscribers);
-    
-    // Apply filters
+    const pageNum = parseInt(page as string) || 1;
+    const limitNum = parseInt(limit as string) || 50;
+    const offset = (pageNum - 1) * limitNum;
+
+    const conditions = [];
     if (search) {
-      query = query.where(
-        sql`${emailSubscribers.email} ILIKE ${'%' + search + '%'} OR 
-            ${emailSubscribers.firstName} ILIKE ${'%' + search + '%'} OR 
-            ${emailSubscribers.lastName} ILIKE ${'%' + search + '%'}`
+      conditions.push(
+        sql`(${emailSubscribers.email} ILIKE ${'%' + search + '%'} OR 
+             ${emailSubscribers.firstName} ILIKE ${'%' + search + '%'} OR 
+             ${emailSubscribers.lastName} ILIKE ${'%' + search + '%'})`
       );
     }
-    
     if (status) {
-      query = query.where(eq(emailSubscribers.status, status as string));
+      conditions.push(eq(emailSubscribers.status, status as string));
     }
-    
-    // Filter by list membership
+
+    let subscribers;
+    let totalCount = 0;
+
     if (listId) {
-      // Join with email_list_subscribers to filter by list
-      query = db
+      const listConditions = [...conditions, eq(emailListSubscribers.listId, Number(listId))];
+      
+      const results = await db
         .select({
           id: emailSubscribers.id,
           email: emailSubscribers.email,
@@ -299,87 +304,49 @@ emailMarketingRouter.get("/subscribers", async (req: Request, res: Response) => 
           emailListSubscribers,
           eq(emailSubscribers.id, emailListSubscribers.subscriberId)
         )
-        .where(eq(emailListSubscribers.listId, Number(listId)));
-        
-      // Apply other filters to the joined query
-      if (search) {
-        query = query.where(
-          sql`${emailSubscribers.email} ILIKE ${'%' + search + '%'} OR 
-              ${emailSubscribers.firstName} ILIKE ${'%' + search + '%'} OR 
-              ${emailSubscribers.lastName} ILIKE ${'%' + search + '%'}`
-        );
-      }
-      
-      if (status) {
-        query = query.where(eq(emailSubscribers.status, status as string));
-      }
-    }
-    
-    // Apply pagination
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
-    const offset = (pageNum - 1) * limitNum;
-    
-    const subscribers = await query
-      .limit(limitNum)
-      .offset(offset)
-      .orderBy(emailSubscribers.email);
-    
-    // Get total count for pagination
-    let countQuery;
-    
-    if (listId) {
-      // If filtering by list, count only subscribers in that list
-      countQuery = db
+        .where(and(...listConditions))
+        .limit(limitNum)
+        .offset(offset)
+        .orderBy(emailSubscribers.email);
+
+      subscribers = results;
+
+      const [countResult] = await db
         .select({ count: sql<number>`count(*)` })
         .from(emailSubscribers)
         .innerJoin(
           emailListSubscribers,
           eq(emailSubscribers.id, emailListSubscribers.subscriberId)
         )
-        .where(eq(emailListSubscribers.listId, Number(listId)));
-        
-      // Apply other filters to the count query
-      if (search) {
-        countQuery = countQuery.where(
-          sql`${emailSubscribers.email} ILIKE ${'%' + search + '%'} OR 
-              ${emailSubscribers.firstName} ILIKE ${'%' + search + '%'} OR 
-              ${emailSubscribers.lastName} ILIKE ${'%' + search + '%'}`
-        );
-      }
-      
-      if (status) {
-        countQuery = countQuery.where(eq(emailSubscribers.status, status as string));
-      }
+        .where(and(...listConditions));
+
+      totalCount = Number(countResult?.count || 0);
     } else {
-      // Standard count query without list filter
-      countQuery = db
+      const results = await db
+        .select()
+        .from(emailSubscribers)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .limit(limitNum)
+        .offset(offset)
+        .orderBy(emailSubscribers.email);
+
+      subscribers = results;
+
+      const [countResult] = await db
         .select({ count: sql<number>`count(*)` })
-        .from(emailSubscribers);
-        
-      // Apply basic filters
-      if (search) {
-        countQuery = countQuery.where(
-          sql`${emailSubscribers.email} ILIKE ${'%' + search + '%'} OR 
-              ${emailSubscribers.firstName} ILIKE ${'%' + search + '%'} OR 
-              ${emailSubscribers.lastName} ILIKE ${'%' + search + '%'}`
-        );
-      }
-      
-      if (status) {
-        countQuery = countQuery.where(eq(emailSubscribers.status, status as string));
-      }
+        .from(emailSubscribers)
+        .where(conditions.length > 0 ? and(...conditions) : undefined);
+
+      totalCount = Number(countResult?.count || 0);
     }
-    
-    const [{ count }] = await countQuery;
     
     res.json({
       subscribers,
       pagination: {
-        total: Number(count),
+        total: totalCount,
         page: pageNum,
         limit: limitNum,
-        pages: Math.ceil(Number(count) / limitNum)
+        pages: Math.ceil(totalCount / limitNum) || 1
       }
     });
   } catch (error) {
@@ -1050,15 +1017,12 @@ emailMarketingRouter.get("/subscribers/export", async (req: Request, res: Respon
       
       subscribers = listSubscribers.map(row => row.subscriber);
     } else {
-      // Get all subscribers
-      let query = db.select().from(emailSubscribers);
-      
-      // Apply status filter if provided
-      if (status) {
-        query = query.where(eq(emailSubscribers.status, status as string));
-      }
-      
-      subscribers = await query.orderBy(emailSubscribers.email);
+      // Get all subscribers with optional status filter
+      subscribers = await db
+        .select()
+        .from(emailSubscribers)
+        .where(status ? eq(emailSubscribers.status, status as string) : undefined)
+        .orderBy(emailSubscribers.email);
     }
     
     // Generate CSV
@@ -1320,7 +1284,10 @@ emailMarketingRouter.post("/campaigns/send", async (req: Request, res: Response)
     }
     
     // If not a test, send to actual list subscribers
-    // Get the list of subscribers
+    if (!campaign.listId) {
+      return res.status(400).json({ message: "Campaign has no subscriber list associated" });
+    }
+
     const listSubscribers = await db
       .select({
         subscriber: emailSubscribers

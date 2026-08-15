@@ -116,7 +116,7 @@ class TicketDeliveryMonitor {
         ticket.qrCodeData,
         event.location,
         event.date,
-        ticket.ticketType,
+        ticket.ticketType || 'Standard',
         typeof ticket.price === 'string' ? parseFloat(ticket.price) : ticket.price || 0,
         event.time || undefined
       );

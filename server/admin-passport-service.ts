@@ -15,7 +15,7 @@ interface PassportProfileWithUser {
   createdAt: Date | null;
   updatedAt: Date | null;
   username: string;
-  email: string;
+  email: string | null;
 }
 
 interface PassportProfileDetails {
@@ -42,7 +42,6 @@ interface PassportAnalytics {
 
 interface PromoterWithUser extends Promoter {
   username?: string;
-  email?: string;
 }
 
 /**
@@ -166,13 +165,14 @@ export class AdminPassportService {
     userId: number,
     data: {
       totalPoints?: number;
-      currentTier?: string;
+      currentTier?: "BRONZE" | "SILVER" | "GOLD" | "ELITE" | string;
       totalEvents?: number;
       totalCountries?: number;
     }
   ): Promise<PassportProfile | null> {
     try {
-      return await storage.updatePassportProfile(userId, data);
+      const updated = await storage.updatePassportProfile(userId, data as any);
+      return updated || null;
     } catch (error) {
       console.error('Error updating passport profile:', error);
       throw error;
@@ -319,13 +319,14 @@ export class AdminPassportService {
         userId: r.userId,
         name: r.name,
         email: r.email,
-        organization: r.organization || undefined,
-        locationCity: r.locationCity || undefined,
-        locationCountry: r.locationCountry || undefined,
-        websiteOrSocial: r.websiteOrSocial || undefined,
-        eventTypes: r.eventTypes || undefined,
+        organization: r.organization || null,
+        locationCity: r.locationCity || null,
+        locationCountry: r.locationCountry || null,
+        websiteOrSocial: r.websiteOrSocial || null,
+        eventTypes: r.eventTypes || null,
         status: r.status,
         createdAt: r.createdAt,
+        updatedAt: r.updatedAt || null,
         username: r.username || undefined,
       }));
 

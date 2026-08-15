@@ -5687,10 +5687,7 @@ export class DatabaseStorage implements IStorage {
   async updatePassportMission(id: number, data: Partial<InsertPassportMission>): Promise<PassportMission | undefined> {
     const [mission] = await db
       .update(passportMissions)
-      .set({
-        ...data,
-        updatedAt: new Date()
-      })
+      .set(data)
       .where(eq(passportMissions.id, id))
       .returning();
     return mission;
@@ -5979,7 +5976,7 @@ export class DatabaseStorage implements IStorage {
       userId,
       delta: amount,
       balanceAfter: newBalance,
-      sourceType,
+      sourceType: sourceType as any,
       sourceId,
       memo
     });
@@ -6009,7 +6006,7 @@ export class DatabaseStorage implements IStorage {
       userId,
       delta: -amount,
       balanceAfter: newBalance,
-      sourceType,
+      sourceType: sourceType as any,
       sourceId,
       memo
     });

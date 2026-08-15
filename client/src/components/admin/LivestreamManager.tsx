@@ -112,21 +112,19 @@ const LivestreamManager: React.FC = () => {
   });
 
   // Fetch all livestreams
-  const { data: livestreams, isLoading } = useQuery<Livestream[]>({
+  const { data: livestreams = [], isLoading } = useQuery<Livestream[]>({
     queryKey: ['/api/livestreams'],
     queryFn: async () => {
-      const response = await apiRequest('/api/livestreams');
-      return response;
+      const response = await apiRequest('GET', '/api/livestreams');
+      return await response.json();
     }
   });
 
   // Create livestream mutation
   const createLivestream = useMutation({
     mutationFn: async (data: LivestreamFormData) => {
-      return await apiRequest('/api/livestreams', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
+      const res = await apiRequest('POST', '/api/livestreams', data);
+      return await res.json();
     },
     onSuccess: () => {
       toast({
@@ -149,10 +147,8 @@ const LivestreamManager: React.FC = () => {
   // Update livestream mutation
   const updateLivestream = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: LivestreamFormData }) => {
-      return await apiRequest(`/api/livestreams/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data)
-      });
+      const res = await apiRequest('PUT', `/api/livestreams/${id}`, data);
+      return await res.json();
     },
     onSuccess: () => {
       toast({
@@ -175,9 +171,8 @@ const LivestreamManager: React.FC = () => {
   // Delete livestream mutation
   const deleteLivestream = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/livestreams/${id}`, {
-        method: 'DELETE'
-      });
+      const res = await apiRequest('DELETE', `/api/livestreams/${id}`);
+      return await res.json();
     },
     onSuccess: () => {
       toast({
@@ -198,10 +193,8 @@ const LivestreamManager: React.FC = () => {
   // Toggle live status mutation
   const toggleLiveStatus = useMutation({
     mutationFn: async ({ id, isLive }: { id: number; isLive: boolean }) => {
-      return await apiRequest(`/api/livestreams/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ isLive })
-      });
+      const res = await apiRequest('PUT', `/api/livestreams/${id}`, { isLive });
+      return await res.json();
     },
     onSuccess: () => {
       toast({
