@@ -583,9 +583,9 @@ export const sendWelcomeEmail = async (
         <p>The Savage Gentlemen Team</p>
         
         <div class="social-links">
-          <a href="https://instagram.com/savage_gentlemen" target="_blank">Instagram</a> |
+          <a href="https://instagram.com/savagegentlemen_" target="_blank">Instagram</a> |
           <a href="https://facebook.com/savagegentlemen" target="_blank">Facebook</a> |
-          <a href="https://twitter.com/savage_gent" target="_blank">Twitter</a>
+          <a href="https://twitter.com/savagegentlemen" target="_blank">Twitter</a>
         </div>
       </div>
       

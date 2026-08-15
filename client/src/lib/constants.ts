@@ -20,7 +20,7 @@ export const EXTERNAL_URLS = {
   ETSY_SHOP: "https://sgxmerch.etsy.com",
   PRINTIFY_SHOP: "https://savagegentlemen.myshopify.com", // Your Printify-connected Shopify store
   FACEBOOK: "https://www.facebook.com/savagegentlemen",
-  INSTAGRAM: "https://www.instagram.com/savagegentlemen",
+  INSTAGRAM: "https://www.instagram.com/savagegentlemen_/",
   TWITTER: "https://www.twitter.com/savagegentlemen",
   YOUTUBE: "https://www.youtube.com/savagegentlemen",
 };
