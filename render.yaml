@@ -10,17 +10,11 @@ services:
         value: production
       - key: DATABASE_URL
         sync: false
-      - key: PRINTIFY_API_KEY
-        sync: false
-      - key: PRINTIFY_SHOP_ID
-        sync: false
       - key: PAYPAL_CLIENT_ID
         sync: false
       - key: PAYPAL_CLIENT_SECRET
         sync: false
       - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: STRIPE_WEBHOOK_SECRET
         sync: false
       - key: VITE_FIREBASE_API_KEY
         sync: false
@@ -42,6 +36,8 @@ services:
         sync: false
       - key: BREVO_SMTP_KEY
         sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
       - key: SENDGRID_API_KEY
         sync: false
       - key: PEXELS_API_KEY
@@ -50,7 +46,16 @@ services:
         sync: false
       - key: ISLAND_LYRIC_STRIPE_WEBHOOK_SECRET
         sync: false
+      - key: PRINTIFY_API_KEY
+        sync: false
+      - key: PRINTIFY_SHOP_ID
+        sync: false
+      - key: META_APP_ID
+        sync: false
+      - key: META_CLIENT_TOKEN
+        sync: false
       - key: INSTAGRAM_ACCESS_TOKEN
         sync: false
       - key: INSTAGRAM_ACCOUNT_ID
         sync: false
+

@@ -1,3 +1,0 @@
-{
-  "/api/events/[eventId]/addons/route": "app/api/events/[eventId]/addons/route.js"
-}

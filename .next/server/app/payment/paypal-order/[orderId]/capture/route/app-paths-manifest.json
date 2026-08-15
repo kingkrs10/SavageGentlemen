@@ -1,3 +1,0 @@
-{
-  "/payment/paypal-order/[orderId]/capture/route": "app/payment/paypal-order/[orderId]/capture/route.js"
-}
