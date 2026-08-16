@@ -32,6 +32,48 @@ export async function publishToSocialMedia(request: PublishRequest): Promise<Mul
   const results: PlatformPublishResult[] = [];
   const fullCaption = `${request.caption}\n\n${(request.hashtags || ["#SavageGentlemen", "#LuxuryStreetwear", "#CarnivalVibes"]).join(" ")}\n\n👉 Shop here: ${request.productLink || "https://savagegentlemen.com/shop"}`;
 
+  // Check if Make.com or Universal Social Webhook is configured
+  const socialWebhookUrl = process.env.MAKE_WEBHOOK_URL || process.env.SOCIAL_WEBHOOK_URL;
+  if (socialWebhookUrl && !request.isTestMode) {
+    try {
+      console.log(`[SocialPublisher] Broadcasting via Social Webhook (${socialWebhookUrl}) to: ${request.platforms.join(", ")}`);
+      
+      const webhookRes = await fetch(socialWebhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          videoUrl: request.videoUrl.startsWith("http") ? request.videoUrl : `https://savagegentlemen.com${request.videoUrl}`,
+          caption: fullCaption,
+          title: request.title || "Savage Gentlemen Exclusive Drop",
+          platforms: request.platforms,
+          productLink: request.productLink || "https://savagegentlemen.com/shop",
+          hashtags: request.hashtags || ["#SavageGentlemen", "#LuxuryStreetwear"],
+          timestamp: new Date().toISOString()
+        }),
+      });
+
+      if (webhookRes.ok) {
+        request.platforms.forEach((platform) => {
+          results.push({
+            platform,
+            status: "success",
+            postId: `webhook_${Date.now()}`,
+            postUrl: `https://www.instagram.com/savagegentlemen_`,
+            message: `Dispatched to Make.com automation for live broadcast to ${platform}.`
+          });
+        });
+
+        return {
+          success: true,
+          publishedAt: new Date().toISOString(),
+          results
+        };
+      }
+    } catch (err: any) {
+      console.error("[SocialPublisher] Webhook broadcast error:", err.message);
+    }
+  }
+
   // Check if Ayrshare API key is provided for 1-click universal distribution
   const ayrshareApiKey = process.env.AYRSHARE_API_KEY;
 
