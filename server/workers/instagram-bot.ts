@@ -55,6 +55,45 @@ export class InstagramBot {
     const caption = this.generateCaption(article);
     const imageUrl = article.featuredImage || "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1080&h=1080&fit=crop";
 
+    // If Make.com / Social Webhook is configured, dispatch live via Webhook
+    const socialWebhookUrl = process.env.MAKE_WEBHOOK_URL || process.env.SOCIAL_WEBHOOK_URL;
+    if (socialWebhookUrl) {
+      try {
+        console.log(`[InstagramBot] Publishing article "${article.title}" via Social Webhook...`);
+        const webhookRes = await fetch(socialWebhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            videoUrl: imageUrl,
+            imageUrl: imageUrl,
+            caption,
+            title: article.title,
+            platforms: ["instagram"],
+            productLink: `https://savagegentlemen.com/magazine/${article.slug}`,
+            timestamp: new Date().toISOString()
+          }),
+        });
+
+        if (webhookRes.ok) {
+          const postId = `webhook_${Date.now()}`;
+          await storage.updateArticle(articleId, {
+            igPosted: true,
+            igPostId: postId,
+          });
+
+          return {
+            success: true,
+            postId,
+            simulated: false,
+            caption,
+            imageUrl
+          };
+        }
+      } catch (err: any) {
+        console.error("[InstagramBot] Webhook dispatch error:", err.message);
+      }
+    }
+
     // If Meta Graph API credentials are configured, execute real publish
     if (this.accessToken && this.accountId) {
       try {
