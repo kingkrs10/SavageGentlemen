@@ -15,8 +15,16 @@ export class InstagramBot {
   private accountId: string | undefined;
 
   constructor() {
-    this.accessToken = process.env.INSTAGRAM_ACCESS_TOKEN;
-    this.accountId = process.env.INSTAGRAM_ACCOUNT_ID;
+    this.accessToken = 
+      process.env.INSTAGRAM_ACCESS_TOKEN || 
+      process.env.META_IG_ACCESS_TOKEN || 
+      process.env.META_ACCESS_TOKEN || 
+      process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
+    this.accountId = 
+      process.env.INSTAGRAM_ACCOUNT_ID || 
+      process.env.META_IG_USER_ID || 
+      process.env.META_ACCOUNT_ID || 
+      process.env.INSTAGRAM_USER_ID;
   }
 
   generateCaption(article: Article): string {

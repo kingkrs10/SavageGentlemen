@@ -85,8 +85,16 @@ export async function publishToSocialMedia(request: PublishRequest): Promise<Mul
   for (const platform of request.platforms) {
     switch (platform) {
       case "instagram": {
-        const igToken = process.env.META_IG_ACCESS_TOKEN;
-        const igUserId = process.env.META_IG_USER_ID;
+        const igToken = 
+          process.env.INSTAGRAM_ACCESS_TOKEN || 
+          process.env.META_IG_ACCESS_TOKEN || 
+          process.env.META_ACCESS_TOKEN || 
+          process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
+        const igUserId = 
+          process.env.INSTAGRAM_ACCOUNT_ID || 
+          process.env.META_IG_USER_ID || 
+          process.env.INSTAGRAM_USER_ID || 
+          process.env.META_ACCOUNT_ID;
 
         if (igToken && igUserId && !request.isTestMode) {
           try {
@@ -138,15 +146,23 @@ export async function publishToSocialMedia(request: PublishRequest): Promise<Mul
             status: "simulated",
             postId: `sim_ig_${Date.now()}`,
             postUrl: "https://www.instagram.com/savagegentlemen",
-            message: "Simulated Instagram Reel broadcast (Live mode requires META_IG_ACCESS_TOKEN)."
+            message: "Simulated Instagram Reel created (Set INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_ACCOUNT_ID for live Meta Graph posting)."
           });
         }
         break;
       }
 
       case "facebook": {
-        const fbToken = process.env.META_FB_PAGE_TOKEN;
-        const fbPageId = process.env.META_FB_PAGE_ID;
+        const fbToken = 
+          process.env.META_FB_PAGE_TOKEN || 
+          process.env.FACEBOOK_PAGE_ACCESS_TOKEN || 
+          process.env.FB_PAGE_TOKEN || 
+          process.env.META_ACCESS_TOKEN || 
+          process.env.INSTAGRAM_ACCESS_TOKEN;
+        const fbPageId = 
+          process.env.META_FB_PAGE_ID || 
+          process.env.FACEBOOK_PAGE_ID || 
+          process.env.FB_PAGE_ID;
 
         if (fbToken && fbPageId && !request.isTestMode) {
           try {
