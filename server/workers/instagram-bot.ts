@@ -46,7 +46,7 @@ export class InstagramBot {
       `${hashtags}`;
   }
 
-  async publishArticlePost(articleId: number): Promise<InstagramPostResult> {
+  async publishArticlePost(articleId: number, options?: { videoUrl?: string; engine?: string }): Promise<InstagramPostResult> {
     const article = await storage.getArticleById(articleId);
     if (!article) {
       return { success: false, simulated: false, caption: "", error: "Article not found" };
@@ -54,22 +54,24 @@ export class InstagramBot {
 
     const caption = this.generateCaption(article);
     const imageUrl = article.featuredImage || "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1080&h=1080&fit=crop";
+    const mediaUrl = options?.videoUrl || imageUrl;
 
     // If Make.com / Social Webhook is configured, dispatch live via Webhook
     const socialWebhookUrl = process.env.MAKE_WEBHOOK_URL || process.env.SOCIAL_WEBHOOK_URL;
     if (socialWebhookUrl) {
       try {
-        console.log(`[InstagramBot] Publishing article "${article.title}" via Social Webhook...`);
+        console.log(`[InstagramBot] Publishing article "${article.title}" via Social Webhook (${options?.videoUrl ? "Video Reel" : "Image"})...`);
         const webhookRes = await fetch(socialWebhookUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            videoUrl: imageUrl,
+            videoUrl: mediaUrl.startsWith("http") ? mediaUrl : `https://savagegentlemen.com${mediaUrl}`,
             imageUrl: imageUrl,
             caption,
             title: article.title,
-            platforms: ["instagram"],
+            platforms: ["instagram", "facebook", "youtube", "tiktok"],
             productLink: `https://savagegentlemen.com/magazine/${article.slug}`,
+            engine: options?.engine || "standard",
             timestamp: new Date().toISOString()
           }),
         });

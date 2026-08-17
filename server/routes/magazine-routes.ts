@@ -3,6 +3,7 @@ import { storage } from "../storage";
 import { insertArticleSchema } from "@shared/schema";
 import { magazineBot } from "../workers/magazine-bot";
 import { instagramBot } from "../workers/instagram-bot";
+import { socialAutoPoster } from "../workers/social-autoposter";
 import { authenticateUser, authorizeAdmin } from "../auth-middleware";
 
 export const magazineRouter = Router();
@@ -146,6 +147,44 @@ magazineRouter.put("/admin/articles/:id", authenticateUser, authorizeAdmin, asyn
     res.json(article);
   } catch (error: any) {
     res.status(400).json({ error: error.message || "Failed to update article" });
+  }
+});
+
+// Admin / Public: Get Autopilot 2-Post-Per-Day Status
+magazineRouter.get("/autopilot/status", async (req: Request, res: Response) => {
+  try {
+    const status = await socialAutoPoster.getStatus();
+    res.json(status);
+  } catch (error: any) {
+    console.error("Error fetching autopilot status:", error);
+    res.status(500).json({ error: "Failed to fetch autopilot status" });
+  }
+});
+
+// Admin: Toggle Autopilot (Enable/Disable)
+magazineRouter.post("/admin/autopilot/toggle", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+  try {
+    const { enabled } = req.body;
+    const updatedStatus = await socialAutoPoster.setEnabled(!!enabled);
+    res.json({
+      success: true,
+      message: `Autopilot is now ${enabled ? "active" : "paused"}.`,
+      status: updatedStatus,
+    });
+  } catch (error: any) {
+    console.error("Error toggling autopilot:", error);
+    res.status(500).json({ error: "Failed to toggle autopilot" });
+  }
+});
+
+// Admin: Manually Trigger Next Scheduled Social Post Now
+magazineRouter.post("/admin/autopilot/trigger-now", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
+  try {
+    const result = await socialAutoPoster.executeAutoPost();
+    res.json(result);
+  } catch (error: any) {
+    console.error("Error executing manual auto-post:", error);
+    res.status(500).json({ error: error.message || "Failed to execute auto-post" });
   }
 });
 

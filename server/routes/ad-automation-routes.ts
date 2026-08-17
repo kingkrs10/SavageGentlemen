@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { generateProductVideoAd, getGeneratedAdsHistory } from "../services/ad-video-generator";
 import { publishToSocialMedia } from "../services/social-publisher";
+import { moneyprinterService } from "../services/moneyprinter-service";
 import { SAVAGE_MERCH_CATALOG } from "../services/printify-service";
 import { db } from "../db";
 import { events } from "@shared/schema";
@@ -156,5 +157,66 @@ adAutomationRouter.get("/history", async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("[AdAutomationRouter] History error:", error);
     res.status(500).json({ error: "Failed to fetch ads history" });
+  }
+});
+
+// GET /api/ad-automation/moneyprinter/health — Check MoneyPrinterTurbo microservice status
+adAutomationRouter.get("/moneyprinter/health", async (req: Request, res: Response) => {
+  try {
+    const status = await moneyprinterService.checkHealth();
+    res.json(status);
+  } catch (error: any) {
+    res.status(500).json({ online: false, message: error.message });
+  }
+});
+
+// POST /api/ad-automation/moneyprinter/generate — Generate AI Narrated Video Reel
+adAutomationRouter.post("/moneyprinter/generate", async (req: Request, res: Response) => {
+  try {
+    const { videoSubject, videoScript, videoTerms, voiceName } = req.body;
+
+    if (!videoSubject) {
+      return res.status(400).json({ error: "videoSubject is required" });
+    }
+
+    const health = await moneyprinterService.checkHealth();
+
+    if (!health.online) {
+      // Return helpful fallback response if microservice is offline
+      return res.json({
+        success: false,
+        fallbackMode: true,
+        message: "MoneyPrinterTurbo microservice is currently offline. You can start it via Docker or use the local studio generator.",
+        health
+      });
+    }
+
+    const taskId = await moneyprinterService.submitTask({
+      videoSubject,
+      videoScript,
+      videoTerms,
+      voiceName,
+      videoAspect: "9:16"
+    });
+
+    const taskResult = await moneyprinterService.pollTask(taskId, 120);
+
+    if (taskResult.status === "completed" && taskResult.videoUrl) {
+      const localUrl = await moneyprinterService.saveVideoLocally(taskResult.videoUrl, "custom_reel");
+      return res.status(201).json({
+        success: true,
+        videoUrl: localUrl,
+        engine: "moneyprinter",
+        taskId
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: taskResult.error || "Video generation failed"
+    });
+  } catch (error: any) {
+    console.error("[AdAutomationRouter] MoneyPrinter generate error:", error);
+    res.status(500).json({ error: error.message || "Failed to generate video reel" });
   }
 });

@@ -1,6 +1,7 @@
 import { db } from "../db";
 import { sql } from "drizzle-orm";
 import { magazineBot } from "../workers/magazine-bot";
+import { socialAutoPoster } from "../workers/social-autoposter";
 
 /**
  * Self-healing database initialization.
@@ -86,6 +87,9 @@ export async function initializeDatabaseTables(): Promise<void> {
 
     // 5. Initialize and start the Autonomous Magazine & Ingestion Bot
     await magazineBot.start(6);
+
+    // 6. Initialize and start the Autonomous 2-Post-Per-Day Social Publisher
+    await socialAutoPoster.init();
   } catch (error: any) {
     console.error("[DBInit] ⚠️ Error during database table initialization:", error.message);
   }

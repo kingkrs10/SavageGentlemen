@@ -1,0 +1,18 @@
+services:
+  moneyprinter-turbo:
+    image: ghcr.io/harry0703/moneyprinterturbo:latest
+    container_name: savage-moneyprinter-sidecar
+    ports:
+      - "8090:8080" # FastAPI Server
+      - "8505:8501" # Streamlit WebUI
+    environment:
+      - PEXELS_API_KEY=${PEXELS_API_KEY:-YOUR_PEXELS_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_API_BASE=${OPENAI_API_BASE:-https://api.openai.com/v1}
+      - DEFAULT_VOICE=en-US-ChristopherNeural
+      - DEFAULT_ASPECT_RATIO=9:16
+    volumes:
+      - ./uploads/videos:/MoneyPrinterTurbo/storage/videos
+    working_dir: /MoneyPrinterTurbo
+    command: sh -c "python3 main.py & streamlit run ./webui/Main.py --server.address=0.0.0.0 --server.port=8501 --browser.serverAddress=127.0.0.1 --server.enableCORS=True --browser.gatherUsageStats=False --client.toolbarMode=minimal --logger.hideWelcomeMessage=True --server.showEmailPrompt=False"
+    restart: unless-stopped
