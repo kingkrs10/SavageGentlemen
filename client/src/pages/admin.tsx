@@ -198,6 +198,7 @@ import {
   DollarSign,
   BookOpen
 } from "lucide-react";
+import { useUser } from "@/context/UserContext";
 import AdminMediaPage from "./admin-media";
 import { MagazineAdminManager } from "@/components/admin/MagazineAdminManager";
 import { BackgroundVideoManager } from "@/components/admin/BackgroundVideoManager";
@@ -210,7 +211,11 @@ import { AffiliateManager } from "@/components/admin/AffiliateManager";
 export default function AdminPage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const { user: contextUser, isAdmin, isModerator, login } = useUser();
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
+  const [adminUsername, setAdminUsername] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -375,88 +380,61 @@ export default function AdminPage() {
   const [editingEvent, setEditingEvent] = useState<AdminEvent | null>(null);
 
   React.useEffect(() => {
-    // Check if user is logged in and is admin
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        const user = JSON.parse(storedUser);
-
-        // Extract user data from nested structure
-        const userData = user?.data?.data || user?.data || user;
-        setCurrentUser(userData);
-
-        // Check if user has a token and validate its age
-        if (userData?.token) {
-          try {
-            // Decode the HMAC token to check its timestamp
-            // Token format: base64url(userId:username:timestamp).signature
-            const [payload] = userData.token.split('.');
-            if (payload) {
-              // Convert base64url to base64: replace - with +, _ with /, and add padding
-              let base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-              const padding = base64.length % 4;
-              if (padding) {
-                base64 += '='.repeat(4 - padding);
-              }
-
-              // Decode the payload (format: userId:username:timestamp)
-              const decoded = atob(base64);
-              const parts = decoded.split(':');
-
-              if (parts.length === 3) {
-                const timestamp = parseInt(parts[2]);
-                if (!isNaN(timestamp)) {
-                  const tokenAge = Date.now() - timestamp;
-                  const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-
-                  // If token is expired (>24 hours)
-                  if (tokenAge >= maxAge) {
-                    toast({
-                      title: "Session Expired",
-                      description: "Your session has expired. Please log out and log back in to continue using admin features.",
-                      variant: "destructive",
-                    });
-                  }
-                  // If token will expire soon (<2 hours remaining)
-                  else if (tokenAge >= maxAge - (2 * 60 * 60 * 1000)) {
-                    const hoursRemaining = ((maxAge - tokenAge) / (60 * 60 * 1000)).toFixed(1);
-                    toast({
-                      title: "Session Expiring Soon",
-                      description: `Your session will expire in ${hoursRemaining} hours. Please save your work and re-login soon.`,
-                      variant: "default",
-                    });
-                  }
-                }
-              }
-            }
-          } catch (tokenError) {
-            console.error("Error checking token age:", tokenError);
-          }
-        }
-
-        // Enforce admin access — redirect non-admins
-        if (!userData.role || userData.role !== "admin") {
-          toast({
-            title: "Access Denied",
-            description: "You must be an admin to view this page.",
-            variant: "destructive",
-          });
-          navigate("/");
-          return;
-        }
-      } catch (err) {
-        console.error("Error parsing stored user:", err);
-      }
+    // Synchronize current user with context or local storage
+    if (contextUser) {
+      setCurrentUser(contextUser as any);
     } else {
-      // No user stored — redirect to home
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        try {
+          const user = JSON.parse(storedUser);
+          const userData = user?.data?.data || user?.data || user;
+          if (userData && userData.id) {
+            setCurrentUser(userData);
+          }
+        } catch (err) {
+          console.error("Error parsing stored user:", err);
+        }
+      }
+    }
+  }, [contextUser]);
+
+  const handleAdminLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminUsername || !adminPassword) return;
+    setIsAuthenticating(true);
+    try {
+      const res = await apiRequest("POST", "/api/auth/login", {
+        username: adminUsername,
+        password: adminPassword,
+      });
+      const responseData = await res.json();
+      if (!res.ok || responseData.status === 'error') {
+        throw new Error(responseData.message || "Invalid credentials");
+      }
+      const userData = responseData.data || responseData;
+      if (!userData || !userData.id) {
+        throw new Error("Invalid response from authentication server");
+      }
+      if (userData.role !== 'admin' && userData.role !== 'moderator') {
+        throw new Error("Account authenticated, but lacks administrator privileges.");
+      }
+      login(userData);
+      setCurrentUser(userData);
       toast({
-        title: "Not Logged In",
-        description: "Please log in with an admin account.",
+        title: "Access Granted",
+        description: `Welcome to the Savage Executive Dashboard, ${userData.displayName || userData.username}!`,
+      });
+    } catch (err: any) {
+      toast({
+        title: "Authentication Failed",
+        description: err.message || "Invalid credentials",
         variant: "destructive",
       });
-      navigate("/");
+    } finally {
+      setIsAuthenticating(false);
     }
-  }, [navigate, toast]);
+  };
 
   // Fetch products
   const {
@@ -1798,6 +1776,79 @@ export default function AdminPage() {
       });
     }
   };
+
+  const hasAdminAccess = isAdmin || isModerator || currentUser?.role === 'admin' || currentUser?.role === 'moderator';
+
+  if (!hasAdminAccess) {
+    return (
+      <div className="min-h-[85vh] flex items-center justify-center p-4">
+        <div className="w-full max-w-md glass-obsidian-strong border border-gold-500/30 rounded-3xl p-8 shadow-2xl backdrop-blur-2xl text-center space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-400 text-xs font-mono font-bold uppercase tracking-widest">
+            <Lock className="w-3.5 h-3.5 text-gold-400" />
+            Executive Access
+          </div>
+
+          <h2 className="text-2xl md:text-3xl font-heading font-extrabold text-white">
+            Admin Authentication
+          </h2>
+          <p className="text-xs text-gray-400 font-mono">
+            Authenticate with administrator or moderator credentials to access the Savage Gentlemen Command Center.
+          </p>
+
+          <form onSubmit={handleAdminLoginSubmit} className="space-y-4 text-left pt-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-mono text-gray-300">Admin Username or Email</Label>
+              <Input
+                type="text"
+                value={adminUsername}
+                onChange={(e) => setAdminUsername(e.target.value)}
+                placeholder="admin"
+                required
+                className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-mono text-gray-300">Password</Label>
+              <Input
+                type="password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              disabled={isAuthenticating}
+              className="w-full bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-obsidian font-bold rounded-xl text-xs uppercase tracking-wider py-5 shadow-lg shadow-gold-500/20"
+            >
+              {isAuthenticating ? "Verifying Credentials..." : "Enter Command Center"}
+            </Button>
+          </form>
+
+          <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs font-mono text-gray-400">
+            <button
+              onClick={() => navigate("/")}
+              className="hover:text-gold-400 transition-colors"
+            >
+              &larr; Return to Main Site
+            </button>
+            <button
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('sg:open-auth-modal', { detail: { tab: 'login' } }));
+              }}
+              className="text-gold-400 hover:text-gold-300"
+            >
+              Member Login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-obsidian text-white py-8 px-4 md:px-8 max-w-7xl mx-auto space-y-8">
