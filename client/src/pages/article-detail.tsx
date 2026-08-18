@@ -178,7 +178,11 @@ export default function ArticleDetail() {
         {/* Title & Metadata */}
         <div className="space-y-4 text-left">
           <div className="flex flex-wrap items-center gap-3">
-            <Badge className="bg-gold-500 text-obsidian font-mono uppercase font-bold text-xs px-3 py-1">
+            <Badge className="bg-gradient-to-r from-gold-500 to-amber-400 text-obsidian font-mono uppercase font-bold text-xs px-3 py-1 flex items-center gap-1.5 shadow-md">
+              <Sparkles className="w-3.5 h-3.5 fill-obsidian" />
+              SG Team Favorite
+            </Badge>
+            <Badge variant="outline" className="border-gold-500/40 text-gold-300 font-mono uppercase font-bold text-xs px-3 py-1">
               {article.category}
             </Badge>
             <span className="text-xs font-mono text-white/50 flex items-center gap-1">
@@ -205,7 +209,7 @@ export default function ArticleDetail() {
             </div>
             <div>
               <span className="text-sm font-semibold text-white block">{article.author || "Savage Editorial"}</span>
-              <span className="text-xs text-white/50">Caribbean Nocturne Culture Bureau</span>
+              <span className="text-xs text-white/50">Caribbean Nocturne Culture Bureau • Handpicked Selection</span>
             </div>
           </div>
         </div>
@@ -260,7 +264,7 @@ export default function ArticleDetail() {
             <AdSpace placement="article_inline" />
 
             {/* Article Action Footer */}
-            <div className="p-6 rounded-2xl border border-white/10 bg-obsidian-card flex flex-wrap items-center justify-between gap-4 mt-12">
+            <div className="p-6 rounded-2xl border border-gold-500/20 bg-obsidian-card flex flex-wrap items-center justify-between gap-4 mt-12">
               <div className="flex items-center gap-3">
                 <Button
                   onClick={() => likeMutation.mutate()}
@@ -290,9 +294,9 @@ export default function ArticleDetail() {
                   href={article.sourceUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs font-mono text-white/40 hover:text-gold-400 inline-flex items-center gap-1 transition-colors"
+                  className="text-xs font-mono text-gold-400 hover:text-gold-300 inline-flex items-center gap-1.5 transition-colors font-bold px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-gold-500/30"
                 >
-                  Original Source: {article.sourceName || "Web"} <ExternalLink className="w-3 h-3" />
+                  Read Original Source: {article.sourceName || "Publisher"} <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               )}
             </div>
@@ -300,6 +304,17 @@ export default function ArticleDetail() {
 
           {/* Sidebar */}
           <div className="lg:col-span-4 space-y-6">
+            {/* SG Team Curation Badge Card */}
+            <div className="rounded-2xl border border-gold-500/30 bg-gradient-to-b from-obsidian-card to-obsidian p-5 space-y-3 text-left shadow-xl">
+              <div className="inline-flex items-center gap-2 text-xs font-mono font-bold text-gold-400 uppercase tracking-widest">
+                <Sparkles className="w-3.5 h-3.5 text-gold-400" />
+                Editorial Team Selection
+              </div>
+              <p className="text-xs text-white/70 leading-relaxed font-light">
+                Hand-curated by the Savage Gentlemen editorial team — selected as an essential dispatch celebrating luxury Caribbean lifestyle, sound system innovation, and diaspora cultural excellence.
+              </p>
+            </div>
+
             {/* Sidebar Sponsor Ad */}
             <AdSpace placement="article_sidebar" />
 

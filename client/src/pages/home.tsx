@@ -319,15 +319,18 @@ const Home = () => {
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-500/10 text-gold-400 border border-gold-500/20 text-xs font-mono font-bold uppercase tracking-widest mb-2">
                 <Sparkles className="w-3.5 h-3.5 text-gold-400" />
-                AUTONOMOUS DIGITAL EDITORIAL
+                SG TEAM FAVORITES // CURATED EDITORIAL
               </div>
               <h2 className="text-3xl md:text-5xl font-heading font-extrabold uppercase tracking-tight text-white">
                 SAVAGE <span className="gold-gradient-text">MAGAZINE</span>
               </h2>
+              <p className="text-white/60 text-xs md:text-sm mt-1 max-w-xl font-light">
+                Handpicked favorite dispatches and cultural deep-dives curated by the Savage Gentlemen editorial staff.
+              </p>
             </div>
             <Link href="/magazine">
               <Button variant="outline" className="glass-obsidian border-gold-500/30 text-gold-300 hover:text-white rounded-xl uppercase text-xs tracking-wider font-bold">
-                Read All Dispatches
+                Explore All Stories
                 <ChevronRight className="w-4 h-4 ml-1.5" />
               </Button>
             </Link>
@@ -336,32 +339,36 @@ const Home = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {latestArticles.map((art: any) => (
               <Link key={art.id} href={`/magazine/${art.slug}`}>
-                <div className="h-full rounded-2xl border border-gold-500/15 bg-obsidian-card hover:border-gold-500/40 transition-all p-5 flex flex-col justify-between group cursor-pointer shadow-lg space-y-4">
+                <div className="h-full rounded-2xl border border-gold-500/15 bg-obsidian-card hover:border-gold-500/50 hover:shadow-xl hover:shadow-gold-500/10 transition-all p-5 flex flex-col justify-between group cursor-pointer shadow-lg space-y-4">
                   <div className="relative w-full h-48 rounded-xl overflow-hidden bg-obsidian-dark">
                     <img
                       src={art.featuredImage || "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&h=500&fit=crop"}
                       alt={art.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute top-2 left-2">
-                      <span className="px-2 py-0.5 rounded-full bg-obsidian/85 text-[10px] font-mono font-bold uppercase tracking-wider text-gold-300 border border-gold-500/30">
+                    <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                      <span className="px-2.5 py-0.5 rounded-full bg-obsidian/90 text-[10px] font-mono font-bold uppercase tracking-wider text-gold-300 border border-gold-500/30 flex items-center gap-1">
+                        <Sparkles className="w-2.5 h-2.5 text-gold-400" />
+                        SG Team Fav
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-black/60 text-[9px] font-mono text-gray-300">
                         {art.category}
                       </span>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <h3 className="font-heading text-lg font-bold text-white group-hover:text-gold-300 transition-colors line-clamp-2">
+                    <h3 className="font-heading text-lg font-bold text-white group-hover:text-gold-300 transition-colors line-clamp-2 leading-snug">
                       {art.title}
                     </h3>
-                    <p className="text-xs text-white/60 line-clamp-2">
+                    <p className="text-xs text-white/60 line-clamp-2 font-light">
                       {art.summary}
                     </p>
                   </div>
 
                   <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs font-mono text-gold-400">
-                    <span>{art.readTime || "3 min read"}</span>
-                    <span className="inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                    <span className="text-white/40">{art.readTime || "3 min read"}</span>
+                    <span className="inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform font-bold">
                       Read Story &rarr;
                     </span>
                   </div>

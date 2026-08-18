@@ -119,14 +119,14 @@ export default function Magazine() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-gold-500/20 pb-8">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-400 text-xs font-mono font-bold uppercase tracking-widest mb-3">
-                <Sparkles className="w-3.5 h-3.5" />
-                The Nocturne Dispatch
+                <Sparkles className="w-3.5 h-3.5 text-gold-400" />
+                SG TEAM FAVORITES // CURATED DISPATCHES
               </div>
               <h1 className="font-heading text-4xl md:text-6xl font-bold gold-gradient-text uppercase tracking-tight">
                 Savage Magazine
               </h1>
-              <p className="text-white/60 text-sm md:text-base max-w-2xl mt-2 font-light">
-                High-octane dispatches from the global Caribbean nightlife circuit: sound system evolutions, luxury fete itineraries, vintage pot-still rums, and runway streetwear.
+              <p className="text-white/70 text-sm md:text-base max-w-2xl mt-2 font-light leading-relaxed">
+                Handpicked editorial favorites from the Savage Gentlemen team — celebrating high-octane Caribbean lifestyle, sound system evolutions, luxury fete itineraries, vintage pot-still rums, and runway streetwear.
               </p>
             </div>
 
@@ -145,7 +145,7 @@ export default function Magazine() {
       {/* ── 2. FEATURED COVER STORY (HERO) ── */}
       {featuredArticle && !searchQuery && (
         <section className="container mx-auto px-4">
-          <div className="relative rounded-3xl overflow-hidden border border-gold-500/30 bg-obsidian-card shadow-2xl group">
+          <Link href={`/magazine/${featuredArticle.slug}`} className="block relative rounded-3xl overflow-hidden border border-gold-500/30 bg-obsidian-card shadow-2xl group cursor-pointer hover:border-gold-500/60 transition-all duration-300">
             <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[460px]">
               {/* Featured Image */}
               <div className="lg:col-span-7 relative h-72 lg:h-full overflow-hidden bg-obsidian-dark">
@@ -155,10 +155,14 @@ export default function Magazine() {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 filter brightness-95"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-transparent to-transparent lg:hidden" />
-                <div className="absolute top-4 left-4 z-10">
-                  <Badge className="bg-gold-500 text-obsidian font-mono uppercase font-bold text-xs px-3 py-1 shadow-lg">
-                    Cover Story
+                <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+                  <Badge className="bg-gradient-to-r from-gold-500 to-amber-400 text-obsidian font-mono uppercase font-bold text-xs px-3 py-1 shadow-lg flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 fill-obsidian" />
+                    SG Team Top Pick
                   </Badge>
+                  <span className="px-2.5 py-1 rounded-full bg-obsidian/85 backdrop-blur-md border border-gold-500/30 text-[10px] font-mono font-bold uppercase tracking-wider text-gold-300">
+                    {featuredArticle.category}
+                  </span>
                 </div>
               </div>
 
@@ -169,13 +173,15 @@ export default function Magazine() {
                     <span className="text-gold-400 uppercase tracking-widest font-semibold">{featuredArticle.category}</span>
                     <span>•</span>
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {featuredArticle.readTime || "4 min read"}</span>
+                    <span>•</span>
+                    <span className="text-emerald-400 font-bold">Featured Story</span>
                   </div>
 
                   <h2 className="font-heading text-2xl md:text-3xl lg:text-4xl font-bold text-white group-hover:text-gold-300 transition-colors leading-tight">
                     {cleanTitle(featuredArticle.title)}
                   </h2>
 
-                  <p className="text-white/70 text-sm md:text-base leading-relaxed line-clamp-4">
+                  <p className="text-white/70 text-sm md:text-base leading-relaxed line-clamp-4 font-light">
                     {cleanCaption(featuredArticle.summary)}
                   </p>
                 </div>
@@ -188,16 +194,14 @@ export default function Magazine() {
                     <span className="text-xs text-white/70 font-medium">{featuredArticle.author || "Savage Editorial"}</span>
                   </div>
 
-                  <Link href={`/magazine/${featuredArticle.slug}`}>
-                    <Button className="bg-gold-500 hover:bg-gold-400 text-obsidian font-bold gap-2 text-xs uppercase tracking-wider shadow-lg">
-                      Read Full Story
-                      <ArrowUpRight className="w-4 h-4" />
-                    </Button>
-                  </Link>
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-500 text-obsidian font-bold text-xs uppercase tracking-wider shadow-lg group-hover:bg-gold-400 transition-colors">
+                    Read Full Story
+                    <ArrowUpRight className="w-4 h-4" />
+                  </span>
                 </div>
               </div>
             </div>
-          </div>
+          </Link>
         </section>
       )}
 
@@ -271,10 +275,11 @@ export default function Magazine() {
         ) : (
           <div className="space-y-12">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-              {filteredArticles.map((article, index) => (
-                <div
+              {filteredArticles.map((article) => (
+                <Link
                   key={article.id}
-                  className="rounded-2xl border border-gold-500/15 bg-obsidian-card hover:border-gold-500/40 transition-all duration-300 flex flex-col justify-between overflow-hidden group shadow-lg"
+                  href={`/magazine/${article.slug}`}
+                  className="rounded-2xl border border-gold-500/15 bg-obsidian-card hover:border-gold-500/50 hover:shadow-xl hover:shadow-gold-500/5 transition-all duration-300 flex flex-col justify-between overflow-hidden group cursor-pointer h-full"
                 >
                   {/* Article Thumbnail */}
                   <div className="relative w-full h-52 overflow-hidden bg-obsidian-dark">
@@ -283,8 +288,12 @@ export default function Magazine() {
                       alt={article.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute top-3 left-3">
-                      <span className="px-2.5 py-1 rounded-full bg-obsidian/85 backdrop-blur-md border border-gold-500/30 text-[10px] font-mono font-bold uppercase tracking-wider text-gold-300">
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                      <span className="px-2.5 py-1 rounded-full bg-obsidian/90 backdrop-blur-md border border-gold-500/30 text-[10px] font-mono font-bold uppercase tracking-wider text-gold-300 flex items-center gap-1">
+                        <Sparkles className="w-2.5 h-2.5 text-gold-400" />
+                        SG Team Fav
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-black/60 text-[9px] font-mono text-gray-300">
                         {article.category}
                       </span>
                     </div>
@@ -303,7 +312,7 @@ export default function Magazine() {
                         {cleanTitle(article.title)}
                       </h3>
 
-                      <p className="text-xs text-white/60 line-clamp-3 leading-relaxed">
+                      <p className="text-xs text-white/60 line-clamp-3 leading-relaxed font-light">
                         {cleanCaption(article.summary)}
                       </p>
                     </div>
@@ -313,14 +322,12 @@ export default function Magazine() {
                         By {article.author || "Savage Editorial"}
                       </span>
 
-                      <Link href={`/magazine/${article.slug}`}>
-                        <span className="text-xs font-mono font-bold text-gold-400 group-hover:text-gold-300 inline-flex items-center gap-1">
-                          Read Story <ArrowUpRight className="w-3.5 h-3.5" />
-                        </span>
-                      </Link>
+                      <span className="text-xs font-mono font-bold text-gold-400 group-hover:text-gold-300 group-hover:translate-x-0.5 inline-flex items-center gap-1 transition-transform">
+                        Read Story <ArrowUpRight className="w-3.5 h-3.5" />
+                      </span>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
 
