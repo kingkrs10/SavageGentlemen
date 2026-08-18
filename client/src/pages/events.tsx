@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getNormalizedImageUrl } from "@/lib/utils/image-utils";
 import { Link } from "wouter";
 import AddToCalendarButton from "@/components/events/AddToCalendarButton";
+import { AdSpace } from "@/components/home/AdSpace";
 
 
 const Events = () => {
@@ -70,7 +71,10 @@ const Events = () => {
   };
 
   return (
-    <div>
+    <div className="space-y-6">
+      {/* Top Header Ticker Ad */}
+      <AdSpace placement="header_ticker" className="rounded-xl overflow-hidden" />
+
       {/* Hero Event */}
       <div className="relative rounded-xl overflow-hidden mb-6 shadow-lg">
         {upcomingLoading ? (
@@ -301,6 +305,9 @@ const Events = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Inline Feature / Sponsored Offer */}
+      <AdSpace placement="article_inline" className="mt-8" />
     </div>
   );
 };

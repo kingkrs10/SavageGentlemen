@@ -12,7 +12,8 @@ export interface AdGenerationOptions {
   description: string;
   imageUrl: string;
   ctaText?: string;
-  stylePreset?: "dark-luxury" | "caribbean-energy" | "streetwear-bold";
+  stylePreset?: "dark-luxury" | "caribbean-energy" | "streetwear-bold" | "fete-fomo";
+  aspectRatio?: "9:16" | "16:9" | "1:1";
   durationSeconds?: number;
 }
 
@@ -22,7 +23,9 @@ export interface GeneratedAdResult {
   duration: number;
   width: number;
   height: number;
+  aspectRatio: string;
   title: string;
+  stylePreset: string;
   createdAt: string;
 }
 
@@ -121,13 +124,15 @@ async function downloadImageToTemp(url: string, destPath: string): Promise<strin
 }
 
 /**
- * Generates an ultra-crisp 9:16 vertical video ad (1080x1920) for TikTok, Reels, and Shorts.
+ * Generates an ultra-crisp viral video ad in 9:16 or 16:9 for TikTok, Reels, Shorts, and Web Banners.
  */
 export async function generateProductVideoAd(options: AdGenerationOptions): Promise<GeneratedAdResult> {
-  const duration = options.durationSeconds || 15;
+  const duration = options.durationSeconds || 12;
   const timestamp = Date.now();
   const safeId = options.id.replace(/[^a-zA-Z0-9_-]/g, "_");
-  const filename = `ad_${safeId}_${timestamp}.mp4`;
+  const aspect = options.aspectRatio || "9:16";
+  const style = options.stylePreset || "dark-luxury";
+  const filename = `ad_${safeId}_${aspect.replace(":", "x")}_${timestamp}.mp4`;
   const outputPath = path.join(ADS_OUTPUT_DIR, filename);
 
   const tempDir = path.resolve(process.cwd(), "scratch");
@@ -138,33 +143,76 @@ export async function generateProductVideoAd(options: AdGenerationOptions): Prom
   const tempImgPath = path.join(tempDir, `temp_img_${timestamp}.jpg`);
 
   try {
-    console.log(`[AdVideoGenerator] Fetching product image for "${options.title}"...`);
+    console.log(`[AdVideoGenerator] Fetching media for "${options.title}"...`);
     await downloadImageToTemp(options.imageUrl, tempImgPath);
 
-    console.log(`[AdVideoGenerator] Compiling 9:16 vertical video ad via FFmpeg: ${filename}`);
+    console.log(`[AdVideoGenerator] Compiling ${aspect} (${style}) viral video ad via FFmpeg: ${filename}`);
 
     const safeTitle = options.title.replace(/[:"'\\]/g, "").toUpperCase();
     const safePrice = options.priceFormatted.replace(/[:"'\\]/g, "");
     const safeCta = (options.ctaText || "SHOP NOW • SAVAGEGENTLEMEN.COM").replace(/[:"'\\]/g, "").toUpperCase();
-    const safeBadge = (options.category || "LIMITED DROP").replace(/[:"'\\]/g, "").toUpperCase();
+    const safeBadge = (options.category || "EXCLUSIVE DROP").replace(/[:"'\\]/g, "").toUpperCase();
 
-    // Clean, robust filtercomplex for video and text overlay
-    const filterComplex = [
-      `color=c=0x0a0a0f:s=1080x1920:d=${duration}[bg]`,
-      `[0:v]scale=900:1100:force_original_aspect_ratio=decrease,pad=900:1100:(ow-iw)/2:(oh-ih)/2:color=0x00000000[prod]`,
-      `[bg][prod]overlay=(W-w)/2:380[v1]`,
-      `[v1]drawbox=x=0:y=0:w=1080:h=180:color=0x000000@0.75:t=fill[v2]`,
-      `[v2]drawtext=text='SAVAGE GENTLEMEN EXCLUSIVE':fontsize=32:fontcolor=0xD4AF37:x=(w-text_w)/2:y=70[v3]`,
-      `[v3]drawbox=x=(1080-360)/2:y=240:w=360:h=60:color=0xD4AF37@0.25:t=fill[v4]`,
-      `[v4]drawtext=text='${safeBadge}':fontsize=28:fontcolor=0xFFFFFF:x=(w-text_w)/2:y=255[v5]`,
-      `[v5]drawtext=text='${safeTitle}':fontsize=48:fontcolor=0xFFFFFF:x=(w-text_w)/2:y=1540[v6]`,
-      `[v6]drawbox=x=(1080-300)/2:y=1640:w=300:h=70:color=0xD4AF37:t=fill[v7]`,
-      `[v7]drawtext=text='${safePrice}':fontsize=38:fontcolor=0x000000:x=(w-text_w)/2:y=1655[v8]`,
-      `[v8]drawbox=x=0:y=1760:w=1080:h=160:color=0x111118@0.95:t=fill[v9]`,
-      `[v9]drawtext=text='${safeCta}':fontsize=34:fontcolor=0xF59E0B:x=(w-text_w)/2:y=1820[vout]`
-    ].join(";");
+    // Style colors
+    let bgColor = "0x0a0a0f";
+    let accentColor = "0xD4AF37"; // Gold
+    let headerText = "SAVAGE GENTLEMEN EXCLUSIVE";
 
-    const audioSource = `sine=frequency=130:duration=${duration}`;
+    if (style === "caribbean-energy") {
+      bgColor = "0x0b132b";
+      accentColor = "0x10B981"; // Emerald
+      headerText = "CARIBBEAN NOCTURNE • HIGH ENERGY";
+    } else if (style === "streetwear-bold") {
+      bgColor = "0x111111";
+      accentColor = "0xFACC15"; // Cyber Yellow
+      headerText = "SAVAGE GENTLEMEN STREETWEAR";
+    } else if (style === "fete-fomo") {
+      bgColor = "0x1a0624";
+      accentColor = "0xF59E0B"; // Amber Gold
+      headerText = "⚡ LIMITED TIME ONLY • SELLING OUT FAST";
+    }
+
+    let filterComplex = "";
+    let width = 1080;
+    let height = 1920;
+
+    if (aspect === "16:9") {
+      width = 1920;
+      height = 1080;
+      // 16:9 Landscape Layout (1920x1080)
+      filterComplex = [
+        `color=c=${bgColor}:s=1920x1080:d=${duration}[bg]`,
+        `[0:v]scale=850:900:force_original_aspect_ratio=decrease,pad=850:900:(ow-iw)/2:(oh-ih)/2:color=0x00000000[prod]`,
+        `[bg][prod]overlay=80:90[v1]`,
+        `[v1]drawbox=x=980:y=120:w=860:h=60:color=${accentColor}@0.3:t=fill[v2]`,
+        `[v2]drawtext=text='${headerText}':fontsize=28:fontcolor=0xFFFFFF:x=1010:y=135[v3]`,
+        `[v3]drawtext=text='${safeBadge}':fontsize=24:fontcolor=${accentColor}:x=1010:y=210[v4]`,
+        `[v4]drawtext=text='${safeTitle}':fontsize=52:fontcolor=0xFFFFFF:x=1010:y=280[v5]`,
+        `[v5]drawbox=x=1010:y=480:w=320:h=80:color=${accentColor}:t=fill[v6]`,
+        `[v6]drawtext=text='${safePrice}':fontsize=44:fontcolor=0x000000:x=1040:y=498[v7]`,
+        `[v7]drawbox=x=980:y=860:w=860:h=120:color=0x111118@0.95:t=fill[v8]`,
+        `[v8]drawtext=text='${safeCta}':fontsize=36:fontcolor=${accentColor}:x=1020:y=900[vout]`
+      ].join(";");
+    } else {
+      // 9:16 Vertical Layout (1080x1920) for TikTok, Reels, Shorts
+      filterComplex = [
+        `color=c=${bgColor}:s=1080x1920:d=${duration}[bg]`,
+        `[0:v]scale=920:1080:force_original_aspect_ratio=decrease,pad=920:1080:(ow-iw)/2:(oh-ih)/2:color=0x00000000[prod]`,
+        `[bg][prod]overlay=(W-w)/2:380[v1]`,
+        `[v1]drawbox=x=0:y=0:w=1080:h=180:color=0x000000@0.85:t=fill[v2]`,
+        `[v2]drawtext=text='${headerText}':fontsize=32:fontcolor=${accentColor}:x=(w-text_w)/2:y=70[v3]`,
+        `[v3]drawbox=x=(1080-420)/2:y=240:w=420:h=64:color=${accentColor}@0.25:t=fill[v4]`,
+        `[v4]drawtext=text='${safeBadge}':fontsize=28:fontcolor=0xFFFFFF:x=(w-text_w)/2:y=258[v5]`,
+        `[v5]drawtext=text='${safeTitle}':fontsize=46:fontcolor=0xFFFFFF:x=(w-text_w)/2:y=1530[v6]`,
+        `[v6]drawbox=x=(1080-320)/2:y=1630:w=320:h=76:color=${accentColor}:t=fill[v7]`,
+        `[v7]drawtext=text='${safePrice}':fontsize=40:fontcolor=0x000000:x=(w-text_w)/2:y=1648[v8]`,
+        `[v8]drawbox=x=0:y=1760:w=1080:h=160:color=0x111118@0.95:t=fill[v9]`,
+        `[v9]drawtext=text='${safeCta}':fontsize=34:fontcolor=${accentColor}:x=(w-text_w)/2:y=1820[vout]`
+      ].join(";");
+    }
+
+    // High energy synthesized rhythmic audio pulse (4-on-the-floor kick rhythm)
+    const audioSource = `aevalsrc=sin(2*PI*55*t)*exp(-8*mod(t\\,0.5))+sin(2*PI*110*t)*0.2*exp(-4*mod(t\\,0.25)):s=44100:d=${duration}`;
 
     return new Promise((resolve, reject) => {
       const args = [
@@ -200,13 +248,15 @@ export async function generateProductVideoAd(options: AdGenerationOptions): Prom
         } catch {}
 
         if (code === 0 && fs.existsSync(outputPath)) {
-          console.log(`[AdVideoGenerator] ✅ Successfully rendered video ad: ${outputPath}`);
+          console.log(`[AdVideoGenerator] ✅ Successfully rendered ${aspect} video ad: ${outputPath}`);
           resolve({
             videoUrl: `/generated-ads/${filename}`,
             filePath: outputPath,
             duration,
-            width: 1080,
-            height: 1920,
+            width,
+            height,
+            aspectRatio: aspect,
+            stylePreset: style,
             title: options.title,
             createdAt: new Date().toISOString()
           });
@@ -235,13 +285,16 @@ export function getGeneratedAdsHistory(): GeneratedAdResult[] {
     .map((file) => {
       const fullPath = path.join(ADS_OUTPUT_DIR, file);
       const stat = fs.statSync(fullPath);
+      const isLandscape = file.includes("16x9");
       return {
         videoUrl: `/generated-ads/${file}`,
         filePath: fullPath,
-        duration: 15,
-        width: 1080,
-        height: 1920,
-        title: file.replace(/^ad_/, "").replace(/_\d+\.mp4$/, "").replace(/_/g, " "),
+        duration: 12,
+        width: isLandscape ? 1920 : 1080,
+        height: isLandscape ? 1080 : 1920,
+        aspectRatio: isLandscape ? "16:9" : "9:16",
+        stylePreset: "dark-luxury",
+        title: file.replace(/^ad_/, "").replace(/_\d+x\d+_\d+\.mp4$/, "").replace(/_\d+\.mp4$/, "").replace(/_/g, " "),
         createdAt: stat.birthtime.toISOString()
       };
     })

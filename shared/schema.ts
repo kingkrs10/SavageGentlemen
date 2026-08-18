@@ -1237,10 +1237,12 @@ export const insertSponsoredContentSchema = createInsertSchema(sponsoredContent)
     priority: true,
     startDate: true,
     endDate: true,
+    placement: true,
     createdBy: true,
   })
   .extend({
     type: z.enum(['standard', 'banner', 'product', 'event', 'video']).default('standard'),
+    placement: z.string().default('header_ticker'),
     title: z.string().min(1, 'Title is required'),
     description: z.string().min(1, 'Description is required'),
     backgroundColor: z.string().default('bg-gray-800'),

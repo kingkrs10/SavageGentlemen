@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { AudioPlayerProvider } from "@/context/AudioPlayerContext";
 import { GlobalAudioPlayer } from "@/components/audio/GlobalAudioPlayer";
+import { ViralPromoDock } from "@/components/ads/ViralPromoDock";
 import { SavageConcierge } from "@/components/ai/SavageConcierge";
 import { GlitchTransition } from "@/components/effects/GlitchTransition";
 import { RealityToggle } from "@/components/layout/RealityToggle";
@@ -248,6 +249,9 @@ function AppContent() {
 
           {/* Sticky Global Audio Player for DJ Mixes */}
           <GlobalAudioPlayer />
+
+          {/* High-Traffic Floating Viral Promo & Conversion Dock */}
+          <ViralPromoDock />
 
           {/* Autonomous AI Booking & Nightlife Concierge */}
           <SavageConcierge />
