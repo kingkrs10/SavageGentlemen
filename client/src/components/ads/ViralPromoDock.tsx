@@ -13,6 +13,14 @@ interface PromoOffer {
 
 const VIRAL_OFFERS: PromoOffer[] = [
   {
+    id: "carnival_planner_sponsor",
+    badge: "OFFICIAL SPONSOR",
+    headline: "Carnival Planner: Luxury Fete & Travel Concierge",
+    subtext: "Bespoke itineraries, VIP costumes & fete packages • www.carnival-planner.com",
+    ctaText: "Plan Trip",
+    ctaLink: "https://www.carnival-planner.com",
+  },
+  {
     id: "hoodie_drop",
     badge: "LIMITED STREETWEAR DROP",
     headline: "Heavyweight 480GSM French Terry Hoodie",
@@ -103,14 +111,26 @@ export function ViralPromoDock() {
 
           {/* Action CTA */}
           <div className="flex items-center gap-2 shrink-0">
-            <Link href={currentOffer.ctaLink}>
-              <button
+            {currentOffer.ctaLink.startsWith("http") ? (
+              <a
+                href={currentOffer.ctaLink}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 rounded-xl bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-obsidian font-bold text-xs md:text-sm shadow-md transition hover:scale-105 active:scale-95"
               >
                 <span>{currentOffer.ctaText}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </Link>
+              </a>
+            ) : (
+              <Link href={currentOffer.ctaLink}>
+                <button
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 rounded-xl bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-obsidian font-bold text-xs md:text-sm shadow-md transition hover:scale-105 active:scale-95"
+                >
+                  <span>{currentOffer.ctaText}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </Link>
+            )}
 
             {/* Dismiss Button */}
             <button

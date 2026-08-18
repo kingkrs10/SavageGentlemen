@@ -142,14 +142,31 @@ adAutomationRouter.get("/catalog", async (req: Request, res: Response) => {
       defaultPlacement: "header_ticker"
     };
 
+    // 6. Official Sponsor: Carnival Planner
+    const carnivalPlannerItem = {
+      id: "carnival_planner_official",
+      type: "sponsor",
+      title: "Carnival Planner • Luxury Fete & Itinerary Concierge",
+      category: "OFFICIAL SPONSOR",
+      price: 0,
+      priceFormatted: "WWW.CARNIVAL-PLANNER.COM",
+      description: "Elevate your carnival experience with all-inclusive VIP fete schedules, costume concierge, and luxury travel.",
+      imageUrl: "/images/carnival-planner-ad.jpg",
+      suggestedHook: "🌴 Elevate your Caribbean carnival experience with bespoke luxury itineraries.",
+      suggestedCaption: "Plan your ultimate carnival escape with all-inclusive fete schedules, VIP costumes, and premium accommodations at www.carnival-planner.com.",
+      productLink: "https://www.carnival-planner.com",
+      defaultPlacement: "header_ticker"
+    };
+
     res.json({
       merch: merchItems,
       events: eventItems,
       passport: [passportItem],
       media: [musicMixItem],
       promoter: [promoterItem],
+      sponsor: [carnivalPlannerItem],
       viralHooks: VIRAL_HOOKS_MATRIX,
-      total: merchItems.length + eventItems.length + 3
+      total: merchItems.length + eventItems.length + 4
     });
   } catch (error: any) {
     console.error("[AdAutomationRouter] Catalog error:", error);

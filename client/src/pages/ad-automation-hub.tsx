@@ -40,7 +40,7 @@ import { apiRequest } from "@/lib/queryClient";
 
 interface CatalogItem {
   id: string;
-  type: "merch" | "event" | "passport" | "media" | "promoter";
+  type: "merch" | "event" | "passport" | "media" | "promoter" | "sponsor";
   title: string;
   category: string;
   priceFormatted: string;
@@ -86,6 +86,7 @@ export default function AdAutomationHub() {
     passport: CatalogItem[];
     media: CatalogItem[];
     promoter: CatalogItem[];
+    sponsor: CatalogItem[];
     viralHooks: ViralHookCategory[];
   }>({
     merch: [],
@@ -93,6 +94,7 @@ export default function AdAutomationHub() {
     passport: [],
     media: [],
     promoter: [],
+    sponsor: [],
     viralHooks: []
   });
 
@@ -375,7 +377,7 @@ export default function AdAutomationHub() {
                 </div>
 
                 <Tabs value={activeCatalogTab} onValueChange={setActiveCatalogTab} className="w-full">
-                  <TabsList className="bg-white/5 border border-white/10 w-full grid grid-cols-5 mb-4 text-xs">
+                  <TabsList className="bg-white/5 border border-white/10 w-full grid grid-cols-3 sm:grid-cols-6 mb-4 text-xs">
                     <TabsTrigger value="merch" className="data-[state=active]:bg-gold-500 data-[state=active]:text-black font-semibold text-[11px]">
                       Merch ({catalog.merch.length})
                     </TabsTrigger>
@@ -391,10 +393,13 @@ export default function AdAutomationHub() {
                     <TabsTrigger value="promoter" className="data-[state=active]:bg-gold-500 data-[state=active]:text-black font-semibold text-[11px]">
                       Promoter ({catalog.promoter.length})
                     </TabsTrigger>
+                    <TabsTrigger value="sponsor" className="data-[state=active]:bg-gold-500 data-[state=active]:text-black font-semibold text-[11px]">
+                      Sponsor ({catalog.sponsor?.length || 0})
+                    </TabsTrigger>
                   </TabsList>
 
                   {/* Tab Contents */}
-                  {["merch", "events", "passport", "media", "promoter"].map((tabKey) => {
+                  {["merch", "events", "passport", "media", "promoter", "sponsor"].map((tabKey) => {
                     const items = (catalog as any)[tabKey] as CatalogItem[];
                     return (
                       <TabsContent key={tabKey} value={tabKey} className="space-y-3">
