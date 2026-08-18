@@ -35,7 +35,7 @@ export class InstagramBot {
     return `NEW DISPATCH: ${title.toUpperCase()}\n\n` +
       `${summary}\n\n` +
       `Read the full editorial & listen to the curated soundtrack at savgent.com/magazine/${article.slug}\n\n` +
-      `Savage Gentlemen | The Pulse of Caribbean Nightlife & Culture`;
+      `Savage Gentlemen | The Pulse of Caribbean Lifestyle & Culture`;
   }
 
   async publishArticlePost(articleId: number, options?: { videoUrl?: string; engine?: string }): Promise<InstagramPostResult> {

@@ -192,7 +192,7 @@ const Home = () => {
           <div className="inline-flex items-center gap-2 mb-4">
             <img src={SGFlyerLogoPng} alt="SG" className="w-10 h-10 object-contain drop-shadow-[0_0_10px_rgba(229,169,60,0.5)]" />
             <span className="text-xs uppercase tracking-[0.3em] text-gold-400 font-bold font-mono">
-              Luxury Caribbean Nightlife & Culture
+              Luxury Caribbean Lifestyle & Culture
             </span>
           </div>
 
