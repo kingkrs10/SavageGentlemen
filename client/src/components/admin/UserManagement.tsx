@@ -199,63 +199,63 @@ const UserManagement = () => {
     <div className="space-y-6">
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card>
+        <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-              <Users className="h-4 w-4 mr-2" />
+            <CardTitle className="text-xs font-mono font-bold text-gray-400 uppercase tracking-wider flex items-center">
+              <Users className="h-3.5 w-3.5 mr-2 text-gold-400" />
               Total Users
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{userStats.total}</div>
+            <div className="text-2xl font-heading font-extrabold text-white">{userStats.total}</div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-              <Shield className="h-4 w-4 mr-2" />
+            <CardTitle className="text-xs font-mono font-bold text-gray-400 uppercase tracking-wider flex items-center">
+              <Shield className="h-3.5 w-3.5 mr-2 text-gold-400" />
               Admins
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{userStats.admins}</div>
+            <div className="text-2xl font-heading font-extrabold text-gold-400">{userStats.admins}</div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-              <Eye className="h-4 w-4 mr-2" />
+            <CardTitle className="text-xs font-mono font-bold text-gray-400 uppercase tracking-wider flex items-center">
+              <Eye className="h-3.5 w-3.5 mr-2 text-amber-400" />
               Moderators
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{userStats.moderators}</div>
+            <div className="text-2xl font-heading font-extrabold text-amber-400">{userStats.moderators}</div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-              <UserCheck className="h-4 w-4 mr-2" />
+            <CardTitle className="text-xs font-mono font-bold text-gray-400 uppercase tracking-wider flex items-center">
+              <UserCheck className="h-3.5 w-3.5 mr-2 text-emerald-400" />
               Registered
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{userStats.registered}</div>
+            <div className="text-2xl font-heading font-extrabold text-emerald-400">{userStats.registered}</div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center">
-              <Mail className="h-4 w-4 mr-2" />
+            <CardTitle className="text-xs font-mono font-bold text-gray-400 uppercase tracking-wider flex items-center">
+              <Mail className="h-3.5 w-3.5 mr-2 text-gray-400" />
               Guests
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-600">{userStats.guests}</div>
+            <div className="text-2xl font-heading font-extrabold text-gray-400">{userStats.guests}</div>
           </CardContent>
         </Card>
       </div>
@@ -263,22 +263,22 @@ const UserManagement = () => {
       {/* Search and Filter Controls */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search users by name, username, or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 bg-obsidian-card/90 border-white/15 text-white placeholder:text-gray-500 rounded-xl"
           />
         </div>
         
         <div className="flex gap-2">
           <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-[150px]">
-              <Filter className="h-4 w-4 mr-2" />
+            <SelectTrigger className="w-[150px] bg-obsidian-card/90 border-white/15 text-white rounded-xl">
+              <Filter className="h-4 w-4 mr-2 text-gold-400" />
               <SelectValue placeholder="Filter by role" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-obsidian-card border border-gold-500/30 text-white rounded-xl shadow-2xl">
               <SelectItem value="all">All Roles</SelectItem>
               <SelectItem value="admin">Admin</SelectItem>
               <SelectItem value="moderator">Moderator</SelectItem>
@@ -287,11 +287,11 @@ const UserManagement = () => {
           </Select>
           
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[150px]">
-              <Filter className="h-4 w-4 mr-2" />
+            <SelectTrigger className="w-[150px] bg-obsidian-card/90 border-white/15 text-white rounded-xl">
+              <Filter className="h-4 w-4 mr-2 text-gold-400" />
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-obsidian-card border border-gold-500/30 text-white rounded-xl shadow-2xl">
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="registered">Registered</SelectItem>
               <SelectItem value="guest">Guest</SelectItem>
@@ -301,34 +301,33 @@ const UserManagement = () => {
       </div>
 
       {/* Results Count */}
-      <div className="text-sm text-muted-foreground">
-        Showing {filteredUsers.length} of {userStats.total} users
+      <div className="text-xs font-mono text-gray-400">
+        Showing {filteredUsers.length} of {userStats.total} members
       </div>
       
-      <div className="bg-card rounded-lg border shadow-sm overflow-hidden">
+      <div className="bg-obsidian-card border border-gold-500/20 rounded-2xl shadow-xl overflow-hidden">
         <Table>
-          <TableCaption>List of all registered users</TableCaption>
-          <TableHeader>
+          <TableHeader className="bg-white/5 border-b border-gold-500/20">
             <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Username</TableHead>
-              <TableHead>Display Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Joined</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">ID</TableHead>
+              <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Username</TableHead>
+              <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Display Name</TableHead>
+              <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Email</TableHead>
+              <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Joined</TableHead>
+              <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Status</TableHead>
+              <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Role</TableHead>
+              <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredUsers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
+                <TableCell colSpan={8} className="text-center py-12">
                   <div className="flex flex-col items-center gap-2">
-                    <Users className="h-8 w-8 text-muted-foreground" />
-                    <p className="text-muted-foreground">
+                    <Users className="h-8 w-8 text-gray-500" />
+                    <p className="text-gray-400 text-xs font-mono">
                       {searchQuery || roleFilter !== 'all' || statusFilter !== 'all' 
-                        ? 'No users match your current filters' 
+                        ? 'No members match your current filters' 
                         : 'No users found'}
                     </p>
                     {(searchQuery || roleFilter !== 'all' || statusFilter !== 'all') && (
@@ -340,6 +339,7 @@ const UserManagement = () => {
                           setRoleFilter('all');
                           setStatusFilter('all');
                         }}
+                        className="border-gold-500/30 text-gold-300 hover:bg-gold-500/10 rounded-xl text-xs mt-2"
                       >
                         Clear Filters
                       </Button>
@@ -349,41 +349,47 @@ const UserManagement = () => {
               </TableRow>
             ) : (
               filteredUsers.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>{user.id}</TableCell>
-                <TableCell>{user.username}</TableCell>
-                <TableCell>{user.displayName || user.username}</TableCell>
-                <TableCell>{user.email || 'Not set'}</TableCell>
-                <TableCell>{formatDate(user.createdAt)}</TableCell>
+              <TableRow key={user.id} className="border-b border-white/5 hover:bg-white/[0.03] transition-colors text-xs">
+                <TableCell className="font-mono text-gray-400">{user.id}</TableCell>
+                <TableCell className="font-semibold text-white">{user.username}</TableCell>
+                <TableCell className="text-gray-300">{user.displayName || user.username}</TableCell>
+                <TableCell className="font-mono text-gray-300">{user.email || '—'}</TableCell>
+                <TableCell className="font-mono text-gray-400">{formatDate(user.createdAt)}</TableCell>
                 <TableCell>
                   {user.isGuest ? (
-                    <Badge variant="secondary">Guest</Badge>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-white/10 text-gray-300 border border-white/15">Guest</span>
                   ) : (
-                    <Badge variant="default">Registered</Badge>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">Registered</span>
                   )}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={getRoleBadgeVariant(user.role)}>
-                    {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                  </Badge>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider border ${
+                    user.role === 'admin' 
+                      ? 'bg-gold-500/20 text-gold-300 border-gold-500/40' 
+                      : user.role === 'moderator'
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                      : 'bg-white/10 text-gray-300 border-white/15'
+                  }`}>
+                    {user.role}
+                  </span>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center space-x-2">
                     {updating === user.id ? (
-                      <Button size="sm" variant="outline" disabled>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Button size="sm" variant="outline" disabled className="border-gold-500/30 text-gold-300 rounded-lg text-xs">
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin text-gold-400" />
                         Updating
                       </Button>
                     ) : (
                       <Select 
                         value={user.role} 
                         onValueChange={(value) => handleRoleChange(user.id, value)}
-                        disabled={user.id === 1} // Protect the main admin user
+                        disabled={user.id === 1}
                       >
-                        <SelectTrigger className="w-[120px]">
-                          <SelectValue placeholder="Select role" />
+                        <SelectTrigger className="w-[110px] h-8 bg-obsidian-card border-white/15 text-white rounded-lg text-xs">
+                          <SelectValue placeholder="Role" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-obsidian-card border border-gold-500/30 text-white rounded-xl shadow-2xl">
                           <SelectItem value="user">User</SelectItem>
                           <SelectItem value="moderator">Moderator</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>

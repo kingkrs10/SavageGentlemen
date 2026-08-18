@@ -308,35 +308,45 @@ const SettingsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/profile">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Profile
-            </Link>
-          </Button>
+    <div className="min-h-screen bg-obsidian text-white py-8 px-4 md:px-8 max-w-4xl mx-auto space-y-8">
+      {/* ── LUXURY HERO ── */}
+      <div className="glass-obsidian-strong border border-gold-500/30 rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-2xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Settings</h1>
-            <p className="text-muted-foreground">Manage your account settings and preferences</p>
+            <div className="flex items-center gap-2 mb-3">
+              <Button variant="outline" size="sm" asChild className="border-gold-500/30 text-gold-300 hover:bg-gold-500/10 rounded-xl text-xs font-mono">
+                <Link href="/profile">
+                  <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
+                  Back to Profile
+                </Link>
+              </Button>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-400 text-xs font-mono font-bold uppercase tracking-widest">
+                ACCOUNT & PREFERENCES
+              </div>
+            </div>
+            <h1 className="text-3xl md:text-4xl font-heading font-extrabold tracking-tight text-white">
+              Account Settings
+            </h1>
+            <p className="text-gray-400 text-sm mt-1">
+              Personalize your member credentials, security preferences, and VIP notifications.
+            </p>
           </div>
         </div>
+      </div>
 
-        <div className="grid gap-6">
-          {/* Profile Picture Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Camera className="h-5 w-5" />
-                Profile Picture
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-6">
-                <div className="relative">
-                  <Avatar className="w-24 h-24 cursor-pointer" onClick={handleAvatarClick}>
+      <div className="grid gap-6">
+        {/* Profile Picture Section */}
+        <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-gold-400 font-heading text-lg">
+              <Camera className="h-5 w-5 text-gold-400" />
+              Profile Picture
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-6">
+              <div className="relative">
+                <Avatar className="w-24 h-24 cursor-pointer ring-2 ring-gold-500/50" onClick={handleAvatarClick}>
                     <AvatarImage src={user?.avatar || profileData.avatar} alt={user?.displayName || user?.username} />
                     <AvatarFallback className="text-lg">
                       {(user?.displayName || user?.username)?.charAt(0)?.toUpperCase() || 'U'}
@@ -387,10 +397,11 @@ const SettingsPage = () => {
           </Card>
 
           {/* Profile Settings */}
-          <Card>
+          {/* Profile Settings */}
+          <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-gold-400 font-heading text-lg">
+                <User className="h-5 w-5 text-gold-400" />
                 Profile Information
               </CardTitle>
             </CardHeader>
@@ -398,64 +409,70 @@ const SettingsPage = () => {
               <form onSubmit={handleProfileSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="displayName">Display Name</Label>
+                    <Label htmlFor="displayName" className="text-xs font-mono text-gray-300">Display Name</Label>
                     <Input
                       id="displayName"
                       value={profileData.displayName}
                       onChange={(e) => setProfileData(prev => ({ ...prev, displayName: e.target.value }))}
                       placeholder="Your display name"
+                      className="bg-obsidian-card/90 border-white/15 text-white rounded-xl"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="username">Username</Label>
+                    <Label htmlFor="username" className="text-xs font-mono text-gray-300">Username</Label>
                     <Input
                       id="username"
                       value={profileData.username}
                       onChange={(e) => setProfileData(prev => ({ ...prev, username: e.target.value }))}
                       placeholder="Your username"
+                      className="bg-obsidian-card/90 border-white/15 text-white rounded-xl"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-xs font-mono text-gray-300">Email</Label>
                   <Input
                     id="email"
                     type="email"
                     value={profileData.email}
                     onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
                     placeholder="your@email.com"
+                    className="bg-obsidian-card/90 border-white/15 text-white rounded-xl"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="bio">Bio</Label>
+                  <Label htmlFor="bio" className="text-xs font-mono text-gray-300">Bio</Label>
                   <Textarea
                     id="bio"
                     value={profileData.bio}
                     onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
                     placeholder="Tell us about yourself"
                     rows={3}
+                    className="bg-obsidian-card/90 border-white/15 text-white rounded-xl"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="location">Location</Label>
+                    <Label htmlFor="location" className="text-xs font-mono text-gray-300">Location</Label>
                     <Input
                       id="location"
                       value={profileData.location}
                       onChange={(e) => setProfileData(prev => ({ ...prev, location: e.target.value }))}
                       placeholder="Your location"
+                      className="bg-obsidian-card/90 border-white/15 text-white rounded-xl"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="website">Website</Label>
+                    <Label htmlFor="website" className="text-xs font-mono text-gray-300">Website</Label>
                     <Input
                       id="website"
                       value={profileData.website}
                       onChange={(e) => setProfileData(prev => ({ ...prev, website: e.target.value }))}
                       placeholder="https://yourwebsite.com"
+                      className="bg-obsidian-card/90 border-white/15 text-white rounded-xl"
                     />
                   </div>
                 </div>
@@ -463,7 +480,7 @@ const SettingsPage = () => {
                 <Button 
                   type="submit" 
                   disabled={updateProfileMutation.isPending}
-                  className="w-full md:w-auto"
+                  className="bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-obsidian font-bold rounded-xl text-xs shadow-md"
                 >
                   {updateProfileMutation.isPending ? "Updating..." : "Update Profile"}
                 </Button>
@@ -472,59 +489,61 @@ const SettingsPage = () => {
           </Card>
 
           {/* Payment Information */}
-          <Card>
+          <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Payment Information
+              <CardTitle className="flex items-center gap-2 text-gold-400 font-heading text-lg">
+                <CreditCard className="h-5 w-5 text-gold-400" />
+                Payment Gateways
               </CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handlePaymentSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="stripeCustomerId">Stripe Customer ID</Label>
+                    <Label htmlFor="stripeCustomerId" className="text-xs font-mono text-gray-300">Stripe Customer ID</Label>
                     <Input
                       id="stripeCustomerId"
                       value={paymentData.stripeCustomerId}
                       onChange={(e) => setPaymentData(prev => ({ ...prev, stripeCustomerId: e.target.value }))}
                       placeholder="cus_xxxxxxxxxxxxx"
                       disabled
+                      className="bg-obsidian-card/90 border-white/15 text-gray-400 rounded-xl font-mono text-xs"
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-xs font-mono text-gray-400 mt-1">
                       Automatically generated when you make your first purchase
                     </p>
                   </div>
                   <div>
-                    <Label htmlFor="paypalCustomerId">PayPal Customer ID</Label>
+                    <Label htmlFor="paypalCustomerId" className="text-xs font-mono text-gray-300">PayPal Customer ID</Label>
                     <Input
                       id="paypalCustomerId"
                       value={paymentData.paypalCustomerId}
                       onChange={(e) => setPaymentData(prev => ({ ...prev, paypalCustomerId: e.target.value }))}
                       placeholder="paypal_xxxxxxxxxxxxx"
                       disabled
+                      className="bg-obsidian-card/90 border-white/15 text-gray-400 rounded-xl font-mono text-xs"
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-xs font-mono text-gray-400 mt-1">
                       Automatically generated when you use PayPal
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-muted/50 p-4 rounded-lg">
+                <div className="bg-white/5 border border-gold-500/20 p-4 rounded-xl">
                   <div className="flex items-center gap-2 mb-2">
-                    <Shield className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium">Secure Payment Processing</span>
+                    <Shield className="h-4 w-4 text-emerald-400" />
+                    <span className="text-sm font-heading font-bold text-white">Bank-Grade Payment Processing</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Payment information is securely processed through Stripe and PayPal. 
-                    We don't store your credit card details on our servers.
+                  <p className="text-xs font-mono text-gray-300">
+                    Payment tokens are securely vaulted through Stripe and PayPal. 
+                    Savage Gentlemen does not store sensitive cardholder details.
                   </p>
                 </div>
 
                 <Button 
                   type="submit" 
                   disabled={updatePaymentMutation.isPending}
-                  className="w-full md:w-auto"
+                  className="bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-obsidian font-bold rounded-xl text-xs shadow-md"
                 >
                   {updatePaymentMutation.isPending ? "Updating..." : "Update Payment Info"}
                 </Button>
@@ -533,18 +552,18 @@ const SettingsPage = () => {
           </Card>
 
           {/* Notification Settings */}
-          <Card>
+          <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" />
-                Notifications
+              <CardTitle className="flex items-center gap-2 text-gold-400 font-heading text-lg">
+                <Bell className="h-5 w-5 text-gold-400" />
+                Notifications & Broadcasts
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="email-notifications">Email Notifications</Label>
-                  <p className="text-sm text-muted-foreground">Receive email notifications for important updates</p>
+                  <Label htmlFor="email-notifications" className="text-sm font-semibold text-white">Email Notifications</Label>
+                  <p className="text-xs font-mono text-gray-400">Receive email notifications for important updates</p>
                 </div>
                 <Switch
                   id="email-notifications"
@@ -555,12 +574,12 @@ const SettingsPage = () => {
                 />
               </div>
               
-              <Separator />
+              <Separator className="bg-white/10" />
               
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="event-reminders">Event Reminders</Label>
-                  <p className="text-sm text-muted-foreground">Get notified about upcoming events</p>
+                  <Label htmlFor="event-reminders" className="text-sm font-semibold text-white">Event Reminders</Label>
+                  <p className="text-xs font-mono text-gray-400">Get notified about upcoming carnival drops and events</p>
                 </div>
                 <Switch
                   id="event-reminders"
@@ -571,12 +590,12 @@ const SettingsPage = () => {
                 />
               </div>
               
-              <Separator />
+              <Separator className="bg-white/10" />
               
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="marketing-emails">Marketing Emails</Label>
-                  <p className="text-sm text-muted-foreground">Receive promotional content and offers</p>
+                  <Label htmlFor="marketing-emails" className="text-sm font-semibold text-white">VIP Priority Drops</Label>
+                  <p className="text-xs font-mono text-gray-400">Receive exclusive promoter codes and private offers</p>
                 </div>
                 <Switch
                   id="marketing-emails"
@@ -590,59 +609,62 @@ const SettingsPage = () => {
           </Card>
 
           {/* Privacy & Security */}
-          <Card>
+          <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                Privacy & Security
+              <CardTitle className="flex items-center gap-2 text-gold-400 font-heading text-lg">
+                <Shield className="h-5 w-5 text-gold-400" />
+                Privacy & Credentials
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start gap-2">
-                    <Shield className="h-4 w-4" />
+                  <Button variant="outline" className="w-full justify-start gap-2 border-gold-500/30 text-gold-300 hover:bg-gold-500/10 rounded-xl text-xs font-mono">
+                    <Shield className="h-4 w-4 text-gold-400" />
                     Change Password
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="bg-obsidian-card border border-gold-500/30 text-white rounded-2xl shadow-2xl backdrop-blur-2xl">
                   <DialogHeader>
-                    <DialogTitle>Change Password</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-xl font-heading text-white">Change Password</DialogTitle>
+                    <DialogDescription className="text-xs font-mono text-gray-400">
                       Enter your current password and a new password below.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <Label htmlFor="current-password">Current Password</Label>
+                      <Label htmlFor="current-password" className="text-xs font-mono text-gray-300">Current Password</Label>
                       <Input
                         id="current-password"
                         type="password"
                         value={passwordForm.currentPassword}
                         onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                        className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="new-password">New Password</Label>
+                      <Label htmlFor="new-password" className="text-xs font-mono text-gray-300">New Password</Label>
                       <Input
                         id="new-password"
                         type="password"
                         value={passwordForm.newPassword}
                         onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                        className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="confirm-password">Confirm New Password</Label>
+                      <Label htmlFor="confirm-password" className="text-xs font-mono text-gray-300">Confirm New Password</Label>
                       <Input
                         id="confirm-password"
                         type="password"
                         value={passwordForm.confirmPassword}
                         onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                        className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
                       />
                     </div>
                   </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>Cancel</Button>
+                  <DialogFooter className="gap-2">
+                    <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)} className="border-white/20 text-gray-300 rounded-xl text-xs">Cancel</Button>
                     <Button 
                       onClick={() => {
                         if (passwordForm.newPassword !== passwordForm.confirmPassword) {
@@ -655,6 +677,7 @@ const SettingsPage = () => {
                         });
                       }}
                       disabled={changePasswordMutation.isPending}
+                      className="bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-obsidian font-bold rounded-xl text-xs"
                     >
                       {changePasswordMutation.isPending ? "Updating..." : "Update Password"}
                     </Button>
@@ -664,8 +687,8 @@ const SettingsPage = () => {
 
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="2fa">Two-Factor Authentication</Label>
-                  <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
+                  <Label htmlFor="2fa" className="text-sm font-semibold text-white">Two-Factor Authentication</Label>
+                  <p className="text-xs font-mono text-gray-400">Add an extra layer of biometric/SMS security to your account</p>
                 </div>
                 <Switch
                   id="2fa"
@@ -679,8 +702,8 @@ const SettingsPage = () => {
 
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="private-profile">Private Profile</Label>
-                  <p className="text-sm text-muted-foreground">Only allow people you follow to see your content</p>
+                  <Label htmlFor="private-profile" className="text-sm font-semibold text-white">Private Profile</Label>
+                  <p className="text-xs font-mono text-gray-400">Only allow verified members you follow to view your passport stamps</p>
                 </div>
                 <Switch
                   id="private-profile"
@@ -692,44 +715,42 @@ const SettingsPage = () => {
                 />
               </div>
 
-              <Separator />
+              <Separator className="bg-white/10" />
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button 
                     variant="destructive" 
-                    className="w-full"
+                    className="w-full bg-red-950/60 hover:bg-red-900 border border-red-500/30 text-red-300 rounded-xl text-xs font-mono"
                     disabled={deleteAccountMutation.isPending}
                   >
                     <AlertTriangle className="h-4 w-4 mr-2" />
                     {deleteAccountMutation.isPending ? "Deleting..." : "Delete Account"}
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
+                <AlertDialogContent className="bg-obsidian-card border border-red-500/40 text-white rounded-2xl shadow-2xl backdrop-blur-2xl">
                   <AlertDialogHeader>
-                    <AlertDialogTitle className="flex items-center gap-2">
-                      <AlertTriangle className="h-5 w-5 text-red-500" />
+                    <AlertDialogTitle className="flex items-center gap-2 text-xl font-heading text-red-400">
+                      <AlertTriangle className="h-5 w-5 text-red-400" />
                       Delete Account
                     </AlertDialogTitle>
-                    <AlertDialogDescription className="text-left">
-                      <strong className="text-red-600">This action cannot be undone.</strong>
+                    <AlertDialogDescription className="text-left text-xs font-mono text-gray-300">
+                      <strong className="text-red-400">This action cannot be undone.</strong>
                       <br /><br />
                       Deleting your account will permanently remove:
-                      <ul className="list-disc list-inside mt-2 space-y-1">
-                        <li>Your profile and personal information</li>
-                        <li>All your posts and comments</li>
-                        <li>Your event attendance history</li>
-                        <li>Your purchase history and tickets</li>
-                        <li>All associated data</li>
+                      <ul className="list-disc list-inside mt-2 space-y-1 text-gray-400">
+                        <li>Your profile and personal credentials</li>
+                        <li>All Soca Passport points, badges, and stamps</li>
+                        <li>Your carnival ticket history and QR passes</li>
                       </ul>
                       <br />
-                      Are you absolutely sure you want to delete your account?
+                      Are you absolutely sure you want to proceed?
                     </AlertDialogDescription>
                   </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogFooter className="gap-2">
+                    <AlertDialogCancel className="border-white/20 text-gray-300 rounded-xl text-xs">Cancel</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleDeleteAccount}
-                      className="bg-red-600 hover:bg-red-700"
+                      className="bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold"
                     >
                       Yes, Delete My Account
                     </AlertDialogAction>
@@ -738,30 +759,8 @@ const SettingsPage = () => {
               </AlertDialog>
             </CardContent>
           </Card>
-
-          {/* Payment Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Payment Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button variant="outline" className="w-full justify-start">
-                Manage Payment Methods
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                Billing History
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                Subscription Settings
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </div>
-    </div>
   );
 };
 

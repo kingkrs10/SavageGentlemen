@@ -197,111 +197,124 @@ const ProfilePage = () => {
   const ticketsData = Array.isArray(tickets) ? tickets : [];
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-obsidian text-white py-8 px-4 md:px-8 max-w-7xl mx-auto space-y-8">
+      <div>
         {/* Profile Header */}
-        <Card className="mb-8">
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="flex-shrink-0">
-                <Avatar className="h-24 w-24 md:h-32 md:w-32">
-                  <AvatarImage 
-                    src={avatar} 
-                    alt={displayName} 
-                  />
-                  <AvatarFallback className="text-2xl">
-                    {displayName.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+        <div className="glass-obsidian-strong border border-gold-500/30 rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-2xl mb-8">
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex-shrink-0">
+              <Avatar className="h-24 w-24 md:h-32 md:w-32 ring-2 ring-gold-500/50 shadow-xl">
+                <AvatarImage 
+                  src={avatar} 
+                  alt={displayName} 
+                />
+                <AvatarFallback className="text-2xl bg-gradient-to-tr from-gold-600 to-amber-400 text-obsidian font-bold">
+                  {displayName.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+            
+            <div className="flex-1">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-heading font-extrabold text-white">
+                    {displayName}
+                  </h1>
+                  <p className="text-gold-400 font-mono text-sm">@{username}</p>
+                  {role !== 'user' && (
+                    <span className="inline-block mt-2 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-gold-500/20 text-gold-300 border border-gold-500/40">
+                      {role}
+                    </span>
+                  )}
+                </div>
+                
+                <div className="flex gap-2 mt-4 md:mt-0">
+                  <Button variant="outline" size="sm" asChild className="border-gold-500/30 text-gold-300 hover:bg-gold-500/10 rounded-xl text-xs font-mono">
+                    <Link href="/settings">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Settings
+                    </Link>
+                  </Button>
+                </div>
               </div>
-              
-              <div className="flex-1">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-                  <div>
-                    <h1 className="text-2xl md:text-3xl font-bold">
-                      {displayName}
-                    </h1>
-                    <p className="text-muted-foreground">@{username}</p>
-                    {role !== 'user' && (
-                      <Badge variant="secondary" className="mt-1">
-                        {role}
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <div className="flex gap-2 mt-4 md:mt-0">
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href="/settings">
-                        <Settings className="h-4 w-4 mr-2" />
-                        Settings
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
 
-                {bio && (
-                  <p className="text-sm text-muted-foreground mb-4">{bio}</p>
+              {bio && (
+                <p className="text-sm text-gray-300 mb-4">{bio}</p>
+              )}
+
+              <div className="flex flex-wrap gap-4 text-xs font-mono text-gray-400">
+                {location && (
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5 text-gold-400" />
+                    {location}
+                  </div>
                 )}
+                {createdAt && (
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5 text-gold-400" />
+                    Joined {formatDate(createdAt)}
+                  </div>
+                )}
+              </div>
 
-                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                  {location && (
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
-                      {location}
-                    </div>
-                  )}
-                  {createdAt && (
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      Joined {formatDate(createdAt)}
-                    </div>
-                  )}
+              {/* Social Stats */}
+              <div className="flex gap-6 mt-6 pt-4 border-t border-white/10">
+                <div className="text-center">
+                  <div className="font-heading font-bold text-lg text-white">{followStatsData.followers}</div>
+                  <div className="text-[11px] font-mono text-gray-400 uppercase tracking-wider">Followers</div>
                 </div>
-
-                {/* Social Stats */}
-                <div className="flex gap-6 mt-4">
-                  <div className="text-center">
-                    <div className="font-bold text-lg">{followStatsData.followers}</div>
-                    <div className="text-sm text-muted-foreground">Followers</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="font-bold text-lg">{followStatsData.following}</div>
-                    <div className="text-sm text-muted-foreground">Following</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="font-bold text-lg">{attendanceData.length}</div>
-                    <div className="text-sm text-muted-foreground">Events Attended</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="font-bold text-lg">{ticketsData.length}</div>
-                    <div className="text-sm text-muted-foreground">Total Tickets</div>
-                  </div>
+                <div className="text-center">
+                  <div className="font-heading font-bold text-lg text-white">{followStatsData.following}</div>
+                  <div className="text-[11px] font-mono text-gray-400 uppercase tracking-wider">Following</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-heading font-bold text-lg text-gold-400">{attendanceData.length}</div>
+                  <div className="text-[11px] font-mono text-gray-400 uppercase tracking-wider">Events Attended</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-heading font-bold text-lg text-amber-400">{ticketsData.length}</div>
+                  <div className="text-[11px] font-mono text-gray-400 uppercase tracking-wider">Total Tickets</div>
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Profile Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="attendance">
+          <TabsList className="flex flex-wrap w-full md:w-auto bg-white/5 border border-white/10 p-1.5 gap-1.5 rounded-2xl backdrop-blur-md mb-6">
+            <TabsTrigger 
+              value="attendance"
+              className="rounded-xl px-5 py-2 text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+            >
               <Calendar className="h-4 w-4 mr-2" />
               Events
             </TabsTrigger>
-            <TabsTrigger value="reviews">
+            <TabsTrigger 
+              value="reviews"
+              className="rounded-xl px-5 py-2 text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+            >
               <Star className="h-4 w-4 mr-2" />
               Reviews
             </TabsTrigger>
-            <TabsTrigger value="photos">
+            <TabsTrigger 
+              value="photos"
+              className="rounded-xl px-5 py-2 text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+            >
               <Camera className="h-4 w-4 mr-2" />
               Photos
             </TabsTrigger>
-            <TabsTrigger value="tickets">
+            <TabsTrigger 
+              value="tickets"
+              className="rounded-xl px-5 py-2 text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+            >
               <Ticket className="h-4 w-4 mr-2" />
               Tickets
             </TabsTrigger>
-            <TabsTrigger value="affiliate">
+            <TabsTrigger 
+              value="affiliate"
+              className="rounded-xl px-5 py-2 text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+            >
               <DollarSign className="h-4 w-4 mr-2" />
               Affiliate
             </TabsTrigger>

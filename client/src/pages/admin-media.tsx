@@ -466,67 +466,81 @@ const AdminMediaPage = ({ embedded = false }: AdminMediaProps) => {
   }, [collectionForm.title, editingCollection]);
 
   return (
-    <div className={embedded ? "w-full" : "container mx-auto px-4 py-8"}>
+    <div className={embedded ? "w-full space-y-6" : "min-h-screen bg-obsidian text-white py-8 px-4 md:px-8 max-w-7xl mx-auto space-y-8"}>
       {!embedded && (
         <SEOHead
-          title="Media Management - Admin - Savage Gentlemen"
-          description="Admin interface for managing media collections, photos, and videos."
+          title="Media Library & Collections - Savage Gentlemen Admin"
+          description="High-resolution visual stem archive, event photography, and video asset management."
         />
       )}
 
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        {!embedded && (
-          <Button
-            variant="ghost"
-            onClick={() => window.history.back()}
-            className="p-2"
-            data-testid="back-button"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-        )}
-        <div>
-          <h1 className="text-3xl font-bold">Media Management</h1>
-          <p className="text-muted-foreground">Manage photo and video collections</p>
+      {/* ── LUXURY HERO ── */}
+      {!embedded && (
+        <div className="glass-obsidian-strong border border-gold-500/30 rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-2xl">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.history.back()}
+                  className="border-gold-500/30 text-gold-300 hover:bg-gold-500/10 rounded-xl text-xs font-mono"
+                  data-testid="back-button"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
+                  Back
+                </Button>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-400 text-xs font-mono font-bold uppercase tracking-widest">
+                  VISUAL ASSET VAULT
+                </div>
+              </div>
+              <h1 className="text-3xl md:text-4xl font-heading font-extrabold tracking-tight text-white">
+                Media Vault & Collections
+              </h1>
+              <p className="text-gray-400 text-sm mt-1">
+                Upload, categorize, and syndicate ultra-high definition photography and festival cinema reels.
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Upload Progress */}
       {uploads.length > 0 && (
-        <Card className="mb-6">
+        <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Upload className="w-5 h-5" />
-              Upload Progress
+            <CardTitle className="flex items-center gap-2 text-gold-400 font-heading text-lg">
+              <Upload className="w-5 h-5 text-gold-400" />
+              Upload Queue & Processing
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {uploads.map((upload, index) => (
-              <div key={index} className="flex items-center gap-4">
+              <div key={index} className="flex items-center gap-4 p-3 bg-white/5 border border-white/10 rounded-xl">
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">{upload.file.name}</span>
+                    <span className="text-sm font-semibold text-white">{upload.file.name}</span>
                     <div className="flex items-center gap-2">
-                      {upload.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-500" />}
-                      {upload.status === 'error' && <AlertCircle className="w-4 h-4 text-red-500" />}
+                      {upload.status === 'completed' && <CheckCircle className="w-4 h-4 text-emerald-400" />}
+                      {upload.status === 'error' && <AlertCircle className="w-4 h-4 text-red-400" />}
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => removeUpload(index)}
                         data-testid={`remove-upload-${index}`}
+                        className="text-gray-400 hover:text-white"
                       >
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
-                  <Progress value={upload.progress} className="h-2" />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>{upload.status}</span>
-                    <span>{upload.progress}%</span>
+                  <Progress value={upload.progress} className="h-2 bg-white/10" />
+                  <div className="flex justify-between text-xs font-mono text-gray-400 mt-1">
+                    <span className="uppercase">{upload.status}</span>
+                    <span className="text-gold-400">{upload.progress}%</span>
                   </div>
                   {upload.error && (
-                    <p className="text-xs text-red-500 mt-1">{upload.error}</p>
+                    <p className="text-xs text-red-400 mt-1 font-mono">{upload.error}</p>
                   )}
                 </div>
               </div>
@@ -537,19 +551,35 @@ const AdminMediaPage = ({ embedded = false }: AdminMediaProps) => {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="collections">Collections</TabsTrigger>
-          <TabsTrigger value="assets">Assets</TabsTrigger>
-          <TabsTrigger value="upload">Upload</TabsTrigger>
+        <TabsList className="flex flex-wrap w-full md:w-auto bg-white/5 border border-white/10 p-1.5 gap-1.5 rounded-2xl backdrop-blur-md mb-6">
+          <TabsTrigger 
+            value="collections"
+            className="rounded-xl px-5 py-2 text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+          >
+            Collections
+          </TabsTrigger>
+          <TabsTrigger 
+            value="assets"
+            className="rounded-xl px-5 py-2 text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+          >
+            Assets
+          </TabsTrigger>
+          <TabsTrigger 
+            value="upload"
+            className="rounded-xl px-5 py-2 text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+          >
+            Upload
+          </TabsTrigger>
         </TabsList>
 
         {/* Collections Tab */}
         <TabsContent value="collections" className="space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Media Collections</h2>
+            <h2 className="text-xl font-heading font-bold text-gold-400">Media Collections</h2>
             <Button
               onClick={() => setShowCollectionDialog(true)}
               data-testid="create-collection-button"
+              className="bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-obsidian font-bold rounded-xl text-xs shadow-md"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create Collection
@@ -810,9 +840,9 @@ const AdminMediaPage = ({ embedded = false }: AdminMediaProps) => {
 
       {/* Collection Dialog */}
       <Dialog open={showCollectionDialog} onOpenChange={setShowCollectionDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl bg-obsidian-card border border-gold-500/30 text-white rounded-2xl shadow-2xl backdrop-blur-2xl">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-xl font-heading text-white">
               {editingCollection ? 'Edit Collection' : 'Create Collection'}
             </DialogTitle>
           </DialogHeader>
@@ -918,10 +948,10 @@ const AdminMediaPage = ({ embedded = false }: AdminMediaProps) => {
 
       {/* Asset Dialog */}
       <Dialog open={showAssetDialog} onOpenChange={setShowAssetDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-lg bg-obsidian-card border border-gold-500/30 text-white rounded-2xl shadow-2xl backdrop-blur-2xl">
           <DialogHeader>
-            <DialogTitle>
-              {editingAsset ? 'Edit Asset' : 'Add Asset'}
+            <DialogTitle className="text-xl font-heading text-white">
+              {editingAsset ? 'Edit Asset' : 'Asset Details'}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">

@@ -87,136 +87,125 @@ const ScanDataViewer = () => {
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case 'valid':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Valid</Badge>;
+        return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">Valid</span>;
       case 'duplicate':
-        return <Badge variant="destructive">Duplicate</Badge>;
+        return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-red-500/20 text-red-300 border border-red-500/40">Duplicate</span>;
       case 'invalid':
-        return <Badge variant="destructive">Invalid</Badge>;
+        return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40">Invalid</span>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-white/10 text-gray-300 border border-white/15">{status}</span>;
     }
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Ticket Scan Data</h1>
-          <p className="text-gray-600 mt-2">View all recorded ticket scan activity</p>
+          <h2 className="text-xl font-heading font-bold text-gold-400">Live Optical Scan Telemetry</h2>
+          <p className="text-xs font-mono text-gray-400 mt-1">Audit log of all door validations and anti-passback checks</p>
         </div>
-        <Button onClick={fetchScanData} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
+        <Button 
+          onClick={fetchScanData} 
+          disabled={loading}
+          className="border-gold-500/30 text-gold-300 hover:bg-gold-500/10 rounded-xl text-xs font-mono"
+          variant="outline"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Refresh Stream
         </Button>
       </div>
 
       {/* Database Location Info */}
-      <Alert>
-        <Database className="h-4 w-4" />
-        <AlertDescription>
-          <strong>Scan Data Storage:</strong> All ticket scan records are stored in the PostgreSQL database in the 
-          <code className="mx-1 px-2 py-1 bg-gray-100 rounded">ticket_scans</code> table. 
-          This includes scan timestamp, scanner identity, ticket details, and duplicate prevention data.
-        </AlertDescription>
-      </Alert>
+      <div className="glass-obsidian border border-gold-500/20 p-4 rounded-2xl text-xs font-mono text-gray-300 flex items-start gap-3">
+        <Database className="h-4 w-4 text-gold-400 shrink-0 mt-0.5" />
+        <div>
+          <span className="font-bold text-gold-400">Storage Architecture:</span> Scanned telemetry is indexed in the PostgreSQL database with millisecond timestamps, gatekeeper ID, and anti-duplicate locks.
+        </div>
+      </div>
 
       {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
+        <Alert variant="destructive" className="bg-red-950/40 border-red-500/30 text-red-300">
+          <AlertDescription className="font-mono text-xs">{error}</AlertDescription>
         </Alert>
       )}
 
       <div className="grid gap-4">
         {loading ? (
-          <Card>
-            <CardContent className="flex items-center justify-center py-8">
-              <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-              Loading scan data...
+          <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
+            <CardContent className="flex items-center justify-center py-12">
+              <RefreshCw className="h-6 w-6 animate-spin mr-2 text-gold-400" />
+              <span className="text-xs font-mono text-gray-400">Syncing door scan logs...</span>
             </CardContent>
           </Card>
         ) : scanData.length === 0 ? (
-          <Card>
+          <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
             <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-              <Eye className="h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Scan Data Found</h3>
-              <p className="text-gray-600 mb-4">
-                No ticket scans have been recorded yet. Start scanning tickets to see data here.
+              <Eye className="h-12 w-12 text-gray-600 mb-4" />
+              <h3 className="text-lg font-heading font-bold text-white mb-2">No Door Scans Recorded</h3>
+              <p className="text-xs font-mono text-gray-400 mb-4">
+                No tickets scanned for this event yet. Launch the Optical Ticket Scanner to begin gate admission.
               </p>
-              <p className="text-sm text-gray-500">
-                Test with QR code: <code className="bg-gray-100 px-2 py-1 rounded">SGX-TIX-1-7</code> or <code className="bg-gray-100 px-2 py-1 rounded">DEMO-TICKET</code>
+              <p className="text-xs font-mono text-gray-500">
+                Sample test code: <code className="bg-white/10 px-2 py-0.5 rounded text-gold-400">SGX-TIX-1-7</code>
               </p>
             </CardContent>
           </Card>
         ) : (
           <>
-            <div className="text-sm text-gray-600 mb-4">
-              Showing {scanData.length} scan record{scanData.length !== 1 ? 's' : ''}
+            <div className="text-xs font-mono text-gray-400">
+              Showing {scanData.length} recorded scan event{scanData.length !== 1 ? 's' : ''}
             </div>
             
             {scanData.map((scan) => (
-              <Card key={scan.id}>
-                <CardHeader>
+              <Card key={scan.id} className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
+                <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <TicketIcon className="h-5 w-5" />
+                    <CardTitle className="flex items-center gap-3 text-base font-heading text-white">
+                      <TicketIcon className="h-4 w-4 text-gold-400" />
                       Scan #{scan.id}
                       {getStatusBadge(scan.status)}
                     </CardTitle>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-xs font-mono text-gray-400">
                       {format(new Date(scan.scannedAt), 'MMM dd, yyyy HH:mm:ss')}
                     </div>
                   </div>
-                  <CardDescription>
-                    {scan.eventName && (
-                      <div className="flex items-center gap-1 text-sm">
-                        <Calendar className="h-4 w-4" />
-                        {scan.eventName}
-                      </div>
-                    )}
-                  </CardDescription>
+                  {scan.eventName && (
+                    <CardDescription className="text-gold-400 font-mono text-xs flex items-center gap-1 mt-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {scan.eventName}
+                    </CardDescription>
+                  )}
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium text-gray-700">Ticket ID:</span>
-                      <div className="text-gray-900">{scan.ticketId}</div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
+                    <div className="p-2.5 bg-white/5 rounded-xl border border-white/5">
+                      <span className="text-gray-400 block text-[10px] uppercase">Ticket ID:</span>
+                      <div className="text-white font-bold">{scan.ticketId}</div>
                     </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Order ID:</span>
-                      <div className="text-gray-900">{scan.orderId}</div>
+                    <div className="p-2.5 bg-white/5 rounded-xl border border-white/5">
+                      <span className="text-gray-400 block text-[10px] uppercase">Order ID:</span>
+                      <div className="text-white font-bold">{scan.orderId}</div>
                     </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Scanned By:</span>
-                      <div className="flex items-center gap-1">
-                        <User className="h-3 w-3" />
+                    <div className="p-2.5 bg-white/5 rounded-xl border border-white/5">
+                      <span className="text-gray-400 block text-[10px] uppercase">Gatekeeper:</span>
+                      <div className="text-white font-semibold flex items-center gap-1">
+                        <User className="h-3 w-3 text-gold-400" />
                         {scan.scannerName || `User ${scan.scannedBy}`}
                       </div>
                     </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Time:</span>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
+                    <div className="p-2.5 bg-white/5 rounded-xl border border-white/5">
+                      <span className="text-gray-400 block text-[10px] uppercase">Timestamp:</span>
+                      <div className="text-white flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-gold-400" />
                         {format(new Date(scan.scannedAt), 'HH:mm:ss')}
                       </div>
                     </div>
                   </div>
                   
                   {scan.ticketName && (
-                    <div className="mt-3 pt-3 border-t">
-                      <span className="font-medium text-gray-700">Ticket:</span>
-                      <div className="text-gray-900">{scan.ticketName}</div>
-                    </div>
-                  )}
-                  
-                  {scan.notes && (
-                    <div className="mt-3 pt-3 border-t">
-                      <div className="flex items-start gap-2">
-                        <FileText className="h-4 w-4 mt-0.5 text-gray-500" />
-                        <div>
-                          <span className="font-medium text-gray-700">Notes:</span>
-                          <div className="text-gray-900">{scan.notes}</div>
-                        </div>
-                      </div>
+                    <div className="mt-3 pt-3 border-t border-white/10 flex items-center gap-2 text-xs font-mono">
+                      <span className="text-gray-400">Tier:</span>
+                      <span className="text-gold-300 font-semibold">{scan.ticketName}</span>
                     </div>
                   )}
                 </CardContent>

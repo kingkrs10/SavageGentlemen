@@ -1800,68 +1800,121 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="container mx-auto py-6 px-4 md:px-6 bg-[#0a0e17] text-white min-h-screen">
+    <div className="min-h-screen bg-obsidian text-white py-8 px-4 md:px-8 max-w-7xl mx-auto space-y-8">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">Admin Dashboard</h1>
-            <p className="text-slate-400">
-              Manage your products, events, users, and more.
-            </p>
-          </div>
-          {currentUser && currentUser.username && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm hidden md:inline">Logged in as: <span className="font-medium">{currentUser.username}</span></span>
-              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white text-sm">
-                {currentUser.username.charAt(0).toUpperCase()}
+        {/* ── LUXURY ADMIN HERO ── */}
+        <div className="glass-obsidian-strong border border-gold-500/30 rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-2xl">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-400 text-xs font-mono font-bold uppercase tracking-widest mb-2">
+                <Sparkles className="w-3.5 h-3.5 text-gold-400" />
+                SAVAGE EXECUTIVE CONTROL
               </div>
+              <h1 className="text-3xl md:text-4xl font-heading font-extrabold tracking-tight text-white">
+                Admin Dashboard
+              </h1>
+              <p className="text-gray-400 text-sm mt-1">
+                Full-spectrum management of luxury merchandise, carnival events, Soca Passport, media stems, and live viral ads.
+              </p>
             </div>
-          )}
+            {currentUser && currentUser.username && (
+              <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2.5 rounded-2xl backdrop-blur-md">
+                <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-gold-600 to-amber-400 flex items-center justify-center text-obsidian font-bold text-sm shadow-md">
+                  {currentUser.username.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-mono tracking-wider text-gold-400 block font-bold">Admin Active</span>
+                  <span className="text-sm font-semibold text-white">{currentUser.username}</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        <Separator />
 
         <Tabs value={activeDashboardTab} onValueChange={setActiveDashboardTab} className="w-full" data-testid="admin-tabs">
-          <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-12 h-auto w-full mb-8 bg-[#141e2e] border border-slate-700 p-1 gap-1">
-            <TabsTrigger value="products" className="flex items-center gap-2">
+          <TabsList className="flex flex-wrap h-auto w-full mb-8 bg-white/5 border border-white/10 p-1.5 gap-1.5 rounded-2xl backdrop-blur-md">
+            <TabsTrigger 
+              value="products" 
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+            >
               <PackageOpen className="h-4 w-4" /> Products
             </TabsTrigger>
-            <TabsTrigger value="events" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" /> AdminEvents
+            <TabsTrigger 
+              value="events" 
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+            >
+              <Calendar className="h-4 w-4" /> Events
             </TabsTrigger>
-            <TabsTrigger value="affiliates" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="affiliates" 
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+            >
               <DollarSign className="h-4 w-4" /> Affiliates
             </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="users" 
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+            >
               <Users className="h-4 w-4" /> Users
             </TabsTrigger>
-            <TabsTrigger value="tickets" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="tickets" 
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+            >
               <TicketIcon className="h-4 w-4" /> Tickets
             </TabsTrigger>
-            <TabsTrigger value="orders" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="orders" 
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+            >
               <ShoppingCart className="h-4 w-4" /> Orders
             </TabsTrigger>
-            <TabsTrigger value="livestreams" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="livestreams" 
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+            >
               <Radio className="h-4 w-4" /> Livestreams
             </TabsTrigger>
-            <TabsTrigger value="musicmixes" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="musicmixes" 
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+            >
               <Music className="h-4 w-4" /> Music Mixes
             </TabsTrigger>
-            <TabsTrigger value="passport" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="passport" 
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+            >
               <Stamp className="h-4 w-4" /> Passport
             </TabsTrigger>
-            <TabsTrigger value="scanner" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="scanner" 
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+            >
               <ScanLine className="h-4 w-4" /> Scanner
             </TabsTrigger>
-            <TabsTrigger value="ads" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="ads" 
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+            >
               <Megaphone className="h-4 w-4" /> Ads
             </TabsTrigger>
-            <TabsTrigger value="magazine" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="magazine" 
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+            >
               <BookOpen className="h-4 w-4" /> Magazine & IG
             </TabsTrigger>
-            <TabsTrigger value="theme" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="theme" 
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+            >
               <Video className="h-4 w-4" /> Site Video
             </TabsTrigger>
-            <TabsTrigger value="media" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="media" 
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+            >
               <ImageIcon className="h-4 w-4" /> Media
             </TabsTrigger>
           </TabsList>
@@ -2099,7 +2152,7 @@ export default function AdminPage() {
                 });
               }
             }}>
-              <DialogContent className="sm:max-w-[600px] bg-[#141e2e] text-white max-h-[90vh] overflow-y-auto">
+              <DialogContent className="sm:max-w-[600px] bg-obsidian-card border border-gold-500/30 text-white rounded-2xl max-h-[90vh] overflow-y-auto shadow-2xl backdrop-blur-2xl">
                 <DialogHeader>
                   <DialogTitle className="text-white text-xl">
                     {editingEvent ? 'Edit AdminEvent' : 'Create new event'}
@@ -2695,7 +2748,7 @@ export default function AdminPage() {
 
             {/* User Dialog */}
             <Dialog open={userDialogOpen} onOpenChange={setUserDialogOpen}>
-              <DialogContent className="sm:max-w-[450px] bg-[#141e2e] text-white">
+              <DialogContent className="sm:max-w-[450px] bg-obsidian-card border border-gold-500/30 text-white rounded-2xl shadow-2xl backdrop-blur-2xl">
                 <DialogHeader>
                   <DialogTitle className="text-white text-xl">
                     {editingUser ? `Edit User: ${editingUser.username}` : 'Create new user'}
@@ -2772,7 +2825,7 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <DialogFooter className="bg-[#141e2e]">
+                <DialogFooter className="bg-obsidian-card pt-4 border-t border-white/10">
                   <Button type="button" variant="outline" onClick={() => setUserDialogOpen(false)}>
                     Cancel
                   </Button>
@@ -2872,16 +2925,18 @@ export default function AdminPage() {
 
                       {/* Essential/Advanced Tabs */}
                       <div className="mb-6">
-                        <div className="flex w-full rounded-md overflow-hidden">
+                        <div className="flex border-b border-gold-500/20">
                           <button
-                            className={`flex-1 py-3 px-4 text-center ${activeTab === "essential" ? "bg-slate-700" : "bg-[#141e2e]"}`}
+                            type="button"
                             onClick={() => setActiveTab("essential")}
+                            className={`flex-1 py-3 px-4 text-center font-mono text-xs font-bold uppercase tracking-wider rounded-t-lg transition ${activeTab === "essential" ? "bg-gold-500/20 text-gold-400 border-b-2 border-gold-500" : "bg-obsidian-card text-gray-400"}`}
                           >
                             Essential
                           </button>
                           <button
-                            className={`flex-1 py-3 px-4 text-center ${activeTab === "advanced" ? "bg-slate-700" : "bg-[#141e2e]"}`}
+                            type="button"
                             onClick={() => setActiveTab("advanced")}
+                            className={`flex-1 py-3 px-4 text-center font-mono text-xs font-bold uppercase tracking-wider rounded-t-lg transition ${activeTab === "advanced" ? "bg-gold-500/20 text-gold-400 border-b-2 border-gold-500" : "bg-obsidian-card text-gray-400"}`}
                           >
                             Advanced
                           </button>
@@ -3573,7 +3628,7 @@ export default function AdminPage() {
 
             {/* Music Mix Dialog */}
             <Dialog open={musicMixDialogOpen} onOpenChange={setMusicMixDialogOpen}>
-              <DialogContent className="sm:max-w-[500px] bg-[#141e2e] text-white">
+              <DialogContent className="sm:max-w-[500px] bg-obsidian-card border border-gold-500/30 text-white rounded-2xl shadow-2xl backdrop-blur-2xl">
                 <DialogHeader>
                   <DialogTitle className="text-white text-xl">Create new music mix</DialogTitle>
                   <DialogDescription className="text-slate-400">
@@ -3695,7 +3750,7 @@ export default function AdminPage() {
                 setArtworkFile(null);
               }
             }}>
-              <DialogContent className="sm:max-w-[400px] bg-[#141e2e] text-white">
+              <DialogContent className="sm:max-w-[400px] bg-obsidian-card border border-gold-500/30 text-white rounded-2xl shadow-2xl backdrop-blur-2xl">
                 <DialogHeader>
                   <DialogTitle className="text-white text-xl">Add Artwork</DialogTitle>
                   <DialogDescription className="text-slate-400">

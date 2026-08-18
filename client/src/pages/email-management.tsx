@@ -96,157 +96,179 @@ export default function EmailManagement() {
   return (
     <>
       <SEOHead 
-        title="Email Management - Admin" 
-        description="Manage user email addresses and password resets" 
+        title="Email & Password Management - Savage Gentlemen Admin" 
+        description="Manage user email credentials, dispatch transactional updates, and manage resets." 
       />
-      <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-obsidian text-white py-8 px-4 md:px-8 max-w-7xl mx-auto space-y-8">
         <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold">Email Management</h1>
-            <p className="text-muted-foreground mt-2">
-              Manage user email addresses and send password reset emails
-            </p>
+          {/* ── LUXURY HERO ── */}
+          <div className="glass-obsidian-strong border border-gold-500/30 rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-2xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-400 text-xs font-mono font-bold uppercase tracking-widest mb-2">
+                  <Mail className="w-3.5 h-3.5 text-gold-400" />
+                  CREDENTIALS & DISPATCH
+                </div>
+                <h1 className="text-3xl md:text-4xl font-heading font-extrabold tracking-tight text-white">
+                  Email Management
+                </h1>
+                <p className="text-gray-400 text-sm mt-1">
+                  Manage user authentication emails, reset access codes, and test transactional dispatches.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Password Reset Testing Card */}
-          <Card>
+          <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Send className="h-5 w-5" />
-                Test Password Reset
+              <CardTitle className="flex items-center gap-2 text-gold-400 font-heading">
+                <Send className="h-5 w-5 text-gold-400" />
+                Test Password Reset Dispatch
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Input
-                  placeholder="Enter email address to test reset"
+                  placeholder="Enter email address to test reset..."
                   value={resetEmail}
                   onChange={(e) => setResetEmail(e.target.value)}
                   type="email"
+                  className="bg-obsidian-card/90 border-white/15 text-white placeholder:text-gray-500 rounded-xl"
                 />
                 <Button 
                   onClick={handleSendReset}
                   disabled={sendResetMutation.isPending || !resetEmail}
+                  className="bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-obsidian font-bold rounded-xl shadow-md"
                 >
                   {sendResetMutation.isPending ? "Sending..." : "Send Reset"}
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Test the password reset functionality by sending a reset email to any address
+              <p className="text-xs text-gray-400">
+                Test the transactional password recovery email dispatch to verify deliverability.
               </p>
             </CardContent>
           </Card>
 
           {/* Users Table */}
-          <Card>
+          <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white overflow-hidden">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                User Email Addresses
+              <CardTitle className="flex items-center gap-2 text-gold-400 font-heading">
+                <User className="h-5 w-5 text-gold-400" />
+                User Email Directory
               </CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="mt-2">Loading users...</p>
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold-500 mx-auto"></div>
+                  <p className="mt-3 text-xs font-mono text-gray-400">Loading user records...</p>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Username</TableHead>
-                      <TableHead>Display Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.username}</TableCell>
-                        <TableCell>{user.displayName}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {user.email ? (
-                              <span className="text-sm">{user.email}</span>
-                            ) : (
-                              <span className="text-sm text-muted-foreground flex items-center gap-1">
-                                <AlertCircle className="h-3 w-3" />
-                                No email set
-                              </span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            user.role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
-                          }`}>
-                            {user.role}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUpdateEmail(user)}
-                            >
-                              <Edit className="h-3 w-3 mr-1" />
-                              Edit Email
-                            </Button>
-                            {user.email && (
+                <div className="rounded-xl border border-white/10 overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-white/5 border-b border-gold-500/20">
+                      <TableRow>
+                        <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Username</TableHead>
+                        <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Display Name</TableHead>
+                        <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Email</TableHead>
+                        <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Role</TableHead>
+                        <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users.map((user) => (
+                        <TableRow key={user.id} className="border-b border-white/5 hover:bg-white/[0.03] transition-colors">
+                          <TableCell className="font-semibold text-white">{user.username}</TableCell>
+                          <TableCell className="text-gray-300">{user.displayName || "—"}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {user.email ? (
+                                <span className="text-sm font-mono text-gray-200">{user.email}</span>
+                              ) : (
+                                <span className="text-xs text-amber-400 flex items-center gap-1 font-mono">
+                                  <AlertCircle className="h-3.5 w-3.5" />
+                                  No email set
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider border ${
+                              user.role === 'admin' 
+                                ? 'bg-gold-500/20 text-gold-300 border-gold-500/40' 
+                                : 'bg-white/10 text-gray-300 border-white/15'
+                            }`}>
+                              {user.role}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => sendResetMutation.mutate(user.email!)}
-                                disabled={sendResetMutation.isPending}
+                                onClick={() => handleUpdateEmail(user)}
+                                className="border-gold-500/30 text-gold-300 hover:bg-gold-500/10 rounded-lg text-xs"
                               >
-                                <Mail className="h-3 w-3 mr-1" />
-                                Send Reset
+                                <Edit className="h-3.5 w-3.5 mr-1" />
+                                Edit
                               </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                              {user.email && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => sendResetMutation.mutate(user.email!)}
+                                  disabled={sendResetMutation.isPending}
+                                  className="border-white/20 text-gray-300 hover:bg-white/10 rounded-lg text-xs"
+                                >
+                                  <Mail className="h-3.5 w-3.5 mr-1" />
+                                  Send Reset
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
 
           {/* Update Email Modal */}
           <Dialog open={isUpdateModalOpen} onOpenChange={setIsUpdateModalOpen}>
-            <DialogContent>
+            <DialogContent className="sm:max-w-[450px] bg-obsidian-card border border-gold-500/30 text-white rounded-2xl shadow-2xl backdrop-blur-2xl">
               <DialogHeader>
-                <DialogTitle>Update Email Address</DialogTitle>
+                <DialogTitle className="text-xl font-heading text-white">Update Email Address</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
+                  <Label htmlFor="username" className="text-xs font-mono text-gray-300">Username</Label>
                   <Input
                     id="username"
                     value={selectedUser?.username || ""}
                     disabled
+                    className="bg-white/5 border-white/10 text-gray-400 rounded-xl"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="email" className="text-xs font-mono text-gold-400 font-bold">Email Address</Label>
                   <Input
                     id="email"
                     type="email"
                     value={emailAddress}
                     onChange={(e) => setEmailAddress(e.target.value)}
-                    placeholder="Enter email address"
+                    placeholder="Enter email address..."
+                    className="bg-obsidian-card/90 border-white/15 text-white placeholder:text-gray-500 rounded-xl"
                   />
                 </div>
               </div>
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
                 <Button
                   variant="outline"
                   onClick={() => setIsUpdateModalOpen(false)}
+                  className="border-white/20 text-gray-300 hover:bg-white/10 rounded-xl text-xs"
                 >
                   Cancel
                 </Button>
@@ -260,6 +282,7 @@ export default function EmailManagement() {
                     }
                   }}
                   disabled={updateEmailMutation.isPending || !emailAddress}
+                  className="bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-obsidian font-bold rounded-xl text-xs shadow-md"
                 >
                   {updateEmailMutation.isPending ? "Updating..." : "Update Email"}
                 </Button>

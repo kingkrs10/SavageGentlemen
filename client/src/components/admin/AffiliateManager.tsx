@@ -34,66 +34,66 @@ export function AffiliateManager() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="bg-zinc-900 border-zinc-800">
+                <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-400">Total Affiliates</CardTitle>
-                        <Users className="h-4 w-4 text-primary" />
+                        <CardTitle className="text-xs font-mono font-bold text-gray-400 uppercase tracking-wider">Total Affiliates</CardTitle>
+                        <Users className="h-4 w-4 text-gold-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-white">{totalAffiliates}</div>
+                        <div className="text-2xl font-heading font-extrabold text-white">{totalAffiliates}</div>
                     </CardContent>
                 </Card>
-                <Card className="bg-zinc-900 border-zinc-800">
+                <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-400">Total Clicks</CardTitle>
-                        <MousePointerClick className="h-4 w-4 text-primary" />
+                        <CardTitle className="text-xs font-mono font-bold text-gray-400 uppercase tracking-wider">Total Clicks</CardTitle>
+                        <MousePointerClick className="h-4 w-4 text-gold-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-white">{totalClicks}</div>
+                        <div className="text-2xl font-heading font-extrabold text-white">{totalClicks}</div>
                     </CardContent>
                 </Card>
-                <Card className="bg-zinc-900 border-zinc-800">
+                <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-400">Conversions</CardTitle>
-                        <Users className="h-4 w-4 text-primary" />
+                        <CardTitle className="text-xs font-mono font-bold text-gray-400 uppercase tracking-wider">Conversions</CardTitle>
+                        <Users className="h-4 w-4 text-emerald-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-white">{totalConversions}</div>
+                        <div className="text-2xl font-heading font-extrabold text-emerald-400">{totalConversions}</div>
                     </CardContent>
                 </Card>
-                <Card className="bg-zinc-900 border-zinc-800">
+                <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-400">Revenue</CardTitle>
-                        <DollarSign className="h-4 w-4 text-primary" />
+                        <CardTitle className="text-xs font-mono font-bold text-gray-400 uppercase tracking-wider">Revenue</CardTitle>
+                        <DollarSign className="h-4 w-4 text-gold-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-white">${(totalRevenue / 100).toFixed(2)}</div>
+                        <div className="text-2xl font-heading font-extrabold text-gold-400">${(totalRevenue / 100).toFixed(2)}</div>
                     </CardContent>
                 </Card>
             </div>
 
-            <Card className="bg-zinc-900 border-zinc-800">
+            <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white overflow-hidden">
                 <CardHeader>
-                    <CardTitle className="text-white">Affiliate Performance</CardTitle>
-                    <CardDescription>Track referrals and click counts for each affiliate.</CardDescription>
+                    <CardTitle className="text-xl font-heading text-gold-400">Affiliate Performance</CardTitle>
+                    <CardDescription className="text-gray-400 text-xs">Track referrals, commissions, and click counts for each partner.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="rounded-md border border-zinc-800 bg-black/20">
+                    <div className="rounded-xl border border-white/10 bg-black/40 overflow-hidden">
                         <Table>
                             <TableHeader>
-                                <TableRow className="border-b border-zinc-800 hover:bg-transparent">
-                                    <TableHead className="text-zinc-400 font-semibold">User</TableHead>
-                                    <TableHead className="text-zinc-400 font-semibold">Code</TableHead>
-                                    <TableHead className="text-zinc-400 font-semibold text-center">Clicks</TableHead>
-                                    <TableHead className="text-zinc-400 font-semibold text-center">Conversions</TableHead>
-                                    <TableHead className="text-zinc-400 font-semibold text-center">Revenue</TableHead>
-                                    <TableHead className="text-zinc-400 font-semibold text-right">Joined</TableHead>
+                                <TableRow className="bg-white/5 border-b border-gold-500/20">
+                                    <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">User</TableHead>
+                                    <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Code</TableHead>
+                                    <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold text-center">Clicks</TableHead>
+                                    <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold text-center">Conversions</TableHead>
+                                    <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold text-center">Revenue</TableHead>
+                                    <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold text-right">Joined</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {affiliates?.length === 0 ? (
-                                    <TableRow className="border-b border-zinc-800/50 hover:bg-zinc-800/20">
-                                        <TableCell colSpan={6} className="text-center py-8 text-zinc-500">
+                                    <TableRow className="border-b border-white/5">
+                                        <TableCell colSpan={6} className="text-center py-8 text-gray-500 font-mono text-xs">
                                             No affiliates found.
                                         </TableCell>
                                     </TableRow>

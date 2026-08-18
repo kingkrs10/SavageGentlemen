@@ -288,198 +288,225 @@ const LivestreamManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Livestream Management</h2>
-          <p className="text-gray-600">Create and manage live streaming events</p>
+          <h2 className="text-xl font-heading font-bold text-gold-400">Livestream Broadcast Hub</h2>
+          <p className="text-xs font-mono text-gray-400 mt-1">Configure and manage multi-platform live streaming events and embed codes</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm}>
+            <Button onClick={resetForm} className="bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-obsidian font-bold rounded-xl text-xs shadow-md">
               <Plus className="w-4 h-4 mr-2" />
               Create Livestream
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl bg-obsidian-card border border-gold-500/30 text-white rounded-2xl shadow-2xl backdrop-blur-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>
-                {selectedLivestream ? 'Edit Livestream' : 'Create New Livestream'}
+              <DialogTitle className="text-xl font-heading text-white">
+                {selectedLivestream ? 'Edit Livestream Stream' : 'Configure New Livestream'}
               </DialogTitle>
-              <DialogDescription>
-                Configure your livestream settings and platform details
+              <DialogDescription className="text-xs font-mono text-gray-400">
+                Configure your livestream platform details, OBS/RTMP keys, and embed player.
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4 pt-2">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="title">Title</Label>
+                  <Label htmlFor="title" className="text-xs font-mono text-gray-300">Title</Label>
                   <Input
                     id="title"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     required
+                    className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="hostName">Host Name</Label>
-                  <Input
-                    id="hostName"
-                    value={formData.hostName}
-                    onChange={(e) => setFormData({ ...formData, hostName: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="streamDate">Stream Date & Time</Label>
-                  <Input
-                    id="streamDate"
-                    type="datetime-local"
-                    value={formData.streamDate}
-                    onChange={(e) => setFormData({ ...formData, streamDate: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="platform">Platform</Label>
-                  <Select value={formData.platform} onValueChange={(value) => setFormData({ ...formData, platform: value })}>
-                    <SelectTrigger>
+                  <Label htmlFor="platform" className="text-xs font-mono text-gray-300">Platform</Label>
+                  <Select
+                    value={formData.platform}
+                    onValueChange={(value) => setFormData({ ...formData, platform: value })}
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/15 text-white rounded-xl text-xs">
                       <SelectValue placeholder="Select platform" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-obsidian-card border border-gold-500/30 text-white rounded-xl shadow-2xl">
                       <SelectItem value="youtube">YouTube</SelectItem>
                       <SelectItem value="twitch">Twitch</SelectItem>
-                      <SelectItem value="instagram">Instagram</SelectItem>
-                      <SelectItem value="facebook">Facebook</SelectItem>
-                      <SelectItem value="tiktok">TikTok</SelectItem>
-                      <SelectItem value="custom">Custom</SelectItem>
+                      <SelectItem value="instagram">Instagram Live</SelectItem>
+                      <SelectItem value="facebook">Facebook Live</SelectItem>
+                      <SelectItem value="tiktok">TikTok Live</SelectItem>
+                      <SelectItem value="custom">Custom RTMP/HLS</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="thumbnailUrl">Thumbnail URL</Label>
+                <Label htmlFor="description" className="text-xs font-mono text-gray-300">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={2}
+                  className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="streamDate" className="text-xs font-mono text-gray-300">Stream Date & Time</Label>
+                  <Input
+                    id="streamDate"
+                    type="datetime-local"
+                    value={formData.streamDate}
+                    onChange={(e) => setFormData({ ...formData, streamDate: e.target.value })}
+                    required
+                    className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="hostName" className="text-xs font-mono text-gray-300">Host / DJ Name</Label>
+                  <Input
+                    id="hostName"
+                    value={formData.hostName}
+                    onChange={(e) => setFormData({ ...formData, hostName: e.target.value })}
+                    className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="thumbnailUrl" className="text-xs font-mono text-gray-300">Cover Thumbnail URL</Label>
                 <Input
                   id="thumbnailUrl"
                   value={formData.thumbnailUrl}
                   onChange={(e) => setFormData({ ...formData, thumbnailUrl: e.target.value })}
-                  placeholder="https://example.com/thumbnail.jpg"
+                  placeholder="https://..."
+                  className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
                 />
               </div>
 
-              {/* Platform-specific fields */}
+              {/* Platform specific fields */}
               {formData.platform === 'youtube' && (
                 <div>
-                  <Label htmlFor="youtubeUrl">YouTube URL</Label>
+                  <Label htmlFor="youtubeUrl" className="text-xs font-mono text-gray-300">YouTube URL</Label>
                   <Input
                     id="youtubeUrl"
                     value={formData.youtubeUrl}
                     onChange={(e) => setFormData({ ...formData, youtubeUrl: e.target.value })}
                     placeholder="https://www.youtube.com/watch?v=..."
+                    className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
                   />
                 </div>
               )}
 
               {formData.platform === 'twitch' && (
                 <div>
-                  <Label htmlFor="twitchChannel">Twitch Channel</Label>
+                  <Label htmlFor="twitchChannel" className="text-xs font-mono text-gray-300">Twitch Channel</Label>
                   <Input
                     id="twitchChannel"
                     value={formData.twitchChannel}
                     onChange={(e) => setFormData({ ...formData, twitchChannel: e.target.value })}
                     placeholder="channel_name"
+                    className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
                   />
                 </div>
               )}
 
               {formData.platform === 'instagram' && (
                 <div>
-                  <Label htmlFor="instagramUsername">Instagram Username</Label>
+                  <Label htmlFor="instagramUsername" className="text-xs font-mono text-gray-300">Instagram Username</Label>
                   <Input
                     id="instagramUsername"
                     value={formData.instagramUsername}
                     onChange={(e) => setFormData({ ...formData, instagramUsername: e.target.value })}
                     placeholder="username"
+                    className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
                   />
                 </div>
               )}
 
               {formData.platform === 'facebook' && (
                 <div>
-                  <Label htmlFor="facebookUrl">Facebook URL</Label>
+                  <Label htmlFor="facebookUrl" className="text-xs font-mono text-gray-300">Facebook URL</Label>
                   <Input
                     id="facebookUrl"
                     value={formData.facebookUrl}
                     onChange={(e) => setFormData({ ...formData, facebookUrl: e.target.value })}
                     placeholder="https://www.facebook.com/..."
+                    className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
                   />
                 </div>
               )}
 
               {formData.platform === 'tiktok' && (
                 <div>
-                  <Label htmlFor="tiktokUsername">TikTok Username</Label>
+                  <Label htmlFor="tiktokUsername" className="text-xs font-mono text-gray-300">TikTok Username</Label>
                   <Input
                     id="tiktokUsername"
                     value={formData.tiktokUsername}
                     onChange={(e) => setFormData({ ...formData, tiktokUsername: e.target.value })}
                     placeholder="@username"
+                    className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
                   />
                 </div>
               )}
 
               {formData.platform === 'custom' && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div>
-                    <Label htmlFor="customStreamUrl">Custom Stream URL</Label>
+                    <Label htmlFor="customStreamUrl" className="text-xs font-mono text-gray-300">Custom Stream URL</Label>
                     <Input
                       id="customStreamUrl"
                       value={formData.customStreamUrl}
                       onChange={(e) => setFormData({ ...formData, customStreamUrl: e.target.value })}
                       placeholder="https://your-stream-url.com"
+                      className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="embedCode">Embed Code (Optional)</Label>
+                    <Label htmlFor="embedCode" className="text-xs font-mono text-gray-300">Embed Code (Optional)</Label>
                     <Textarea
                       id="embedCode"
                       value={formData.embedCode}
                       onChange={(e) => setFormData({ ...formData, embedCode: e.target.value })}
                       placeholder="<iframe>...</iframe>"
-                      rows={3}
+                      rows={2}
+                      className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
                     />
                   </div>
                 </div>
               )}
 
-              <div className="flex items-center space-x-2">
+              <div>
+                <Label htmlFor="streamUrl" className="text-xs font-mono text-gray-300">Stream URL / Direct Video Link</Label>
+                <Input
+                  id="streamUrl"
+                  value={formData.streamUrl}
+                  onChange={(e) => setFormData({ ...formData, streamUrl: e.target.value })}
+                  placeholder="https://..."
+                  className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
+                />
+              </div>
+
+              <div className="flex items-center space-x-2 pt-2">
                 <Switch
                   id="isLive"
                   checked={formData.isLive}
                   onCheckedChange={(checked) => setFormData({ ...formData, isLive: checked })}
                 />
-                <Label htmlFor="isLive">Currently Live</Label>
+                <Label htmlFor="isLive" className="text-xs font-mono text-gold-400 font-bold uppercase">Broadcast Live Now</Label>
               </div>
 
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <div className="flex justify-end space-x-2 pt-4 border-t border-white/10">
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="border-white/20 text-gray-300 rounded-xl text-xs">
                   Cancel
                 </Button>
                 <Button 
                   type="submit" 
                   disabled={createLivestream.isPending || updateLivestream.isPending}
+                  className="bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-obsidian font-bold rounded-xl text-xs shadow-md"
                 >
                   {selectedLivestream ? 'Update' : 'Create'} Livestream
                 </Button>
@@ -490,93 +517,105 @@ const LivestreamManager: React.FC = () => {
       </div>
 
       {/* Livestreams Table */}
-      <Card>
+      <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white overflow-hidden">
         <CardHeader>
-          <CardTitle>All Livestreams</CardTitle>
-          <CardDescription>
-            Manage your live streaming events and their status
+          <CardTitle className="text-xl font-heading text-gold-400">Configured Livestreams</CardTitle>
+          <CardDescription className="text-gray-400 text-xs">
+            Manage your live streaming broadcasts and on-air statuses
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8">Loading livestreams...</div>
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold-500 mx-auto"></div>
+              <p className="mt-3 text-xs font-mono text-gray-400">Loading broadcasts...</p>
+            </div>
           ) : livestreams && livestreams.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Platform</TableHead>
-                  <TableHead>Host</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {livestreams.map((livestream) => (
-                  <TableRow key={livestream.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Video className="w-4 h-4" />
-                        <span className="font-medium">{livestream.title}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <span>{getPlatformIcon(livestream.platform)}</span>
-                        <span className="capitalize">{livestream.platform}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{livestream.hostName || 'N/A'}</TableCell>
-                    <TableCell>
-                      {new Date(livestream.streamDate).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit'
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant={livestream.isLive ? "default" : "secondary"}>
-                          {livestream.isLive ? 'Live' : 'Offline'}
-                        </Badge>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleToggleLive(livestream.id, livestream.isLive)}
-                        >
-                          {livestream.isLive ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-                        </Button>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEdit(livestream)}
-                        >
-                          <Edit2 className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDelete(livestream.id)}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            <div className="rounded-xl border border-white/10 overflow-hidden">
+              <Table>
+                <TableHeader className="bg-white/5 border-b border-gold-500/20">
+                  <TableRow>
+                    <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Title</TableHead>
+                    <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Platform</TableHead>
+                    <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Host</TableHead>
+                    <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Date</TableHead>
+                    <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Status</TableHead>
+                    <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {livestreams.map((livestream) => (
+                    <TableRow key={livestream.id} className="border-b border-white/5 hover:bg-white/[0.03] transition-colors text-xs">
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Video className="w-4 h-4 text-gold-400 shrink-0" />
+                          <span className="font-semibold text-white">{livestream.title}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2 font-mono text-gray-300">
+                          <span>{getPlatformIcon(livestream.platform)}</span>
+                          <span className="capitalize">{livestream.platform}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-gray-300 font-mono">{livestream.hostName || '—'}</TableCell>
+                      <TableCell className="text-gray-400 font-mono">
+                        {new Date(livestream.streamDate).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit'
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider border ${
+                            livestream.isLive 
+                              ? 'bg-red-500/20 text-red-300 border-red-500/40 animate-pulse' 
+                              : 'bg-white/10 text-gray-400 border-white/15'
+                          }`}>
+                            {livestream.isLive ? 'Live' : 'Offline'}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleToggleLive(livestream.id, livestream.isLive)}
+                            className="border-gold-500/30 text-gold-300 hover:bg-gold-500/10 rounded-lg h-7 px-2"
+                          >
+                            {livestream.isLive ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEdit(livestream)}
+                            className="border-white/20 text-gray-300 hover:bg-white/10 rounded-lg h-7 w-7 p-0"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDelete(livestream.id)}
+                            className="border-red-500/30 text-red-400 hover:bg-red-950/40 rounded-lg h-7 w-7 p-0"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           ) : (
-            <div className="text-center py-8">
-              <Video className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-500">No livestreams found. Create your first livestream!</p>
+            <div className="text-center py-12">
+              <Video className="w-12 h-12 mx-auto mb-4 text-gray-600" />
+              <p className="text-gray-400 text-xs font-mono">No livestreams scheduled. Create your first broadcast above!</p>
             </div>
           )}
         </CardContent>

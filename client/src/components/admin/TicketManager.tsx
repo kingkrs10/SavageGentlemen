@@ -390,7 +390,7 @@ const TicketManager: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
         <div className="w-full sm:w-2/3">
-          <Label htmlFor="event-select">Select Event</Label>
+          <Label htmlFor="event-select" className="text-xs font-mono text-gold-400 font-bold uppercase tracking-wider">Select Carnival Event</Label>
           <Select 
             value={selectedEvent ? String(selectedEvent.id) : ''} 
             onValueChange={(value) => {
@@ -398,10 +398,10 @@ const TicketManager: React.FC = () => {
               setSelectedEvent(event || null);
             }}
           >
-            <SelectTrigger className="w-full mt-1">
-              <SelectValue placeholder="Select an event" />
+            <SelectTrigger className="w-full mt-1.5 bg-obsidian-card/90 border-white/15 text-white rounded-xl">
+              <SelectValue placeholder="Select an event to manage inventory..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-obsidian-card border border-gold-500/30 text-white rounded-xl shadow-2xl">
               {events && events.map((event) => (
                 <SelectItem key={event.id} value={String(event.id)}>{event.title}</SelectItem>
               ))}
@@ -416,32 +416,32 @@ const TicketManager: React.FC = () => {
               setIsNewTicketDialogOpen(true);
             }}
             disabled={!selectedEvent}
-            className="w-full h-10 mt-1"
+            className="w-full h-10 mt-1.5 bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-obsidian font-bold rounded-xl shadow-md disabled:opacity-50"
           >
             <PlusCircle className="h-4 w-4 mr-2" />
-            Add Ticket
+            Create Ticket Tier
           </Button>
         </div>
       </div>
       
       {selectedEvent ? (
         <>
-          <div className="bg-muted/40 p-4 rounded-md mb-6">
-            <h3 className="text-lg font-medium">{selectedEvent.title}</h3>
-            <div className="mt-2 text-sm text-muted-foreground">
-              <div className="flex items-center mb-1">
-                <Calendar className="h-4 w-4 mr-2" />
+          <div className="bg-white/5 border border-gold-500/20 p-5 rounded-2xl mb-6">
+            <h3 className="text-lg font-heading font-bold text-white">{selectedEvent.title}</h3>
+            <div className="mt-2 text-xs font-mono text-gray-400 space-y-1">
+              <div className="flex items-center">
+                <Calendar className="h-3.5 w-3.5 mr-2 text-gold-400" />
                 {selectedEvent.date} at {selectedEvent.time}
               </div>
               <div className="flex items-center">
-                <MapPin className="h-4 w-4 mr-2" />
+                <MapPin className="h-3.5 w-3.5 mr-2 text-gold-400" />
                 {selectedEvent.location}
               </div>
             </div>
           </div>
           
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Tickets</h3>
+            <h3 className="text-lg font-heading font-bold text-gold-400">Configured Ticket Tiers</h3>
           </div>
           
           {ticketsLoading ? (
@@ -532,11 +532,11 @@ const TicketManager: React.FC = () => {
         </div>
       )}
       
-      {/* New Ticket Dialog */}
+      {/* Create Ticket Dialog */}
       <Dialog open={isNewTicketDialogOpen} onOpenChange={setIsNewTicketDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[550px] bg-obsidian-card border border-gold-500/30 text-white rounded-2xl shadow-2xl backdrop-blur-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add New Ticket</DialogTitle>
+            <DialogTitle className="text-xl font-heading text-white">Create New Ticket Tier</DialogTitle>
             <DialogDescription>
               Create a new ticket for {selectedEvent?.title}
             </DialogDescription>
@@ -826,9 +826,9 @@ const TicketManager: React.FC = () => {
       
       {/* Edit Ticket Dialog */}
       <Dialog open={isEditTicketDialogOpen} onOpenChange={setIsEditTicketDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[550px] bg-obsidian-card border border-gold-500/30 text-white rounded-2xl shadow-2xl backdrop-blur-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Ticket</DialogTitle>
+            <DialogTitle className="text-xl font-heading text-white">Edit Ticket Tier</DialogTitle>
             <DialogDescription>
               Update ticket information
             </DialogDescription>

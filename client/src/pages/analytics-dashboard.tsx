@@ -15,9 +15,10 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { BarChartIcon, CalendarIcon, LineChartIcon, PieChartIcon, TrendingUpIcon } from "lucide-react";
+import { BarChartIcon, CalendarIcon, LineChartIcon, PieChartIcon, TrendingUpIcon, Sparkles } from "lucide-react";
+import SEOHead from "@/components/SEOHead";
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#00A876', '#FF6347', '#4B0082'];
+const COLORS = ['#E5A93C', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#3B82F6', '#EC4899', '#D97706'];
 
 type TabType = "overview" | "events" | "products" | "users";
 
@@ -116,44 +117,83 @@ const AnalyticsDashboard: React.FC = () => {
   }));
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold mb-4 md:mb-0">Analytics Dashboard</h1>
-        
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="inline-flex items-center">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {format(dateRange.start, "MMM dd, yyyy")} - {format(dateRange.end, "MMM dd, yyyy")}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="range"
-                defaultMonth={dateRange.start}
-                selected={{
-                  from: dateRange.start,
-                  to: dateRange.end,
-                }}
-                onSelect={(range) => {
-                  if (range?.from && range?.to) {
-                    setDateRange({ start: range.from, end: range.to });
-                  }
-                }}
-                numberOfMonths={2}
-              />
-            </PopoverContent>
-          </Popover>
+    <div className="min-h-screen bg-obsidian text-white py-8 px-4 md:px-8 max-w-7xl mx-auto space-y-8">
+      <SEOHead 
+        title="Analytics & Telemetry - Savage Gentlemen Executive Control" 
+        description="Comprehensive real-time telemetry, ticket conversion, and audience analytics." 
+      />
+
+      {/* ── LUXURY HERO ── */}
+      <div className="glass-obsidian-strong border border-gold-500/30 rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-2xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-400 text-xs font-mono font-bold uppercase tracking-widest mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-gold-400" />
+              EXECUTIVE TELEMETRY & CONVERSION
+            </div>
+            <h1 className="text-3xl md:text-4xl font-heading font-extrabold tracking-tight text-white">
+              Analytics Dashboard
+            </h1>
+            <p className="text-gray-400 text-sm mt-1">
+              Real-time telemetry on page views, ticket sales, viral ad CTRs, and member engagement.
+            </p>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="border-gold-500/30 text-gold-300 hover:bg-gold-500/10 inline-flex items-center rounded-xl font-mono text-xs">
+                  <CalendarIcon className="mr-2 h-4 w-4 text-gold-400" />
+                  {format(dateRange.start, "MMM dd, yyyy")} - {format(dateRange.end, "MMM dd, yyyy")}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-obsidian-card border border-gold-500/30 text-white rounded-2xl shadow-2xl">
+                <Calendar
+                  mode="range"
+                  defaultMonth={dateRange.start}
+                  selected={{
+                    from: dateRange.start,
+                    to: dateRange.end,
+                  }}
+                  onSelect={(range) => {
+                    if (range?.from && range?.to) {
+                      setDateRange({ start: range.from, end: range.to });
+                    }
+                  }}
+                  numberOfMonths={2}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabType)}>
-        <TabsList className="grid w-full grid-cols-4 md:w-[400px] mb-6">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="events">Events</TabsTrigger>
-          <TabsTrigger value="products">Products</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
+        <TabsList className="flex flex-wrap w-full md:w-auto bg-white/5 border border-white/10 p-1.5 gap-1.5 rounded-2xl backdrop-blur-md mb-6">
+          <TabsTrigger 
+            value="overview"
+            className="rounded-xl px-5 py-2 text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+          >
+            Overview
+          </TabsTrigger>
+          <TabsTrigger 
+            value="events"
+            className="rounded-xl px-5 py-2 text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+          >
+            Events
+          </TabsTrigger>
+          <TabsTrigger 
+            value="products"
+            className="rounded-xl px-5 py-2 text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+          >
+            Products
+          </TabsTrigger>
+          <TabsTrigger 
+            value="users"
+            className="rounded-xl px-5 py-2 text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+          >
+            Users
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">

@@ -216,27 +216,39 @@ export default function PassportManager() {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="users" data-testid="tab-passport-users">
+        <TabsList className="flex flex-wrap w-full md:w-auto bg-white/5 border border-white/10 p-1.5 gap-1.5 rounded-2xl backdrop-blur-md mb-6">
+          <TabsTrigger 
+            value="users" 
+            data-testid="tab-passport-users"
+            className="rounded-xl px-5 py-2 text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+          >
             <Users className="h-4 w-4 mr-2" />
-            Passport Users
+            Passport Holders
           </TabsTrigger>
-          <TabsTrigger value="analytics" data-testid="tab-passport-analytics">
+          <TabsTrigger 
+            value="analytics" 
+            data-testid="tab-passport-analytics"
+            className="rounded-xl px-5 py-2 text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+          >
             <Trophy className="h-4 w-4 mr-2" />
-            Analytics
+            Passport Analytics
           </TabsTrigger>
-          <TabsTrigger value="promoters" data-testid="tab-promoters">
+          <TabsTrigger 
+            value="promoters" 
+            data-testid="tab-promoters"
+            className="rounded-xl px-5 py-2 text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
+          >
             <CheckCircle className="h-4 w-4 mr-2" />
-            Promoters
+            Promoter Approvals
           </TabsTrigger>
         </TabsList>
 
         {/* Passport Users Tab */}
         <TabsContent value="users" className="space-y-4">
-          <Card>
+          <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
             <CardHeader>
-              <CardTitle>Passport Users</CardTitle>
-              <CardDescription>Manage user passports, points, and tiers</CardDescription>
+              <CardTitle className="text-xl font-heading text-gold-400">Soca Passport Members</CardTitle>
+              <CardDescription className="text-gray-400 text-xs">Manage member passport credentials, stamp points, and VIP tiers</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-4">
@@ -489,17 +501,17 @@ export default function PassportManager() {
         </TabsContent>
       </Tabs>
 
-      {/* Edit Profile Dialog */}
+      {/* Profile Details & Edit Dialog */}
       <Dialog open={editDialogOpen || !!selectedProfile} onOpenChange={(open) => {
         if (!open) {
           setEditDialogOpen(false);
           setSelectedProfile(null);
         }
       }}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl bg-obsidian-card border border-gold-500/30 text-white rounded-2xl shadow-2xl backdrop-blur-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Passport Profile Details</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-xl font-heading text-white">Passport Profile Details</DialogTitle>
+            <DialogDescription className="text-xs font-mono text-gray-400">
               View and edit passport profile for {selectedProfile?.user.username}
             </DialogDescription>
           </DialogHeader>

@@ -458,13 +458,13 @@ const TicketScanner = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-2 sm:p-4 space-y-4">
+    <div className="w-full max-w-4xl mx-auto space-y-5">
       {/* Mode Selection */}
-      <Card className="shadow-sm">
-        <CardHeader className="pb-2 sm:pb-4">
-          <CardTitle className="text-lg sm:text-xl">Ticket Scanner</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">
-            Choose your preferred scanning method
+      <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
+        <CardHeader className="pb-2 sm:pb-3">
+          <CardTitle className="text-lg sm:text-xl font-heading text-gold-400">Optical Ticket Validator</CardTitle>
+          <CardDescription className="text-xs font-mono text-gray-400">
+            Select high-speed validation mode for gatekeeper entry
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -472,26 +472,38 @@ const TicketScanner = () => {
             <Button
               variant={scanMode === 'manual' ? 'default' : 'outline'}
               onClick={() => setScanMode('manual')}
-              className="flex-1 text-xs sm:text-sm"
+              className={`flex-1 text-xs font-mono rounded-xl transition-all ${
+                scanMode === 'manual'
+                  ? 'bg-gradient-to-r from-gold-500 to-amber-400 text-obsidian font-bold shadow-md shadow-gold-500/20'
+                  : 'border-white/15 text-gray-300 hover:bg-white/5'
+              }`}
             >
               <KeyboardIcon className="mr-2 h-4 w-4" />
-              Manual Entry
+              Manual Code Entry
             </Button>
             <Button
               variant={scanMode === 'camera' ? 'default' : 'outline'}
               onClick={() => setScanMode('camera')}
-              className="flex-1 text-xs sm:text-sm"
+              className={`flex-1 text-xs font-mono rounded-xl transition-all ${
+                scanMode === 'camera'
+                  ? 'bg-gradient-to-r from-gold-500 to-amber-400 text-obsidian font-bold shadow-md shadow-gold-500/20'
+                  : 'border-white/15 text-gray-300 hover:bg-white/5'
+              }`}
             >
               <Video className="mr-2 h-4 w-4" />
-              Live Camera
+              Live Optical Camera
             </Button>
             <Button
               variant={scanMode === 'upload' ? 'default' : 'outline'}
               onClick={() => setScanMode('upload')}
-              className="flex-1 text-xs sm:text-sm"
+              className={`flex-1 text-xs font-mono rounded-xl transition-all ${
+                scanMode === 'upload'
+                  ? 'bg-gradient-to-r from-gold-500 to-amber-400 text-obsidian font-bold shadow-md shadow-gold-500/20'
+                  : 'border-white/15 text-gray-300 hover:bg-white/5'
+              }`}
             >
               <Camera className="mr-2 h-4 w-4" />
-              Photo Upload
+              Photo / File Upload
             </Button>
           </div>
         </CardContent>
@@ -499,56 +511,56 @@ const TicketScanner = () => {
 
       {/* Error Display */}
       {error && (
-        <Alert variant="destructive" className="shadow-sm">
-          <XCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
+        <Alert variant="destructive" className="bg-red-950/60 border border-red-500/40 text-red-200 rounded-2xl shadow-xl">
+          <XCircle className="h-5 w-5 text-red-400" />
+          <AlertTitle className="font-heading font-bold text-red-300">Admission Alert</AlertTitle>
+          <AlertDescription className="text-xs font-mono text-red-200">{error}</AlertDescription>
         </Alert>
       )}
 
       {/* Success Display */}
       {ticketInfo && (
-        <Card className="shadow-md border-green-200 bg-green-50">
-          <CardHeader className="pb-2 sm:pb-3">
-            <CardTitle className="flex items-center text-green-800 text-lg sm:text-xl">
-              <CheckCircle className="mr-2 h-6 w-6 text-green-600" />
-              {ticketInfo.scannedAt ? 'Previously Scanned' : '✅ ENTRY APPROVED'}
+        <Card className="glass-obsidian border-2 border-emerald-500/50 bg-emerald-950/20 rounded-2xl shadow-2xl text-white">
+          <CardHeader className="pb-2 sm:pb-3 border-b border-emerald-500/20">
+            <CardTitle className="flex items-center text-emerald-400 font-heading text-lg sm:text-2xl">
+              <CheckCircle className="mr-2.5 h-7 w-7 text-emerald-400" />
+              {ticketInfo.scannedAt ? 'Previously Admitted' : 'ENTRY APPROVED'}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-              <div>
-                <p className="font-semibold text-green-800">Event:</p>
-                <p className="text-green-700">{ticketInfo.eventName}</p>
+          <CardContent className="space-y-4 pt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
+              <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+                <span className="text-gray-400 block text-[10px] uppercase">Event</span>
+                <span className="text-white font-bold text-sm">{ticketInfo.eventName}</span>
               </div>
-              <div>
-                <p className="font-semibold text-green-800">Ticket:</p>
-                <p className="text-green-700">{ticketInfo.ticketName}</p>
+              <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+                <span className="text-gray-400 block text-[10px] uppercase">Tier</span>
+                <span className="text-gold-300 font-bold text-sm">{ticketInfo.ticketName}</span>
               </div>
-              <div>
-                <p className="font-semibold text-green-800">Date:</p>
-                <p className="text-green-700">{ticketInfo.eventDate}</p>
+              <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+                <span className="text-gray-400 block text-[10px] uppercase">Date & Time</span>
+                <span className="text-gray-300">{ticketInfo.eventDate}</span>
               </div>
-              <div>
-                <p className="font-semibold text-green-800">Location:</p>
-                <p className="text-green-700">{ticketInfo.eventLocation}</p>
+              <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+                <span className="text-gray-400 block text-[10px] uppercase">Location</span>
+                <span className="text-gray-300">{ticketInfo.eventLocation}</span>
               </div>
-              <div>
-                <p className="font-semibold text-green-800">Order ID:</p>
-                <p className="text-green-700">#{ticketInfo.orderId}</p>
+              <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+                <span className="text-gray-400 block text-[10px] uppercase">Order ID</span>
+                <span className="text-white font-bold">#{ticketInfo.orderId}</span>
               </div>
               {ticketInfo.scannedAt && (
-                <div>
-                  <p className="font-semibold text-green-800">First Scanned:</p>
-                  <p className="text-green-700">{new Date(ticketInfo.scannedAt).toLocaleString()}</p>
+                <div className="p-3 bg-red-950/40 rounded-xl border border-red-500/30">
+                  <span className="text-red-400 block text-[10px] uppercase">First Admitted</span>
+                  <span className="text-red-200">{new Date(ticketInfo.scannedAt).toLocaleString()}</span>
                 </div>
               )}
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="pt-2">
             <Button 
               onClick={resetScanner}
-              className="w-full bg-green-600 hover:bg-green-700 text-white"
+              className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-obsidian font-bold text-sm h-12 rounded-xl shadow-lg shadow-emerald-500/20"
             >
               Scan Next Ticket
             </Button>
@@ -558,11 +570,11 @@ const TicketScanner = () => {
 
       {/* Manual Entry Mode */}
       {!ticketInfo && scanMode === 'manual' && (
-        <Card className="shadow-md">
+        <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
           <CardHeader className="pb-2 sm:pb-3">
-            <CardTitle className="text-lg sm:text-xl">Manual Entry</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Enter the ticket code manually
+            <CardTitle className="text-lg sm:text-xl font-heading text-white">Manual Passcode Validation</CardTitle>
+            <CardDescription className="text-xs font-mono text-gray-400">
+              Type or paste the attendee ticket identifier
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -570,26 +582,26 @@ const TicketScanner = () => {
               <Input
                 ref={inputRef}
                 type="text"
-                placeholder="Enter ticket code (e.g., SGX-TIX-123-456 or EVENT-7-ORDER-67-123456)"
+                placeholder="e.g. SGX-TIX-1-7 or DEMO-TICKET"
                 value={ticketCode}
                 onChange={(e) => setTicketCode(e.target.value)}
-                className="text-center text-lg font-mono"
+                className="text-center text-lg font-mono bg-obsidian-card border-white/15 text-gold-300 rounded-xl h-12 tracking-wider"
                 disabled={loading}
               />
               <Button 
                 type="submit" 
-                className="w-full h-12 text-lg font-semibold"
+                className="w-full h-12 text-sm font-bold bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-obsidian rounded-xl shadow-lg shadow-gold-500/20"
                 disabled={loading || !ticketCode.trim()}
               >
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Validating...
+                    Validating Ticket Code...
                   </>
                 ) : (
                   <>
                     <TicketIcon className="mr-2 h-5 w-5" />
-                    Validate Ticket
+                    Verify & Admit Attendee
                   </>
                 )}
               </Button>
@@ -600,85 +612,78 @@ const TicketScanner = () => {
 
       {/* Camera Scanning Mode */}
       {!ticketInfo && scanMode === 'camera' && (
-        <Card className="shadow-md">
+        <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
           <CardHeader className="pb-2 sm:pb-3">
-            <CardTitle className="text-lg sm:text-xl">Live QR Scanner</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Use your camera to scan QR codes in real-time
+            <CardTitle className="text-lg sm:text-xl font-heading text-white">Live Optical QR Scanner</CardTitle>
+            <CardDescription className="text-xs font-mono text-gray-400">
+              Point your camera at the digital or printed attendee QR pass
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col items-center space-y-4">
               {!cameraActive ? (
                 <>
-                  <div className="w-full aspect-square max-w-[280px] border-2 border-dashed border-green-300 rounded-lg flex items-center justify-center bg-green-50">
+                  <div className="w-full aspect-square max-w-[280px] border-2 border-dashed border-gold-500/30 rounded-2xl flex items-center justify-center bg-white/5">
                     <div className="text-center p-4">
-                      <Video className="h-16 w-16 mx-auto text-green-500 mb-3" />
-                      <p className="text-sm font-medium text-green-700 mb-1">Start Live Scanner</p>
-                      <p className="text-xs text-green-600">Point camera at QR code for instant scanning</p>
+                      <Video className="h-14 w-14 mx-auto text-gold-400 mb-3 animate-pulse" />
+                      <p className="text-sm font-heading font-bold text-white mb-1">Optical Camera Ready</p>
+                      <p className="text-xs font-mono text-gray-400">Instant hardware scanner integration</p>
                     </div>
                   </div>
                   
-                  <div className="space-y-3">
+                  <div className="space-y-3 w-full max-w-sm">
                     <Button 
                       onClick={startCamera} 
-                      className="w-full flex items-center justify-center h-14 text-lg font-semibold bg-green-600 hover:bg-green-700 text-white"
+                      className="w-full flex items-center justify-center h-12 text-sm font-bold bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-obsidian rounded-xl shadow-lg shadow-gold-500/20"
                       disabled={loading}
                     >
                       {loading ? (
                         <>
-                          <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                          Starting Camera...
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Initializing Camera Feed...
                         </>
                       ) : (
                         <>
-                          <Video className="mr-2 h-6 w-6" />
-                          Start Camera
+                          <Video className="mr-2 h-5 w-5" />
+                          Activate Scanner Camera
                         </>
                       )}
                     </Button>
                     
                     <div className="text-center">
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Camera not working? Try photo mode instead
-                      </p>
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
                         onClick={() => setScanMode('upload')}
-                        className="text-xs"
+                        className="text-xs font-mono border-white/15 text-gray-400 hover:text-white rounded-xl"
                       >
-                        Switch to Photo Mode
+                        Switch to Photo Upload Mode
                       </Button>
                     </div>
                   </div>
                 </>
               ) : (
                 <>
-                  {/* Html5QrcodeScanner container */}
                   <div 
                     id="qr-scanner-container" 
-                    className="w-full max-w-[400px] mx-auto rounded-lg overflow-hidden"
+                    className="w-full max-w-[400px] mx-auto rounded-2xl overflow-hidden border border-gold-500/30 shadow-2xl"
                     style={{ minHeight: '300px' }}
-                  >
-                    {/* Scanner will be injected here by html5-qrcode */}
-                  </div>
+                  />
                   
-                  {/* Enhanced scanning indicators overlay */}
                   <div className="w-full max-w-[280px] mx-auto mt-2">
-                    <div className="bg-green-500 text-white px-3 py-2 rounded-full text-xs font-bold text-center animate-pulse">
-                      🎯 AUTO-SCAN ACTIVE - Point at QR code
+                    <div className="bg-gradient-to-r from-gold-500 to-amber-400 text-obsidian px-3 py-1.5 rounded-full text-xs font-mono font-bold text-center animate-pulse">
+                      TARGET QR CODE FOR AUTO-VALIDATION
                     </div>
                   </div>
                   
                   <Button 
                     onClick={stopCamera} 
                     variant="outline"
-                    className="w-full flex items-center justify-center h-12 text-base border-red-200 text-red-600 hover:bg-red-50"
+                    className="w-full max-w-sm flex items-center justify-center h-11 text-xs font-mono border-red-500/30 text-red-300 hover:bg-red-950/40 rounded-xl"
                   >
-                    <StopCircle className="mr-2 h-5 w-5" />
-                    Stop Camera
+                    <StopCircle className="mr-2 h-4 w-4" />
+                    Stop Camera Feed
                   </Button>
                 </>
               )}
@@ -689,20 +694,20 @@ const TicketScanner = () => {
 
       {/* Photo Upload Mode */}
       {!ticketInfo && scanMode === 'upload' && (
-        <Card className="shadow-md">
+        <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
           <CardHeader className="pb-2 sm:pb-3">
-            <CardTitle className="text-lg sm:text-xl">Photo Upload</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Take a photo of the QR code or upload an image
+            <CardTitle className="text-lg sm:text-xl font-heading text-white">Photo / File Upload</CardTitle>
+            <CardDescription className="text-xs font-mono text-gray-400">
+              Upload a screenshot or photo of the attendee QR code
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col items-center space-y-4">
-              <div className="w-full aspect-square max-w-[280px] border-2 border-dashed border-blue-300 rounded-lg flex items-center justify-center bg-blue-50">
+              <div className="w-full aspect-square max-w-[280px] border-2 border-dashed border-gold-500/30 rounded-2xl flex items-center justify-center bg-white/5">
                 <div className="text-center p-4">
-                  <Camera className="h-16 w-16 mx-auto text-blue-500 mb-3" />
-                  <p className="text-sm font-medium text-blue-700 mb-1">Upload QR Code Image</p>
-                  <p className="text-xs text-blue-600">Take a photo or select from gallery</p>
+                  <Camera className="h-14 w-14 mx-auto text-gold-400 mb-3" />
+                  <p className="text-sm font-heading font-bold text-white mb-1">Upload QR Snapshot</p>
+                  <p className="text-xs font-mono text-gray-400">Select PNG, JPG, or camera roll photo</p>
                 </div>
               </div>
               
@@ -715,37 +720,34 @@ const TicketScanner = () => {
                 className="hidden"
               />
               
-              <div className="space-y-3 w-full">
+              <div className="space-y-3 w-full max-w-sm">
                 <Button 
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full flex items-center justify-center h-14 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white"
+                  className="w-full flex items-center justify-center h-12 text-sm font-bold bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-obsidian rounded-xl shadow-lg shadow-gold-500/20"
                   disabled={loading}
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                      Scanning Image...
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Scanning Uploaded Image...
                     </>
                   ) : (
                     <>
-                      <Camera className="mr-2 h-6 w-6" />
-                      Take Photo / Upload
+                      <Camera className="mr-2 h-5 w-5" />
+                      Choose Image or Take Photo
                     </>
                   )}
                 </Button>
                 
                 <div className="text-center">
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Photo not working? Try live camera instead
-                  </p>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => setScanMode('camera')}
-                    className="text-xs"
+                    className="text-xs font-mono border-white/15 text-gray-400 hover:text-white rounded-xl"
                   >
-                    Switch to Live Camera
+                    Switch to Live Camera Feed
                   </Button>
                 </div>
               </div>
