@@ -25,6 +25,7 @@ import { AdSpace } from "@/components/home/AdSpace";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayer } from "@/context/AudioPlayerContext";
 import SGFlyerLogoPng from "@/assets/SGFLYERLOGO.png";
+import { cleanTitle, cleanCaption } from "@shared/text-sanitizer";
 
 interface Article {
   id: number;
@@ -135,8 +136,8 @@ export default function ArticleDetail() {
   return (
     <div className="min-h-screen pb-24 text-white">
       <SEOHead
-        title={`${article.title} | Savage Magazine`}
-        description={article.summary}
+        title={`${cleanTitle(article.title)} | Savage Magazine`}
+        description={cleanCaption(article.summary)}
       />
 
       {/* Top Header Sponsor Ticker */}
@@ -190,11 +191,11 @@ export default function ArticleDetail() {
           </div>
 
           <h1 className="font-heading text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
-            {article.title}
+            {cleanTitle(article.title)}
           </h1>
 
           <p className="text-white/70 text-lg md:text-xl font-light leading-relaxed border-l-2 border-gold-500/40 pl-4">
-            {article.summary}
+            {cleanCaption(article.summary)}
           </p>
 
           {/* Author Badge */}

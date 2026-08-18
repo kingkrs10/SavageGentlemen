@@ -27,6 +27,7 @@ import { AdSpace } from "@/components/home/AdSpace";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayer } from "@/context/AudioPlayerContext";
 import SGFlyerLogoPng from "@/assets/SGFLYERLOGO.png";
+import { cleanTitle, cleanCaption } from "@shared/text-sanitizer";
 
 interface Article {
   id: number;
@@ -171,11 +172,11 @@ export default function Magazine() {
                   </div>
 
                   <h2 className="font-heading text-2xl md:text-3xl lg:text-4xl font-bold text-white group-hover:text-gold-300 transition-colors leading-tight">
-                    {featuredArticle.title}
+                    {cleanTitle(featuredArticle.title)}
                   </h2>
 
                   <p className="text-white/70 text-sm md:text-base leading-relaxed line-clamp-4">
-                    {featuredArticle.summary}
+                    {cleanCaption(featuredArticle.summary)}
                   </p>
                 </div>
 
@@ -299,11 +300,11 @@ export default function Magazine() {
                       </div>
 
                       <h3 className="font-heading text-lg font-bold text-white group-hover:text-gold-300 transition-colors line-clamp-2 leading-snug">
-                        {article.title}
+                        {cleanTitle(article.title)}
                       </h3>
 
                       <p className="text-xs text-white/60 line-clamp-3 leading-relaxed">
-                        {article.summary}
+                        {cleanCaption(article.summary)}
                       </p>
                     </div>
 

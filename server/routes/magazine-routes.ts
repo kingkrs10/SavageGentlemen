@@ -5,38 +5,63 @@ import { magazineBot } from "../workers/magazine-bot";
 import { instagramBot } from "../workers/instagram-bot";
 import { socialAutoPoster } from "../workers/social-autoposter";
 import { authenticateUser, authorizeAdmin } from "../auth-middleware";
+import { cleanTitle, cleanCaption, isDuplicateStory } from "@shared/text-sanitizer";
 
 export const magazineRouter = Router();
 
-// Public: Get all articles (with category, limit, offset filtering)
+// Helper to sanitize article object
+function sanitizeArticleResponse(a: any) {
+  if (!a) return a;
+  return {
+    ...a,
+    title: cleanTitle(a.title),
+    summary: cleanCaption(a.summary),
+    content: cleanCaption(a.content),
+  };
+}
+
+// Public: Get all articles (with category, limit, offset filtering and deduplication)
 magazineRouter.get("/articles", async (req: Request, res: Response) => {
   try {
     const category = req.query.category as string | undefined;
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 30;
     const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
     const isPublished = true;
 
-    let articles = await storage.getAllArticles({
+    let rawArticles = await storage.getAllArticles({
       category,
       isPublished,
-      limit,
+      limit: limit + 20, // fetch extra to account for deduplication
       offset,
     });
 
-    if (articles.length === 0 && (!category || category === "all")) {
+    if (rawArticles.length === 0 && (!category || category === "all")) {
       console.log("[Magazine] DB has 0 articles. Seeding starter stories immediately...");
       await magazineBot.seedInitialArticlesIfEmpty();
       magazineBot.syncFeeds().catch(err => console.error("[Magazine] Auto-sync error:", err));
 
-      articles = await storage.getAllArticles({
+      rawArticles = await storage.getAllArticles({
         category,
         isPublished,
-        limit,
+        limit: limit + 20,
         offset,
       });
     }
 
-    res.json(articles);
+    // Deduplicate and sanitize on-the-fly
+    const seenTitles: string[] = [];
+    const sanitizedArticles = [];
+
+    for (const a of rawArticles) {
+      const cleaned = sanitizeArticleResponse(a);
+      if (!isDuplicateStory(cleaned.title, seenTitles)) {
+        seenTitles.push(cleaned.title);
+        sanitizedArticles.push(cleaned);
+      }
+      if (sanitizedArticles.length >= limit) break;
+    }
+
+    res.json(sanitizedArticles);
   } catch (error: any) {
     console.error("Error fetching articles:", error);
     res.status(500).json({ error: "Failed to fetch articles" });
@@ -48,7 +73,18 @@ magazineRouter.get("/articles/featured", async (req: Request, res: Response) => 
   try {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 4;
     const featured = await storage.getFeaturedArticles(limit);
-    res.json(featured);
+    const seenTitles: string[] = [];
+    const sanitized = [];
+
+    for (const a of featured) {
+      const cleaned = sanitizeArticleResponse(a);
+      if (!isDuplicateStory(cleaned.title, seenTitles)) {
+        seenTitles.push(cleaned.title);
+        sanitized.push(cleaned);
+      }
+    }
+
+    res.json(sanitized);
   } catch (error: any) {
     console.error("Error fetching featured articles:", error);
     res.status(500).json({ error: "Failed to fetch featured articles" });
@@ -68,7 +104,7 @@ magazineRouter.get("/articles/:slug", async (req: Request, res: Response) => {
     // Increment view asynchronously
     storage.incrementArticleViews(article.id).catch(err => console.error("Error updating views:", err));
 
-    res.json(article);
+    res.json(sanitizeArticleResponse(article));
   } catch (error: any) {
     console.error("Error fetching article:", error);
     res.status(500).json({ error: "Failed to fetch article" });

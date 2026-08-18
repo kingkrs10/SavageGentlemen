@@ -1,5 +1,6 @@
 import { storage } from "../storage";
 import { InsertArticle } from "@shared/schema";
+import { cleanTitle, cleanCaption, isDuplicateStory } from "@shared/text-sanitizer";
 
 interface RssItem {
   title: string;
@@ -206,11 +207,12 @@ function parseRssXml(xmlText: string, sourceName: string, defaultCategory: strin
                        itemBlock.match(/<media:thumbnail[^>]*url=["']([^"']+)["']/i) ||
                        itemBlock.match(/<img[^>]+src=["']([^"']+)["']/i);
 
-    const title = titleMatch ? titleMatch[1].replace(/<\/?[^>]+(>|$)/g, "").trim() : "";
+    const rawTitle = titleMatch ? titleMatch[1] : "";
+    const title = cleanTitle(rawTitle);
     const link = linkMatch ? linkMatch[1].trim() : "";
     
     let rawDesc = descMatch ? descMatch[1] : (contentMatch ? contentMatch[1] : "");
-    let description = rawDesc.replace(/<\/?[^>]+(>|$)/g, "").replace(/&#\d+;/g, "").trim();
+    let description = cleanCaption(rawDesc);
     if (description.length > 300) description = description.substring(0, 297) + "...";
 
     let imageUrl = mediaMatch ? mediaMatch[1] : undefined;
@@ -232,7 +234,7 @@ function parseRssXml(xmlText: string, sourceName: string, defaultCategory: strin
 }
 
 function slugify(text: string): string {
-  return text
+  return cleanTitle(text)
     .toLowerCase()
     .replace(/[^\w\s-]/g, "")
     .replace(/[\s_-]+/g, "-")
@@ -277,7 +279,11 @@ export class MagazineBot {
       if (existing.length === 0) {
         console.log("[MagazineBot] Seeding initial luxury Caribbean editorial articles...");
         for (const seed of SEED_ARTICLES) {
-          await storage.createArticle(seed);
+          await storage.createArticle({
+            ...seed,
+            title: cleanTitle(seed.title),
+            summary: cleanCaption(seed.summary),
+          });
         }
         console.log(`[MagazineBot] Successfully seeded ${SEED_ARTICLES.length} initial articles.`);
       }
@@ -289,6 +295,11 @@ export class MagazineBot {
   async syncFeeds(): Promise<{ createdCount: number; errors: string[] }> {
     const errors: string[] = [];
     let createdCount = 0;
+
+    // Load existing articles to check for duplicates and prevent repetitive story floods
+    const existingArticles = await storage.getAllArticles({ limit: 300 });
+    const existingTitles: string[] = existingArticles.map(a => cleanTitle(a.title));
+    const existingUrls = new Set(existingArticles.map(a => a.sourceUrl).filter(Boolean));
 
     for (const feed of CARIBBEAN_FEEDS) {
       try {
@@ -307,11 +318,25 @@ export class MagazineBot {
 
         const xml = await res.text();
         const items = parseRssXml(xml, feed.name, feed.defaultCategory);
+        let ingestedForThisFeed = 0;
 
-        for (const item of items.slice(0, 3)) {
-          const slug = slugify(item.title);
-          const existing = await storage.getArticleBySlug(slug);
-          if (existing) continue;
+        for (const item of items) {
+          // Limit to max 1-2 articles per feed per sync to maintain high diversity
+          if (ingestedForThisFeed >= 1) break;
+
+          const cleanedTitle = cleanTitle(item.title);
+          const slug = slugify(cleanedTitle);
+
+          // 1. Check exact slug or URL
+          if (existingUrls.has(item.link)) continue;
+          const existingBySlug = await storage.getArticleBySlug(slug);
+          if (existingBySlug) continue;
+
+          // 2. Check duplicate / near-duplicate similarity
+          if (isDuplicateStory(cleanedTitle, existingTitles)) {
+            console.log(`[MagazineBot] ⏭️ Skipping duplicate/near-duplicate story: "${cleanedTitle}"`);
+            continue;
+          }
 
           // Generate rich formatted editorial content
           const category = feed.defaultCategory || "nightlife";
@@ -322,17 +347,18 @@ export class MagazineBot {
             "https://images.unsplash.com/photo-1527061011665-3652c757a4d4?w=1200&h=800&fit=crop"
           ];
           const randomImage = fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
+          const cleanedSummary = cleanCaption(item.description) || "The latest high-energy Caribbean nightlife, sound, and culture dispatch from Savage Gentlemen.";
 
           const newArticle: InsertArticle = {
             slug,
-            title: item.title,
-            summary: item.description || "The latest high-energy Caribbean nightlife, sound, and culture dispatch from Savage Gentlemen.",
+            title: cleanedTitle,
+            summary: cleanedSummary,
             content: `
-# ${item.title}
+# ${cleanedTitle}
 
 *Published by ${item.sourceName} | Curated for Savage Gentlemen Caribbean Nocturne*
 
-${item.description}
+${cleanedSummary}
 
 ---
 
@@ -360,7 +386,10 @@ In the ever-evolving world of Caribbean music and nightlife culture, stories lik
           };
 
           await storage.createArticle(newArticle);
+          existingTitles.push(cleanedTitle);
+          existingUrls.add(item.link);
           createdCount++;
+          ingestedForThisFeed++;
         }
       } catch (err: any) {
         errors.push(`Error crawling ${feed.name}: ${err.message}`);

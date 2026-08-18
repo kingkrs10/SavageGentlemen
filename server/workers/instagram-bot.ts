@@ -1,5 +1,6 @@
 import { Article } from "@shared/schema";
 import { storage } from "../storage";
+import { cleanTitle, cleanCaption } from "@shared/text-sanitizer";
 
 export interface InstagramPostResult {
   success: boolean;
@@ -28,22 +29,13 @@ export class InstagramBot {
   }
 
   generateCaption(article: Article): string {
-    const hashtags = [
-      "#SavageGentlemen",
-      "#CaribbeanNocturne",
-      "#SocaMusic",
-      "#DancehallCulture",
-      "#Carnival2026",
-      "#IslandNightlife",
-      "#CaribbeanLuxury",
-      "#FeteLife"
-    ].join(" ");
+    const title = cleanTitle(article.title);
+    const summary = cleanCaption(article.summary);
 
-    return `🔥 NEW DISPATCH: ${article.title.toUpperCase()}\n\n` +
-      `${article.summary}\n\n` +
-      `📖 Read the full editorial & listen to the curated playlist at savgent.com/magazine/${article.slug}\n\n` +
-      `🍸 Savage Gentlemen | The Pulse of Caribbean Nightlife & Culture\n\n` +
-      `${hashtags}`;
+    return `NEW DISPATCH: ${title.toUpperCase()}\n\n` +
+      `${summary}\n\n` +
+      `Read the full editorial & listen to the curated soundtrack at savgent.com/magazine/${article.slug}\n\n` +
+      `Savage Gentlemen | The Pulse of Caribbean Nightlife & Culture`;
   }
 
   async publishArticlePost(articleId: number, options?: { videoUrl?: string; engine?: string }): Promise<InstagramPostResult> {

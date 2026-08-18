@@ -2,6 +2,7 @@ import { db } from "../db";
 import { sql } from "drizzle-orm";
 import { magazineBot } from "../workers/magazine-bot";
 import { socialAutoPoster } from "../workers/social-autoposter";
+import { cleanTitle, cleanCaption, isDuplicateStory } from "@shared/text-sanitizer";
 
 /**
  * Self-healing database initialization.
@@ -158,10 +159,51 @@ export async function initializeDatabaseTables(): Promise<void> {
       console.error("[DBInit] Viral ad seeder note:", adSeedErr.message);
     }
 
-    // 6. Initialize and start the Autonomous Magazine & Ingestion Bot
+    // 6. Sanitize existing article titles/captions and remove duplicates in database
+    try {
+      const articlesRes = await db.execute(sql`SELECT id, title, summary, content, source_url FROM articles ORDER BY id ASC;`);
+      const allRows = articlesRes.rows as any[];
+      const processedTitles: string[] = [];
+      let sanitizedCount = 0;
+      let deletedDuplicates = 0;
+
+      for (const row of allRows) {
+        const cleanedTitle = cleanTitle(row.title);
+        const cleanedSummary = cleanCaption(row.summary);
+        const cleanedContent = cleanCaption(row.content);
+
+        // Check if this article is a duplicate of an already preserved story
+        if (isDuplicateStory(cleanedTitle, processedTitles)) {
+          console.log(`[DBInit] 🗑️ Removing duplicate article (ID: ${row.id}): "${cleanedTitle}"`);
+          await db.execute(sql`DELETE FROM articles WHERE id = ${row.id};`);
+          deletedDuplicates++;
+          continue;
+        }
+
+        // If content was modified during sanitization, update in DB
+        if (cleanedTitle !== row.title || cleanedSummary !== row.summary) {
+          await db.execute(sql`
+            UPDATE articles 
+            SET title = ${cleanedTitle}, summary = ${cleanedSummary}, content = ${cleanedContent} 
+            WHERE id = ${row.id};
+          `);
+          sanitizedCount++;
+        }
+
+        processedTitles.push(cleanedTitle);
+      }
+
+      if (sanitizedCount > 0 || deletedDuplicates > 0) {
+        console.log(`[DBInit] ✅ Article DB cleanup complete: Sanitized ${sanitizedCount} titles, removed ${deletedDuplicates} duplicate posts.`);
+      }
+    } catch (cleanupErr: any) {
+      console.error("[DBInit] Article cleanup note:", cleanupErr.message);
+    }
+
+    // 7. Initialize and start the Autonomous Magazine & Ingestion Bot
     await magazineBot.start(6);
 
-    // 7. Initialize and start the Autonomous 2-Post-Per-Day Social Publisher
+    // 8. Initialize and start the Autonomous 2-Post-Per-Day Social Publisher
     await socialAutoPoster.init();
   } catch (error: any) {
     console.error("[DBInit] ⚠️ Error during database table initialization:", error.message);
