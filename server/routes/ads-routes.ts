@@ -36,7 +36,7 @@ adsRouter.post("/:id/view", async (req: Request, res: Response) => {
   }
 });
 
-// Public: Record ad click
+// Public: Record ad click (POST or GET redirect)
 adsRouter.post("/:id/click", async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
@@ -47,6 +47,30 @@ adsRouter.post("/:id/click", async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).json({ error: "Failed to track click" });
   }
+});
+
+// Public: Click-through and redirect directly to destination URL
+adsRouter.get(["/:id/click", "/:id/redirect"], async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    let targetUrl = "https://www.carnival-planner.com";
+    if (!isNaN(id)) {
+      await storage.incrementSponsoredContentClicks(id);
+      const allAds = await storage.getActiveSponsoredContent();
+      const matched = allAds.find((a: any) => a.id === id);
+      if (matched && matched.linkUrl) {
+        targetUrl = matched.linkUrl;
+      }
+    }
+    res.redirect(302, targetUrl);
+  } catch (error) {
+    res.redirect(302, "https://www.carnival-planner.com");
+  }
+});
+
+// Public: Direct Carnival Planner redirect endpoint
+adsRouter.get(["/carnival-planner", "/planner"], (req: Request, res: Response) => {
+  res.redirect(302, "https://www.carnival-planner.com");
 });
 
 // Admin: Get all ads (active & inactive)

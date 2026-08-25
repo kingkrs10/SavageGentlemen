@@ -37,6 +37,19 @@ interface CreatorBot {
 
 const creatorBots: CreatorBot[] = [
   {
+    id: "carnival-planner",
+    name: "Carnival Planner Concierge",
+    category: "Luxury Travel & Itinerary Suite",
+    icon: "🌴",
+    priceTag: "VIP Packages",
+    priceAmount: 0,
+    description: "Bespoke Caribbean carnival itineraries, all-inclusive VIP fete schedules, masquerader costume concierge, and premium accommodations.",
+    status: "AUTONOMOUS",
+    features: ["Bespoke Fete Schedules & Tickets", "Masquerade & Costume Pickup Concierge", "Trinidad, Barbados, Jamaica & Miami Itineraries"],
+    externalUrl: "https://www.carnival-planner.com",
+    accent: "gold",
+  },
+  {
     id: "itssoca-decoder",
     name: "itsSOCA DECODER",
     category: "AI Audio & Riddim Recognition",

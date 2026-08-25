@@ -134,11 +134,25 @@ export const SavageConcierge = () => {
           actionPath: "/media",
         }
       };
+    } else if (query.includes("planner") || query.includes("carnival planner") || query.includes("itinerary") || query.includes("vacation") || query.includes("costume") || query.includes("masquerade")) {
+      reply = {
+        id: (Date.now() + 1).toString(),
+        sender: "bot",
+        text: "Looking for all-inclusive carnival concierge, bespoke fete schedules, and costume pickup? Visit our official luxury partner Carnival Planner!",
+        card: {
+          title: "Carnival Planner • Luxury Concierge",
+          tag: "OFFICIAL PARTNER",
+          price: "VIP Packages",
+          details: ["All-inclusive fete schedules & VIP tickets", "Costume pickup & masquerader packages", "Trinidad, Barbados, Jamaica & Miami"],
+          actionLabel: "Visit Carnival-Planner.com",
+          actionPath: "https://www.carnival-planner.com",
+        }
+      };
     } else {
       reply = {
         id: (Date.now() + 1).toString(),
         sender: "bot",
-        text: "I can help you reserve VIP tickets, preview DJ mixes, claim Soca Passport rewards, or launch autonomous creator bots. What would you like to explore?",
+        text: "I can help you reserve VIP tickets, preview DJ mixes, plan carnival itineraries with Carnival Planner, claim Soca Passport rewards, or launch autonomous creator bots. What would you like to explore?",
       };
     }
 
@@ -256,7 +270,11 @@ export const SavageConcierge = () => {
                       size="sm"
                       onClick={() => {
                         setIsOpen(false);
-                        navigate(msg.card!.actionPath);
+                        if (msg.card!.actionPath.startsWith("http")) {
+                          window.open(msg.card!.actionPath, "_blank", "noopener,noreferrer");
+                        } else {
+                          navigate(msg.card!.actionPath);
+                        }
                       }}
                       className="w-full bg-gradient-to-r from-gold-500 to-amber-500 hover:from-gold-400 hover:to-amber-400 text-black font-bold uppercase tracking-wider text-xs py-1.5 h-8 rounded-lg shadow-md shadow-gold-500/20"
                     >

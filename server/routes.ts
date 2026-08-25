@@ -219,6 +219,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Retroactive fix for old affiliate links pointing to non-existent product page
   app.get("/products/soca-noir-rose", (req, res) => res.redirect("/"));
 
+  // Direct Redirects for Carnival Planner Partner Platform
+  app.get(
+    ["/carnival-planner", "/planner", "/carnivalplanner", "/carnival", "/carnival-planner.com", "/carnival_planner"],
+    (req, res) => res.redirect(302, "https://www.carnival-planner.com")
+  );
+
   registerAffiliatesRoutes(app);
   // Add performance monitoring middleware
   app.use(performanceMiddleware);
@@ -226,6 +232,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API prefix for all routes
   const router = express.Router();
   app.use("/api", router);
+
+  // Carnival Planner API & Redirect Endpoint
+  router.get(
+    ["/carnival-planner", "/planner", "/carnivalplanner", "/carnival", "/external/carnival-planner"],
+    (req: Request, res: Response) => {
+      if (req.accepts("html") && !req.xhr) {
+        return res.redirect(302, "https://www.carnival-planner.com");
+      }
+      return res.json({
+        success: true,
+        name: "Carnival Planner",
+        url: "https://www.carnival-planner.com",
+        description: "Official Luxury Fete & Caribbean Itinerary Concierge",
+      });
+    }
+  );
 
   // Comprehensive Health and Database Status Endpoint
   router.get("/health", async (req: Request, res: Response) => {

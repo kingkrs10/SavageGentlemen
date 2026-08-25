@@ -107,9 +107,13 @@ function Router() {
         <Route path="/apps/language-sensei" component={AppsLanguageSensei} />
         <Route path="/apps/savage-physics" component={AppsSavagePhysics} />
         <Route path="/apps/island-lyric-bot" component={IslandLyricBot} />
-        <Route path="/apps/ad-studio" component={AdAutomationHub} />
         <Route path="/ad-studio" component={AdAutomationHub} />
         <Route path="/admin/ad-automation" component={AdAutomationHub} />
+        <Route path="/carnival-planner">{() => { window.location.href = 'https://www.carnival-planner.com'; return null; }}</Route>
+        <Route path="/carnivalplanner">{() => { window.location.href = 'https://www.carnival-planner.com'; return null; }}</Route>
+        <Route path="/planner">{() => { window.location.href = 'https://www.carnival-planner.com'; return null; }}</Route>
+        <Route path="/carnival">{() => { window.location.href = 'https://www.carnival-planner.com'; return null; }}</Route>
+        <Route path="/apps/carnival-planner">{() => { window.location.href = 'https://www.carnival-planner.com'; return null; }}</Route>
         <Route path="/IslandLyricBot">{() => { window.location.href = '/apps/island-lyric-bot'; return null; }}</Route>
         <Route path="/media" component={Media} />
         <Route path="/live" component={Live} />
