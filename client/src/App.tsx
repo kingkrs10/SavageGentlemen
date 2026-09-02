@@ -39,6 +39,7 @@ const ArticleDetail = lazy(() => import("@/pages/article-detail"));
 const Apps = lazy(() => import("@/pages/apps"));
 const AppsLanguageSensei = lazy(() => import("@/pages/apps-language-sensei"));
 const AppsSavagePhysics = lazy(() => import("@/pages/apps-savage-physics"));
+const CymaticsVisualizer = lazy(() => import("@/pages/cymatics-visualizer"));
 const IslandLyricBot = lazy(() => import("@/pages/island-lyric-bot"));
 const AdAutomationHub = lazy(() => import("@/pages/ad-automation-hub"));
 const Media = lazy(() => import("@/pages/media"));
@@ -58,6 +59,7 @@ const FreeTicketsDashboard = lazy(() => import("@/pages/free-tickets-dashboard")
 const EmailManagement = lazy(() => import("@/pages/email-management"));
 const Profile = lazy(() => import("@/pages/profile"));
 const Settings = lazy(() => import("@/pages/settings"));
+const GuyanaCarnivalOrganizers = lazy(() => import("@/pages/guyana-carnival-organizers"));
 
 const Passport = lazy(() => import("@/pages/passport"));
 const SocaPassport = lazy(() => import("@/pages/socaport-app"));
@@ -106,6 +108,9 @@ function Router() {
         <Route path="/fete-decoder" component={FeteDecoder} />
         <Route path="/apps/language-sensei" component={AppsLanguageSensei} />
         <Route path="/apps/savage-physics" component={AppsSavagePhysics} />
+        <Route path="/apps/cymatics" component={CymaticsVisualizer} />
+        <Route path="/apps/cymatics-visualizer" component={CymaticsVisualizer} />
+        <Route path="/cymatics" component={CymaticsVisualizer} />
         <Route path="/apps/island-lyric-bot" component={IslandLyricBot} />
         <Route path="/ad-studio" component={AdAutomationHub} />
         <Route path="/admin/ad-automation" component={AdAutomationHub} />
@@ -132,6 +137,10 @@ function Router() {
         <Route path="/email-management" component={EmailManagement} />
         <Route path="/profile" component={Profile} />
         <Route path="/settings" component={Settings} />
+        <Route path="/organizers/guyana2027" component={GuyanaCarnivalOrganizers} />
+        <Route path="/guyana2027" component={GuyanaCarnivalOrganizers} />
+        <Route path="/guyana-carnival-2027" component={GuyanaCarnivalOrganizers} />
+        <Route path="/carnival/guyana-2027" component={GuyanaCarnivalOrganizers} />
 
         <Route path="/passport" component={Passport} />
         <Route path="/passport/:username" component={PassportPublicProfile} />

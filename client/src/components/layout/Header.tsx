@@ -86,6 +86,7 @@ const Header = ({ user: propUser, onProfileClick, onLogout, transparent }: Heade
             { href: "/media", label: "Media & Mixes" },
             { href: "/events", label: "Events" },
             { href: "/passport", label: "Soca Passport" },
+            { href: "/guyana2027", label: "🇬🇾 Guyana '27", isSpecial: true },
             { href: "/apps", label: "Apps & AI" },
             { href: "/live", label: "Live Stream" },
           ].map((link) => {
@@ -183,6 +184,12 @@ const Header = ({ user: propUser, onProfileClick, onLogout, transparent }: Heade
                   <Link href="/profile" className="flex items-center gap-2 w-full p-2">
                     <User className="w-4 h-4 text-gold-400" />
                     <span>Account Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="focus:bg-amber-500/15 focus:text-amber-300 rounded-lg cursor-pointer text-xs" asChild>
+                  <Link href="/guyana2027" className="flex items-center gap-2 w-full p-2">
+                    <span className="text-xs">🇬🇾</span>
+                    <span>Guyana Carnival '27 Hub</span>
                   </Link>
                 </DropdownMenuItem>
                 {user.role === "admin" && (
