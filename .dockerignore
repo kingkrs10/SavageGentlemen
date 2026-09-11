@@ -4,7 +4,7 @@ node_modules
 .npm-cache2
 dist
 uploads
-attached_assets
+attached_assets/*.m4v
 scratch
 .env
 .env.local

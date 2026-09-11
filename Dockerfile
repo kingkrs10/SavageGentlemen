@@ -25,6 +25,7 @@ COPY tsconfig.json vite.config.ts postcss.config.js tailwind.config.ts component
 COPY shared/ ./shared/
 COPY client/ ./client/
 COPY server/ ./server/
+COPY attached_assets/ ./attached_assets/
 
 # Build Vite SPA (to dist/public) and server (to dist/index.js)
 RUN npm run build
