@@ -30,8 +30,6 @@ COPY attached_assets/ ./attached_assets/
 # Build Vite SPA (to dist/public) and server (to dist/index.js)
 RUN npm run build
 
-# Prune devDependencies for clean runtime
-RUN npm prune --omit=dev
 
 # ─────────────────────────────────────────────────────────────
 # Stage 2: Production Runtime
