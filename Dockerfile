@@ -56,10 +56,9 @@ COPY --from=builder /app/dist ./dist
 
 # Copy static assets and sub-apps
 COPY client/public/ ./client/public/
-COPY samples/ ./samples/
 
-# Create uploads directory (will be mapped to a persistent volume)
-RUN mkdir -p /app/uploads/videos /app/uploads/mixes /app/uploads/lyric-videos
+# Create runtime directories for samples and uploads
+RUN mkdir -p /app/samples /app/uploads/videos /app/uploads/mixes /app/uploads/lyric-videos
 
 EXPOSE 5000
 
