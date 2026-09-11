@@ -1,0 +1,36 @@
+log_level = "INFO"
+listen_host = "0.0.0.0"
+listen_port = 8080
+
+[app]
+hide_config = false
+edge_tts_timeout = 30
+tls_verify = true
+video_source = "pexels"
+pexels_api_keys = ["RQyvqpPjo8M1l5dFM8zwJM3dmuDTcIShmOFXxl2mCYHiLtkMp3xwiOfd"]
+pixabay_api_keys = []
+coverr_api_keys = []
+twelvelabs_api_keys = []
+twelvelabs_rerank_terms = false
+match_materials_to_script = false
+subtitle_provider = "edge"
+max_concurrent_tasks = 5
+max_queued_tasks = 100
+
+[whisper]
+model_size = "base"
+device = "cpu"
+compute_type = "int8"
+
+[ui]
+hide_log = false
+open_task_folder_on_completion = true
+voice_mode = "tts"
+tts_server = "azure-tts-v1"
+voice_name = "en-US-ChristopherNeural"
+font_name = "MicrosoftYaHeiBold.ttc"
+subtitle_position = "bottom"
+text_fore_color = "#FFFFFF"
+font_size = 60
+subtitle_background_enabled = false
+subtitle_background_color = "#000000"

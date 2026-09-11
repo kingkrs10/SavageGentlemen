@@ -92,10 +92,10 @@ export class MoneyPrinterService {
       video_script: request.videoScript || "",
       video_terms: request.videoTerms || ["caribbean", "nightlife", "party", "carnival", "luxury"],
       video_aspect: request.videoAspect || "9:16",
-      voice_name: request.voiceName || "en-US-ChristopherNeural",
+      voice_name: request.voiceName || "en-US-BrianMultilingualNeural",
       voice_volume: 1.0,
       bgm_type: request.bgmType || "random",
-      bgm_volume: 0.2,
+      bgm_volume: 0.15,
       subtitle_enabled: request.subtitlesEnabled ?? true,
       font_name: "STHeitiMedium.ttc",
       text_fore_color: "#FFFFFF",
@@ -128,7 +128,7 @@ export class MoneyPrinterService {
   /**
    * Polls task status until video is finished or failed
    */
-  async pollTask(taskId: string, maxWaitSeconds: number = 180): Promise<MoneyPrinterTaskResponse> {
+  async pollTask(taskId: string, maxWaitSeconds: number = 600): Promise<MoneyPrinterTaskResponse> {
     const startTime = Date.now();
 
     while (Date.now() - startTime < maxWaitSeconds * 1000) {
@@ -140,7 +140,7 @@ export class MoneyPrinterService {
           const state = taskData.state;
 
           if (state === 1 || state === "completed" || state === "success" || (taskData.progress === 100 && taskData.videos?.length)) {
-            const rawVideoUrl = taskData.combined_videos?.[0] || taskData.videos?.[0] || taskData.video_url || taskData.file_url;
+            const rawVideoUrl = taskData.videos?.[0] || taskData.combined_videos?.[0] || taskData.video_url || taskData.file_url;
             return {
               taskId,
               status: "completed",
@@ -187,39 +187,58 @@ export class MoneyPrinterService {
 
   /**
    * Converts an article into a full vertical video reel
-   * Uses MoneyPrinterTurbo if online; seamlessly falls back to local ffmpeg template if offline
+   * Uses MoneyPrinterTurbo if online; seamlessly falls back to local high-performance generator if offline
    */
   async generateVideoFromArticle(article: Article): Promise<{
     videoUrl: string;
     engine: "moneyprinter" | "local-ffmpeg";
     caption: string;
   }> {
+    const { resolveArticleMedia } = await import("./media-matcher");
+    const mediaInfo = await resolveArticleMedia(article);
+    let spokenScript = mediaInfo.spokenScript;
+    let videoTerms = mediaInfo.videoTerms;
+    let videoSubject = `${mediaInfo.subjectName}: ${mediaInfo.headline}`;
+    let customCaption = `🔥 WATCH NOW: ${mediaInfo.headline.toUpperCase()}\n\n${mediaInfo.summaryQuote}\n\n👉 Read full story: Link in bio or visit https://savagegentlemen.onrender.com/magazine/${article.slug}\n\n#SavageGentlemen #CaribbeanCulture #Carnival2026 #ReelsViral`;
+
+    // Enhance with Google AI Studio (Gemini 3.6 Flash / Nano Banana) if available
+    try {
+      const { geminiStudioService } = await import("./gemini-studio-service");
+      if (geminiStudioService.isAvailable()) {
+        console.log(`[MoneyPrinter] 🍌 Generating viral Caribbean script via Google AI Studio Gemini 3.6 Flash...`);
+        const geminiResult = await geminiStudioService.generateViralCaribbeanScript({
+          topic: article.title,
+          category: article.category,
+          summary: article.summary,
+          style: "2d_anime"
+        });
+
+        spokenScript = geminiResult.script;
+        videoTerms = geminiResult.brollKeywords;
+        videoSubject = geminiResult.title;
+        customCaption = `${geminiResult.caption}\n\n${geminiResult.hashtags.join(" ")}`;
+        console.log(`[MoneyPrinter] ⚡ Gemini Hook: "${geminiResult.hook}"`);
+      }
+    } catch (geminiErr: any) {
+      console.warn(`[MoneyPrinter] Gemini Studio enhancement note: ${geminiErr.message}`);
+    }
+
     const health = await this.checkHealth();
 
     if (health.online) {
       try {
         console.log(`[MoneyPrinter] Generating AI Video Reel for "${article.title}" via MoneyPrinterTurbo Sidecar...`);
 
-        const keywordsByCategory: Record<string, string[]> = {
-          nightlife: ["caribbean nightlife", "club party", "dj lights", "fete dancing"],
-          music: ["soca concert", "dancehall stage", "sound system", "steelpan"],
-          style: ["luxury streetwear", "tropical fashion", "sneakers urban", "gold jewelry"],
-          cocktails: ["caribbean rum", "cocktail bar", "bartender craft", "tropical drink"],
-          culture: ["carnival costumes", "masquerade", "island beach", "caribbean sunset"],
-        };
-
-        const terms = keywordsByCategory[article.category] || ["caribbean", "nightlife", "party", "carnival"];
-
         const taskId = await this.submitTask({
-          videoSubject: article.title,
-          videoScript: `${article.title}. ${article.summary}`,
-          videoTerms: terms,
+          videoSubject,
+          videoScript: spokenScript,
+          videoTerms,
           videoAspect: "9:16",
           voiceName: "en-US-ChristopherNeural",
           subtitlesEnabled: true
         });
 
-        const taskResult = await this.pollTask(taskId, 60);
+        const taskResult = await this.pollTask(taskId, 360);
 
         if (taskResult.status === "completed" && taskResult.videoUrl) {
           const localUrl = await this.saveVideoLocally(taskResult.videoUrl, `article_${article.slug}`);
@@ -228,35 +247,35 @@ export class MoneyPrinterService {
           return {
             videoUrl: localUrl,
             engine: "moneyprinter",
-            caption: `🔥 WATCH NOW: ${article.title.toUpperCase()}\n\n${article.summary}\n\n👉 Read full story at https://savagegentlemen.com/magazine/${article.slug}\n\n#SavageGentlemen #CaribbeanCulture #Carnival2026 #ReelsViral`
+            caption: customCaption
           };
         } else if (taskResult.status === "failed") {
           throw new Error(taskResult.error || "MoneyPrinter video pipeline failed");
         }
       } catch (err: any) {
-        console.warn(`[MoneyPrinter] Sidecar render note: ${err.message}. Falling back to local high-performance video generator.`);
+        console.warn(`[MoneyPrinter] Sidecar render note: ${err.message}. Falling back to verified artist studio generator.`);
       }
     } else {
-      console.log(`[MoneyPrinter] Microservice offline. Using local high-performance FFmpeg video generator.`);
+      console.log(`[MoneyPrinter] Microservice offline. Using verified artist studio generator.`);
     }
 
-    // High-performance Local FFmpeg fallback
+    // Verified Artist Visual Studio Generator
     const localAdResult = await generateProductVideoAd({
       id: `article_${article.id}`,
-      title: article.title,
-      category: article.category.toUpperCase(),
+      title: `${mediaInfo.subjectName} • ${article.title}`,
+      category: mediaInfo.categoryFormatted,
       priceFormatted: "SAVAGE EDITORIAL",
       description: article.summary,
-      imageUrl: article.featuredImage || "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1080&h=1920&fit=crop",
-      ctaText: "READ AT SAVGENT.COM",
+      imageUrl: mediaInfo.imageUrl,
+      ctaText: "READ AT SAVAGE GENTLEMEN",
       stylePreset: "dark-luxury",
-      durationSeconds: 12
+      durationSeconds: 8
     });
 
     return {
       videoUrl: localAdResult.videoUrl,
       engine: "local-ffmpeg",
-      caption: `🔥 NEW DISPATCH: ${article.title.toUpperCase()}\n\n${article.summary}\n\n👉 Read full story at https://savagegentlemen.com/magazine/${article.slug}\n\n#SavageGentlemen #CaribbeanCulture #Carnival2026`
+      caption: `🔥 NEW DISPATCH: ${article.title.toUpperCase()}\n\n${article.summary}\n\n👉 Read full story at https://savagegentlemen.onrender.com/magazine/${article.slug}\n\n#SavageGentlemen #CaribbeanCulture #Carnival2026`
     };
   }
 }

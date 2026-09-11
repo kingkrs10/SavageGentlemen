@@ -29,13 +29,42 @@ export class InstagramBot {
   }
 
   generateCaption(article: Article): string {
-    const title = cleanTitle(article.title);
-    const summary = cleanCaption(article.summary);
+    const title = cleanTitle(article.title)
+      .replace(/&#\d+;/g, "")
+      .replace(/["'“”‘’]/g, "");
+    let summary = cleanCaption(article.summary)
+      .replace(/&#\d+;/g, "")
+      .replace(/https?:\/\/\S+/gi, "")
+      .replace(/#\w+/g, "")
+      .replace(/Match the vibe with our luxury streetwear.*$/i, "")
+      .replace(/Shop the collection.*$/i, "")
+      .trim();
 
-    return `NEW DISPATCH: ${title.toUpperCase()}\n\n` +
-      `${summary}\n\n` +
-      `Read the full editorial & listen to the curated soundtrack at savgent.com/magazine/${article.slug}\n\n` +
-      `Savage Gentlemen | The Pulse of Caribbean Lifestyle & Culture`;
+    const category = (article.category || "culture").toLowerCase();
+    
+    // Category-specific hashtags
+    const categoryTagsMap: Record<string, string[]> = {
+      music: ["#SocaMusic", "#Dancehall", "#SoundSystem", "#Afrobeats", "#CaribbeanMusic", "#DJCulture", "#ReggaeVibes"],
+      nightlife: ["#CaribbeanNightlife", "#FeteLife", "#CarnivalVibes", "#VIPExperience", "#BottleService", "#NightclubLife"],
+      culture: ["#CaribbeanCulture", "#Carnival2026", "#TriniCarnival", "#Masquerade", "#WestIndian", "#IslandVibes"],
+      style: ["#CaribbeanStyle", "#LuxuryStreetwear", "#StreetwearFashion", "#Drip", "#UrbanLuxury", "#OOTD"],
+      cocktails: ["#RumCulture", "#CaribbeanRum", "#CraftCocktails", "#IslandEats", "#Mixology", "#BarLife"],
+    };
+
+    const categoryTags = categoryTagsMap[category] || ["#CaribbeanCulture", "#IslandVibes", "#Carnival2026"];
+    const brandTags = ["#SavageGentlemen", "#SavGent", "#SGGang", "#SocaPassport", "#CaribbeanExcellence"];
+    const viralTags = ["#ReelsViral", "#ExplorePage", "#FYP", "#TrendingNow", "#CultureMovement"];
+
+    const allHashtags = Array.from(new Set([...brandTags, ...categoryTags, ...viralTags])).join(" ");
+
+    const siteUrl = process.env.SITE_URL || "https://savagegentlemen.onrender.com";
+
+    return `🔥 NEW DISPATCH: ${title.toUpperCase()}\n\n` +
+      `🌴 ${summary}\n\n` +
+      `📖 Read the full story: Tap link in bio or visit ${siteUrl}/magazine/${article.slug}\n\n` +
+      `—\n` +
+      `Savage Gentlemen | The Pulse of Caribbean Lifestyle & Culture ⚡\n\n` +
+      `${allHashtags}`;
   }
 
   async publishArticlePost(articleId: number, options?: { videoUrl?: string; engine?: string }): Promise<InstagramPostResult> {
@@ -47,42 +76,62 @@ export class InstagramBot {
     const caption = this.generateCaption(article);
     const imageUrl = article.featuredImage || "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1080&h=1080&fit=crop";
     const mediaUrl = options?.videoUrl || imageUrl;
+    const siteUrl = process.env.SITE_URL || "https://savagegentlemen.onrender.com";
 
-    // If Make.com / Social Webhook is configured, dispatch live via Webhook
-    const socialWebhookUrl = process.env.MAKE_WEBHOOK_URL || process.env.SOCIAL_WEBHOOK_URL;
-    if (socialWebhookUrl) {
+    // Broadcast across all configured social webhooks
+    const configuredWebhooks = Array.from(
+      new Set([
+        process.env.INSTAGRAM_WEBHOOK_URL,
+        process.env.MAKE_WEBHOOK_URL,
+        process.env.SOCIAL_WEBHOOK_URL
+      ].filter(Boolean) as string[])
+    );
+
+    if (configuredWebhooks.length > 0) {
       try {
-        console.log(`[InstagramBot] Publishing article "${article.title}" via Social Webhook (${options?.videoUrl ? "Video Reel" : "Image"})...`);
-        const webhookRes = await fetch(socialWebhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            videoUrl: mediaUrl.startsWith("http") ? mediaUrl : `https://savagegentlemen.com${mediaUrl}`,
-            imageUrl: imageUrl,
-            caption,
-            title: article.title,
-            platforms: ["instagram", "facebook", "youtube", "tiktok"],
-            productLink: `https://savagegentlemen.com/magazine/${article.slug}`,
-            engine: options?.engine || "standard",
-            timestamp: new Date().toISOString()
-          }),
+        console.log(`[InstagramBot] Publishing article "${article.title}" via ${configuredWebhooks.length} Webhook(s) (${options?.videoUrl ? "Video Reel" : "Image"})...`);
+        const { uploadLocalVideoToPublicCDN } = await import("../services/social-publisher");
+        const publicVideoUrl = uploadLocalVideoToPublicCDN(mediaUrl);
+
+        const payload = {
+          videoUrl: publicVideoUrl,
+          imageUrl: imageUrl,
+          caption,
+          title: article.title,
+          platforms: ["instagram", "facebook", "youtube", "tiktok"],
+          productLink: `${siteUrl}/magazine/${article.slug}`,
+          engine: options?.engine || "standard",
+          timestamp: new Date().toISOString()
+        };
+
+        await Promise.all(
+          configuredWebhooks.map(async (webhookUrl) => {
+            try {
+              const webhookRes = await fetch(webhookUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
+              console.log(`[InstagramBot] Webhook ${webhookUrl} response: ${webhookRes.status} ${webhookRes.statusText}`);
+            } catch (err: any) {
+              console.error(`[InstagramBot] Failed to send to ${webhookUrl}:`, err.message);
+            }
+          })
+        );
+
+        const postId = `webhook_${Date.now()}`;
+        await storage.updateArticle(articleId, {
+          igPosted: true,
+          igPostId: postId,
         });
 
-        if (webhookRes.ok) {
-          const postId = `webhook_${Date.now()}`;
-          await storage.updateArticle(articleId, {
-            igPosted: true,
-            igPostId: postId,
-          });
-
-          return {
-            success: true,
-            postId,
-            simulated: false,
-            caption,
-            imageUrl
-          };
-        }
+        return {
+          success: true,
+          postId,
+          simulated: false,
+          caption,
+          imageUrl
+        };
       } catch (err: any) {
         console.error("[InstagramBot] Webhook dispatch error:", err.message);
       }

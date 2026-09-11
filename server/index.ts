@@ -92,6 +92,26 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
   }
 }));
 
+// Static file serving for samples directory (Audio visualizer demo tracks)
+app.use('/samples', express.static(path.join(process.cwd(), 'samples'), {
+  maxAge: '1y',
+  etag: true,
+  lastModified: true,
+  dotfiles: 'deny',
+  index: false,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.mp3')) {
+      res.setHeader('Content-Type', 'audio/mpeg');
+    } else if (filePath.endsWith('.wav')) {
+      res.setHeader('Content-Type', 'audio/wav');
+    } else if (filePath.endsWith('.ogg')) {
+      res.setHeader('Content-Type', 'audio/ogg');
+    }
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Accept-Ranges', 'bytes');
+  }
+}));
+
 // Alternative uploads route for API compatibility
 app.use('/api/uploads', express.static(path.join(process.cwd(), 'uploads'), {
   maxAge: '1y',

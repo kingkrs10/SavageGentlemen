@@ -70,7 +70,7 @@ adAutomationRouter.get("/catalog", async (req: Request, res: Response) => {
       imageUrl: item.images[0] || "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&h=1000&fit=crop",
       suggestedHook: `🚨 EXCLUSIVE DROP: ${item.title.toUpperCase()}`,
       suggestedCaption: `Elevate your streetwear standard with the ${item.title}. Limited handcrafted batch.`,
-      productLink: `https://savagegentlemen.com/shop`,
+      productLink: `${process.env.SITE_URL || "https://savagegentlemen.onrender.com"}/shop`,
       defaultPlacement: "shop_feed"
     }));
 
@@ -89,7 +89,7 @@ adAutomationRouter.get("/catalog", async (req: Request, res: Response) => {
         imageUrl: ev.imageUrl || "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&h=1000&fit=crop",
         suggestedHook: `🔥 TICKET ALERT: ${ev.title.toUpperCase()}`,
         suggestedCaption: `Experience ${ev.title}. Secure your VIP passes before tier closes.`,
-        productLink: `https://savagegentlemen.com/events/${ev.id}`,
+        productLink: `${process.env.SITE_URL || "https://savagegentlemen.onrender.com"}/events/${ev.id}`,
         defaultPlacement: "article_sidebar"
       }));
     } catch {}
@@ -106,7 +106,7 @@ adAutomationRouter.get("/catalog", async (req: Request, res: Response) => {
       imageUrl: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1200&h=600&fit=crop",
       suggestedHook: "🌴 You party all year. Why aren't you getting paid for it?",
       suggestedCaption: "Join thousands of Caribbean music lovers earning stamps and VIP perks at every fete with Soca Passport.",
-      productLink: "https://savagegentlemen.com/socapassport/dashboard",
+      productLink: `${process.env.SITE_URL || "https://savagegentlemen.onrender.com"}/socapassport/dashboard`,
       defaultPlacement: "article_inline"
     };
 
@@ -122,7 +122,7 @@ adAutomationRouter.get("/catalog", async (req: Request, res: Response) => {
       imageUrl: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&h=800&fit=crop",
       suggestedHook: "🔊 Turn the bass up. The uncensored 135BPM studio dubplates just dropped.",
       suggestedCaption: "Download the full uncompressed soundclash master session for $1.99.",
-      productLink: "https://savagegentlemen.com/media",
+      productLink: `${process.env.SITE_URL || "https://savagegentlemen.onrender.com"}/media`,
       defaultPlacement: "audio_player"
     };
 
@@ -138,7 +138,7 @@ adAutomationRouter.get("/catalog", async (req: Request, res: Response) => {
       imageUrl: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&h=800&fit=crop",
       suggestedHook: "🚀 Promoters: Stop losing 15% to Eventbrite fees on every ticket.",
       suggestedCaption: "Scale your Caribbean events with automated ticketing, loyalty check-ins, and zero middlemen.",
-      productLink: "https://savagegentlemen.com/socapassport/promoters",
+      productLink: `${process.env.SITE_URL || "https://savagegentlemen.onrender.com"}/socapassport/promoters`,
       defaultPlacement: "header_ticker"
     };
 
@@ -280,7 +280,7 @@ adAutomationRouter.post("/publish", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Video URL and at least one target platform are required" });
     }
 
-    const host = req.headers.host || "savagegentlemen.com";
+    const host = req.headers.host || "savagegentlemen.onrender.com";
     const protocol = req.headers["x-forwarded-proto"] || "https";
     const absoluteVideoUrl = videoUrl.startsWith("http") ? videoUrl : `${protocol}://${host}${videoUrl}`;
 
@@ -290,7 +290,7 @@ adAutomationRouter.post("/publish", async (req: Request, res: Response) => {
       platforms,
       title,
       hashtags: hashtags || ["#SavageGentlemen", "#LuxuryStreetwear", "#CaribbeanCulture", "#CarnivalVibes"],
-      productLink: productLink || "https://savagegentlemen.com",
+      productLink: productLink || `${process.env.SITE_URL || "https://savagegentlemen.onrender.com"}`,
       isTestMode: isTestMode ?? false
     });
 

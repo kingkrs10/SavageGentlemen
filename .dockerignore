@@ -12,3 +12,5 @@ scratch
 courtvision-android
 *.log
 .DS_Store
+samples
+public/samples

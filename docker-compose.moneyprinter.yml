@@ -13,6 +13,7 @@ services:
       - DEFAULT_ASPECT_RATIO=9:16
     volumes:
       - ./uploads/videos:/MoneyPrinterTurbo/storage/videos
+      - ./moneyprinter.config.toml:/MoneyPrinterTurbo/config.toml
     working_dir: /MoneyPrinterTurbo
     command: sh -c "python3 main.py & streamlit run ./webui/Main.py --server.address=0.0.0.0 --server.port=8501 --browser.serverAddress=127.0.0.1 --server.enableCORS=True --browser.gatherUsageStats=False --client.toolbarMode=minimal --logger.hideWelcomeMessage=True --server.showEmailPrompt=False"
     restart: unless-stopped

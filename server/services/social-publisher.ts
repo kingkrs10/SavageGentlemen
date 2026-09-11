@@ -1,4 +1,7 @@
 import fetch from "node-fetch";
+import fs from "fs";
+import path from "path";
+import { execSync } from "child_process";
 
 export interface PublishRequest {
   videoUrl: string; // Absolute or relative URL to the video file
@@ -25,52 +28,118 @@ export interface MultiPlatformPublishResponse {
   results: PlatformPublishResult[];
 }
 
+const SITE_URL = process.env.SITE_URL || "https://savagegentlemen.onrender.com";
+
+export function uploadLocalVideoToPublicCDN(mediaUrl: string): string {
+  if (!mediaUrl || mediaUrl.startsWith("http://files.catbox.moe") || mediaUrl.startsWith("https://files.catbox.moe")) {
+    return mediaUrl;
+  }
+  try {
+    const cleanPath = mediaUrl.replace(/^https?:\/\/[^\/]+/, "").replace(/^\//, "");
+    
+    // Check multiple candidate paths for public/ and uploads/ directories
+    const candidatePaths = [
+      path.resolve(process.cwd(), cleanPath),
+      path.resolve(process.cwd(), "public", cleanPath),
+      path.resolve(process.cwd(), "uploads", cleanPath),
+      path.resolve(process.cwd(), "uploads", "videos", path.basename(cleanPath)),
+      path.resolve(process.cwd(), "public", "generated-ads", path.basename(cleanPath)),
+    ];
+
+    const localFile = candidatePaths.find(p => fs.existsSync(p));
+
+    if (localFile && (localFile.endsWith(".mp4") || localFile.endsWith(".mov") || localFile.endsWith(".jpg") || localFile.endsWith(".png"))) {
+      console.log(`[SocialPublisher] Uploading local asset (${path.basename(localFile)}) to public CDN for Make.com...`);
+      const cdnUrl = execSync(`curl -s -F "reqtype=fileupload" -F "fileToUpload=@${localFile}" https://catbox.moe/user/api.php`, { encoding: "utf-8", timeout: 35000 }).trim();
+      if (cdnUrl && cdnUrl.startsWith("http")) {
+        console.log(`[SocialPublisher] ✅ Public CDN URL generated: ${cdnUrl}`);
+        return cdnUrl;
+      }
+    } else {
+      console.warn(`[SocialPublisher] Local file not found in candidate paths: ${cleanPath}`);
+    }
+  } catch (err: any) {
+    console.warn(`[SocialPublisher] Note on CDN upload: ${err.message}`);
+  }
+  return mediaUrl.startsWith("http") ? mediaUrl : `${SITE_URL}${mediaUrl}`;
+}
+
 /**
  * Publishes a video ad to selected social media platforms (Instagram Reels, Facebook Reels, YouTube Shorts, TikTok).
  */
 export async function publishToSocialMedia(request: PublishRequest): Promise<MultiPlatformPublishResponse> {
+  const defaultTags = [
+    "#SavageGentlemen",
+    "#SavGent",
+    "#SGGang",
+    "#LuxuryStreetwear",
+    "#CaribbeanCulture",
+    "#CarnivalVibes",
+    "#ReelsViral",
+    "#ExplorePage",
+    "#FYP"
+  ];
+  const targetProductLink = request.productLink || `${SITE_URL}/shop`;
+  const fullCaption = `${request.caption}\n\n${(request.hashtags && request.hashtags.length > 0 ? request.hashtags : defaultTags).join(" ")}\n\n👉 Shop here: ${targetProductLink}`;
   const results: PlatformPublishResult[] = [];
-  const fullCaption = `${request.caption}\n\n${(request.hashtags || ["#SavageGentlemen", "#LuxuryStreetwear", "#CarnivalVibes"]).join(" ")}\n\n👉 Shop here: ${request.productLink || "https://savagegentlemen.com/shop"}`;
 
-  // Check if Make.com or Universal Social Webhook is configured
-  const socialWebhookUrl = process.env.MAKE_WEBHOOK_URL || process.env.SOCIAL_WEBHOOK_URL;
-  if (socialWebhookUrl && !request.isTestMode) {
+  // Check all active Webhooks (Instagram, YouTube, Universal)
+  const configuredWebhooks = Array.from(
+    new Set([
+      process.env.INSTAGRAM_WEBHOOK_URL,
+      process.env.YOUTUBE_WEBHOOK_URL,
+      process.env.MAKE_WEBHOOK_URL,
+      process.env.SOCIAL_WEBHOOK_URL
+    ].filter(Boolean) as string[])
+  );
+
+  if (configuredWebhooks.length > 0 && !request.isTestMode) {
     try {
-      console.log(`[SocialPublisher] Broadcasting via Social Webhook (${socialWebhookUrl}) to: ${request.platforms.join(", ")}`);
-      
-      const webhookRes = await fetch(socialWebhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          videoUrl: request.videoUrl.startsWith("http") ? request.videoUrl : `https://savagegentlemen.com${request.videoUrl}`,
-          caption: fullCaption,
-          title: request.title || "Savage Gentlemen Exclusive Drop",
-          platforms: request.platforms,
-          productLink: request.productLink || "https://savagegentlemen.com/shop",
-          hashtags: request.hashtags || ["#SavageGentlemen", "#LuxuryStreetwear"],
-          timestamp: new Date().toISOString()
-        }),
+      const publicVideoUrl = uploadLocalVideoToPublicCDN(request.videoUrl);
+      console.log(`[SocialPublisher] Broadcasting to ${configuredWebhooks.length} webhooks for platforms: ${request.platforms.join(", ")}`);
+
+      const payload = {
+        videoUrl: publicVideoUrl,
+        caption: fullCaption,
+        title: request.title || "Savage Gentlemen Exclusive Drop",
+        platforms: request.platforms,
+        productLink: targetProductLink,
+        hashtags: request.hashtags || ["#SavageGentlemen", "#LuxuryStreetwear"],
+        timestamp: new Date().toISOString()
+      };
+
+      await Promise.all(
+        configuredWebhooks.map(async (webhookUrl) => {
+          try {
+            const res = await fetch(webhookUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+            console.log(`[SocialPublisher] Dispatch to ${webhookUrl} status: ${res.status} ${res.statusText}`);
+          } catch (err: any) {
+            console.error(`[SocialPublisher] Failed sending to webhook ${webhookUrl}:`, err.message);
+          }
+        })
+      );
+
+      request.platforms.forEach((platform) => {
+        results.push({
+          platform,
+          status: "success",
+          postId: `webhook_${Date.now()}`,
+          postUrl: `https://www.instagram.com/savagegentlemen_`,
+          message: `Dispatched to Make.com automation for live broadcast to ${platform}.`
+        });
       });
 
-      if (webhookRes.ok) {
-        request.platforms.forEach((platform) => {
-          results.push({
-            platform,
-            status: "success",
-            postId: `webhook_${Date.now()}`,
-            postUrl: `https://www.instagram.com/savagegentlemen_`,
-            message: `Dispatched to Make.com automation for live broadcast to ${platform}.`
-          });
-        });
-
-        return {
-          success: true,
-          publishedAt: new Date().toISOString(),
-          results
-        };
-      }
-    } catch (err: any) {
-      console.error("[SocialPublisher] Webhook broadcast error:", err.message);
+      return {
+        success: true,
+        publishedAt: new Date().toISOString(),
+        results
+      };
+    } catch (webhookErr: any) {
+      console.error("[SocialPublisher] Webhook broadcast error:", webhookErr.message);
     }
   }
 

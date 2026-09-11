@@ -39,7 +39,7 @@ async function runAutoPostVideo() {
   console.log(`   - Selected Story: "${candidate.title}" (ID: ${candidate.id})`);
   console.log(`   - Category: ${candidate.category.toUpperCase()}`);
   console.log(`   - Summary: "${candidate.summary}"`);
-  console.log(`   - Article URL: https://savagegentlemen.com/magazine/${candidate.slug}`);
+  console.log(`   - Article URL: https://savagegentlemen.onrender.com/magazine/${candidate.slug}`);
 
   // 3. Render 9:16 Vertical Video Reel
   console.log("\n[Step 3/5] 🎥 Compiling 9:16 Vertical Video Reel...");

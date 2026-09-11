@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>432Hz CymaScope - Beat-Synced 3D Audio Visualizer</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #000000;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #ffffff;
+    }
+    #canvas-container {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+    }
+    #canvas-container:active {
+      cursor: grabbing;
+    }
+    .glass-panel {
+      background: rgba(10, 10, 10, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 16px;
+    }
+    /* Top Bar */
+    .top-bar {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 25;
+      pointer-events: none;
+    }
+    .top-left, .top-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      pointer-events: auto;
+      position: relative;
+    }
+    .badge {
+      padding: 8px 16px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #ffaa00;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+      transition: border-color 0.2s;
+    }
+    .badge:hover {
+      border-color: rgba(255, 170, 0, 0.5);
+    }
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff5500;
+      box-shadow: 0 0 10px #ff5500;
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.3); }
+    }
+    #track-menu {
+      position: absolute;
+      top: 48px;
+      left: 0;
+      width: 320px;
+      background: rgba(14, 14, 14, 0.96);
+      border: 1px solid rgba(255, 170, 0, 0.35);
+      border-radius: 14px;
+      padding: 8px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      z-index: 60;
+    }
+    .track-item {
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #ccc;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: left;
+      background: transparent;
+      border: none;
+      width: 100%;
+    }
+    .track-item:hover {
+      background: rgba(255, 170, 0, 0.2);
+      color: #ffcc00;
+    }
+    /* Multi-Beat HUD */
+    .hud-left {
+      position: absolute;
+      top: 80px;
+      left: 16px;
+      z-index: 15;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 240px;
+      pointer-events: none;
+    }
+    .hud-card {
+      padding: 12px;
+      font-size: 11px;
+    }
+    .hud-label {
+      font-family: monospace;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .hud-bar-bg {
+      width: 100%;
+      height: 6px;
+      background: #1a1a1a;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .hud-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.05s ease-out;
+    }
+    .bar-kick { background: linear-gradient(90deg, #ff1a00, #ff8800, #ffea00); }
+    .bar-snare { background: linear-gradient(90deg, #ff8800, #ffea00); }
+    .bar-hihat { background: #ffea00; }
+    /* Bottom Controls */
+    .bottom-dock {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 860px;
+      padding: 14px 22px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .scrubber-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: monospace;
+      font-size: 11px;
+      color: #888;
+    }
+    .controls-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .btn {
+      background: #1c1c1c;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #eee;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn:hover {
+      background: #2a2a2a;
+      border-color: rgba(255, 170, 0, 0.4);
+      color: #fff;
+    }
+    .btn.active {
+      background: #ff9900;
+      color: #000;
+      border-color: #ff9900;
+      box-shadow: 0 0 15px rgba(255, 150, 0, 0.5);
+    }
+    .btn-play {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ff1a00, #ff8800, #ffea00);
+      color: #000;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 0 25px rgba(255, 120, 0, 0.6);
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn-play:hover {
+      transform: scale(1.06);
+      box-shadow: 0 0 35px rgba(255, 140, 0, 0.8);
+    }
+    input[type="range"] {
+      accent-color: #ff9900;
+      cursor: pointer;
+    }
+    #drop-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.88);
+      border: 4px dashed #ff9900;
+      z-index: 50;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+    }
+    #start-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.94);
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+    .hero-box {
+      max-width: 540px;
+      padding: 34px;
+      border: 1px solid rgba(255, 120, 0, 0.35);
+      box-shadow: 0 0 80px rgba(255, 80, 0, 0.3);
+    }
+    .hero-title {
+      font-size: 32px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      background: linear-gradient(90deg, #ff2200, #ff8800, #ffea00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <audio id="audio-player" preload="auto" playsinline></audio>
+  <input type="file" id="file-input" accept="audio/*" style="display: none;">
+
+  <!-- Start Overlay -->
+  <div id="start-overlay">
+    <div class="glass-panel hero-box">
+      <div style="font-size: 44px; margin-bottom: 12px;">🔥</div>
+      <h1 class="hero-title">432Hz CYMASCOPE 3D</h1>
+      <p style="color: #bbb; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
+        High-precision <strong style="color: #ffaa00;">Beat-Synced CymaScope Resonance</strong>.<br>
+        <span style="color: #ff5500;">Kick (20-90Hz)</span> triggers center rosette solar flare & outward shockwave.<br>
+        <span style="color: #ffaa00;">Snare/Clap (200-1.2k)</span> flashes radial spoke cells with golden fire.<br>
+        <span style="color: #ffea00;">Hi-Hats (5k-16k)</span> serrate and ignite outer perimeter teeth on every 16th tick.
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <button id="btn-start-hero" class="btn" style="background: linear-gradient(90deg, #ff1a00, #ff8800, #ffea00); color: #000; font-weight: 800; padding: 12px 24px; font-size: 14px;">
+          ▶ PLAY HERO (HEROES RIDDIM)
+        </button>
+        <button id="btn-start-upload" class="btn" style="padding: 12px 20px; font-size: 14px;">
+          ⬆ UPLOAD AUDIO FILE
+        </button>
+      </div>
+      <div style="margin-top: 18px; display: flex; gap: 18px; justify-content: center; font-size: 12px; color: #888;">
+        <span id="btn-start-synth" style="cursor: pointer; color: #ffaa00;">⚡ Generative Synth</span>
+        <span id="btn-start-mic" style="cursor: pointer; color: #ff5500;">🎙 Live Mic Input</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drag Overlay -->
+  <div id="drop-overlay">
+    <h2 style="font-size: 28px; font-weight: 900; color: #ffaa00; margin-bottom: 8px;">DROP AUDIO FILE HERE</h2>
+    <p style="color: #ddd; font-family: monospace;">MP3, WAV, OGG, FLAC</p>
+  </div>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="top-left">
+      <div class="glass-panel badge" id="btn-toggle-tracks">
+        <div class="badge-dot"></div>
+        <span id="track-title-display">Gbmnutron x Tano - Hero (Heroes Riddim)</span>
+        <span style="font-size: 10px; opacity: 0.7;">▼</span>
+      </div>
+      <div id="track-menu">
+        <div style="font-size: 10px; font-family: monospace; color: #666; padding: 4px 8px; border-bottom: 1px solid #222;">/SAMPLES PLAYLIST</div>
+        <button class="track-item" data-path="samples/Gbmnutron x Tano - Hero (Heroes Riddim)  Official Audio.mp3">🔥 Gbmnutron x Tano - Hero (Heroes Riddim)</button>
+        <button class="track-item" data-path="samples/dance-anthem.mp3">⚡ Dance Anthem (128 BPM Club Edit)</button>
+        <button class="track-item" data-path="samples/05 Speechless.mp3">🌴 05 Speechless</button>
+        <button class="track-item" data-path="samples/TT_2024_-_Kerwin_Du_Bois_x_Yung_Bredda_-_Sugar_Waist_(No_Drums).mp3">🥁 Sugar Waist (No Drums)</button>
+      </div>
+    </div>
+    <div class="top-right">
+      <button id="btn-source-sample" class="btn active">Sample</button>
+      <button id="btn-source-upload" class="btn">Upload</button>
+      <button id="btn-source-synth" class="btn">Synth</button>
+      <button id="btn-source-mic" class="btn">Mic</button>
+    </div>
+  </div>
+
+  <!-- Multi-Beat HUD Left -->
+  <div class="hud-left">
+    <div class="glass-panel hud-card">
+      <div class="hud-label">
+        <span>Kick Drum (20-90Hz)</span>
+        <span id="label-kick-state" style="color: #ff5500;">PULSE</span>
+      </div>
+      <div class="hud-bar-bg">
+        <div id="bar-kick" class="hud-bar-fill bar-kick" style="width: 0%;"></div>
+      </div>
+    </div>
+
+    <div class="glass-panel hud-card">
+      <div class="hud-label">
+        <span>Snare / Clap (200-1.2k)</span>
+        <span id="label-snare-state" style="color: #ffaa00;">CELLS</span>
+      </div>
+      <div class="hud-bar-bg">
+        <div id="bar-snare" class="hud-bar-fill bar-snare" style="width: 0%;"></div>
+      </div>
+    </div>
+
+    <div class="glass-panel hud-card">
+      <div class="hud-label">
+        <span>Hi-Hats (5k-16kHz)</span>
+        <span id="label-hihat-state" style="color: #ffea00;">16TH TICK</span>
+      </div>
+      <div class="hud-bar-bg">
+        <div id="bar-hihat" class="hud-bar-fill bar-hihat" style="width: 0%;"></div>
+      </div>
+    </div>
+
+    <div class="glass-panel hud-card">
+      <div class="hud-label">
+        <span>Pitch & Spoke Symmetry</span>
+        <span id="label-pitch-note" style="color: #ffaa00; font-weight: bold;">432Hz</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; font-family: monospace; color: #ffea00; margin-top: 4px;">
+        <span id="label-dominant-freq">432 Hz (A4)</span>
+        <span id="label-spoke-symmetry">24 Spokes</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Dock -->
+  <div class="glass-panel bottom-dock">
+    <div class="scrubber-row" id="scrubber-container">
+      <span id="time-current">0:00</span>
+      <input type="range" id="audio-scrubber" min="0" max="100" value="0" step="0.1" style="flex: 1;">
+      <span id="time-duration">0:00</span>
+    </div>
+    <div class="controls-row">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <button id="btn-play-pause" class="btn-play">▶</button>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="font-size: 14px; color: #ffaa00;">🔊</span>
+          <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.9" style="width: 90px;">
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 6px;">
+        <button id="mode-flower" class="btn active">CymaScope</button>
+        <button id="mode-radial" class="btn">Radial</button>
+        <button id="mode-hex" class="btn">Hex</button>
+      </div>
+
+      <div style="display: flex; gap: 6px;">
+        <button id="cam-top" class="btn active">2D Top</button>
+        <button id="cam-iso" class="btn">3D</button>
+        <button id="cam-macro" class="btn">Macro</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // 1. Multi-Beat Audio Engine
+    const audioEl = document.getElementById('audio-player');
+    let audioCtx = null;
+    let analyser = null;
+    let gainNode = null;
+    let mediaSource = null;
+    let isPlaying = false;
+    let sourceType = 'sample';
+    let synthInterval = null;
+
+    const freqData = new Uint8Array(1024);
+    const prevFreqData = new Uint8Array(1024);
+    const timeData = new Uint8Array(1024);
+
+    // Multi-beat trackers
+    const kickHistory = [];
+    let lastKickTime = 0, kickDecay = 0;
+    let lastSnareTime = 0, snareDecay = 0;
+    let lastHihatTime = 0, hihatDecay = 0;
+
+    async function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048;
+        analyser.smoothingTimeConstant = 0.18; // Ultra-fast 0.18 smoothing for zero-latency transient response
+
+        gainNode = audioCtx.createGain();
+        gainNode.gain.setValueAtTime(0.9, audioCtx.currentTime);
+        gainNode.connect(audioCtx.destination);
+
+        try {
+          mediaSource = audioCtx.createMediaElementSource(audioEl);
+          mediaSource.connect(analyser);
+          analyser.connect(gainNode);
+        } catch (e) {}
+      }
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+    }
+
+    function formatTime(s) {
+      if (!s || isNaN(s) || s < 0) return '0:00';
+      const m = Math.floor(s / 60);
+      const sec = Math.floor(s % 60);
+      return `${m}:${sec < 10 ? '0' : ''}${sec}`;
+    }
+
+    audioEl.ontimeupdate = () => {
+      if (audioEl.duration && sourceType !== 'synth' && sourceType !== 'mic') {
+        document.getElementById('audio-scrubber').value = (audioEl.currentTime / audioEl.duration) * 100;
+        document.getElementById('time-current').textContent = formatTime(audioEl.currentTime);
+        document.getElementById('time-duration').textContent = formatTime(audioEl.duration);
+      }
+    };
+
+    audioEl.onended = () => {
+      isPlaying = false;
+      document.getElementById('btn-play-pause').textContent = '▶';
+    };
+
+    async function loadTrackByPath(trackPath, title) {
+      await initAudio();
+      stopGenerativeSynth();
+      sourceType = 'sample';
+      document.getElementById('track-title-display').textContent = title || trackPath.split('/').pop().replace(/\.[^/.]+$/, "");
+
+      audioEl.src = encodeURI(trackPath);
+      await audioEl.load();
+      try {
+        await audioEl.play();
+        isPlaying = true;
+        document.getElementById('btn-play-pause').textContent = '❚❚';
+      } catch(err) {
+        console.warn('Playback error:', err);
+      }
+    }
+
+    function togglePlayAudio() {
+      if (isPlaying) {
+        if (sourceType === 'synth') stopGenerativeSynth();
+        else audioEl.pause();
+        isPlaying = false;
+        document.getElementById('btn-play-pause').textContent = '▶';
+      } else {
+        initAudio();
+        if (sourceType === 'synth') startGenerativeSynth();
+        else {
+          audioEl.play().catch(e => console.warn(e));
+          isPlaying = true;
+          document.getElementById('btn-play-pause').textContent = '❚❚';
+        }
+      }
+    }
+
+    function startGenerativeSynth() {
+      initAudio();
+      audioEl.pause();
+      sourceType = 'synth';
+      document.getElementById('track-title-display').textContent = 'Generative 128 BPM Dance Synth';
+      if (synthInterval) clearInterval(synthInterval);
+
+      const synthGain = audioCtx.createGain();
+      synthGain.gain.setValueAtTime(0.75, audioCtx.currentTime);
+      synthGain.connect(analyser);
+      analyser.connect(gainNode);
+
+      const bpm = 128;
+      const stepDur = 60 / bpm / 4;
+      let step = 0;
+      const chords = [
+        [220, 261.63, 329.63, 440, 880],
+        [174.61, 220, 261.63, 349.23, 698.46],
+        [130.81, 164.81, 196, 261.63, 523.25],
+        [196, 246.94, 293.66, 392, 783.99]
+      ];
+
+      synthInterval = setInterval(() => {
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const chord = chords[Math.floor((step / 16) % 4)];
+
+        // 1. Kick on every beat
+        if (step % 4 === 0) {
+          const osc = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          osc.frequency.setValueAtTime(150, now);
+          osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+          g.gain.setValueAtTime(1.0, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+          osc.connect(g);
+          g.connect(synthGain);
+          osc.start(now);
+          osc.stop(now + 0.32);
+        }
+        // 2. Offbeat Hi-Hat
+        if (step % 4 === 2) {
+          const b = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.06, audioCtx.sampleRate);
+          const d = b.getChannelData(0);
+          for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.015));
+          const src = audioCtx.createBufferSource();
+          src.buffer = b;
+          const f = audioCtx.createBiquadFilter();
+          f.type = 'highpass';
+          f.frequency.setValueAtTime(8000, now);
+          const g = audioCtx.createGain();
+          g.gain.setValueAtTime(0.35, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+          src.connect(f);
+          f.connect(g);
+          g.connect(synthGain);
+          src.start(now);
+          src.stop(now + 0.07);
+        }
+        // 3. Snare on 4 and 12
+        if (step % 8 === 4) {
+          const sb = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.14, audioCtx.sampleRate);
+          const sd = sb.getChannelData(0);
+          for (let i = 0; i < sd.length; i++) sd[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.03));
+          const ssrc = audioCtx.createBufferSource();
+          ssrc.buffer = sb;
+          const sg = audioCtx.createGain();
+          sg.gain.setValueAtTime(0.6, now);
+          sg.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+          ssrc.connect(sg);
+          sg.connect(synthGain);
+          ssrc.start(now);
+          ssrc.stop(now + 0.15);
+        }
+        // 4. Arp Lead
+        const note = chord[step % chord.length] * (step % 2 === 0 ? 2 : 1.5);
+        const lOsc = audioCtx.createOscillator();
+        const lGain = audioCtx.createGain();
+        lOsc.type = 'sawtooth';
+        lOsc.frequency.setValueAtTime(note, now);
+        lGain.gain.setValueAtTime(0.28, now);
+        lGain.gain.exponentialRampToValueAtTime(0.001, now + stepDur * 0.85);
+        lOsc.connect(lGain);
+        lGain.connect(synthGain);
+        lOsc.start(now);
+        lOsc.stop(now + stepDur);
+
+        step = (step + 1) % 64;
+      }, stepDur * 1000);
+
+      isPlaying = true;
+      document.getElementById('btn-play-pause').textContent = '❚❚';
+    }
+
+    function stopGenerativeSynth() {
+      if (synthInterval) {
+        clearInterval(synthInterval);
+        synthInterval = null;
+      }
+    }
+
+    async function loadUploadedFile(file) {
+      await initAudio();
+      stopGenerativeSynth();
+      sourceType = 'upload';
+      document.getElementById('track-title-display').textContent = file.name.replace(/\.[^/.]+$/, "");
+      audioEl.src = URL.createObjectURL(file);
+      await audioEl.load();
+      await audioEl.play();
+      isPlaying = true;
+      document.getElementById('btn-play-pause').textContent = '❚❚';
+    }
+
+    // Multi-Band Beat Separation Analyzer
+    function getAudioBands() {
+      if (!analyser || !isPlaying) {
+        return { 
+          subBass: 0, bass: 0, kickPunch: 0, isKick: false, 
+          snareSnap: 0, isSnare: false, hihatTick: 0, isHihat: false, 
+          dominantFreqHz: 432, spokeCount: 24, midEnergy: 0 
+        };
+      }
+      analyser.getByteFrequencyData(freqData);
+      analyser.getByteTimeDomainData(timeData);
+
+      const binHz = 22050 / 1024;
+      const getAvg = (minHz, maxHz) => {
+        const minB = Math.max(0, Math.floor(minHz / binHz));
+        const maxB = Math.min(1023, Math.ceil(maxHz / binHz));
+        let sum = 0;
+        for (let i = minB; i <= maxB; i++) sum += freqData[i];
+        return (sum / (maxB - minB + 1)) / 255;
+      };
+
+      const now = performance.now();
+
+      // 1. Kick (20-90Hz)
+      const subBass = getAvg(20, 70);
+      const bass = getAvg(70, 140);
+      const lowComb = subBass * 0.75 + bass * 0.25;
+
+      let subFlux = 0;
+      for (let b = 1; b <= 4; b++) {
+        const diff = (freqData[b] - prevFreqData[b]) / 255;
+        if (diff > 0) subFlux += diff * diff;
+      }
+      kickHistory.push(lowComb);
+      if (kickHistory.length > 16) kickHistory.shift();
+      const avgK = kickHistory.reduce((a, b) => a + b, 0) / kickHistory.length;
+
+      let isKick = false;
+      if ((lowComb > 0.26 || subFlux > 0.035) && lowComb > avgK * 1.22 && (now - lastKickTime) > 85) {
+        isKick = true;
+        lastKickTime = now;
+        kickDecay = 1.0;
+      } else {
+        kickDecay *= 0.80;
+      }
+
+      // 2. Snare / Clap (200-1200Hz)
+      let snareFlux = 0;
+      for (let b = 10; b <= 55; b++) {
+        const diff = (freqData[b] - prevFreqData[b]) / 255;
+        if (diff > 0) snareFlux += diff * diff;
+      }
+      const snareEnergy = getAvg(200, 1200);
+      let isSnare = false;
+      if (snareFlux > 0.08 && snareEnergy > 0.22 && (now - lastSnareTime) > 90) {
+        isSnare = true;
+        lastSnareTime = now;
+        snareDecay = 1.0;
+      } else {
+        snareDecay *= 0.78;
+      }
+
+      // 3. Hi-Hat (5k-16kHz)
+      let hihatFlux = 0;
+      for (let b = 230; b <= 740; b += 4) {
+        const diff = (freqData[b] - prevFreqData[b]) / 255;
+        if (diff > 0) hihatFlux += diff * diff;
+      }
+      const hihatEnergy = getAvg(5000, 15000);
+      let isHihat = false;
+      if (hihatFlux > 0.03 && hihatEnergy > 0.15 && (now - lastHihatTime) > 50) {
+        isHihat = true;
+        lastHihatTime = now;
+        hihatDecay = 1.0;
+      } else {
+        hihatDecay *= 0.75;
+      }
+
+      prevFreqData.set(freqData);
+
+      // 4. Melodic Pitch & Spoke Symmetry
+      let maxVal = 0, dominantBin = 20;
+      for (let b = 8; b <= 120; b++) {
+        if (freqData[b] > maxVal) { maxVal = freqData[b]; dominantBin = b; }
+      }
+      const dominantFreqHz = Math.round(dominantBin * binHz);
+      let spokeCount = 24;
+      if (dominantFreqHz < 250) spokeCount = 16;
+      else if (dominantFreqHz < 400) spokeCount = 20;
+      else if (dominantFreqHz < 550) spokeCount = 24;
+      else if (dominantFreqHz < 900) spokeCount = 32;
+      else if (dominantFreqHz < 1500) spokeCount = 48;
+      else spokeCount = 64;
+
+      const midEnergy = (getAvg(400, 950) + getAvg(950, 2200)) / 2;
+
+      return {
+        subBass,
+        bass,
+        kickPunch: kickDecay,
+        isKick,
+        snareSnap: snareDecay,
+        isSnare,
+        hihatTick: hihatDecay,
+        isHihat,
+        dominantFreqHz,
+        spokeCount,
+        midEnergy
+      };
+    }
+
+    // 2. Three.js Scene Setup
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);
+    scene.fog = new THREE.FogExp2(0x000000, 0.005);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const R = 28;
+    camera.position.set(0, R * 2.35, 0.001); // 2D Top default
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.45;
+    container.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+
+    // CymaScope GLSL Shader
+    const vertexShader = `
+      varying vec2 vUv;
+      uniform float u_bassEnergy;
+      uniform float u_kickTransient;
+      uniform float u_snareTransient;
+      uniform float u_spokes;
+      uniform float u_rings;
+      uniform float u_phase;
+
+      void main() {
+        vUv = uv;
+        vec3 pos = position;
+        vec2 centered = (uv - 0.5) * 2.0;
+        float r = length(centered);
+        float th = atan(centered.y, centered.x) + u_phase;
+
+        if (r < 1.0) {
+          float standing = cos(u_rings * 3.14159 * pow(r, 0.82)) * cos(u_spokes * th);
+          pos.z += standing * (u_bassEnergy * 1.8 + u_kickTransient * 2.5 + u_snareTransient * 1.2) * (1.0 - r * 0.45);
+        }
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+      }
+    `;
+
+    const fragmentShader = `
+      varying vec2 vUv;
+      uniform float u_time;
+      uniform float u_bassEnergy;
+      uniform float u_kickTransient;
+      uniform float u_snareTransient;
+      uniform float u_hihatTransient;
+      uniform float u_midsEnergy;
+      uniform float u_spokes1;
+      uniform float u_spokes2;
+      uniform float u_rings;
+      uniform float u_phase;
+      uniform float u_pulseWave;
+      uniform float u_mode;
+
+      vec3 getFieryColor(float t) {
+        t = clamp(t, 0.0, 1.0);
+        vec3 c0 = vec3(0.04, 0.005, 0.00);
+        vec3 c1 = vec3(0.72, 0.08, 0.00);
+        vec3 c2 = vec3(1.00, 0.38, 0.01);
+        vec3 c3 = vec3(1.00, 0.76, 0.08);
+        vec3 c4 = vec3(1.00, 0.95, 0.40);
+        vec3 c5 = vec3(1.00, 1.00, 0.95);
+
+        if (t < 0.20) return mix(c0, c1, t / 0.20);
+        if (t < 0.45) return mix(c1, c2, (t - 0.20) / 0.25);
+        if (t < 0.70) return mix(c2, c3, (t - 0.45) / 0.25);
+        if (t < 0.88) return mix(c3, c4, (t - 0.70) / 0.18);
+        return mix(c4, c5, (t - 0.88) / 0.12);
+      }
+
+      void main() {
+        vec2 uvCentered = (vUv - 0.5) * 2.0;
+        float r = length(uvCentered);
+        if (r > 1.02) discard;
+
+        float theta = atan(uvCentered.y, uvCentered.x);
+        float snareSnapAngle = u_snareTransient * 0.025;
+        float th1 = theta + u_phase + snareSnapAngle;
+        float th2 = theta - u_phase * 0.75 - snareSnapAngle;
+        float rWarp = pow(r, 0.82);
+
+        float numSpokes = u_spokes1;
+        if (u_mode == 2.0) numSpokes = 12.0;
+        if (u_mode == 1.0) numSpokes = u_spokes1 * 0.75;
+
+        float spokeOsc1 = abs(cos(numSpokes * th1));
+        float spokeOsc2 = abs(cos(u_spokes2 * th2));
+        float spokeMix = mix(spokeOsc1, spokeOsc2, u_midsEnergy * 0.45);
+
+        float ringOsc = abs(sin(u_rings * 3.14159265 * rWarp - u_bassEnergy * 0.35 + u_pulseWave));
+
+        float cellAngular = smoothstep(0.24, 0.88, spokeMix);
+        float cellRadial = smoothstep(0.22, 0.90, ringOsc);
+        float cells = cellAngular * cellRadial;
+
+        float filaments = sin(r * 160.0 + th1 * 16.0) * (0.06 + u_snareTransient * 0.12);
+        cells = clamp(cells + filaments, 0.0, 1.0);
+
+        // Center Rosette Starburst
+        float coreSpokes = 24.0;
+        float coreSpokeOsc = abs(cos(coreSpokes * (th1 * 1.2)));
+        float coreExpansion = 0.22 + u_kickTransient * 0.06;
+        float coreTeeth = smoothstep(0.25, 0.92, coreSpokeOsc) * smoothstep(coreExpansion, 0.05, r);
+        float centerEye = smoothstep(0.06 + u_kickTransient * 0.03, 0.015, r);
+
+        // Hi-Hat Serrated Outer Teeth
+        float hatSpokes = u_spokes2 * 1.5;
+        float hatTeethOsc = abs(cos(hatSpokes * th1));
+        float hatSerration = smoothstep(0.3, 0.95, hatTeethOsc) * smoothstep(0.70, 0.95, r) * u_hihatTransient;
+
+        float cellEnergy = cells * (0.65 + u_bassEnergy * 0.85 + u_snareTransient * 0.65);
+        float coreEnergy = (coreTeeth * 1.15 + centerEye * 1.35) * (0.9 + u_bassEnergy * 0.7 + u_kickTransient * 1.4);
+
+        float totalIntensity = cellEnergy + coreEnergy + hatSerration * 0.85;
+        totalIntensity += u_kickTransient * (smoothstep(0.98, 0.0, r) * 0.75 + centerEye * 0.9);
+        totalIntensity += u_snareTransient * cells * 0.55;
+
+        float rimEdge = smoothstep(1.0, 0.94, r);
+        totalIntensity *= rimEdge;
+
+        vec3 color = getFieryColor(totalIntensity);
+        if (totalIntensity > 0.85) {
+          color = mix(color, vec3(1.0, 1.0, 1.0), (totalIntensity - 0.85) / 0.15 * 0.75);
+        }
+
+        float bezelGlow = smoothstep(0.94, 0.99, r) * (1.0 - smoothstep(0.99, 1.01, r));
+        color += vec3(1.0, 0.45, 0.05) * bezelGlow * (0.6 + u_kickTransient * 0.8 + u_hihatTransient * 0.5);
+
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `;
+
+    const shaderMaterial = new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader,
+      uniforms: {
+        u_time: { value: 0 },
+        u_bassEnergy: { value: 0 },
+        u_kickTransient: { value: 0 },
+        u_snareTransient: { value: 0 },
+        u_hihatTransient: { value: 0 },
+        u_midsEnergy: { value: 0 },
+        u_spokes1: { value: 24.0 },
+        u_spokes2: { value: 48.0 },
+        u_rings: { value: 5.0 },
+        u_phase: { value: 0 },
+        u_pulseWave: { value: 0 },
+        u_mode: { value: 0.0 }
+      },
+      side: THREE.DoubleSide
+    });
+
+    const planeGeom = new THREE.PlaneGeometry(R * 2, R * 2, 128, 128);
+    planeGeom.rotateX(-Math.PI / 2);
+    const shaderMesh = new THREE.Mesh(planeGeom, shaderMaterial);
+    shaderMesh.position.y = -0.05;
+    scene.add(shaderMesh);
+
+    // Bezel Ring
+    const bezelGeom = new THREE.RingGeometry(R - 0.1, R + 3.5, 128);
+    bezelGeom.rotateX(-Math.PI / 2);
+    const bezelMat = new THREE.MeshBasicMaterial({ color: 0x080402, side: THREE.DoubleSide });
+    const bezelMesh = new THREE.Mesh(bezelGeom, bezelMat);
+    bezelMesh.position.y = -0.04;
+    scene.add(bezelMesh);
+
+    // 3D Particles
+    const particleCount = 50000;
+    const positions = new Float32Array(particleCount * 3);
+    const velocities = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+
+    for (let i = 0; i < particleCount; i++) {
+      const i3 = i * 3;
+      const r = Math.sqrt(Math.random()) * (R * 0.96);
+      const a = Math.random() * Math.PI * 2;
+      positions[i3 + 0] = Math.cos(a) * r;
+      positions[i3 + 1] = (Math.random() - 0.5) * 0.15;
+      positions[i3 + 2] = Math.sin(a) * r;
+      colors[i3 + 0] = 1.0; colors[i3 + 1] = 0.5; colors[i3 + 2] = 0.05;
+    }
+
+    const particleGeom = new THREE.BufferGeometry();
+    particleGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particleGeom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const cvs = document.createElement('canvas');
+    cvs.width = cvs.height = 64;
+    const ctx = cvs.getContext('2d');
+    const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(0.2, 'rgba(255,215,60,0.95)');
+    grad.addColorStop(0.5, 'rgba(255,90,0,0.55)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 64, 64);
+    const tex = new THREE.CanvasTexture(cvs);
+
+    const particleMat = new THREE.PointsMaterial({
+      size: 1.6,
+      vertexColors: true,
+      map: tex,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const particles = new THREE.Points(particleGeom, particleMat);
+    scene.add(particles);
+
+    let spokes1 = 24, rings = 5;
+    let phaseTheta = 0, plateModeNum = 0.0, shockwavePulsePhase = 0;
+
+    let lastTime = performance.now();
+    function animate() {
+      requestAnimationFrame(animate);
+      const now = performance.now();
+      const dt = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+
+      const bands = getAudioBands();
+      const kickBoost = bands.kickPunch * 1.6;
+      const snareBoost = bands.snareSnap * 1.3;
+      const hihatBoost = bands.hihatTick * 1.2;
+      const bassLevel = (bands.subBass * 1.3 + bands.bass * 0.7) / 2;
+
+      // Lock spoke symmetry to pitch
+      const targetSpokes = bands.spokeCount || 24;
+      spokes1 += (targetSpokes - spokes1) * 0.12;
+      rings += (Math.round(4 + bands.midEnergy * 3) - rings) * 0.08;
+
+      phaseTheta += 0.002 + bands.midEnergy * 0.015 + kickBoost * 0.025;
+
+      if (bands.isKick && kickBoost > 0.3) {
+        shockwavePulsePhase = 1.0;
+      } else {
+        shockwavePulsePhase *= 0.85;
+      }
+
+      // Update shader uniforms
+      const u = shaderMaterial.uniforms;
+      u.u_time.value += dt;
+      u.u_bassEnergy.value = bassLevel;
+      u.u_kickTransient.value = kickBoost;
+      u.u_snareTransient.value = snareBoost;
+      u.u_hihatTransient.value = hihatBoost;
+      u.u_midsEnergy.value = bands.midEnergy;
+      u.u_spokes1.value = spokes1;
+      u.u_spokes2.value = spokes1 * 2.0;
+      u.u_rings.value = rings;
+      u.u_phase.value = phaseTheta;
+      u.u_pulseWave.value = shockwavePulsePhase * 2.5;
+      u.u_mode.value = plateModeNum;
+
+      // Multi-Beat HUD updates
+      document.getElementById('bar-kick').style.width = `${Math.min(100, Math.round(bands.subBass * 100))}%`;
+      document.getElementById('label-kick-state').textContent = bands.isKick ? 'KICK HIT!' : 'PULSE';
+
+      document.getElementById('bar-snare').style.width = `${Math.min(100, Math.round(bands.snareSnap * 100))}%`;
+      document.getElementById('label-snare-state').textContent = bands.isSnare ? 'SNARE SNAP!' : 'CELLS';
+
+      document.getElementById('bar-hihat').style.width = `${Math.min(100, Math.round(bands.hihatTick * 100))}%`;
+      document.getElementById('label-hihat-state').textContent = bands.isHihat ? '16TH TICK' : 'SHIMMER';
+
+      document.getElementById('label-dominant-freq').textContent = `${bands.dominantFreqHz} Hz`;
+      document.getElementById('label-spoke-symmetry').textContent = `${Math.round(spokes1)} Spokes`;
+
+      // 3D Particles
+      for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        let y = positions[i3 + 1];
+        let vy = velocities[i3 + 1];
+        if (kickBoost > 0.05 && Math.random() < 0.08) {
+          vy += kickBoost * (0.35 + Math.random() * 0.3);
+        }
+        if (snareBoost > 0.08 && Math.random() < 0.05) {
+          vy += snareBoost * 0.15;
+        }
+        vy -= 0.02;
+        if (y < 0) { y = 0; vy = Math.abs(vy) * 0.25; }
+        y += vy;
+        positions[i3 + 1] = y;
+        velocities[i3 + 1] = vy;
+      }
+      particleGeom.attributes.position.needsUpdate = true;
+
+      scene.rotation.y += 0.0014 + bassLevel * 0.003;
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Event Listeners
+    document.getElementById('btn-start-hero').onclick = () => {
+      document.getElementById('start-overlay').style.display = 'none';
+      loadTrackByPath('samples/Gbmnutron x Tano - Hero (Heroes Riddim)  Official Audio.mp3', 'Gbmnutron x Tano - Hero (Heroes Riddim)');
+    };
+    document.getElementById('btn-start-upload').onclick = () => {
+      document.getElementById('start-overlay').style.display = 'none';
+      document.getElementById('file-input').click();
+    };
+    document.getElementById('btn-start-synth').onclick = () => {
+      document.getElementById('start-overlay').style.display = 'none';
+      startGenerativeSynth();
+    };
+    document.getElementById('btn-start-mic').onclick = async () => {
+      document.getElementById('start-overlay').style.display = 'none';
+      await initAudio();
+      audioEl.pause();
+      sourceType = 'mic';
+      document.getElementById('track-title-display').textContent = 'Live Microphone';
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const micSrc = audioCtx.createMediaStreamSource(stream);
+      micSrc.connect(analyser);
+      isPlaying = true;
+      document.getElementById('btn-play-pause').textContent = '❚❚';
+    };
+
+    document.getElementById('btn-play-pause').onclick = () => togglePlayAudio();
+    document.getElementById('audio-scrubber').oninput = (e) => {
+      if (audioEl.duration) audioEl.currentTime = (parseFloat(e.target.value) / 100) * audioEl.duration;
+    };
+    document.getElementById('volume-slider').oninput = (e) => {
+      if (gainNode && audioCtx) gainNode.gain.setValueAtTime(parseFloat(e.target.value), audioCtx.currentTime);
+    };
+
+    const trackMenu = document.getElementById('track-menu');
+    document.getElementById('btn-toggle-tracks').onclick = () => {
+      trackMenu.style.display = trackMenu.style.display === 'flex' ? 'none' : 'flex';
+    };
+    document.querySelectorAll('.track-item').forEach(item => {
+      item.onclick = () => {
+        trackMenu.style.display = 'none';
+        loadTrackByPath(item.dataset.path, item.textContent.replace(/^[^\s]+\s/, ''));
+      };
+    });
+
+    document.getElementById('btn-source-sample').onclick = () => loadTrackByPath('samples/Gbmnutron x Tano - Hero (Heroes Riddim)  Official Audio.mp3', 'Gbmnutron x Tano - Hero (Heroes Riddim)');
+    document.getElementById('btn-source-upload').onclick = () => document.getElementById('file-input').click();
+    document.getElementById('btn-source-synth').onclick = () => startGenerativeSynth();
+    document.getElementById('btn-source-mic').onclick = async () => {
+      await initAudio();
+      audioEl.pause();
+      sourceType = 'mic';
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const micSrc = audioCtx.createMediaStreamSource(stream);
+      micSrc.connect(analyser);
+      isPlaying = true;
+    };
+
+    document.getElementById('file-input').onchange = (e) => {
+      if (e.target.files[0]) loadUploadedFile(e.target.files[0]);
+    };
+
+    document.getElementById('mode-flower').onclick = () => { plateModeNum = 0.0; };
+    document.getElementById('mode-radial').onclick = () => { plateModeNum = 1.0; };
+    document.getElementById('mode-hex').onclick = () => { plateModeNum = 2.0; };
+
+    document.getElementById('cam-top').onclick = () => camera.position.set(0, R * 2.35, 0.001);
+    document.getElementById('cam-iso').onclick = () => camera.position.set(R * 1.2, R * 1.1, R * 1.2);
+    document.getElementById('cam-macro').onclick = () => camera.position.set(R * 0.45, R * 0.35, R * 0.45);
+
+    window.ondragover = (e) => { e.preventDefault(); document.getElementById('drop-overlay').style.display = 'flex'; };
+    window.ondragleave = () => { document.getElementById('drop-overlay').style.display = 'none'; };
+    window.ondrop = (e) => {
+      e.preventDefault();
+      document.getElementById('drop-overlay').style.display = 'none';
+      document.getElementById('start-overlay').style.display = 'none';
+      if (e.dataTransfer.files[0]) loadUploadedFile(e.dataTransfer.files[0]);
+    };
+
+    window.onresize = () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+  </script>
+</body>
+</html>
