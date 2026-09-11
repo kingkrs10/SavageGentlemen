@@ -1,0 +1,14 @@
+node_modules
+.git
+.github
+.npm-cache2
+dist
+uploads
+attached_assets
+scratch
+.env
+.env.local
+.env.production
+courtvision-android
+*.log
+.DS_Store

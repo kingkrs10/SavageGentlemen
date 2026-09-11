@@ -1,0 +1,37 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+    env_file:
+      - .env
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      - moneyprinter-turbo
+
+  moneyprinter-turbo:
+    image: ghcr.io/harry0703/moneyprinterturbo:latest
+    restart: always
+    ports:
+      - "8090:8080" # FastAPI Server
+      - "8505:8501" # Streamlit WebUI
+    environment:
+      - PEXELS_API_KEY=${PEXELS_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_API_BASE=${OPENAI_API_BASE:-https://api.openai.com/v1}
+      - DEFAULT_VOICE=en-US-ChristopherNeural
+      - DEFAULT_ASPECT_RATIO=9:16
+    volumes:
+      - uploads_data:/MoneyPrinterTurbo/storage/videos
+      - ./moneyprinter.config.toml:/MoneyPrinterTurbo/config.toml
+
+volumes:
+  uploads_data:
+    driver: local
