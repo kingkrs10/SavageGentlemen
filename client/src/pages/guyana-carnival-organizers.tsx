@@ -17,7 +17,8 @@ import {
   Box,
   Building2,
   ArrowUpRight,
-  Sparkles
+  Sparkles,
+  Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import SEOHead from "@/components/SEOHead";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/context/UserContext";
 
 interface PartnerInfo {
   name: string;
@@ -125,6 +127,7 @@ const INITIAL_DISTRIBUTION: MasqueraderItem[] = [
 ];
 
 export default function GuyanaCarnivalOrganizers() {
+  const { user, isLoading } = useUser();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("roadmap");
   const [searchQuery, setSearchQuery] = useState("");
@@ -189,6 +192,46 @@ export default function GuyanaCarnivalOrganizers() {
     const alterations = 14;
     return { total, collected, ready, inTransit, alterations };
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-obsidian-dark">
+        <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user || user.role !== "admin") {
+    return (
+      <div className="min-h-screen py-16 px-4 flex items-center justify-center bg-obsidian-dark">
+        <SEOHead
+          title="Restricted Access // Guyana 2027 Ops Hub"
+          description="Access to the Guyana Carnival 2027 Organizer Command Center is restricted to verified administrators."
+        />
+        <Card className="max-w-md w-full glass-obsidian-strong border-amber-500/30 text-center p-8 space-y-6 shadow-2xl">
+          <div className="w-16 h-16 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-heading font-extrabold uppercase text-white tracking-wider">
+              Admin Access Required
+            </h1>
+            <p className="text-sm text-white/60 leading-relaxed">
+              The Guyana Carnival 2027 Multi-Band Command Center is restricted strictly to authorized executive committee administrators and band leaders.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 pt-2">
+            <Button asChild className="bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-bold uppercase tracking-wider hover:from-amber-400 hover:to-yellow-400">
+              <Link href="/passport-auth">Sign In as Admin</Link>
+            </Button>
+            <Button asChild variant="ghost" className="text-white/60 hover:text-white hover:bg-white/5">
+              <Link href="/">Return to Main Stage</Link>
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-20">

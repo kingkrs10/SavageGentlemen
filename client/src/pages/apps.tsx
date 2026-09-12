@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { 
   Blocks, 
@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import SEOHead from "@/components/SEOHead";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/context/UserContext";
 
 interface CreatorBot {
   id: string;
@@ -171,6 +172,16 @@ const creatorBots: CreatorBot[] = [
 export default function Apps() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { user } = useUser();
+
+  const visibleBots = useMemo(() => {
+    return creatorBots.filter((bot) => {
+      if (bot.id === "guyana-carnival-2027") {
+        return user?.role === "admin";
+      }
+      return true;
+    });
+  }, [user]);
 
   const handleLaunchApp = (bot: CreatorBot) => {
     if (bot.externalUrl) {
@@ -244,7 +255,7 @@ export default function Apps() {
 
         {/* ── 2. AUTONOMOUS CREATOR BOTS GRID ── */}
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {creatorBots.map((bot) => (
+          {visibleBots.map((bot) => (
             <div
               key={bot.id}
               onClick={() => handleLaunchApp(bot)}
