@@ -196,7 +196,8 @@ import {
   Plus,
   Trash,
   DollarSign,
-  BookOpen
+  BookOpen,
+  Sparkles
 } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 import AdminMediaPage from "./admin-media";
