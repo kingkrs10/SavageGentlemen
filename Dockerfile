@@ -16,6 +16,10 @@ COPY package.json package-lock.json ./
 # Ensure devDependencies (vite, esbuild, typescript) are installed regardless of external build-args
 ENV NODE_ENV=development
 ENV PATH="/app/node_modules/.bin:$PATH"
+ENV FFMPEG_BIN=/usr/bin/ffmpeg
+
+# Create placeholder ffmpeg binary so ffmpeg-static skips external github download
+RUN touch /usr/bin/ffmpeg && chmod +x /usr/bin/ffmpeg
 
 # Install all dependencies (including devDependencies for build)
 RUN npm ci --legacy-peer-deps --include=dev
@@ -49,6 +53,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV NODE_ENV=production
 ENV PORT=5000
+ENV FFMPEG_BIN=/usr/bin/ffmpeg
+ENV FFMPEG_PATH=/usr/bin/ffmpeg
 
 # Copy node_modules from builder
 COPY --from=builder /app/node_modules ./node_modules
