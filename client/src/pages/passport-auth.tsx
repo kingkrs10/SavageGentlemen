@@ -74,7 +74,11 @@ export default function PassportAuth() {
     const loginMutation = useMutation({
         mutationFn: async (data: LoginFormValues) => {
             const res = await apiRequest("POST", "/api/auth/login", data);
-            return res.json();
+            const responseData = await res.json();
+            if (!res.ok || responseData.status === 'error') {
+                throw new Error(responseData.message || "Invalid username or password");
+            }
+            return responseData.data || responseData;
         },
         onSuccess: (data) => {
             login(data);
@@ -94,7 +98,11 @@ export default function PassportAuth() {
         mutationFn: async (data: RegisterFormValues) => {
             const { confirmPassword, ...registerData } = data;
             const res = await apiRequest("POST", "/api/auth/register", registerData);
-            return res.json();
+            const responseData = await res.json();
+            if (!res.ok || responseData.status === 'error') {
+                throw new Error(responseData.message || "Registration failed");
+            }
+            return responseData.data || responseData;
         },
         onSuccess: (data) => {
             login(data);
