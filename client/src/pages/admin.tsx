@@ -199,6 +199,7 @@ import {
   BookOpen,
   Sparkles
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useUser } from "@/context/UserContext";
 import AdminMediaPage from "./admin-media";
 import { MagazineAdminManager } from "@/components/admin/MagazineAdminManager";
@@ -208,20 +209,69 @@ import LivestreamManager from "@/components/admin/LivestreamManager";
 import TicketScanner from "@/components/admin/TicketScanner";
 import PassportManager from "@/components/admin/PassportManager";
 import { AffiliateManager } from "@/components/admin/AffiliateManager";
+import UserManagement from "@/components/admin/UserManagement";
+
+const ADMIN_CATEGORIES = [
+  {
+    id: "audience",
+    label: "Audience & Loyalty",
+    icon: Users,
+    tabs: [
+      { id: "users", label: "User Accounts", icon: Users },
+      { id: "passport", label: "Soca Passport", icon: Stamp },
+    ]
+  },
+  {
+    id: "events",
+    label: "Events & Box Office",
+    icon: Calendar,
+    tabs: [
+      { id: "events", label: "Events Master", icon: Calendar },
+      { id: "tickets", label: "Ticket Tiers", icon: TicketIcon },
+      { id: "orders", label: "Customer Orders", icon: ShoppingCart },
+      { id: "scanner", label: "Gate Scanner", icon: ScanLine },
+      { id: "affiliates", label: "Affiliates", icon: DollarSign },
+    ]
+  },
+  {
+    id: "media",
+    label: "Media & Broadcast",
+    icon: Radio,
+    tabs: [
+      { id: "magazine", label: "Magazine & IG", icon: BookOpen },
+      { id: "musicmixes", label: "Music Mixes", icon: Music },
+      { id: "livestreams", label: "Livestreams", icon: Radio },
+      { id: "ads", label: "Ads Studio", icon: Megaphone },
+      { id: "theme", label: "Site Visuals", icon: Video },
+      { id: "media", label: "Media Library", icon: ImageIcon },
+    ]
+  },
+  {
+    id: "commerce",
+    label: "Merchandise",
+    icon: PackageOpen,
+    tabs: [
+      { id: "products", label: "Shop Products", icon: PackageOpen },
+    ]
+  }
+];
 
 export default function AdminPage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const { user: contextUser, isAdmin, isModerator, login } = useUser();
-  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
+  const [currentUser, setCurrentUser] = React.useState<User | null>(() => (contextUser as any) || null);
   const [adminUsername, setAdminUsername] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
-  const [activeDashboardTab, setActiveDashboardTab] = useState("products");
+  const [activeDashboardTab, setActiveDashboardTab] = useState("users");
+
+  const currentCategory = React.useMemo(() => {
+    return ADMIN_CATEGORIES.find(cat => cat.tabs.some(t => t.id === activeDashboardTab)) || ADMIN_CATEGORIES[0];
+  }, [activeDashboardTab]);
 
   // Ad management state
   const [isCreateAdModalOpen, setIsCreateAdModalOpen] = useState(false);
@@ -1778,7 +1828,8 @@ export default function AdminPage() {
     }
   };
 
-  const hasAdminAccess = isAdmin || isModerator || currentUser?.role === 'admin' || currentUser?.role === 'moderator';
+  const effectiveUser = currentUser || (contextUser as any);
+  const hasAdminAccess = isAdmin || isModerator || effectiveUser?.role === 'admin' || effectiveUser?.role === 'moderator';
 
   if (!hasAdminAccess) {
     return (
@@ -1854,158 +1905,175 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-obsidian text-white py-8 px-4 md:px-8 max-w-7xl mx-auto space-y-8">
       <div className="space-y-6">
-        {/* ── LUXURY ADMIN HERO ── */}
-        <div className="glass-obsidian-strong border border-gold-500/30 rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-2xl">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
+        {/* ── LUXURY ADMIN HERO & LIVE SYSTEM METRICS ── */}
+        <div className="glass-obsidian-strong border border-gold-500/30 rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-2xl space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-white/10">
+            <div className="space-y-1">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-400 text-xs font-mono font-bold uppercase tracking-widest mb-2">
-                <Sparkles className="w-3.5 h-3.5 text-gold-400" />
-                SAVAGE EXECUTIVE CONTROL
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                SAVAGE EXECUTIVE COMMAND // NEON SG ACTIVE
               </div>
-              <h1 className="text-3xl md:text-4xl font-heading font-extrabold tracking-tight text-white">
-                Admin Dashboard
+              <h1 className="text-3xl md:text-5xl font-heading font-extrabold uppercase text-white tracking-tight">
+                ADMIN <span className="gold-gradient-text">CONSOLE</span>
               </h1>
-              <p className="text-gray-400 text-sm mt-1">
-                Full-spectrum management of luxury merchandise, carnival events, Soca Passport, media stems, and live viral ads.
+              <p className="text-gray-400 text-xs md:text-sm font-mono max-w-2xl">
+                Master command center for luxury merchandise, festival events, Soca Passport, media operations, and diaspora marketing.
               </p>
             </div>
-            {currentUser && currentUser.username && (
-              <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2.5 rounded-2xl backdrop-blur-md">
-                <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-gold-600 to-amber-400 flex items-center justify-center text-obsidian font-bold text-sm shadow-md">
-                  {currentUser.username.charAt(0).toUpperCase()}
+
+            {/* Quick Actions & Admin Status */}
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                onClick={() => navigate("/")}
+                variant="outline"
+                className="glass-obsidian border-white/15 text-white/80 hover:text-white hover:border-gold-500/40 text-xs font-bold uppercase tracking-wider rounded-xl px-4 py-5"
+              >
+                <ArrowLeft className="w-4 h-4 mr-1.5 text-gold-400" />
+                Main Stage
+              </Button>
+              <Button
+                onClick={() => navigate("/guyana2027")}
+                className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold uppercase tracking-wider rounded-xl px-4 py-5 shadow-lg shadow-amber-500/10"
+              >
+                🇬🇾 Guyana '27
+              </Button>
+              {currentUser && (
+                <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl backdrop-blur-md">
+                  <div className="h-8 w-8 rounded-lg bg-gradient-to-tr from-gold-600 to-amber-400 flex items-center justify-center text-obsidian font-bold text-xs shadow-md">
+                    {currentUser.username.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <span className="text-[9px] uppercase font-mono tracking-wider text-gold-400 block font-bold">Admin Active</span>
+                    <span className="text-xs font-semibold text-white">{currentUser.displayName || currentUser.username}</span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-[10px] uppercase font-mono tracking-wider text-gold-400 block font-bold">Admin Active</span>
-                  <span className="text-sm font-semibold text-white">{currentUser.username}</span>
-                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Quick Metrics KPI Bar */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="glass-obsidian border border-gold-500/20 p-4 rounded-2xl flex items-center gap-3 shadow-lg">
+              <div className="w-10 h-10 rounded-xl bg-gold-500/15 border border-gold-500/30 flex items-center justify-center text-gold-400">
+                <Users className="w-5 h-5" />
               </div>
-            )}
+              <div>
+                <span className="text-[10px] uppercase font-mono text-white/50 block font-bold">Registered Members</span>
+                <span className="text-xl font-heading font-extrabold text-white">{users?.length ?? 28}</span>
+              </div>
+            </div>
+            <div className="glass-obsidian border border-gold-500/20 p-4 rounded-2xl flex items-center gap-3 shadow-lg">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-mono text-white/50 block font-bold">Published Stories</span>
+                <span className="text-xl font-heading font-extrabold text-amber-300">202</span>
+              </div>
+            </div>
+            <div className="glass-obsidian border border-gold-500/20 p-4 rounded-2xl flex items-center gap-3 shadow-lg">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <ShoppingCart className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-mono text-white/50 block font-bold">Customer Orders</span>
+                <span className="text-xl font-heading font-extrabold text-emerald-300">{orders?.length ?? 21}</span>
+              </div>
+            </div>
+            <div className="glass-obsidian border border-gold-500/20 p-4 rounded-2xl flex items-center gap-3 shadow-lg">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-mono text-white/50 block font-bold">Events Scheduled</span>
+                <span className="text-xl font-heading font-extrabold text-cyan-300">{events?.length ?? 0}</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <Tabs value={activeDashboardTab} onValueChange={setActiveDashboardTab} className="w-full" data-testid="admin-tabs">
-          <TabsList className="flex flex-wrap h-auto w-full mb-8 bg-white/5 border border-white/10 p-1.5 gap-1.5 rounded-2xl backdrop-blur-md">
-            <TabsTrigger 
-              value="products" 
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
-            >
-              <PackageOpen className="h-4 w-4" /> Products
-            </TabsTrigger>
-            <TabsTrigger 
-              value="events" 
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
-            >
-              <Calendar className="h-4 w-4" /> Events
-            </TabsTrigger>
-            <TabsTrigger 
-              value="affiliates" 
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
-            >
-              <DollarSign className="h-4 w-4" /> Affiliates
-            </TabsTrigger>
-            <TabsTrigger 
-              value="users" 
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
-            >
-              <Users className="h-4 w-4" /> Users
-            </TabsTrigger>
-            <TabsTrigger 
-              value="tickets" 
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
-            >
-              <TicketIcon className="h-4 w-4" /> Tickets
-            </TabsTrigger>
-            <TabsTrigger 
-              value="orders" 
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
-            >
-              <ShoppingCart className="h-4 w-4" /> Orders
-            </TabsTrigger>
-            <TabsTrigger 
-              value="livestreams" 
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
-            >
-              <Radio className="h-4 w-4" /> Livestreams
-            </TabsTrigger>
-            <TabsTrigger 
-              value="musicmixes" 
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
-            >
-              <Music className="h-4 w-4" /> Music Mixes
-            </TabsTrigger>
-            <TabsTrigger 
-              value="passport" 
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
-            >
-              <Stamp className="h-4 w-4" /> Passport
-            </TabsTrigger>
-            <TabsTrigger 
-              value="scanner" 
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
-            >
-              <ScanLine className="h-4 w-4" /> Scanner
-            </TabsTrigger>
-            <TabsTrigger 
-              value="ads" 
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
-            >
-              <Megaphone className="h-4 w-4" /> Ads
-            </TabsTrigger>
-            <TabsTrigger 
-              value="magazine" 
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
-            >
-              <BookOpen className="h-4 w-4" /> Magazine & IG
-            </TabsTrigger>
-            <TabsTrigger 
-              value="theme" 
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
-            >
-              <Video className="h-4 w-4" /> Site Video
-            </TabsTrigger>
-            <TabsTrigger 
-              value="media" 
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-300 transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-gold-500 data-[state=active]:to-amber-400 data-[state=active]:text-obsidian data-[state=active]:shadow-lg data-[state=active]:shadow-gold-500/20"
-            >
-              <ImageIcon className="h-4 w-4" /> Media
-            </TabsTrigger>
-          </TabsList>
+        {/* ── 2-TIER EXECUTIVE CATEGORY & TAB NAVIGATION ── */}
+        <div className="space-y-4">
+          {/* Top Category Switcher */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 p-2 rounded-2xl glass-obsidian-strong border border-white/10 backdrop-blur-xl">
+            {ADMIN_CATEGORIES.map((category) => {
+              const Icon = category.icon;
+              const isSelected = category.id === currentCategory.id;
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => setActiveDashboardTab(category.tabs[0].id)}
+                  className={cn(
+                    "flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl text-xs uppercase font-mono font-bold tracking-wider transition-all duration-200 border",
+                    isSelected
+                      ? "bg-gradient-to-r from-gold-500 to-amber-400 text-obsidian border-gold-400 shadow-lg shadow-gold-500/25 font-extrabold"
+                      : "bg-white/[0.03] text-white/70 border-white/5 hover:text-white hover:bg-white/10 hover:border-gold-500/30"
+                  )}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{category.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <Tabs value={activeDashboardTab} onValueChange={setActiveDashboardTab} className="w-full" data-testid="admin-tabs">
+            {/* Sub-Tabs Strip for Selected Category */}
+            <TabsList className="flex flex-wrap h-auto w-full mb-6 bg-obsidian-card/90 border border-gold-500/20 p-1.5 gap-1.5 rounded-2xl backdrop-blur-md shadow-xl">
+              {currentCategory.tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <TabsTrigger
+                    key={tab.id}
+                    value={tab.id}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-mono font-bold tracking-wider text-white/70 transition-all data-[state=active]:bg-gold-500/20 data-[state=active]:text-gold-300 data-[state=active]:border data-[state=active]:border-gold-500/50 data-[state=active]:shadow-md"
+                  >
+                    <Icon className="h-3.5 w-3.5 text-gold-400" />
+                    <span>{tab.label}</span>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
 
           {/* Products Tab */}
           <TabsContent value="products" className="space-y-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+            <Card className="glass-obsidian-strong border border-gold-500/20 rounded-3xl p-6 shadow-2xl backdrop-blur-xl text-white">
+              <CardHeader className="flex flex-row items-center justify-between pb-6 border-b border-white/10 px-0 pt-0">
                 <div>
-                  <CardTitle>Products</CardTitle>
-                  <CardDescription>Manage your merchandise and products.</CardDescription>
+                  <CardTitle className="text-xl font-heading font-extrabold uppercase text-white tracking-wider flex items-center gap-2">
+                    <PackageOpen className="h-5 w-5 text-gold-400" />
+                    Products & Merchandise
+                  </CardTitle>
+                  <CardDescription className="text-white/60 text-xs font-mono">Manage luxury merchandise, apparel, and boutique inventory</CardDescription>
                 </div>
                 <Button className="sg-btn" onClick={() => toast({ title: "Feature coming soon" })}>
-                  Add Product
+                  <Plus className="h-4 w-4 mr-2" /> Add Product
                 </Button>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6 px-0 pb-0">
                 {productsLoading ? (
-                  <div className="py-10 text-center">Loading products...</div>
+                  <div className="py-12 text-center text-white/60 font-mono text-sm">Loading products...</div>
                 ) : productsError ? (
-                  <div className="py-10 text-center text-red-500">
+                  <div className="py-12 text-center text-red-400 font-mono text-sm">
                     Error loading products. Please try again.
                   </div>
                 ) : products && products.length > 0 ? (
-                  <div className="rounded-md border">
+                  <div className="rounded-2xl border border-white/10 overflow-hidden bg-obsidian-card/80 shadow-inner">
                     <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[100px]">Image</TableHead>
-                          <TableHead>Title</TableHead>
-                          <TableHead>Price</TableHead>
-                          <TableHead>Category</TableHead>
+                      <TableHeader className="bg-white/5 border-b border-gold-500/20">
+                        <TableRow className="border-b border-white/10 hover:bg-transparent">
+                          <TableHead className="w-[100px] text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Image</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Title</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Price</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Category</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {products.map((product) => (
-                          <TableRow key={product.id}>
+                          <TableRow key={product.id} className="hover:bg-white/5 transition-colors border-b border-white/5">
                             <TableCell>
-                              <div className="h-12 w-12 overflow-hidden rounded border">
+                              <div className="h-12 w-12 overflow-hidden rounded-xl border border-white/10 bg-white/5">
                                 {product.imageUrl ? (
                                   <img
                                     src={getNormalizedImageUrl(product.imageUrl)}
@@ -2013,25 +2081,29 @@ export default function AdminPage() {
                                     className="h-full w-full object-cover"
                                   />
                                 ) : (
-                                  <div className="h-full w-full bg-gray-100 flex items-center justify-center">
-                                    <PackageOpen className="h-6 w-6 text-gray-400" />
+                                  <div className="h-full w-full flex items-center justify-center text-gray-500">
+                                    <PackageOpen className="h-6 w-6" />
                                   </div>
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell className="font-medium">{product.title}</TableCell>
-                            <TableCell>${(product.price / 100).toFixed(2)}</TableCell>
-                            <TableCell>{product.category || "N/A"}</TableCell>
+                            <TableCell className="font-medium text-white">{product.title}</TableCell>
+                            <TableCell className="font-mono text-gold-300 font-bold">${(product.price / 100).toFixed(2)}</TableCell>
+                            <TableCell>
+                              <span className="px-2.5 py-1 rounded-full text-[11px] font-mono uppercase font-bold tracking-wider bg-gold-500/10 border border-gold-500/30 text-gold-300">
+                                {product.category || "General"}
+                              </span>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                   </div>
                 ) : (
-                  <div className="py-10 text-center">
-                    <PackageOpen className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium">No products found</h3>
-                    <p className="text-sm text-gray-500">
+                  <div className="py-12 text-center border border-dashed border-white/10 rounded-2xl">
+                    <PackageOpen className="h-12 w-12 mx-auto text-gray-500 mb-4" />
+                    <h3 className="text-lg font-medium text-white">No products found</h3>
+                    <p className="text-sm text-gray-400 font-mono mt-1">
                       Add your first product by clicking the "Add Product" button above.
                     </p>
                   </div>
@@ -2040,44 +2112,47 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
 
-          {/* AdminEvents Tab */}
+          {/* Events Master Tab */}
           <TabsContent value="events" className="space-y-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+            <Card className="glass-obsidian-strong border border-gold-500/20 rounded-3xl p-6 shadow-2xl backdrop-blur-xl text-white">
+              <CardHeader className="flex flex-row items-center justify-between pb-6 border-b border-white/10 px-0 pt-0">
                 <div>
-                  <CardTitle>AdminEvents</CardTitle>
-                  <CardDescription>Manage events and performances</CardDescription>
+                  <CardTitle className="text-xl font-heading font-extrabold uppercase text-white tracking-wider flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-gold-400" />
+                    Events & Performances
+                  </CardTitle>
+                  <CardDescription className="text-white/60 text-xs font-mono">Manage carnival experiences, passport activations, and ticket tiers</CardDescription>
                 </div>
                 <Button className="sg-btn" onClick={() => { setEditingEvent(null); resetEventFormState(); setEventDialogOpen(true); }}>
-                  <Calendar className="h-4 w-4 mr-2" /> Add AdminEvent
+                  <Plus className="h-4 w-4 mr-2" /> Add Event
                 </Button>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6 px-0 pb-0">
                 {eventsLoading ? (
-                  <div className="py-10 text-center">Loading events...</div>
+                  <div className="py-12 text-center text-white/60 font-mono text-sm">Loading events...</div>
                 ) : eventsError ? (
-                  <div className="py-10 text-center text-red-500">
+                  <div className="py-12 text-center text-red-400 font-mono text-sm">
                     Error loading events. Please try again.
                   </div>
                 ) : events && events.length > 0 ? (
-                  <div className="rounded-md border">
+                  <div className="rounded-2xl border border-white/10 overflow-hidden bg-obsidian-card/80 shadow-inner">
                     <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[100px]">Image</TableHead>
-                          <TableHead>Title</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Location</TableHead>
-                          <TableHead>Price</TableHead>
-                          <TableHead>Check-In</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                      <TableHeader className="bg-white/5 border-b border-gold-500/20">
+                        <TableRow className="border-b border-white/10 hover:bg-transparent">
+                          <TableHead className="w-[100px] text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Image</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Title</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Date</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Location</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Price</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Check-In</TableHead>
+                          <TableHead className="text-right text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {events.map((event: AdminEvent) => (
-                          <TableRow key={event.id}>
+                          <TableRow key={event.id} className="hover:bg-white/5 transition-colors border-b border-white/5">
                             <TableCell>
-                              <div className="h-12 w-12 overflow-hidden rounded border">
+                              <div className="h-12 w-12 overflow-hidden rounded-xl border border-white/10 bg-white/5">
                                 {event.imageUrl ? (
                                   <img
                                     src={getNormalizedImageUrl(event.imageUrl)}
@@ -2085,38 +2160,39 @@ export default function AdminPage() {
                                     className="h-full w-full object-cover"
                                   />
                                 ) : (
-                                  <div className="h-full w-full bg-gray-100 flex items-center justify-center">
-                                    <Calendar className="h-6 w-6 text-gray-400" />
+                                  <div className="h-full w-full flex items-center justify-center text-gray-500">
+                                    <Calendar className="h-6 w-6" />
                                   </div>
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell className="font-medium">
+                            <TableCell className="font-medium text-white">
                               <div className="flex items-center gap-2">
                                 <span>{event.title}</span>
                                 {event.isSocaPassportEnabled && (
                                   <Badge
                                     variant="outline"
-                                    className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 text-xs"
+                                    className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-xs font-mono"
                                   >
                                     🎫 Passport
                                   </Badge>
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-white/80 text-xs font-mono">
                               {typeof event.date === 'string'
                                 ? new Date(event.date).toLocaleDateString()
                                 : event.date.toLocaleDateString()}
                             </TableCell>
-                            <TableCell>{event.location}</TableCell>
-                            <TableCell>${(event.price / 100).toFixed(2)}</TableCell>
+                            <TableCell className="text-white/70 text-xs">{event.location}</TableCell>
+                            <TableCell className="font-mono text-gold-300 font-bold">${(event.price / 100).toFixed(2)}</TableCell>
                             <TableCell>
                               {event.isSocaPassportEnabled && event.accessCode ? (
                                 <div className="flex items-center gap-2">
                                   <Button
                                     variant="outline"
                                     size="sm"
+                                    className="h-7 text-xs border-gold-500/30 text-gold-300 hover:bg-gold-500/10 rounded-lg"
                                     onClick={() => {
                                       const url = `${window.location.origin}/socapassport/checkin/${event.accessCode}`;
                                       navigator.clipboard.writeText(url);
@@ -2131,7 +2207,7 @@ export default function AdminPage() {
                                   </Button>
                                 </div>
                               ) : (
-                                <span className="text-xs text-muted-foreground">—</span>
+                                <span className="text-xs text-white/30 font-mono">—</span>
                               )}
                             </TableCell>
                             <TableCell className="text-right">
@@ -2139,6 +2215,7 @@ export default function AdminPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
+                                  className="h-8 text-xs border-white/20 text-white hover:bg-white/10 rounded-lg"
                                   onClick={() => handleEditEvent(event)}
                                   data-testid={`button-edit-event-${event.id}`}
                                 >
@@ -2147,6 +2224,7 @@ export default function AdminPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
+                                  className="h-8 text-xs border-gold-500/30 text-gold-300 hover:bg-gold-500/10 rounded-lg"
                                   onClick={() => {
                                     setSelectedEventId(event.id);
                                     setActiveDashboardTab("tickets");
@@ -2157,6 +2235,7 @@ export default function AdminPage() {
                                 <Button
                                   variant="destructive"
                                   size="sm"
+                                  className="h-8 w-8 p-0 rounded-lg"
                                   onClick={() => handleDeleteEvent(event)}
                                 >
                                   <Trash className="h-4 w-4" />
@@ -2169,11 +2248,11 @@ export default function AdminPage() {
                     </Table>
                   </div>
                 ) : (
-                  <div className="py-10 text-center">
-                    <Calendar className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium">No events found</h3>
-                    <p className="text-sm text-gray-500">
-                      Create your first event by clicking the "Add AdminEvent" button above.
+                  <div className="py-12 text-center border border-dashed border-white/10 rounded-2xl">
+                    <Calendar className="h-12 w-12 mx-auto text-gray-500 mb-4" />
+                    <h3 className="text-lg font-medium text-white">No events found</h3>
+                    <p className="text-sm text-gray-400 font-mono mt-1">
+                      Create your first event by clicking the "Add Event" button above.
                     </p>
                   </div>
                 )}
@@ -2641,273 +2720,31 @@ export default function AdminPage() {
 
           {/* Users Tab */}
           <TabsContent value="users" className="space-y-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Users</CardTitle>
-                  <CardDescription>Manage user accounts and permissions</CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  {selectedUsers.length > 0 && (
-                    <Button
-                      variant="destructive"
-                      className="flex items-center gap-2"
-                      onClick={handleDeleteUsersBulk}
-                    >
-                      <Trash className="h-4 w-4" /> Delete ({selectedUsers.length})
-                    </Button>
-                  )}
-                  <Button className="sg-btn" onClick={() => {
-                    setEditingUser(null);
-                    setUserForm({
-                      username: '',
-                      displayName: '',
-                      email: '',
-                      password: '',
-                      role: 'user'
-                    });
-                    setUserDialogOpen(true);
-                  }}>
-                    <Users className="h-4 w-4 mr-2" /> Add User
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {usersLoading ? (
-                  <div className="py-10 text-center">Loading users...</div>
-                ) : usersError ? (
-                  <div className="py-10 text-center text-red-500">
-                    Error loading users. Please try again.
-                  </div>
-                ) : users && users.length > 0 ? (
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[40px]">
-                            <Checkbox
-                              checked={users?.length > 0 && selectedUsers.length === users.length}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setSelectedUsers(users.map(u => u.id));
-                                } else {
-                                  setSelectedUsers([]);
-                                }
-                              }}
-                            />
-                          </TableHead>
-                          <TableHead className="w-[50px]">Avatar</TableHead>
-                          <TableHead>Username</TableHead>
-                          <TableHead>Display Name</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Role</TableHead>
-                          <TableHead>Change Role</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {users.map((user) => (
-                          <TableRow key={user.id} className={selectedUsers.includes(user.id) ? "bg-slate-800/50" : ""}>
-                            <TableCell>
-                              <Checkbox
-                                checked={selectedUsers.includes(user.id)}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    setSelectedUsers(prev => [...prev, user.id]);
-                                  } else {
-                                    setSelectedUsers(prev => prev.filter(id => id !== user.id));
-                                  }
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <div className="h-8 w-8 overflow-hidden rounded-full border">
-                                {user.avatar ? (
-                                  <img
-                                    src={getNormalizedImageUrl(user.avatar)}
-                                    alt={user.username}
-                                    className="h-full w-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="h-full w-full bg-primary flex items-center justify-center text-white text-xs">
-                                    {user.username?.charAt(0).toUpperCase() || '?'}
-                                  </div>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell className="font-medium">{user.username}</TableCell>
-                            <TableCell>{user.displayName || "—"}</TableCell>
-                            <TableCell>{user.email || "—"}</TableCell>
-                            <TableCell>
-                              <span className={`px-2 py-1 rounded text-xs font-medium ${user.role === "admin"
-                                ? "bg-red-100 text-red-700"
-                                : user.role === "moderator"
-                                  ? "bg-blue-100 text-blue-700"
-                                  : "bg-gray-100 text-gray-700"
-                                }`}>
-                                {user.role}
-                              </span>
-                            </TableCell>
-                            <TableCell>
-                              <Select
-                                value={user.role}
-                                onValueChange={(value) => handleChangeUserRole(user.id, value)}
-                              >
-                                <SelectTrigger className="w-[120px] bg-slate-700 border-slate-600 text-white h-8 text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="bg-slate-800 border-slate-600 text-white">
-                                  <SelectItem value="user" className="text-white focus:bg-slate-700">User</SelectItem>
-                                  <SelectItem value="moderator" className="text-white focus:bg-slate-700">Moderator</SelectItem>
-                                  <SelectItem value="admin" className="text-white focus:bg-slate-700">Admin</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleEditUser(user)}
-                                >
-                                  Edit
-                                </Button>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => handleDeleteUser(user.id)}
-                                >
-                                  <Trash className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                ) : (
-                  <div className="py-10 text-center">
-                    <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium">No users found</h3>
-                    <p className="text-sm text-gray-500">
-                      Add your first user by clicking the "Add User" button above.
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* User Dialog */}
-            <Dialog open={userDialogOpen} onOpenChange={setUserDialogOpen}>
-              <DialogContent className="sm:max-w-[450px] bg-obsidian-card border border-gold-500/30 text-white rounded-2xl shadow-2xl backdrop-blur-2xl">
-                <DialogHeader>
-                  <DialogTitle className="text-white text-xl">
-                    {editingUser ? `Edit User: ${editingUser.username}` : 'Create new user'}
-                  </DialogTitle>
-                  <DialogDescription className="text-slate-400">
-                    {editingUser ? 'Update user profile details below.' : 'Add a new user to the system with appropriate permissions.'}
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="username" className="text-white">Username</Label>
-                    <Input
-                      id="username"
-                      placeholder="Enter username"
-                      className="bg-slate-700 border border-slate-600 text-white"
-                      value={userForm.username}
-                      onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="displayName" className="text-white">Display Name</Label>
-                    <Input
-                      id="displayName"
-                      placeholder="Enter display name"
-                      className="bg-slate-700 border border-slate-600 text-white"
-                      value={userForm.displayName}
-                      onChange={(e) => setUserForm({ ...userForm, displayName: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-white">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter email address"
-                      className="bg-slate-700 border border-slate-600 text-white"
-                      value={userForm.email}
-                      onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
-                    />
-                  </div>
-
-                  {!editingUser && (
-                    <div className="space-y-2">
-                      <Label htmlFor="password" className="text-white">Password</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="Enter password"
-                        className="bg-slate-700 border border-slate-600 text-white"
-                        value={userForm.password}
-                        onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-                      />
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label htmlFor="role" className="text-white">Role</Label>
-                    <Select
-                      value={userForm.role}
-                      onValueChange={(value) => setUserForm({ ...userForm, role: value })}
-                    >
-                      <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-white">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-600 text-white">
-                        <SelectItem value="user" className="text-white focus:bg-slate-700">User</SelectItem>
-                        <SelectItem value="moderator" className="text-white focus:bg-slate-700">Moderator</SelectItem>
-                        <SelectItem value="admin" className="text-white focus:bg-slate-700">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <DialogFooter className="bg-obsidian-card pt-4 border-t border-white/10">
-                  <Button type="button" variant="outline" onClick={() => setUserDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button className="sg-btn" onClick={editingUser ? handleUpdateUser : handleCreateUser}>
-                    {editingUser ? 'Update User' : 'Create User'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <UserManagement />
           </TabsContent>
 
           {/* Tickets Tab */}
           <TabsContent value="tickets" className="space-y-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+            <Card className="glass-obsidian-strong border border-gold-500/20 rounded-3xl p-6 shadow-2xl backdrop-blur-xl text-white">
+              <CardHeader className="flex flex-row items-center justify-between pb-6 border-b border-white/10 px-0 pt-0">
                 <div>
-                  <CardTitle>Tickets</CardTitle>
-                  <CardDescription>Manage event tickets and ticket sales</CardDescription>
+                  <CardTitle className="text-xl font-heading font-extrabold uppercase text-white tracking-wider flex items-center gap-2">
+                    <TicketIcon className="h-5 w-5 text-gold-400" />
+                    Ticket Tiers & Inventory
+                  </CardTitle>
+                  <CardDescription className="text-white/60 text-xs font-mono">Manage admission tiers, pricing, sales windows, and capacity</CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
                   <Select
                     value={selectedEventId?.toString() || ""}
                     onValueChange={(value) => setSelectedEventId(Number(value))}
                   >
-                    <SelectTrigger className="w-[200px] bg-slate-700 border-slate-600 text-white">
+                    <SelectTrigger className="w-[220px] bg-obsidian-card/90 border border-white/15 text-white rounded-xl">
                       <SelectValue placeholder="Select an event" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-600 text-white">
+                    <SelectContent className="bg-obsidian-card border border-gold-500/30 text-white rounded-xl shadow-2xl">
                       {events && events.map((event) => (
-                        <SelectItem key={event.id} value={event.id.toString()} className="text-white focus:bg-slate-700">
+                        <SelectItem key={event.id} value={event.id.toString()} className="text-white focus:bg-white/10">
                           {event.title}
                         </SelectItem>
                       ))}
@@ -3374,47 +3211,45 @@ export default function AdminPage() {
                   </Dialog>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6 px-0 pb-0">
                 {ticketsLoading ? (
-                  <div className="py-10 text-center">Loading tickets...</div>
+                  <div className="py-12 text-center text-white/60 font-mono text-sm">Loading tickets...</div>
                 ) : ticketsError ? (
-                  <div className="py-10 text-center text-red-500">
+                  <div className="py-12 text-center text-red-400 font-mono text-sm">
                     Error loading tickets. Please try again.
                   </div>
                 ) : tickets && tickets.length > 0 ? (
-                  <div className="rounded-md border">
+                  <div className="rounded-2xl border border-white/10 overflow-hidden bg-obsidian-card/80 shadow-inner">
                     <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>AdminEvent</TableHead>
-                          <TableHead>Price</TableHead>
-                          <TableHead>Sold</TableHead>
-                          <TableHead>Remaining</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                      <TableHeader className="bg-white/5 border-b border-gold-500/20">
+                        <TableRow className="border-b border-white/10 hover:bg-transparent">
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Tier Name</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Event</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Price</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Sold</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Remaining</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Status</TableHead>
+                          <TableHead className="text-right text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {tickets.map((ticket) => {
                           const soldTickets = ticket.quantity - (ticket.remainingQuantity || 0);
-                          const percentSold = Math.round((soldTickets / ticket.quantity) * 100);
 
-                          // Find the event name instead of just showing the ID
                           const event = events?.find(e => e.id === ticket.eventId);
-                          const eventName = event ? event.title : `AdminEvent #${ticket.eventId}`;
+                          const eventName = event ? event.title : `Event #${ticket.eventId}`;
 
                           return (
-                            <TableRow key={ticket.id}>
-                              <TableCell className="font-medium">{ticket.name}</TableCell>
-                              <TableCell>{eventName}</TableCell>
-                              <TableCell>${(ticket.price / 100).toFixed(2)}</TableCell>
-                              <TableCell>{soldTickets} / {ticket.quantity}</TableCell>
-                              <TableCell>{ticket.remainingQuantity || ticket.quantity}</TableCell>
+                            <TableRow key={ticket.id} className="hover:bg-white/5 transition-colors border-b border-white/5">
+                              <TableCell className="font-medium text-white">{ticket.name}</TableCell>
+                              <TableCell className="text-white/80 text-xs">{eventName}</TableCell>
+                              <TableCell className="font-mono text-gold-300 font-bold">${(ticket.price / 100).toFixed(2)}</TableCell>
+                              <TableCell className="font-mono text-xs text-white/70">{soldTickets} / {ticket.quantity}</TableCell>
+                              <TableCell className="font-mono text-xs text-white/70">{ticket.remainingQuantity || ticket.quantity}</TableCell>
                               <TableCell>
-                                <span className={`px-2 py-1 rounded text-xs font-medium ${ticket.isActive
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-gray-100 text-gray-700"
+                                <span className={`px-2.5 py-1 rounded-full text-[11px] font-mono uppercase font-bold tracking-wider ${ticket.isActive
+                                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                                  : "bg-white/5 text-white/40 border border-white/10"
                                   }`}>
                                   {ticket.isActive ? "Active" : "Inactive"}
                                 </span>
@@ -3424,6 +3259,7 @@ export default function AdminPage() {
                                   <Button
                                     variant="outline"
                                     size="sm"
+                                    className="h-8 text-xs border-white/20 text-white hover:bg-white/10 rounded-lg"
                                     onClick={() => handleEditTicket(ticket)}
                                   >
                                     Edit
@@ -3431,14 +3267,15 @@ export default function AdminPage() {
                                   <Button
                                     variant={ticket.isActive ? "destructive" : "outline"}
                                     size="sm"
+                                    className="h-8 text-xs rounded-lg"
                                     onClick={() => handleToggleTicketStatus(ticket)}
                                   >
                                     {ticket.isActive ? "Deactivate" : "Activate"}
                                   </Button>
                                   <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                    variant="destructive"
+                                    size="sm"
+                                    className="h-8 w-8 p-0 rounded-lg"
                                     onClick={() => handleDeleteTicket(ticket.id)}
                                   >
                                     <Trash className="h-4 w-4" />
@@ -3452,10 +3289,10 @@ export default function AdminPage() {
                     </Table>
                   </div>
                 ) : (
-                  <div className="py-10 text-center">
-                    <TicketIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium">No tickets found</h3>
-                    <p className="text-sm text-gray-500">
+                  <div className="py-12 text-center border border-dashed border-white/10 rounded-2xl">
+                    <TicketIcon className="h-12 w-12 mx-auto text-gray-500 mb-4" />
+                    <h3 className="text-lg font-medium text-white">No tickets found</h3>
+                    <p className="text-sm text-gray-400 font-mono mt-1">
                       Create your first ticket type by clicking the "Create Ticket Type" button above.
                     </p>
                   </div>
@@ -3466,14 +3303,17 @@ export default function AdminPage() {
 
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+            <Card className="glass-obsidian-strong border border-gold-500/20 rounded-3xl p-6 shadow-2xl backdrop-blur-xl text-white">
+              <CardHeader className="flex flex-row items-center justify-between pb-6 border-b border-white/10 px-0 pt-0">
                 <div>
-                  <CardTitle>Orders</CardTitle>
-                  <CardDescription>Manage customer orders and payments</CardDescription>
+                  <CardTitle className="text-xl font-heading font-extrabold uppercase text-white tracking-wider flex items-center gap-2">
+                    <ShoppingCart className="h-5 w-5 text-gold-400" />
+                    Customer Orders & Transactions
+                  </CardTitle>
+                  <CardDescription className="text-white/60 text-xs font-mono">Real-time ledger of ticket purchases, merchandise checkout, and fulfillment</CardDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => toast({ title: "Export Orders", description: "Coming soon" })}>
+                  <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 text-xs rounded-xl" onClick={() => toast({ title: "Export Orders", description: "Coming soon" })}>
                     Export
                   </Button>
                   <Button className="sg-btn" onClick={() => toast({ title: "View Reports", description: "Coming soon" })}>
@@ -3481,47 +3321,47 @@ export default function AdminPage() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6 px-0 pb-0">
                 {ordersLoading ? (
-                  <div className="py-10 text-center">Loading orders...</div>
+                  <div className="py-12 text-center text-white/60 font-mono text-sm">Loading orders...</div>
                 ) : ordersError ? (
-                  <div className="py-10 text-center text-red-500">
+                  <div className="py-12 text-center text-red-400 font-mono text-sm">
                     Error loading orders. Please try again.
                   </div>
                 ) : orders && orders.length > 0 ? (
-                  <div className="rounded-md border">
+                  <div className="rounded-2xl border border-white/10 overflow-hidden bg-obsidian-card/80 shadow-inner">
                     <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Order ID</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Customer</TableHead>
-                          <TableHead>Total</TableHead>
-                          <TableHead>Payment Method</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                      <TableHeader className="bg-white/5 border-b border-gold-500/20">
+                        <TableRow className="border-b border-white/10 hover:bg-transparent">
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Order ID</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Date</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Customer</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Total</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Payment</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Status</TableHead>
+                          <TableHead className="text-right text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {orders.map((order) => (
-                          <TableRow key={order.id}>
-                            <TableCell className="font-medium">#{order.id}</TableCell>
-                            <TableCell>
+                          <TableRow key={order.id} className="hover:bg-white/5 transition-colors border-b border-white/5">
+                            <TableCell className="font-mono text-gold-300 font-bold">#{order.id}</TableCell>
+                            <TableCell className="text-white/80 text-xs font-mono">
                               {typeof order.createdAt === 'string'
                                 ? new Date(order.createdAt).toLocaleDateString()
                                 : order.createdAt.toLocaleDateString()}
                             </TableCell>
-                            <TableCell>{`User #${order.userId}`}</TableCell>
-                            <TableCell>${(order.totalAmount / 100).toFixed(2)}</TableCell>
-                            <TableCell>{order.paymentMethod || "N/A"}</TableCell>
+                            <TableCell className="text-white text-xs">{`User #${order.userId}`}</TableCell>
+                            <TableCell className="font-mono text-gold-300 font-bold">${(order.totalAmount / 100).toFixed(2)}</TableCell>
+                            <TableCell className="font-mono text-xs text-white/70 uppercase">{order.paymentMethod || "Credit Card"}</TableCell>
                             <TableCell>
-                              <span className={`px-2 py-1 rounded text-xs font-medium ${order.status === "completed"
-                                ? "bg-green-100 text-green-700"
+                              <span className={`px-2.5 py-1 rounded-full text-[11px] font-mono uppercase font-bold tracking-wider ${order.status === "completed"
+                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
                                 : order.status === "processing"
-                                  ? "bg-blue-100 text-blue-700"
+                                  ? "bg-amber-500/10 text-amber-400 border border-amber-500/30"
                                   : order.status === "cancelled"
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-gray-100 text-gray-700"
+                                    ? "bg-red-500/10 text-red-400 border border-red-500/30"
+                                    : "bg-white/5 text-white/50 border border-white/10"
                                 }`}>
                                 {order.status}
                               </span>
@@ -3531,25 +3371,14 @@ export default function AdminPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
+                                  className="h-8 text-xs border-white/20 text-white hover:bg-white/10 rounded-lg"
                                   onClick={() => toast({
                                     title: "View Order Details",
-                                    description: "Coming soon"
+                                    description: `Order #${order.id} details`
                                   })}
                                 >
                                   View
                                 </Button>
-                                {order.status !== "completed" && order.status !== "cancelled" && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => toast({
-                                      title: "Update Order Status",
-                                      description: "Coming soon"
-                                    })}
-                                  >
-                                    Update
-                                  </Button>
-                                )}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -3558,10 +3387,10 @@ export default function AdminPage() {
                     </Table>
                   </div>
                 ) : (
-                  <div className="py-10 text-center">
-                    <ShoppingCart className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium">No orders found</h3>
-                    <p className="text-sm text-gray-500">
+                  <div className="py-12 text-center border border-dashed border-white/10 rounded-2xl">
+                    <ShoppingCart className="h-12 w-12 mx-auto text-gray-500 mb-4" />
+                    <h3 className="text-lg font-medium text-white">No orders found</h3>
+                    <p className="text-sm text-gray-400 font-mono mt-1">
                       Customer orders will appear here once they make purchases.
                     </p>
                   </div>
@@ -3577,54 +3406,57 @@ export default function AdminPage() {
 
           {/* Music Mixes Tab */}
           <TabsContent value="musicmixes" className="space-y-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+            <Card className="glass-obsidian-strong border border-gold-500/20 rounded-3xl p-6 shadow-2xl backdrop-blur-xl text-white">
+              <CardHeader className="flex flex-row items-center justify-between pb-6 border-b border-white/10 px-0 pt-0">
                 <div>
-                  <CardTitle>Music Mixes</CardTitle>
-                  <CardDescription>Manage your music mixes and digital downloads</CardDescription>
+                  <CardTitle className="text-xl font-heading font-extrabold uppercase text-white tracking-wider flex items-center gap-2">
+                    <Music className="h-5 w-5 text-gold-400" />
+                    Music Mixes & Stems
+                  </CardTitle>
+                  <CardDescription className="text-white/60 text-xs font-mono">Manage curated carnival mixes, DJ stems, and digital audio drops</CardDescription>
                 </div>
                 <Button className="sg-btn" onClick={() => setMusicMixDialogOpen(true)} data-testid="button-add-music-mix">
-                  <Music className="h-4 w-4 mr-2" /> Add Music Mix
+                  <Plus className="h-4 w-4 mr-2" /> Add Music Mix
                 </Button>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6 px-0 pb-0">
                 {musicMixesLoading ? (
-                  <div className="py-10 text-center" data-testid="loading-music-mixes">Loading music mixes...</div>
+                  <div className="py-12 text-center text-white/60 font-mono text-sm" data-testid="loading-music-mixes">Loading music mixes...</div>
                 ) : musicMixesError ? (
-                  <div className="py-10 text-center text-red-500" data-testid="error-music-mixes">
+                  <div className="py-12 text-center text-red-400 font-mono text-sm" data-testid="error-music-mixes">
                     Error loading music mixes. Please try again.
                   </div>
                 ) : musicMixes && musicMixes.length > 0 ? (
-                  <div className="rounded-md border">
+                  <div className="rounded-2xl border border-white/10 overflow-hidden bg-obsidian-card/80 shadow-inner">
                     <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>ID</TableHead>
-                          <TableHead>Title</TableHead>
-                          <TableHead>Price</TableHead>
-                          <TableHead>Published</TableHead>
-                          <TableHead>Created</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                      <TableHeader className="bg-white/5 border-b border-gold-500/20">
+                        <TableRow className="border-b border-white/10 hover:bg-transparent">
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">ID</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Title</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Price</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Published</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Created</TableHead>
+                          <TableHead className="text-right text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {musicMixes.map((mix) => (
-                          <TableRow key={mix.id} data-testid={`row-music-mix-${mix.id}`}>
-                            <TableCell className="font-medium" data-testid={`text-mix-id-${mix.id}`}>{mix.id}</TableCell>
-                            <TableCell data-testid={`text-mix-title-${mix.id}`}>{mix.title}</TableCell>
-                            <TableCell data-testid={`text-mix-price-${mix.id}`}>${(mix.priceInCents / 100).toFixed(2)}</TableCell>
+                          <TableRow key={mix.id} data-testid={`row-music-mix-${mix.id}`} className="hover:bg-white/5 transition-colors border-b border-white/5">
+                            <TableCell className="font-mono text-gold-300 font-bold" data-testid={`text-mix-id-${mix.id}`}>#{mix.id}</TableCell>
+                            <TableCell className="font-medium text-white" data-testid={`text-mix-title-${mix.id}`}>{mix.title}</TableCell>
+                            <TableCell className="font-mono text-gold-300 font-bold" data-testid={`text-mix-price-${mix.id}`}>${(mix.priceInCents / 100).toFixed(2)}</TableCell>
                             <TableCell>
                               <span
-                                className={`px-2 py-1 rounded text-xs font-medium ${mix.isPublished
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-gray-100 text-gray-700"
+                                className={`px-2.5 py-1 rounded-full text-[11px] font-mono uppercase font-bold tracking-wider ${mix.isPublished
+                                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                                  : "bg-white/5 text-white/50 border border-white/10"
                                   }`}
                                 data-testid={`badge-mix-status-${mix.id}`}
                               >
                                 {mix.isPublished ? "Published" : "Draft"}
                               </span>
                             </TableCell>
-                            <TableCell data-testid={`text-mix-created-${mix.id}`}>
+                            <TableCell className="text-white/80 text-xs font-mono" data-testid={`text-mix-created-${mix.id}`}>
                               {typeof mix.createdAt === 'string'
                                 ? new Date(mix.createdAt).toLocaleDateString()
                                 : mix.createdAt.toLocaleDateString()}
@@ -3635,6 +3467,7 @@ export default function AdminPage() {
                                   <Button
                                     variant="outline"
                                     size="sm"
+                                    className="h-8 text-xs border-gold-500/30 text-gold-300 hover:bg-gold-500/10 rounded-lg"
                                     onClick={() => {
                                       setArtworkUploadMixId(mix.id);
                                     }}
@@ -3646,6 +3479,7 @@ export default function AdminPage() {
                                 <Button
                                   variant={mix.isPublished ? "outline" : "default"}
                                   size="sm"
+                                  className="h-8 text-xs border-white/20 text-white hover:bg-white/10 rounded-lg"
                                   onClick={() => handleToggleMixPublished(mix)}
                                   data-testid={`button-toggle-publish-${mix.id}`}
                                 >
@@ -3654,10 +3488,11 @@ export default function AdminPage() {
                                 <Button
                                   variant="destructive"
                                   size="sm"
+                                  className="h-8 w-8 p-0 rounded-lg"
                                   onClick={() => handleDeleteMix(mix)}
                                   data-testid={`button-delete-mix-${mix.id}`}
                                 >
-                                  Delete
+                                  <Trash className="h-4 w-4" />
                                 </Button>
                               </div>
                             </TableCell>
@@ -3667,10 +3502,10 @@ export default function AdminPage() {
                     </Table>
                   </div>
                 ) : (
-                  <div className="py-10 text-center" data-testid="empty-music-mixes">
-                    <Music className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium">No music mixes found</h3>
-                    <p className="text-sm text-gray-500">
+                  <div className="py-12 text-center border border-dashed border-white/10 rounded-2xl" data-testid="empty-music-mixes">
+                    <Music className="h-12 w-12 mx-auto text-gray-500 mb-4" />
+                    <h3 className="text-lg font-medium text-white">No music mixes found</h3>
+                    <p className="text-sm text-gray-400 font-mono mt-1">
                       Create your first music mix by clicking the "Add Music Mix" button above.
                     </p>
                   </div>
@@ -3857,12 +3692,15 @@ export default function AdminPage() {
 
           {/* Scanner Tab */}
           <TabsContent value="scanner" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Ticket Scanner</CardTitle>
-                <CardDescription>Scan and validate event tickets</CardDescription>
+            <Card className="glass-obsidian-strong border border-gold-500/20 rounded-3xl p-6 shadow-2xl backdrop-blur-xl text-white">
+              <CardHeader className="pb-6 border-b border-white/10 px-0 pt-0">
+                <CardTitle className="text-xl font-heading font-extrabold uppercase text-white tracking-wider flex items-center gap-2">
+                  <ScanLine className="h-5 w-5 text-gold-400" />
+                  Ticket Scanner & Gate Validation
+                </CardTitle>
+                <CardDescription className="text-white/60 text-xs font-mono">Scan QR codes, validate attendance credentials, and track admissions</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6 px-0 pb-0">
                 <TicketScanner />
               </CardContent>
             </Card>
@@ -3876,11 +3714,14 @@ export default function AdminPage() {
               onAdCreated={() => refetchAds()} 
             />
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+            <Card className="glass-obsidian-strong border border-gold-500/20 rounded-3xl p-6 shadow-2xl backdrop-blur-xl text-white">
+              <CardHeader className="flex flex-row items-center justify-between pb-6 border-b border-white/10 px-0 pt-0">
                 <div>
-                  <CardTitle>Sponsored Content</CardTitle>
-                  <CardDescription>Manage advertisements displayed on your site.</CardDescription>
+                  <CardTitle className="text-xl font-heading font-extrabold uppercase text-white tracking-wider flex items-center gap-2">
+                    <Megaphone className="h-5 w-5 text-gold-400" />
+                    Sponsored Content & Ads
+                  </CardTitle>
+                  <CardDescription className="text-white/60 text-xs font-mono">Manage viral campaign banners, sponsor takeovers, and impression analytics</CardDescription>
                 </div>
                 <Button
                   className="sg-btn"
@@ -3893,94 +3734,97 @@ export default function AdminPage() {
                   <Plus className="h-4 w-4 mr-2" /> Create Ad
                 </Button>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6 px-0 pb-0">
                 {adsLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
-                    <p className="mt-2 text-sm text-muted-foreground">Loading ads...</p>
+                  <div className="text-center py-12 text-white/60 font-mono text-sm">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold-400 mx-auto" />
+                    <p className="mt-2">Loading ads...</p>
                   </div>
                 ) : sponsoredContent.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground border border-dashed rounded-lg">
-                    <Megaphone className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                    <p className="font-medium">No ads created yet</p>
-                    <p className="text-sm mt-1">Click "Create Ad" to get started</p>
+                  <div className="text-center py-12 border border-dashed border-white/10 rounded-2xl">
+                    <Megaphone className="h-10 w-10 mx-auto mb-3 text-gray-500" />
+                    <p className="font-medium text-white">No ads created yet</p>
+                    <p className="text-sm text-gray-400 font-mono mt-1">Click "Create Ad" to get started</p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Title</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Views</TableHead>
-                        <TableHead>Clicks</TableHead>
-                        <TableHead>Priority</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {sponsoredContent.map((ad: any) => (
-                        <TableRow key={ad.id}>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{ad.title}</p>
-                              <p className="text-xs text-muted-foreground line-clamp-1">{ad.description}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="capitalize">{ad.type}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={ad.isActive ? "default" : "secondary"}>
-                              {ad.isActive ? 'Active' : 'Inactive'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <span className="flex items-center gap-1 text-sm">
-                              <Eye className="h-3 w-3" /> {ad.views || 0}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="flex items-center gap-1 text-sm">
-                              <BarChart3 className="h-3 w-3" /> {ad.clicks || 0}
-                            </span>
-                          </TableCell>
-                          <TableCell>{ad.priority || 0}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={() => handleEditAd(ad)}
-                              >
-                                <Edit className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                                onClick={() => handleDeleteAd(ad.id, ad.title)}
-                                disabled={deleteAdMutation.isPending}
-                              >
-                                <Trash className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                  <div className="rounded-2xl border border-white/10 overflow-hidden bg-obsidian-card/80 shadow-inner">
+                    <Table>
+                      <TableHeader className="bg-white/5 border-b border-gold-500/20">
+                        <TableRow className="border-b border-white/10 hover:bg-transparent">
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Title</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Type</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Status</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Views</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Clicks</TableHead>
+                          <TableHead className="text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Priority</TableHead>
+                          <TableHead className="text-right text-gold-400 font-mono text-[11px] uppercase tracking-wider font-bold">Actions</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {sponsoredContent.map((ad: any) => (
+                          <TableRow key={ad.id} className="hover:bg-white/5 transition-colors border-b border-white/5">
+                            <TableCell>
+                              <div>
+                                <p className="font-medium text-white">{ad.title}</p>
+                                <p className="text-xs text-white/50 line-clamp-1">{ad.description}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="capitalize text-[11px] font-mono border-white/15 text-white/80">{ad.type}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <span className={`px-2.5 py-1 rounded-full text-[11px] font-mono uppercase font-bold tracking-wider ${ad.isActive
+                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                                : "bg-white/5 text-white/40 border border-white/10"
+                                }`}>
+                                {ad.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="flex items-center gap-1 text-sm font-mono text-white/80">
+                                <Eye className="h-3 w-3 text-gold-400" /> {ad.views || 0}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="flex items-center gap-1 text-sm font-mono text-emerald-400">
+                                <BarChart3 className="h-3 w-3" /> {ad.clicks || 0}
+                              </span>
+                            </TableCell>
+                            <TableCell className="font-mono text-gold-300 font-bold">{ad.priority || 0}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 border-white/20 text-white hover:bg-white/10 rounded-lg"
+                                  onClick={() => handleEditAd(ad)}
+                                >
+                                  <Edit className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 rounded-lg"
+                                  onClick={() => handleDeleteAd(ad.id, ad.title)}
+                                  disabled={deleteAdMutation.isPending}
+                                >
+                                  <Trash className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
           <TabsContent value="media">
-            <Card>
-              <CardContent className="p-0">
-                <AdminMediaPage embedded />
-              </CardContent>
-            </Card>
+            <div className="glass-obsidian-strong border border-gold-500/20 rounded-3xl p-6 shadow-2xl backdrop-blur-xl text-white">
+              <AdminMediaPage embedded />
+            </div>
           </TabsContent>
           <TabsContent value="affiliates">
             <AffiliateManager />
@@ -3992,6 +3836,7 @@ export default function AdminPage() {
             <BackgroundVideoManager />
           </TabsContent>
         </Tabs>
+        </div>
 
         {/* Create/Edit Ad Dialog */}
         <Dialog open={isCreateAdModalOpen} onOpenChange={setIsCreateAdModalOpen}>

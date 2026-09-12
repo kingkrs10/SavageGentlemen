@@ -423,9 +423,9 @@ const UserManagement = () => {
       </div>
       
       {/* Additional Info */}
-      <div className="text-xs text-muted-foreground bg-muted/50 p-4 rounded-lg">
-        <p className="font-medium mb-2">User Management Guidelines:</p>
-        <ul className="space-y-1 ml-4">
+      <div className="text-xs text-white/60 bg-obsidian-card/80 border border-gold-500/20 p-5 rounded-2xl shadow-xl font-mono">
+        <p className="font-heading uppercase font-bold tracking-wider text-gold-400 mb-2">User Management Guidelines:</p>
+        <ul className="space-y-1 ml-4 text-white/70">
           <li>• Main admin account (ID: 1) is protected from deletion and role changes</li>
           <li>• Deleting a user removes all associated data including tickets, orders, and reviews</li>
           <li>• Role changes take effect immediately and affect user permissions</li>
