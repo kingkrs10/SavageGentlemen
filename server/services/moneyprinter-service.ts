@@ -92,7 +92,7 @@ export class MoneyPrinterService {
       video_script: request.videoScript || "",
       video_terms: request.videoTerms || ["caribbean", "nightlife", "party", "carnival", "luxury"],
       video_aspect: request.videoAspect || "9:16",
-      voice_name: request.voiceName || "en-US-BrianMultilingualNeural",
+      voice_name: request.voiceName || process.env.VOICE_NAME || "en-US-BrianMultilingualNeural",
       voice_volume: 1.0,
       bgm_type: request.bgmType || "random",
       bgm_volume: 0.15,
@@ -199,13 +199,14 @@ export class MoneyPrinterService {
     let spokenScript = mediaInfo.spokenScript;
     let videoTerms = mediaInfo.videoTerms;
     let videoSubject = `${mediaInfo.subjectName}: ${mediaInfo.headline}`;
-    let customCaption = `🔥 WATCH NOW: ${mediaInfo.headline.toUpperCase()}\n\n${mediaInfo.summaryQuote}\n\n👉 Read full story: Link in bio or visit https://savagegentlemen.onrender.com/magazine/${article.slug}\n\n#SavageGentlemen #CaribbeanCulture #Carnival2026 #ReelsViral`;
+    const siteUrl = process.env.SITE_URL || "https://www.savgent.com";
+    let customCaption = `🔥 WATCH NOW: ${mediaInfo.headline.toUpperCase()}\n\n${mediaInfo.summaryQuote}\n\n👉 Read full story: Link in bio or visit ${siteUrl}/magazine/${article.slug}\n\n#SavageGentlemen #SavGent #SocaMusic #Carnival2026 #ReelsViral`;
 
-    // Enhance with Google AI Studio (Gemini 3.6 Flash / Nano Banana) if available
+    // Enhance with Google AI Studio (Gemini 3.8 Flash) if available
     try {
       const { geminiStudioService } = await import("./gemini-studio-service");
       if (geminiStudioService.isAvailable()) {
-        console.log(`[MoneyPrinter] 🍌 Generating viral Caribbean script via Google AI Studio Gemini 3.6 Flash...`);
+        console.log(`[MoneyPrinter] 🍌 Generating viral Caribbean script via Google AI Studio Gemini 3.8 Flash...`);
         const geminiResult = await geminiStudioService.generateViralCaribbeanScript({
           topic: article.title,
           category: article.category,
@@ -234,7 +235,7 @@ export class MoneyPrinterService {
           videoScript: spokenScript,
           videoTerms,
           videoAspect: "9:16",
-          voiceName: "en-US-ChristopherNeural",
+          voiceName: process.env.VOICE_NAME || "en-US-BrianMultilingualNeural",
           subtitlesEnabled: true
         });
 
@@ -275,7 +276,7 @@ export class MoneyPrinterService {
     return {
       videoUrl: localAdResult.videoUrl,
       engine: "local-ffmpeg",
-      caption: `🔥 NEW DISPATCH: ${article.title.toUpperCase()}\n\n${article.summary}\n\n👉 Read full story at https://savagegentlemen.onrender.com/magazine/${article.slug}\n\n#SavageGentlemen #CaribbeanCulture #Carnival2026`
+      caption: `🔥 NEW DISPATCH: ${article.title.toUpperCase()}\n\n${article.summary}\n\n👉 Read full story at ${process.env.SITE_URL || "https://www.savgent.com"}/magazine/${article.slug}\n\n#SavageGentlemen #SavGent #SocaMusic #Carnival2026`
     };
   }
 }

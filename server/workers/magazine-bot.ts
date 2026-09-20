@@ -14,14 +14,44 @@ interface RssItem {
 
 const CARIBBEAN_FEEDS = [
   {
+    name: "Soca News Global",
+    url: "https://socanews.com/feed/",
+    defaultCategory: "soca",
+  },
+  {
+    name: "Soca News Music Releases",
+    url: "https://socanews.com/category/music/feed/",
+    defaultCategory: "soca",
+  },
+  {
+    name: "Newsday Trinidad Carnival",
+    url: "https://newsday.co.tt/category/features/carnival/feed/",
+    defaultCategory: "soca",
+  },
+  {
+    name: "Trinidad Express Features & Culture",
+    url: "https://trinidadexpress.com/search/?f=rss&t=article&c=features&l=25&s=start_time&sd=desc",
+    defaultCategory: "soca",
+  },
+  {
+    name: "Barbados Today Entertainment & Crop Over",
+    url: "https://barbadostoday.bb/category/lifestyle/entertainment/feed/",
+    defaultCategory: "soca",
+  },
+  {
+    name: "Searchlight SVG & Vincy Mas",
+    url: "https://www.searchlight.vc/category/entertainment/feed/",
+    defaultCategory: "soca",
+  },
+  {
     name: "Global Carnivalist",
     url: "https://globalcarnivalist.com/feed/",
-    defaultCategory: "nightlife",
+    defaultCategory: "soca",
   },
   {
     name: "TriniJungleJuice Events & Reviews",
     url: "https://www.trinijunglejuice.com/home/feed/",
-    defaultCategory: "nightlife",
+    defaultCategory: "soca",
   },
   {
     name: "LargeUp Caribbean Culture",
@@ -29,21 +59,30 @@ const CARIBBEAN_FEEDS = [
     defaultCategory: "culture",
   },
   {
-    name: "Dancehall & Reggae Daily",
-    url: "https://dancehallmag.com/feed",
-    defaultCategory: "music",
-  },
-  {
-    name: "Soca News Global",
-    url: "https://socanews.com/feed/",
-    defaultCategory: "nightlife",
-  },
-  {
     name: "Caribbean Beat Magazine",
     url: "https://www.caribbean-beat.com/feed",
-    defaultCategory: "style",
+    defaultCategory: "culture",
   },
 ];
+
+const SOCA_CARNIVAL_KEYWORDS = [
+  "soca", "calypso", "carnival", "fete", "mas", "j'ouvert", "jouvert", 
+  "road march", "crop over", "spicemas", "vincy mas", "caribana", 
+  "pan", "steelband", "steelpan", "chutney soca", "groovy soca", "power soca",
+  "machel montano", "kes", "patrice roberts", "voice", "bunji garlin", 
+  "fay-ann", "nailah blackman", "destra", "skinny fabulous", "teddyson john", 
+  "lyrikal", "kerwin du bois", "preedy", "erphaan alves", "shurwayne winchester",
+  "nadia batson", "adam o", "asa bantan", "problem child", "dennery segment",
+  "bouyon", "kadooment", "jab jab", "panorama", "band launch", "costume", "cooler fete"
+];
+
+function detectSocaOrCultureCategory(title: string, description: string, defaultCat: string): string {
+  const combined = `${title} ${description}`.toLowerCase();
+  if (SOCA_CARNIVAL_KEYWORDS.some(kw => combined.includes(kw))) {
+    return "soca";
+  }
+  return defaultCat || "soca";
+}
 
 // High-quality curated starter articles for immediate rich content
 const SEED_ARTICLES: InsertArticle[] = [
@@ -339,7 +378,7 @@ export class MagazineBot {
           }
 
           // Generate rich formatted editorial content
-          const category = feed.defaultCategory || "nightlife";
+          const category = detectSocaOrCultureCategory(cleanedTitle, item.description, feed.defaultCategory || "soca");
           const fallbackImages = [
             "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1200&h=800&fit=crop",
             "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=1200&h=800&fit=crop",

@@ -216,7 +216,8 @@ magazineRouter.post("/admin/autopilot/toggle", authenticateUser, authorizeAdmin,
 // Admin: Manually Trigger Next Scheduled Social Post Now
 magazineRouter.post("/admin/autopilot/trigger-now", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
   try {
-    const result = await socialAutoPoster.executeAutoPost();
+    const targetArticleId = req.body?.articleId ? parseInt(req.body.articleId) : undefined;
+    const result = await socialAutoPoster.executeAutoPost(undefined, targetArticleId);
     res.json(result);
   } catch (error: any) {
     console.error("Error executing manual auto-post:", error);

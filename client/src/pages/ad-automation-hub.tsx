@@ -37,6 +37,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SEOHead from "@/components/SEOHead";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { SevenDayStrategySection } from "@/components/admin/SevenDayStrategySection";
 
 interface CatalogItem {
   id: string;
@@ -358,6 +359,9 @@ export default function AdAutomationHub() {
               </Badge>
             </div>
           </div>
+
+          {/* ── 7-DAY CARIBBEAN STRATEGY & SHOP CONVERSION SECTION ── */}
+          <SevenDayStrategySection />
 
           {/* ── MAIN STUDIO GRID ── */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-8">

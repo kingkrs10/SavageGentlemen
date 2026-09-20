@@ -89,17 +89,17 @@ const PARTNERS: PartnerInfo[] = [
   },
   {
     name: "Carnival-Planner",
-    role: "Band Distribution & Mas Camp Logistics",
+    role: "Registration, Ticketing & Distribution Hub",
     website: "https://www.carnival-planner.com",
     instagram: "https://www.carnival-planner.com",
     logoText: "CP",
     badgeColor: "bg-cyan-500/20 text-cyan-300 border-cyan-500/40",
-    description: "Specialized carnival operations platform managing costume inventory, pickup scheduling, and collection desks.",
+    description: "Primary digital platform for masquerader registrations, costume package sales, and AC Marriott Ogle event ticketing.",
     coreResponsibilities: [
-      "Masquerader costume distribution scheduling & queueing",
-      "Barcode scanning for error-free package handoff",
-      "Real-time inventory tracking (in-transit, ready, collected)",
-      "Resolution of size swaps and missing piece escalations"
+      "Official masquerader registration & costume package checkout (www.carnival-planner.com)",
+      "AC Marriott Ogle pool party & fete ticket sales engine",
+      "Mas Camp distribution barcode scanning & collection scheduling",
+      "Real-time inventory tracking (ready, collected, size alterations)"
     ]
   }
 ];
@@ -343,8 +343,8 @@ export default function GuyanaCarnivalOrganizers() {
                 Masquerader packages accounted for via <span className="text-cyan-300 font-medium">Carnival-Planner</span>.
               </p>
               <div className="flex items-center justify-between text-xs pt-1 border-t border-white/5">
-                <span className="text-muted-foreground">Mas Camp Venue:</span>
-                <span className="font-semibold text-foreground">Pegasus Suites / Marriott Hub</span>
+                <span className="text-muted-foreground">Venue & Event Hub:</span>
+                <span className="font-semibold text-foreground">AC Hotel Marriott (Ogle, Guyana) Pool</span>
               </div>
             </CardContent>
           </Card>
@@ -549,11 +549,11 @@ export default function GuyanaCarnivalOrganizers() {
                       </div>
                       <div className="flex items-center gap-1.5 text-muted-foreground">
                         <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
-                        <span>Island Vibes NYC/London warm-up party</span>
+                        <span>NJ / NY Buildup Fete (Tri-State Committee Lead)</span>
                       </div>
                       <div className="flex items-center gap-1.5 text-muted-foreground">
                         <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
-                        <span>Mas Camp venue contract (Pegasus/Marriott)</span>
+                        <span>AC Hotel Marriott Ogle Pool venue contract secured</span>
                       </div>
                       <div className="flex items-center gap-1.5 text-muted-foreground">
                         <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
@@ -731,11 +731,11 @@ export default function GuyanaCarnivalOrganizers() {
                   <div className="space-y-2 text-xs text-muted-foreground">
                     <div className="flex items-start gap-2">
                       <span className="font-mono text-foreground font-semibold w-24 shrink-0">12:00 PM – ON</span>
-                      <span>Airport greeting at Cheddi Jagan International (GEO) & hotel shuttle drop-offs to Marriott / Pegasus.</span>
+                      <span>Airport greetings at Cheddi Jagan (GEO) and Eugene F. Correia (OGL) with direct shuttles to AC Marriott Ogle.</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="font-mono text-foreground font-semibold w-24 shrink-0">08:00 PM – 02:00 AM</span>
-                      <span>Welcome to El Dorado diaspora mixer & DJ showcase featuring Island Vibes resident DJs.</span>
+                      <span>Oasis: Welcome to El Dorado mixer & DJ showcase at AC Marriott Ogle Pool Lounge.</span>
                     </div>
                   </div>
                 </div>
@@ -747,7 +747,7 @@ export default function GuyanaCarnivalOrganizers() {
                       <span className="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-300 font-bold flex items-center justify-center text-xs">
                         THU-FRI
                       </span>
-                      <h4 className="font-bold text-sm">May 20–21, 2027 • Mas Camp Distribution & Signature Fetes</h4>
+                      <h4 className="font-bold text-sm">May 20–21, 2027 • AC Marriott Ogle Mas Camp & Pool Fetes</h4>
                     </div>
                     <Badge variant="outline" className="text-xs border-white/10 text-muted-foreground">
                       Lead: Carnival-Planner x Euphoria Mas
@@ -756,11 +756,11 @@ export default function GuyanaCarnivalOrganizers() {
                   <div className="space-y-2 text-xs text-muted-foreground">
                     <div className="flex items-start gap-2">
                       <span className="font-mono text-foreground font-semibold w-24 shrink-0">09:00 AM – 06:00 PM</span>
-                      <span>Mas Camp Distribution Desk open (Carnival-Planner scanning). Fitting booths, wire adjustment, and wristband issuance.</span>
+                      <span>Mas Camp Poolside Cabana Distribution (Carnival-Planner scanning). Fittings, alterations & wristbands.</span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <span className="font-mono text-foreground font-semibold w-24 shrink-0">02:00 PM (Fri)</span>
-                      <span>Island Vibes Signature Daytime Boat Ride / River Cooler Fete.</span>
+                      <span className="font-mono text-foreground font-semibold w-24 shrink-0">01:00 PM (Fri)</span>
+                      <span>Sunkissed: Official Euphoria Daytime Pool Fete at the AC Marriott Ogle Pool (Island Vibes).</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="font-mono text-foreground font-semibold w-24 shrink-0">08:00 PM (Fri)</span>

@@ -169,7 +169,7 @@ export function buildSpokenNewsScript(article: Article, subjectName: string): st
   let cleanTitleStr = cleanTitle(article.title)
     .replace(/&#\d+;/g, "")
     .replace(/["'“”‘’]/g, "")
-    .replace(/[:—–-].*$/, "") // Keep hook concise
+    .replace(/^[a-z\s,]+[—–-]\s*/i, "") // Remove news agency datelines like "PORT OF SPAIN, Trinidad — "
     .trim();
 
   let cleanSummaryStr = cleanCaption(article.summary)
@@ -177,6 +177,7 @@ export function buildSpokenNewsScript(article: Article, subjectName: string): st
     .replace(/https?:\/\/\S+/gi, "")
     .replace(/#\w+/g, "")
     .replace(/\.\.\.$/, "")
+    .replace(/^[a-z\s,]+[—–-]\s*/i, "")
     .replace(/Match the vibe with our luxury streetwear.*$/i, "")
     .replace(/Shop the collection.*$/i, "")
     .replace(/Available now in the Savage Gentlemen shop.*$/i, "")
@@ -187,8 +188,17 @@ export function buildSpokenNewsScript(article: Article, subjectName: string): st
     cleanSummaryStr += ".";
   }
 
-  // Conversational broadcast script
-  return `${cleanTitleStr}. ${cleanSummaryStr} Tap the link in bio for the full story.`;
+  // Natural conversational contractions for human-sounding neural TTS
+  cleanSummaryStr = cleanSummaryStr
+    .replace(/\bdo not\b/gi, "don't")
+    .replace(/\bcannot\b/gi, "can't")
+    .replace(/\bit is\b/gi, "it's")
+    .replace(/\bwe are\b/gi, "we're")
+    .replace(/\bthey are\b/gi, "they're")
+    .replace(/\bthere is\b/gi, "there's");
+
+  // Conversational broadcast script with natural pause punctuation
+  return `${cleanTitleStr} — ${cleanSummaryStr} Tap the link in bio for the full story.`;
 }
 
 /**

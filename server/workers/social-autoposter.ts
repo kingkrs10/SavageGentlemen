@@ -9,10 +9,11 @@ import { eq } from "drizzle-orm";
 interface AutoPosterStatus {
   enabled: boolean;
   postsPerDay: number;
-  scheduledSlotsEST: string[]; // ["11:00", "19:00"]
+  scheduledSlotsEST: string[]; // ["11:00 AM EST", "7:00 PM EST"]
   lastPostTime: string | null;
   lastPostTitle: string | null;
   lastPostChannel: string | null;
+  lastError: string | null;
   nextScheduledPostTime: string;
   totalAutoPosted: number;
   isRunning: boolean;
@@ -25,6 +26,24 @@ interface AutoPosterStatus {
 
 const SETTING_KEY = "social_autoposter_config";
 
+const SOCA_DISCOVERY_KEYWORDS = [
+  "soca", "calypso", "carnival", "fete", "mas", "j'ouvert", "jouvert", 
+  "road march", "crop over", "spicemas", "vincy mas", "caribana", 
+  "pan", "steelband", "steelpan", "chutney soca", "groovy soca", "power soca",
+  "machel montano", "kes", "patrice roberts", "voice", "bunji garlin", 
+  "fay-ann", "nailah blackman", "destra", "skinny fabulous", "teddyson john", 
+  "lyrikal", "kerwin du bois", "preedy", "erphaan alves", "shurwayne winchester",
+  "nadia batson", "adam o", "asa bantan", "problem child", "dennery segment",
+  "bouyon", "kadooment", "jab jab", "panorama", "band launch", "costume", "cooler fete"
+];
+
+export function isSocaArticle(article: any): boolean {
+  if (!article) return false;
+  if (article.category?.toLowerCase() === "soca") return true;
+  const combined = `${article.title || ""} ${article.summary || ""} ${(article.tags || []).join(" ")}`.toLowerCase();
+  return SOCA_DISCOVERY_KEYWORDS.some(kw => combined.includes(kw));
+}
+
 export class SocialAutoPoster {
   private timer: NodeJS.Timeout | null = null;
   private isRunning: boolean = false;
@@ -35,6 +54,7 @@ export class SocialAutoPoster {
   private lastPostTitle: string | null = null;
   private lastPostTime: string | null = null;
   private lastPostChannel: string | null = null;
+  private lastError: string | null = null;
   private totalAutoPosted: number = 0;
 
   async init() {
@@ -83,6 +103,7 @@ export class SocialAutoPoster {
         this.lastPostTitle = parsed.lastPostTitle || null;
         this.lastPostTime = parsed.lastPostTime || null;
         this.lastPostChannel = parsed.lastPostChannel || null;
+        this.lastError = parsed.lastError || null;
         this.totalAutoPosted = parsed.totalAutoPosted || 0;
       }
     } catch (err: any) {
@@ -99,6 +120,7 @@ export class SocialAutoPoster {
         lastPostTitle: this.lastPostTitle,
         lastPostTime: this.lastPostTime,
         lastPostChannel: this.lastPostChannel,
+        lastError: this.lastError,
         totalAutoPosted: this.totalAutoPosted,
       });
 
@@ -158,11 +180,13 @@ export class SocialAutoPoster {
     } else if (currentHour < this.scheduledHoursEST[1]) {
       targetHour = this.scheduledHoursEST[1]; // 7:00 PM today
     } else {
-      // Next day 11:00 AM
-      const d = new Date();
-      d.setDate(d.getDate() + 1);
-      const tomorrowStr = d.toISOString().split("T")[0];
-      targetDate = tomorrowStr;
+      // Next day 11:00 AM EST (calculate using EST date)
+      const [y, m, d] = est.dateStr.split("-").map(Number);
+      const nextEstDate = new Date(Date.UTC(y, m - 1, d + 1));
+      const nextYear = nextEstDate.getUTCFullYear();
+      const nextMonth = String(nextEstDate.getUTCMonth() + 1).padStart(2, "0");
+      const nextDay = String(nextEstDate.getUTCDate()).padStart(2, "0");
+      targetDate = `${nextYear}-${nextMonth}-${nextDay}`;
       targetHour = this.scheduledHoursEST[0];
     }
 
@@ -176,45 +200,65 @@ export class SocialAutoPoster {
     const est = this.getCurrentESTTime();
     const currentHour = est.hour;
 
-    // Check if current hour matches one of the scheduled windows (11:00 AM or 7:00 PM EST)
-    const matchingSlot = this.scheduledHoursEST.find(h => currentHour === h);
-    if (matchingSlot === undefined) {
-      return;
+    // Resilient Missed-Slot Recovery:
+    // Slot 1 (11:00 AM): eligible if currentHour >= 11
+    // Slot 2 (7:00 PM): eligible if currentHour >= 19
+    const eligibleSlots: number[] = [];
+    if (currentHour >= this.scheduledHoursEST[0]) {
+      eligibleSlots.push(this.scheduledHoursEST[0]); // 11
+    }
+    if (currentHour >= this.scheduledHoursEST[1]) {
+      eligibleSlots.push(this.scheduledHoursEST[1]); // 19
     }
 
-    const slotKey = `${est.dateStr}_${matchingSlot}`;
-    if (this.lastPostDateSlot === slotKey) {
-      // Slot already posted today
-      return;
-    }
-
-    console.log(`[SocialAutoPoster] ⏰ Reached scheduled publishing slot: ${matchingSlot}:00 EST (${est.dateStr}). Executing broadcast...`);
-    await this.executeAutoPost(slotKey);
-  }
-
-  async executeAutoPost(slotKey?: string): Promise<{ success: boolean; message: string; article?: any }> {
-    try {
-      // 1. Fetch unposted published articles
-      const allArticles = await storage.getAllArticles({ isPublished: true, limit: 50 });
-      let candidate = allArticles.find(a => !a.igPosted);
-
-      // If no unposted article found, trigger an instant RSS crawl to ingest new stories
-      if (!candidate) {
-        console.log("[SocialAutoPoster] No unposted articles found. Triggering fresh RSS crawl...");
-        await magazineBot.syncFeeds();
-        const refreshed = await storage.getAllArticles({ isPublished: true, limit: 50 });
-        candidate = refreshed.find(a => !a.igPosted);
+    for (const slotHour of eligibleSlots) {
+      const slotKey = `${est.dateStr}_${slotHour}`;
+      if (this.lastPostDateSlot === slotKey) {
+        // Slot already posted successfully today
+        continue;
       }
 
-      // If still none, pick the highest-viewed story as fallback
-      if (!candidate && allArticles.length > 0) {
-        candidate = allArticles[0];
+      console.log(`[SocialAutoPoster] ⏰ Reached scheduled publishing window for slot: ${slotHour}:00 EST (${est.dateStr}). Executing broadcast...`);
+      const result = await this.executeAutoPost(slotKey);
+      if (!result.success) {
+        console.warn(`[SocialAutoPoster] Auto-post for slot ${slotKey} failed: ${result.message}. Will retry in next interval.`);
+      }
+      // Only execute at most one post per schedule check interval
+      break;
+    }
+  }
+
+  async executeAutoPost(slotKey?: string, targetArticleId?: number): Promise<{ success: boolean; message: string; article?: any }> {
+    try {
+      // 1. Fetch unposted published articles or target specific article
+      let candidate: any = null;
+      if (targetArticleId) {
+        candidate = await storage.getArticleById(targetArticleId);
+      }
+
+      if (!candidate) {
+        const allArticles = await storage.getAllArticles({ isPublished: true, limit: 100 });
+        const socaArticles = allArticles.filter(isSocaArticle);
+        candidate = socaArticles.find(a => !a.igPosted);
+
+        // If no unposted Soca article found, trigger an instant RSS crawl to ingest new stories
+        if (!candidate) {
+          console.log("[SocialAutoPoster] No unposted Soca articles found. Triggering fresh RSS crawl...");
+          await magazineBot.syncFeeds();
+          const refreshed = await storage.getAllArticles({ isPublished: true, limit: 100 });
+          candidate = refreshed.filter(isSocaArticle).find(a => !a.igPosted);
+        }
+
+        // If still none, pick the latest Soca story as fallback
+        if (!candidate && socaArticles.length > 0) {
+          candidate = socaArticles[0];
+        }
       }
 
       if (!candidate) {
         return {
           success: false,
-          message: "No articles available in database to publish.",
+          message: "No Soca or Carnival articles available in database to publish.",
         };
       }
 
@@ -235,7 +279,18 @@ export class SocialAutoPoster {
         engine: videoResult?.engine || "standard",
       });
 
-      // 4. Update tracking metadata
+      if (!postResult.success) {
+        this.lastError = postResult.error || "Social dispatch rejected by downstream service";
+        await this.saveConfig();
+        console.error(`[SocialAutoPoster] ❌ Social dispatch failed: ${this.lastError}`);
+        return {
+          success: false,
+          message: `Social dispatch failed: ${this.lastError}`,
+          article: candidate,
+        };
+      }
+
+      // 4. Update tracking metadata only when broadcast truly succeeded
       const nowIso = new Date().toISOString();
       this.lastPostDateSlot = slotKey || `${new Date().toISOString().split("T")[0]}_manual`;
       this.lastPostTitle = candidate.title;
@@ -244,6 +299,7 @@ export class SocialAutoPoster {
         ? "Simulated Preview" 
         : `Make.com (${videoResult?.engine === "moneyprinter" ? "AI Reel" : "Video Ad"})`;
       this.totalAutoPosted += 1;
+      this.lastError = null;
 
       await this.saveConfig();
 
@@ -256,6 +312,8 @@ export class SocialAutoPoster {
       };
     } catch (error: any) {
       console.error("[SocialAutoPoster] Auto-post execution error:", error);
+      this.lastError = error.message || "Failed to execute auto-post";
+      await this.saveConfig();
       return {
         success: false,
         message: error.message || "Failed to execute auto-post",
@@ -276,6 +334,7 @@ export class SocialAutoPoster {
       lastPostTime: this.lastPostTime,
       lastPostTitle: this.lastPostTitle,
       lastPostChannel: this.lastPostChannel,
+      lastError: this.lastError,
       nextScheduledPostTime: this.getNextScheduledPostTime(),
       totalAutoPosted: this.totalAutoPosted,
       isRunning: this.isRunning,

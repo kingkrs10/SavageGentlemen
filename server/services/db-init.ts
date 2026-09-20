@@ -42,10 +42,39 @@ export async function initializeDatabaseTables(): Promise<void> {
     `);
 
     // 2. Verify placement column on sponsored_content
-    await db.execute(sql`
-      ALTER TABLE sponsored_content 
-      ADD COLUMN IF NOT EXISTS placement TEXT DEFAULT 'header_ticker';
-    `);
+    try {
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS sponsored_content (
+          id SERIAL PRIMARY KEY,
+          title TEXT NOT NULL,
+          description TEXT NOT NULL,
+          type TEXT NOT NULL DEFAULT 'standard',
+          placement TEXT NOT NULL DEFAULT 'header_ticker',
+          image_url TEXT,
+          logo_url TEXT,
+          link_url TEXT,
+          background_color TEXT DEFAULT 'bg-gray-800',
+          text_color TEXT DEFAULT 'text-white',
+          cta_text TEXT DEFAULT 'Learn More',
+          price TEXT,
+          event_date TEXT,
+          location TEXT,
+          video_url TEXT,
+          is_active BOOLEAN DEFAULT true,
+          priority INTEGER DEFAULT 0,
+          start_date TIMESTAMP,
+          end_date TIMESTAMP,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW()
+        );
+      `);
+      await db.execute(sql`
+        ALTER TABLE sponsored_content 
+        ADD COLUMN IF NOT EXISTS placement TEXT DEFAULT 'header_ticker';
+      `);
+    } catch (scErr: any) {
+      console.warn("[DBInit] Sponsored content table note:", scErr.message);
+    }
 
     // 3. Verify site_settings table
     await db.execute(sql`
@@ -201,10 +230,18 @@ export async function initializeDatabaseTables(): Promise<void> {
     }
 
     // 7. Initialize and start the Autonomous Magazine & Ingestion Bot
-    await magazineBot.start(6);
+    try {
+      await magazineBot.start(6);
+    } catch (magErr: any) {
+      console.error("[DBInit] ⚠️ Error starting MagazineBot:", magErr.message);
+    }
 
     // 8. Initialize and start the Autonomous 2-Post-Per-Day Social Publisher
-    await socialAutoPoster.init();
+    try {
+      await socialAutoPoster.init();
+    } catch (postErr: any) {
+      console.error("[DBInit] ⚠️ Error starting SocialAutoPoster:", postErr.message);
+    }
   } catch (error: any) {
     console.error("[DBInit] ⚠️ Error during database table initialization:", error.message);
   }

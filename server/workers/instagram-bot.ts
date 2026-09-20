@@ -12,20 +12,32 @@ export interface InstagramPostResult {
 }
 
 export class InstagramBot {
-  private accessToken: string | undefined;
-  private accountId: string | undefined;
-
-  constructor() {
-    this.accessToken = 
+  getAccessToken(): string | undefined {
+    return (
       process.env.INSTAGRAM_ACCESS_TOKEN || 
       process.env.META_IG_ACCESS_TOKEN || 
       process.env.META_ACCESS_TOKEN || 
-      process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
-    this.accountId = 
+      process.env.FACEBOOK_PAGE_ACCESS_TOKEN
+    );
+  }
+
+  getAccountId(): string | undefined {
+    return (
       process.env.INSTAGRAM_ACCOUNT_ID || 
       process.env.META_IG_USER_ID || 
       process.env.META_ACCOUNT_ID || 
-      process.env.INSTAGRAM_USER_ID;
+      process.env.INSTAGRAM_USER_ID
+    );
+  }
+
+  getConfiguredWebhooks(): string[] {
+    return Array.from(
+      new Set([
+        process.env.INSTAGRAM_WEBHOOK_URL,
+        process.env.MAKE_WEBHOOK_URL,
+        process.env.SOCIAL_WEBHOOK_URL
+      ].filter(Boolean) as string[])
+    );
   }
 
   generateCaption(article: Article): string {
@@ -57,7 +69,7 @@ export class InstagramBot {
 
     const allHashtags = Array.from(new Set([...brandTags, ...categoryTags, ...viralTags])).join(" ");
 
-    const siteUrl = process.env.SITE_URL || "https://savagegentlemen.onrender.com";
+    const siteUrl = process.env.SITE_URL || "https://www.savgent.com";
 
     return `🔥 NEW DISPATCH: ${title.toUpperCase()}\n\n` +
       `🌴 ${summary}\n\n` +
@@ -67,7 +79,7 @@ export class InstagramBot {
       `${allHashtags}`;
   }
 
-  async publishArticlePost(articleId: number, options?: { videoUrl?: string; engine?: string }): Promise<InstagramPostResult> {
+  async publishArticlePost(articleId: number, options?: { videoUrl?: string; engine?: string; forceSimulate?: boolean }): Promise<InstagramPostResult> {
     const article = await storage.getArticleById(articleId);
     if (!article) {
       return { success: false, simulated: false, caption: "", error: "Article not found" };
@@ -76,22 +88,19 @@ export class InstagramBot {
     const caption = this.generateCaption(article);
     const imageUrl = article.featuredImage || "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1080&h=1080&fit=crop";
     const mediaUrl = options?.videoUrl || imageUrl;
-    const siteUrl = process.env.SITE_URL || "https://savagegentlemen.onrender.com";
+    const siteUrl = process.env.SITE_URL || "https://www.savgent.com";
 
-    // Broadcast across all configured social webhooks
-    const configuredWebhooks = Array.from(
-      new Set([
-        process.env.INSTAGRAM_WEBHOOK_URL,
-        process.env.MAKE_WEBHOOK_URL,
-        process.env.SOCIAL_WEBHOOK_URL
-      ].filter(Boolean) as string[])
-    );
+    const configuredWebhooks = this.getConfiguredWebhooks();
+    const accessToken = this.getAccessToken();
+    const accountId = this.getAccountId();
+    const dispatchErrors: string[] = [];
 
-    if (configuredWebhooks.length > 0) {
+    // Channel 1: Broadcast across all configured social webhooks (Make.com / Universal)
+    if (configuredWebhooks.length > 0 && !options?.forceSimulate) {
       try {
         console.log(`[InstagramBot] Publishing article "${article.title}" via ${configuredWebhooks.length} Webhook(s) (${options?.videoUrl ? "Video Reel" : "Image"})...`);
         const { uploadLocalVideoToPublicCDN } = await import("../services/social-publisher");
-        const publicVideoUrl = uploadLocalVideoToPublicCDN(mediaUrl);
+        const publicVideoUrl = await uploadLocalVideoToPublicCDN(mediaUrl);
 
         const payload = {
           videoUrl: publicVideoUrl,
@@ -104,7 +113,7 @@ export class InstagramBot {
           timestamp: new Date().toISOString()
         };
 
-        await Promise.all(
+        const results = await Promise.all(
           configuredWebhooks.map(async (webhookUrl) => {
             try {
               const webhookRes = await fetch(webhookUrl, {
@@ -112,69 +121,85 @@ export class InstagramBot {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
               });
-              console.log(`[InstagramBot] Webhook ${webhookUrl} response: ${webhookRes.status} ${webhookRes.statusText}`);
+              const responseText = await webhookRes.text().catch(() => "");
+              if (webhookRes.ok) {
+                console.log(`[InstagramBot] ✅ Webhook ${webhookUrl} response: ${webhookRes.status} ${webhookRes.statusText}`);
+                return { success: true, url: webhookUrl };
+              } else {
+                console.error(`[InstagramBot] ⚠️ Webhook ${webhookUrl} returned error (${webhookRes.status}): ${responseText}`);
+                return { success: false, url: webhookUrl, error: `HTTP ${webhookRes.status}: ${responseText}` };
+              }
             } catch (err: any) {
               console.error(`[InstagramBot] Failed to send to ${webhookUrl}:`, err.message);
+              return { success: false, url: webhookUrl, error: err.message };
             }
           })
         );
 
-        const postId = `webhook_${Date.now()}`;
-        await storage.updateArticle(articleId, {
-          igPosted: true,
-          igPostId: postId,
-        });
+        const anyWebhookSucceeded = results.some(r => r.success);
+        results.filter(r => !r.success).forEach(r => dispatchErrors.push(`Webhook (${r.url}): ${r.error}`));
 
-        return {
-          success: true,
-          postId,
-          simulated: false,
-          caption,
-          imageUrl
-        };
+        if (anyWebhookSucceeded) {
+          const postId = `webhook_${Date.now()}`;
+          await storage.updateArticle(articleId, {
+            igPosted: true,
+            igPostId: postId,
+          });
+
+          return {
+            success: true,
+            postId,
+            simulated: false,
+            caption,
+            imageUrl
+          };
+        } else {
+          console.warn(`[InstagramBot] All configured webhooks failed. Attempting fallback to direct Meta Graph API...`);
+        }
       } catch (err: any) {
-        console.error("[InstagramBot] Webhook dispatch error:", err.message);
+        console.error("[InstagramBot] Webhook dispatch exception:", err.message);
+        dispatchErrors.push(`Webhook exception: ${err.message}`);
       }
     }
 
-    // If Meta Graph API credentials are configured, execute real publish
-    if (this.accessToken && this.accountId) {
+    // Channel 2: Direct Meta Graph API (Fallback if webhooks fail or aren't set)
+    if (accessToken && accountId && !options?.forceSimulate) {
       try {
-        console.log(`[InstagramBot] Publishing article "${article.title}" to Instagram...`);
+        console.log(`[InstagramBot] Attempting direct Meta Graph API publishing for "${article.title}"...`);
         
         // Step 1: Create media container
-        const containerUrl = `https://graph.facebook.com/v19.0/${this.accountId}/media`;
+        const containerUrl = `https://graph.facebook.com/v19.0/${accountId}/media`;
         const containerRes = await fetch(containerUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             image_url: imageUrl,
             caption: caption,
-            access_token: this.accessToken,
+            access_token: accessToken,
           }),
         });
 
         const containerData = await containerRes.json();
         if (!containerRes.ok || !containerData.id) {
-          throw new Error(containerData.error?.message || "Failed to create Instagram container");
+          throw new Error(containerData.error?.message || `Failed to create Instagram media container (HTTP ${containerRes.status})`);
         }
 
         const creationId = containerData.id;
 
         // Step 2: Publish media container
-        const publishUrl = `https://graph.facebook.com/v19.0/${this.accountId}/media_publish`;
+        const publishUrl = `https://graph.facebook.com/v19.0/${accountId}/media_publish`;
         const publishRes = await fetch(publishUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             creation_id: creationId,
-            access_token: this.accessToken,
+            access_token: accessToken,
           }),
         });
 
         const publishData = await publishRes.json();
         if (!publishRes.ok || !publishData.id) {
-          throw new Error(publishData.error?.message || "Failed to publish media to Instagram");
+          throw new Error(publishData.error?.message || `Failed to publish media to Instagram (HTTP ${publishRes.status})`);
         }
 
         // Mark article as posted
@@ -183,7 +208,7 @@ export class InstagramBot {
           igPostId: publishData.id,
         });
 
-        console.log(`[InstagramBot] Successfully published post ID: ${publishData.id}`);
+        console.log(`[InstagramBot] Successfully published post ID via Meta API: ${publishData.id}`);
         return {
           success: true,
           postId: publishData.id,
@@ -192,19 +217,26 @@ export class InstagramBot {
           imageUrl,
         };
       } catch (error: any) {
-        console.error("[InstagramBot] Error publishing to Instagram API:", error);
-        return {
-          success: false,
-          simulated: false,
-          caption,
-          imageUrl,
-          error: error.message,
-        };
+        console.error("[InstagramBot] Error publishing to Meta Graph API:", error.message);
+        dispatchErrors.push(`Meta Graph API: ${error.message}`);
       }
     }
 
-    // Dry-run / Sandbox mode when API keys aren't set yet
-    console.log(`[InstagramBot] Simulated Instagram Post generated for "${article.title}" (Meta API credentials not set in .env)`);
+    // If real channels were configured but failed, report failure and DO NOT mark article as posted!
+    if ((configuredWebhooks.length > 0 || (accessToken && accountId)) && !options?.forceSimulate) {
+      const consolidatedError = dispatchErrors.join("; ") || "All publishing channels failed.";
+      console.error(`[InstagramBot] ❌ Publishing failed for article ${articleId}: ${consolidatedError}`);
+      return {
+        success: false,
+        simulated: false,
+        caption,
+        imageUrl,
+        error: consolidatedError
+      };
+    }
+
+    // Channel 3: Dry-run / Sandbox mode when NO credentials or webhooks are configured at all, or forced simulation
+    console.log(`[InstagramBot] Simulated Instagram Post generated for "${article.title}" (Sandbox mode)`);
     await storage.updateArticle(articleId, {
       igPosted: true,
       igPostId: `simulated_ig_${Date.now()}`,

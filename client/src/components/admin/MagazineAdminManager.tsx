@@ -16,7 +16,8 @@ import {
   Zap,
   Globe,
   Radio,
-  Film
+  Film,
+  AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +48,7 @@ interface AutoPosterStatus {
   lastPostTime: string | null;
   lastPostTitle: string | null;
   lastPostChannel: string | null;
+  lastError?: string | null;
   nextScheduledPostTime: string;
   totalAutoPosted: number;
   isRunning: boolean;
@@ -289,6 +291,17 @@ export const MagazineAdminManager = () => {
             </p>
           </div>
         </CardContent>
+
+        {autopilotStatus?.lastError && (
+          <div className="mx-6 mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 flex items-start gap-2.5 text-red-300 text-xs">
+            <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <span className="font-bold">Social Dispatch Notice:</span>
+              <p className="text-white/80">{autopilotStatus.lastError}</p>
+              <p className="text-[11px] text-white/50">Unblock Make.com scenario queue or update INSTAGRAM_ACCESS_TOKEN in .env to resume live publishing.</p>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Main Magazine & Articles Manager */}

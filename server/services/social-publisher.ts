@@ -28,12 +28,13 @@ export interface MultiPlatformPublishResponse {
   results: PlatformPublishResult[];
 }
 
-const SITE_URL = process.env.SITE_URL || "https://savagegentlemen.onrender.com";
+const SITE_URL = process.env.SITE_URL || "https://www.savgent.com";
 
-export function uploadLocalVideoToPublicCDN(mediaUrl: string): string {
+export async function uploadLocalVideoToPublicCDN(mediaUrl: string): Promise<string> {
   if (!mediaUrl || mediaUrl.startsWith("http://files.catbox.moe") || mediaUrl.startsWith("https://files.catbox.moe")) {
     return mediaUrl;
   }
+  const siteUrl = process.env.SITE_URL || "https://www.savgent.com";
   try {
     const cleanPath = mediaUrl.replace(/^https?:\/\/[^\/]+/, "").replace(/^\//, "");
     
@@ -49,11 +50,18 @@ export function uploadLocalVideoToPublicCDN(mediaUrl: string): string {
     const localFile = candidatePaths.find(p => fs.existsSync(p));
 
     if (localFile && (localFile.endsWith(".mp4") || localFile.endsWith(".mov") || localFile.endsWith(".jpg") || localFile.endsWith(".png"))) {
-      console.log(`[SocialPublisher] Uploading local asset (${path.basename(localFile)}) to public CDN for Make.com...`);
-      const cdnUrl = execSync(`curl -s -F "reqtype=fileupload" -F "fileToUpload=@${localFile}" https://catbox.moe/user/api.php`, { encoding: "utf-8", timeout: 35000 }).trim();
-      if (cdnUrl && cdnUrl.startsWith("http")) {
-        console.log(`[SocialPublisher] ✅ Public CDN URL generated: ${cdnUrl}`);
-        return cdnUrl;
+      console.log(`[SocialPublisher] Uploading local asset (${path.basename(localFile)}) to public CDN...`);
+      try {
+        const cdnUrl = execSync(
+          `curl -s -m 15 -F "reqtype=fileupload" -F "fileToUpload=@${localFile}" https://catbox.moe/user/api.php`,
+          { encoding: "utf-8", timeout: 16000 }
+        ).trim();
+        if (cdnUrl && cdnUrl.startsWith("http")) {
+          console.log(`[SocialPublisher] ✅ Public CDN URL generated: ${cdnUrl}`);
+          return cdnUrl;
+        }
+      } catch (catboxErr: any) {
+        console.warn(`[SocialPublisher] Catbox CDN fallback: ${catboxErr.message}`);
       }
     } else {
       console.warn(`[SocialPublisher] Local file not found in candidate paths: ${cleanPath}`);
@@ -61,7 +69,7 @@ export function uploadLocalVideoToPublicCDN(mediaUrl: string): string {
   } catch (err: any) {
     console.warn(`[SocialPublisher] Note on CDN upload: ${err.message}`);
   }
-  return mediaUrl.startsWith("http") ? mediaUrl : `${SITE_URL}${mediaUrl}`;
+  return mediaUrl.startsWith("http") ? mediaUrl : `${siteUrl}${mediaUrl.startsWith("/") ? "" : "/"}${mediaUrl}`;
 }
 
 /**
@@ -79,7 +87,8 @@ export async function publishToSocialMedia(request: PublishRequest): Promise<Mul
     "#ExplorePage",
     "#FYP"
   ];
-  const targetProductLink = request.productLink || `${SITE_URL}/shop`;
+  const siteUrl = process.env.SITE_URL || "https://www.savgent.com";
+  const targetProductLink = request.productLink || `${siteUrl}/shop`;
   const fullCaption = `${request.caption}\n\n${(request.hashtags && request.hashtags.length > 0 ? request.hashtags : defaultTags).join(" ")}\n\n👉 Shop here: ${targetProductLink}`;
   const results: PlatformPublishResult[] = [];
 
@@ -95,7 +104,7 @@ export async function publishToSocialMedia(request: PublishRequest): Promise<Mul
 
   if (configuredWebhooks.length > 0 && !request.isTestMode) {
     try {
-      const publicVideoUrl = uploadLocalVideoToPublicCDN(request.videoUrl);
+      const publicVideoUrl = await uploadLocalVideoToPublicCDN(request.videoUrl);
       console.log(`[SocialPublisher] Broadcasting to ${configuredWebhooks.length} webhooks for platforms: ${request.platforms.join(", ")}`);
 
       const payload = {
@@ -108,7 +117,7 @@ export async function publishToSocialMedia(request: PublishRequest): Promise<Mul
         timestamp: new Date().toISOString()
       };
 
-      await Promise.all(
+      const webhookResponses = await Promise.all(
         configuredWebhooks.map(async (webhookUrl) => {
           try {
             const res = await fetch(webhookUrl, {
@@ -116,28 +125,42 @@ export async function publishToSocialMedia(request: PublishRequest): Promise<Mul
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(payload),
             });
-            console.log(`[SocialPublisher] Dispatch to ${webhookUrl} status: ${res.status} ${res.statusText}`);
+            const text = await res.text().catch(() => "");
+            if (res.ok) {
+              console.log(`[SocialPublisher] Dispatch to ${webhookUrl} status: ${res.status} ${res.statusText}`);
+              return { success: true, url: webhookUrl };
+            } else {
+              console.error(`[SocialPublisher] Webhook ${webhookUrl} returned error ${res.status}: ${text}`);
+              return { success: false, url: webhookUrl, error: `HTTP ${res.status}: ${text}` };
+            }
           } catch (err: any) {
             console.error(`[SocialPublisher] Failed sending to webhook ${webhookUrl}:`, err.message);
+            return { success: false, url: webhookUrl, error: err.message };
           }
         })
       );
 
-      request.platforms.forEach((platform) => {
-        results.push({
-          platform,
-          status: "success",
-          postId: `webhook_${Date.now()}`,
-          postUrl: `https://www.instagram.com/savagegentlemen_`,
-          message: `Dispatched to Make.com automation for live broadcast to ${platform}.`
-        });
-      });
+      const anyWebhookSucceeded = webhookResponses.some(r => r.success);
 
-      return {
-        success: true,
-        publishedAt: new Date().toISOString(),
-        results
-      };
+      if (anyWebhookSucceeded) {
+        request.platforms.forEach((platform) => {
+          results.push({
+            platform,
+            status: "success",
+            postId: `webhook_${Date.now()}`,
+            postUrl: `https://www.instagram.com/savagegentlemen_`,
+            message: `Dispatched to Make.com automation for live broadcast to ${platform}.`
+          });
+        });
+
+        return {
+          success: true,
+          publishedAt: new Date().toISOString(),
+          results
+        };
+      } else {
+        console.warn("[SocialPublisher] All webhooks rejected dispatch. Proceeding to individual platform fallback...");
+      }
     } catch (webhookErr: any) {
       console.error("[SocialPublisher] Webhook broadcast error:", webhookErr.message);
     }
