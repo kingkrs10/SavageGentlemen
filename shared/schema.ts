@@ -2549,3 +2549,29 @@ export const insertSiteSettingSchema = createInsertSchema(siteSettings).omit({
 export type SiteSetting = typeof siteSettings.$inferSelect;
 export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
 
+// Guyana Carnival 2027 Executive Committee Proposals & Auto-Sites
+export const committeeProposals = pgTable("committee_proposals", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  category: text("category").notNull().default("event"), // 'event' | 'merch' | 'campaign' | 'budget'
+  author: text("author").notNull().default("NJ/NY Committee"),
+  status: text("status").notNull().default("draft"), // 'draft' | 'under_review' | 'approved' | 'active'
+  venue: text("venue").default("AC Hotel by Marriott (Ogle, Guyana) Outdoor Pool & Event Lounge"),
+  targetDate: text("target_date").default("May 2027"),
+  inputData: jsonb("input_data").notNull(),
+  generatedOutput: jsonb("generated_output").notNull(),
+  slug: text("slug").unique(),
+  isPublished: boolean("is_published").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertCommitteeProposalSchema = createInsertSchema(committeeProposals).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type CommitteeProposal = typeof committeeProposals.$inferSelect;
+export type InsertCommitteeProposal = z.infer<typeof insertCommitteeProposalSchema>;
+
+

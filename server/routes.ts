@@ -81,6 +81,8 @@ import { adsRouter } from "./routes/ads-routes";
 import { merchRouter } from "./routes/merch-routes";
 import { settingsRouter } from "./routes/settings-routes";
 import { adAutomationRouter } from "./routes/ad-automation-routes";
+import { sevenDayStrategyRouter } from "./routes/seven-day-strategy-routes";
+import { committeeRouter } from "./routes/committee-routes";
 import { magazineBot } from "./workers/magazine-bot";
 
 // Initialize Stripe
@@ -519,12 +521,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   router.use("/merch", merchRouter);
   router.use("/settings", settingsRouter);
   router.use("/ad-automation", adAutomationRouter);
+  router.use("/seven-day-strategy", sevenDayStrategyRouter);
+  router.use("/committee", committeeRouter);
 
   app.use("/api/magazine", magazineRouter);
   app.use("/api/ads", adsRouter);
   app.use("/api/merch", merchRouter);
   app.use("/api/settings", settingsRouter);
   app.use("/api/ad-automation", adAutomationRouter);
+  app.use("/api/seven-day-strategy", sevenDayStrategyRouter);
+  app.use("/api/committee", committeeRouter);
 
   // Initialize Autonomous Magazine Bot
   magazineBot.start().catch(err => console.error("Error starting MagazineBot:", err));

@@ -60,6 +60,7 @@ const EmailManagement = lazy(() => import("@/pages/email-management"));
 const Profile = lazy(() => import("@/pages/profile"));
 const Settings = lazy(() => import("@/pages/settings"));
 const GuyanaCarnivalOrganizers = lazy(() => import("@/pages/guyana-carnival-organizers"));
+const CommitteePortal = lazy(() => import("@/pages/committee-portal"));
 
 const Passport = lazy(() => import("@/pages/passport"));
 const SocaPassport = lazy(() => import("@/pages/socaport-app"));
@@ -142,6 +143,12 @@ function Router() {
         <Route path="/guyana-carnival-2027" component={GuyanaCarnivalOrganizers} />
         <Route path="/carnival/guyana-2027" component={GuyanaCarnivalOrganizers} />
 
+        {/* Guyana Carnival 2027 Executive Committee Portal (Private, Code-Gated) */}
+        <Route path="/committee" component={CommitteePortal} />
+        <Route path="/committee/portal" component={CommitteePortal} />
+        <Route path="/committee/guyana2027" component={CommitteePortal} />
+        <Route path="/committee-portal" component={CommitteePortal} />
+
         <Route path="/passport" component={Passport} />
         <Route path="/passport/:username" component={PassportPublicProfile} />
         <Route path="/socapassport" component={SocaPassport} />
@@ -166,6 +173,14 @@ function AppContent() {
   const isSocaPassportRoute = () => {
     return location.startsWith('/socapassport') ||
       location.startsWith('/passport');
+  };
+
+  const isCommitteeRoute = () => {
+    return location.startsWith('/committee');
+  };
+
+  const isIsolatedRoute = () => {
+    return isSocaPassportRoute() || isCommitteeRoute();
   };
 
   const guestLoginMutation = useMutation({
@@ -248,7 +263,7 @@ function AppContent() {
             backgroundColor: 'rgba(8, 9, 13, 0.95)',
           }}
         >
-          {!isSocaPassportRoute() && (
+          {!isIsolatedRoute() && (
             <Header
               user={user}
               onLogout={logout}
@@ -256,20 +271,20 @@ function AppContent() {
             />
           )}
 
-          <main className={isSocaPassportRoute() || location === '/' || location === '/home' ? "" : "container mx-auto px-4 py-8 pb-28"}>
+          <main className={isIsolatedRoute() || location === '/' || location === '/home' ? "" : "container mx-auto px-4 py-8 pb-28"}>
             <Router />
           </main>
 
           {/* Sticky Global Audio Player for DJ Mixes */}
-          <GlobalAudioPlayer />
+          {!isCommitteeRoute() && <GlobalAudioPlayer />}
 
           {/* High-Traffic Floating Viral Promo & Conversion Dock */}
-          <ViralPromoDock />
+          {!isCommitteeRoute() && <ViralPromoDock />}
 
           {/* Autonomous AI Booking & Nightlife Concierge */}
-          <SavageConcierge />
+          {!isCommitteeRoute() && <SavageConcierge />}
 
-          {!isSocaPassportRoute() && <BottomNavigation />}
+          {!isIsolatedRoute() && <BottomNavigation />}
 
           {showAuthModal && (
             <AuthModal
