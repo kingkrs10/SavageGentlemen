@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db";
-import { committeeProposals, insertCommitteeProposalSchema } from "@shared/schema";
+import { committeeProposals, insertCommitteeProposalSchema, siteSettings } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 
 export const committeeRouter = Router();
@@ -278,3 +278,228 @@ committeeRouter.post("/generate", (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to generate output" });
   }
 });
+
+// -------------------------------------------------------------
+// Interactive Committee Master Visual Timeline & Roadmap
+// -------------------------------------------------------------
+export interface TimelineMilestone {
+  id: string;
+  phase: string;
+  title: string;
+  date: string;
+  hub: "NJ/NY Committee" | "Guyana Operations" | "UK Logistics" | "All Committee";
+  venue: string;
+  status: "planned" | "in_progress" | "completed";
+  description: string;
+  checklist: string[];
+}
+
+const DEFAULT_TIMELINE_MILESTONES: TimelineMilestone[] = [
+  {
+    id: "m-1",
+    phase: "Phase 1: Concept & Production",
+    title: "Apparel Sampling: Amazonian Botanical Jerseys & Shorts",
+    date: "Q3-Q4 2026",
+    hub: "UK Logistics",
+    venue: "Printify Production Suite",
+    status: "in_progress",
+    description: "Finalize 300 DPI full-bleed sublimation proofs for the Amazonian basketball jersey and swim shorts.",
+    checklist: ["Verify decal coordinates", "Review sample fabric weight", "Lock in pre-order pricing on carnival-planner.com"]
+  },
+  {
+    id: "m-2",
+    phase: "Phase 1: Concept & Production",
+    title: "AC Hotel by Marriott Ogle Pool Venue Lock-In",
+    date: "November 2026",
+    hub: "Guyana Operations",
+    venue: "AC Hotel by Marriott (Ogle, Guyana) Outdoor Pool & Event Lounge",
+    status: "in_progress",
+    description: "Confirmed event venue execution agreement, electrical load assessment, and poolside cabana layout reservation.",
+    checklist: ["Contract sign-off", "Pergola DJ booth allocation", "Security and check-in desk layout"]
+  },
+  {
+    id: "m-3",
+    phase: "Phase 2: Tri-State Buildup & Teaser Launch",
+    title: "Carnival-Planner Registration & Ticket Tier Launch",
+    date: "January 2027",
+    hub: "All Committee",
+    venue: "https://www.carnival-planner.com",
+    status: "planned",
+    description: "Publish Early Bird passes ($45), Sunset Tier 1 ($65), and VIP Cabana packages ($1,250) on Carnival-Planner checkout.",
+    checklist: ["Map direct checkout API links", "Configure QR ticket scanner accounts", "Announce exclusive registration window"]
+  },
+  {
+    id: "m-4",
+    phase: "Phase 2: Tri-State Buildup & Teaser Launch",
+    title: "NJ / NY Tri-State Pop-Up Launch & Diaspora Warmup Fete",
+    date: "March 2027",
+    hub: "NJ/NY Committee",
+    venue: "Tri-State Metro Lounge / Event Space",
+    status: "planned",
+    description: "Exclusive promotional evening in NY/NJ for diaspora masqueraders, carnival travelers, and committee stakeholders.",
+    checklist: ["Apparel showcase display", "Early pool pass ticket incentives", "Live Caribbean DJ set & travel briefing"]
+  },
+  {
+    id: "m-5",
+    phase: "Phase 2: Tri-State Buildup & Teaser Launch",
+    title: "Headline DJ & Talent Lineup Announcement",
+    date: "April 15, 2027",
+    hub: "NJ/NY Committee",
+    venue: "Social Distribution & Carnival-Planner Hub",
+    status: "planned",
+    description: "Announce premier talent (DJ Private Ryan, Dr. Esan, DJ Kevin, Savage Soundsystem) and launch high-energy teaser reels.",
+    checklist: ["Sign talent riders", "Coordinate Ogle flight arrivals", "Publish social video kits"]
+  },
+  {
+    id: "m-6",
+    phase: "Phase 3: Logistics & Arrivals",
+    title: "Diaspora Travel & Airport Transfer Coordination",
+    date: "May 10, 2027",
+    hub: "Guyana Operations",
+    venue: "Eugene F. Correia (Ogle) Airport & Cheddi Jagan (GEO)",
+    status: "planned",
+    description: "Finalize express shuttle logistics between AC Hotel Marriott Ogle (2 mins from OGL airport) and hotel zones.",
+    checklist: ["VIP guest welcome list", "Concierge luggage & hotel check-in dispatch", "Ogle pool pass digital delivery"]
+  },
+  {
+    id: "m-7",
+    phase: "Phase 4: Carnival Week Execution (May 19–26, 2027)",
+    title: "Committee Hub Arrival & On-Site Reconnaissance",
+    date: "Wednesday, May 19, 2027",
+    hub: "All Committee",
+    venue: "AC Hotel by Marriott (Ogle Pool & Lounge)",
+    status: "planned",
+    description: "NJ/NY, UK, and Guyana operations teams convene at AC Marriott for venue walkthrough and registration station setup.",
+    checklist: ["Radio communications check", "Wristband inventory audit", "Bar package & bottle service delivery"]
+  },
+  {
+    id: "m-8",
+    phase: "Phase 4: Carnival Week Execution (May 19–26, 2027)",
+    title: "Technical Load-in & Poolside Acoustic Soundcheck",
+    date: "Thursday, May 20, 2027",
+    hub: "Guyana Operations",
+    venue: "AC Hotel by Marriott (Ogle Pool Deck)",
+    status: "planned",
+    description: "Erect covered DJ booth, tune waterproof speaker arrays, test ambient glow lighting, and inspect cabana daybeds.",
+    checklist: ["Electrical load safety sign-off", "Carnival-Planner scanner stress test", "Lifeguard & security orientation"]
+  },
+  {
+    id: "m-9",
+    phase: "Phase 4: Carnival Week Execution (May 19–26, 2027)",
+    title: "OASIS: The AC Marriott Welcome Pool Party",
+    date: "Friday, May 21, 2027 (2:00 PM – 10:00 PM)",
+    hub: "All Committee",
+    venue: "AC Hotel by Marriott (Ogle, Guyana) Outdoor Pool & Event Lounge",
+    status: "planned",
+    description: "Flagship luxury daytime pool fete bridging international arrivals with local VIPs. High-energy soca, cabana bottle service, and Amazonian botanical atmosphere.",
+    checklist: ["Doors open 2:00 PM", "Golden hour sunset headline set", "Night swim glow canopy activation", "Secure venue load-out at 10:00 PM"]
+  },
+  {
+    id: "m-10",
+    phase: "Phase 4: Carnival Week Execution (May 19–26, 2027)",
+    title: "Guyana Independence Carnival Road March",
+    date: "Sunday, May 23, 2027",
+    hub: "All Committee",
+    venue: "Georgetown Carnival Parade Route",
+    status: "planned",
+    description: "Full costume street parade with band truck coordination and diaspora masqueraders.",
+    checklist: ["Hydration truck sync", "Costume repair crew dispatch", "Masquerader safety zone protocol"]
+  },
+  {
+    id: "m-11",
+    phase: "Phase 4: Carnival Week Execution (May 19–26, 2027)",
+    title: "Re-Charge: Post-Carnival Pool & Recovery Lounge",
+    date: "Monday, May 24, 2027",
+    hub: "Guyana Operations",
+    venue: "AC Hotel by Marriott (Ogle Pool Deck)",
+    status: "planned",
+    description: "Chill recovery daytime pool lounge with acoustic tropical rhythms, fresh coconut water, and relaxed cabana hospitality.",
+    checklist: ["Sun lounger reserved seating", "Recovery brunch service", "Merch commemorative gifts"]
+  },
+  {
+    id: "m-12",
+    phase: "Phase 4: Carnival Week Execution (May 19–26, 2027)",
+    title: "Financial Reconciliation & Executive Debrief",
+    date: "Wednesday, May 26, 2027",
+    hub: "All Committee",
+    venue: "Executive Suite / Virtual Bridge",
+    status: "planned",
+    description: "Complete post-event ticket sales tally on Carnival-Planner, vendor settlements, and 2028 planning review.",
+    checklist: ["Reconcile ticket revenue & cabana gross", "Vendor invoice clearance", "Committee report archive"]
+  }
+];
+
+let fallbackTimeline: TimelineMilestone[] = [...DEFAULT_TIMELINE_MILESTONES];
+
+// GET /api/committee/timeline - Fetch master committee timeline
+committeeRouter.get("/timeline", async (req: Request, res: Response) => {
+  try {
+    if (db) {
+      try {
+        const [record] = await db
+          .select()
+          .from(siteSettings)
+          .where(eq(siteSettings.key, "committee_timeline_2027"))
+          .limit(1);
+
+        if (record && record.value) {
+          const parsed = JSON.parse(record.value);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            fallbackTimeline = parsed;
+            return res.json(parsed);
+          }
+        }
+      } catch (dbErr) {
+        console.warn("[CommitteeRouter] DB timeline fetch failed, using fallback:", (dbErr as Error).message);
+      }
+    }
+    return res.json(fallbackTimeline);
+  } catch (err: any) {
+    console.error("[CommitteeRouter] Error fetching timeline:", err);
+    res.status(500).json({ error: "Failed to fetch timeline" });
+  }
+});
+
+// POST /api/committee/timeline - Update master committee timeline
+committeeRouter.post("/timeline", async (req: Request, res: Response) => {
+  try {
+    const { milestones } = req.body;
+    if (!Array.isArray(milestones)) {
+      return res.status(400).json({ error: "Milestones must be an array" });
+    }
+
+    fallbackTimeline = milestones;
+
+    if (db) {
+      try {
+        const jsonValue = JSON.stringify(milestones);
+        const [existing] = await db
+          .select()
+          .from(siteSettings)
+          .where(eq(siteSettings.key, "committee_timeline_2027"))
+          .limit(1);
+
+        if (existing) {
+          await db
+            .update(siteSettings)
+            .set({ value: jsonValue, updatedAt: new Date() })
+            .where(eq(siteSettings.key, "committee_timeline_2027"));
+        } else {
+          await db.insert(siteSettings).values({
+            key: "committee_timeline_2027",
+            value: jsonValue,
+            updatedAt: new Date(),
+          });
+        }
+      } catch (dbErr) {
+        console.warn("[CommitteeRouter] DB timeline update failed, saved to memory cache:", (dbErr as Error).message);
+      }
+    }
+
+    return res.json({ success: true, count: milestones.length, milestones: fallbackTimeline });
+  } catch (err: any) {
+    console.error("[CommitteeRouter] Error updating timeline:", err);
+    res.status(500).json({ error: "Failed to update timeline" });
+  }
+});
+

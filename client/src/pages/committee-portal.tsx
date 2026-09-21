@@ -30,6 +30,13 @@ import {
   Laptop,
   ArrowRight,
   Eye,
+  Save,
+  Filter,
+  CheckSquare,
+  Square,
+  Flag,
+  AlertCircle,
+  ListChecks,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,6 +45,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+export interface TimelineMilestone {
+  id: string;
+  phase: string;
+  title: string;
+  date: string;
+  hub: "NJ/NY Committee" | "Guyana Operations" | "UK Logistics" | "All Committee";
+  venue: string;
+  status: "planned" | "in_progress" | "completed";
+  description: string;
+  checklist: string[];
+}
 
 // Fallback default passcode (case-insensitive)
 const DEFAULT_ACCESS_KEY = "EUPHORIA2027";
@@ -123,6 +142,25 @@ export default function CommitteePortal() {
   const [selectedProposalForModal, setSelectedProposalForModal] = useState<ProposalItem | null>(null);
   const [proposalToDelete, setProposalToDelete] = useState<ProposalItem | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  // Timeline State
+  const [milestones, setMilestones] = useState<TimelineMilestone[]>([]);
+  const [hasUnsavedTimeline, setHasUnsavedTimeline] = useState<boolean>(false);
+  const [selectedHubFilter, setSelectedHubFilter] = useState<string>("all");
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>("all");
+  const [isMilestoneModalOpen, setIsMilestoneModalOpen] = useState<boolean>(false);
+  const [editingMilestoneId, setEditingMilestoneId] = useState<string | null>(null);
+  const [milestoneFormData, setMilestoneFormData] = useState<Partial<TimelineMilestone>>({
+    phase: "Phase 4: Carnival Week Execution (May 19–26, 2027)",
+    title: "",
+    date: "May 21, 2027",
+    hub: "All Committee",
+    venue: "AC Hotel by Marriott (Ogle, Guyana) Outdoor Pool & Event Lounge",
+    status: "planned",
+    description: "",
+    checklist: [],
+  });
+  const [rawChecklistInput, setRawChecklistInput] = useState<string>("");
 
   // Form State
   const [formData, setFormData] = useState({
@@ -300,6 +338,180 @@ export default function CommitteePortal() {
     },
   });
 
+  // Query: Master Timeline Milestones
+  const { data: serverTimeline = [], isLoading: isLoadingTimeline } = useQuery<TimelineMilestone[]>({
+    queryKey: ["/api/committee/timeline"],
+    enabled: isAuthenticated,
+  });
+
+  useEffect(() => {
+    if (serverTimeline && serverTimeline.length > 0 && milestones.length === 0) {
+      setMilestones(serverTimeline);
+    }
+  }, [serverTimeline, milestones.length]);
+
+  // Mutation: Save Master Timeline
+  const saveTimelineMutation = useMutation({
+    mutationFn: async (updatedList: TimelineMilestone[]) => {
+      const res = await apiRequest("POST", "/api/committee/timeline", { milestones: updatedList });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/committee/timeline"] });
+      setHasUnsavedTimeline(false);
+      toast({
+        title: "Timeline Synchronized",
+        description: "Master roadmap saved to cloud across all committee hubs.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Save Failed",
+        description: "Could not sync timeline changes to database.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Helper: Cycle milestone status
+  const handleCycleMilestoneStatus = (id: string) => {
+    const updated = milestones.map((m) => {
+      if (m.id === id) {
+        const nextStatus: "planned" | "in_progress" | "completed" =
+          m.status === "planned"
+            ? "in_progress"
+            : m.status === "in_progress"
+            ? "completed"
+            : "planned";
+        return { ...m, status: nextStatus };
+      }
+      return m;
+    });
+    setMilestones(updated);
+    setHasUnsavedTimeline(true);
+    toast({
+      title: "Status Updated",
+      description: "Remember to click 'Save Timeline to Cloud' to lock in changes.",
+    });
+  };
+
+  // Helper: Toggle checklist item check state
+  const handleToggleChecklistItem = (milestoneId: string, itemIdx: number) => {
+    const updated = milestones.map((m) => {
+      if (m.id === milestoneId) {
+        const newChecklist = [...(m.checklist || [])];
+        if (newChecklist[itemIdx].startsWith("[x] ")) {
+          newChecklist[itemIdx] = newChecklist[itemIdx].replace("[x] ", "");
+        } else {
+          newChecklist[itemIdx] = `[x] ${newChecklist[itemIdx]}`;
+        }
+        return { ...m, checklist: newChecklist };
+      }
+      return m;
+    });
+    setMilestones(updated);
+    setHasUnsavedTimeline(true);
+  };
+
+  // Helper: Delete milestone
+  const handleDeleteMilestone = (id: string) => {
+    const updated = milestones.filter((m) => m.id !== id);
+    setMilestones(updated);
+    setHasUnsavedTimeline(true);
+    toast({
+      title: "Milestone Removed",
+      description: "Item removed from roadmap. Click 'Save Timeline to Cloud' to persist.",
+    });
+  };
+
+  // Helper: Open add milestone dialog
+  const handleOpenAddMilestone = () => {
+    setEditingMilestoneId(null);
+    setMilestoneFormData({
+      phase: "Phase 4: Carnival Week Execution (May 19–26, 2027)",
+      title: "",
+      date: "May 21, 2027",
+      hub: "All Committee",
+      venue: "AC Hotel by Marriott (Ogle, Guyana) Outdoor Pool & Event Lounge",
+      status: "planned",
+      description: "",
+      checklist: [],
+    });
+    setRawChecklistInput("");
+    setIsMilestoneModalOpen(true);
+  };
+
+  // Helper: Open edit milestone dialog
+  const handleOpenEditMilestone = (item: TimelineMilestone) => {
+    setEditingMilestoneId(item.id);
+    setMilestoneFormData({ ...item });
+    setRawChecklistInput((item.checklist || []).join("\n"));
+    setIsMilestoneModalOpen(true);
+  };
+
+  // Helper: Save milestone from modal
+  const handleSaveMilestoneModal = () => {
+    if (!milestoneFormData.title?.trim()) {
+      toast({
+        title: "Title Required",
+        description: "Please provide a title for this milestone or event.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const parsedChecklist = rawChecklistInput
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (editingMilestoneId) {
+      const updated = milestones.map((m) => {
+        if (m.id === editingMilestoneId) {
+          return {
+            ...m,
+            ...milestoneFormData,
+            checklist: parsedChecklist,
+          } as TimelineMilestone;
+        }
+        return m;
+      });
+      setMilestones(updated);
+    } else {
+      const newItem: TimelineMilestone = {
+        id: `m-${Date.now()}`,
+        phase: milestoneFormData.phase || "Phase 2: Tri-State Buildup & Teaser Launch",
+        title: milestoneFormData.title.trim(),
+        date: milestoneFormData.date || "May 2027",
+        hub: (milestoneFormData.hub as any) || "All Committee",
+        venue: milestoneFormData.venue || "AC Hotel by Marriott (Ogle, Guyana) Outdoor Pool & Event Lounge",
+        status: (milestoneFormData.status as any) || "planned",
+        description: milestoneFormData.description || "",
+        checklist: parsedChecklist,
+      };
+      setMilestones([...milestones, newItem]);
+    }
+
+    setHasUnsavedTimeline(true);
+    setIsMilestoneModalOpen(false);
+    toast({
+      title: editingMilestoneId ? "Milestone Updated" : "Milestone Added",
+      description: "Click 'Save Timeline to Cloud' to persist changes.",
+    });
+  };
+
+  // Helper: Reset to default roadmap
+  const handleResetTimelineToDefault = () => {
+    if (serverTimeline && serverTimeline.length > 0) {
+      setMilestones(serverTimeline);
+      setHasUnsavedTimeline(false);
+      toast({
+        title: "Roadmap Reset",
+        description: "Reset to last cloud-synchronized state.",
+      });
+    }
+  };
+
   // Trigger initial generation on first auth
   useEffect(() => {
     if (isAuthenticated && !activeOutput) {
@@ -353,6 +565,32 @@ export default function CommitteePortal() {
     setActiveOutput(null);
     setActiveTab("generator");
   };
+
+  // Derived Timeline Metrics
+  const filteredMilestones = milestones.filter((m) => {
+    const hubMatches = selectedHubFilter === "all" || m.hub === selectedHubFilter;
+    const statusMatches = selectedStatusFilter === "all" || m.status === selectedStatusFilter;
+    return hubMatches && statusMatches;
+  });
+
+  const totalMilestonesCount = milestones.length;
+  const completedMilestonesCount = milestones.filter((m) => m.status === "completed").length;
+  const inProgressMilestonesCount = milestones.filter((m) => m.status === "in_progress").length;
+  const plannedMilestonesCount = milestones.filter((m) => m.status === "planned").length;
+  const completionPercentage =
+    totalMilestonesCount > 0
+      ? Math.round((completedMilestonesCount / totalMilestonesCount) * 100)
+      : 0;
+
+  // Days to Carnival / Oasis Pool Party (May 21, 2027)
+  const targetCarnivalDate = new Date("2027-05-21T14:00:00Z");
+  const daysUntilPoolParty = Math.max(
+    0,
+    Math.ceil((targetCarnivalDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  );
+
+  // Distinct phases represented in the filtered milestones
+  const distinctPhases = Array.from(new Set(filteredMilestones.map((m) => m.phase)));
 
   // -------------------------------------------------------------
   // 1. LOCK SCREEN (CODE ACCESS ONLY)
@@ -484,34 +722,75 @@ export default function CommitteePortal() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCreateNew}
-              className="border-[#223147] bg-[#0E1522] hover:bg-[#141D2E] text-gray-200 text-xs h-9"
-            >
-              <Plus className="w-3.5 h-3.5 mr-1.5 text-[#00D2B4]" />
-              New Proposal
-            </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Main Committee Navigation Tabs */}
+            <div className="bg-[#080C14] p-1 rounded-lg border border-[#1C2739] flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setActiveTab("generator")}
+                className={`text-xs h-8 px-3 rounded-md transition-all ${
+                  activeTab === "generator"
+                    ? "bg-[#00D2B4]/20 text-[#00D2B4] font-semibold"
+                    : "text-gray-300 hover:text-white hover:bg-[#131B2A]"
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 mr-1.5 text-[#00D2B4]" />
+                Auto-Site Studio
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setActiveTab("timeline")}
+                className={`text-xs h-8 px-3 rounded-md relative transition-all ${
+                  activeTab === "timeline"
+                    ? "bg-[#E5A93C]/20 text-[#E5A93C] font-semibold"
+                    : "text-gray-300 hover:text-white hover:bg-[#131B2A]"
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5 mr-1.5 text-[#E5A93C]" />
+                Visual Master Roadmap
+                {hasUnsavedTimeline && (
+                  <span className="ml-1.5 inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-500 text-black animate-pulse">
+                    Unsaved
+                  </span>
+                )}
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setActiveTab("records")}
+                className={`text-xs h-8 px-3 rounded-md transition-all ${
+                  activeTab === "records"
+                    ? "bg-[#0B4F37] text-white font-semibold"
+                    : "text-gray-300 hover:text-white hover:bg-[#131B2A]"
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5 mr-1.5 text-gray-300" />
+                Saved Records ({savedProposals.length})
+              </Button>
+            </div>
 
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setActiveTab("records")}
-              className={`border-[#223147] text-xs h-9 ${activeTab === "records" ? "bg-[#00D2B4]/20 text-[#00D2B4] border-[#00D2B4]" : "bg-[#0E1522] hover:bg-[#141D2E] text-gray-200"}`}
+              onClick={handleCreateNew}
+              className="border-[#223147] bg-[#0E1522] hover:bg-[#141D2E] text-gray-200 text-xs h-8"
             >
-              <FileText className="w-3.5 h-3.5 mr-1.5 text-[#E5A93C]" />
-              Saved Records ({savedProposals.length})
+              <Plus className="w-3.5 h-3.5 mr-1 text-[#00D2B4]" />
+              New Proposal
             </Button>
 
             <Button
               variant="ghost"
               size="sm"
               onClick={handleLockPortal}
-              className="text-gray-400 hover:text-red-400 hover:bg-red-950/20 text-xs h-9"
+              className="text-gray-400 hover:text-red-400 hover:bg-red-950/20 text-xs h-8"
+              title="Lock Committee Portal"
             >
-              <Lock className="w-3.5 h-3.5 mr-1.5" />
+              <Lock className="w-3.5 h-3.5 mr-1" />
               Lock
             </Button>
           </div>
@@ -520,7 +799,435 @@ export default function CommitteePortal() {
 
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 lg:px-8 py-6">
-        {activeTab === "records" ? (
+        {activeTab === "timeline" ? (
+          /* ------------------------------------------------------------- */
+          /* VISUAL MASTER ROADMAP & TIMELINE (INTERACTIVE & EDITABLE)     */
+          /* ------------------------------------------------------------- */
+          <div className="space-y-6">
+            {/* Top Toolbar & Summary Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0A0E17] border border-[#1A2639] p-4 lg:p-5 rounded-xl shadow-lg">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Badge className="bg-[#0B4F37] text-[#00D2B4] border-0 text-[10px] font-mono uppercase tracking-wider">
+                    Executive Master Roadmap
+                  </Badge>
+                  {hasUnsavedTimeline && (
+                    <Badge className="bg-amber-500 text-black text-[10px] font-bold animate-pulse">
+                      Pending Cloud Sync
+                    </Badge>
+                  )}
+                </div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-[#E5A93C]" />
+                  Guyana Carnival 2027 Master Timeline & Roadmap
+                </h2>
+                <p className="text-xs text-gray-400 mt-1 max-w-3xl">
+                  Strategic roadmap from 2026 concept & apparel sampling, through 2027 diaspora buildup in NJ/NY,
+                  airport arrivals, and execution of Carnival Week May 19–26, 2027 at the AC Hotel Marriott Ogle Pool.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2.5 flex-wrap">
+                {hasUnsavedTimeline && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResetTimelineToDefault}
+                    className="border-[#2C3B52] bg-[#0E1522] text-xs text-gray-300 hover:text-white"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 mr-1 text-gray-400" />
+                    Reset
+                  </Button>
+                )}
+
+                <Button
+                  size="sm"
+                  onClick={handleOpenAddMilestone}
+                  className="bg-[#122030] hover:bg-[#1A2B42] text-white border border-[#24354C] text-xs h-9"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1.5 text-[#00D2B4]" />
+                  Add Milestone
+                </Button>
+
+                <Button
+                  size="sm"
+                  onClick={() => saveTimelineMutation.mutate(milestones)}
+                  disabled={saveTimelineMutation.isPending}
+                  className={`text-xs h-9 font-semibold text-white transition-all shadow-md ${
+                    hasUnsavedTimeline
+                      ? "bg-gradient-to-r from-[#0B4F37] via-[#008F6B] to-[#E5A93C] animate-pulse"
+                      : "bg-[#0B4F37] hover:bg-[#0F6546]"
+                  }`}
+                >
+                  {saveTimelineMutation.isPending ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                      Syncing...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5 mr-1.5" />
+                      {hasUnsavedTimeline ? "Save Timeline to Cloud *" : "Timeline Saved"}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Infographic KPI Bar */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Stat 1: Countdown */}
+              <Card className="bg-[#0D121C] border-[#182334] p-4 relative overflow-hidden">
+                <div className="absolute right-2 top-2 opacity-10">
+                  <Clock className="w-20 h-20 text-[#00D2B4]" />
+                </div>
+                <div className="text-[11px] font-semibold text-[#00D2B4] uppercase tracking-wider mb-1">
+                  Countdown to Oasis Pool Party
+                </div>
+                <div className="text-3xl font-extrabold text-white font-mono tracking-tight">
+                  {daysUntilPoolParty} <span className="text-sm font-normal text-gray-400">Days</span>
+                </div>
+                <div className="text-[11px] text-gray-400 mt-2 flex items-center gap-1.5">
+                  <MapPin className="w-3 h-3 text-[#E5A93C]" />
+                  <span>Friday, May 21, 2027 • Ogle, Guyana</span>
+                </div>
+              </Card>
+
+              {/* Stat 2: Progress Tracker */}
+              <Card className="bg-[#0D121C] border-[#182334] p-4 relative overflow-hidden">
+                <div className="text-[11px] font-semibold text-[#E5A93C] uppercase tracking-wider mb-1">
+                  Executive Progress
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-extrabold text-white font-mono">{completionPercentage}%</span>
+                  <span className="text-xs text-gray-400">({completedMilestonesCount}/{totalMilestonesCount} complete)</span>
+                </div>
+                {/* Visual Progress Bar */}
+                <div className="w-full bg-[#1A2332] h-2 rounded-full overflow-hidden mt-3 flex">
+                  <div
+                    style={{ width: `${(completedMilestonesCount / (totalMilestonesCount || 1)) * 100}%` }}
+                    className="bg-emerald-500 h-full transition-all"
+                    title={`Completed: ${completedMilestonesCount}`}
+                  />
+                  <div
+                    style={{ width: `${(inProgressMilestonesCount / (totalMilestonesCount || 1)) * 100}%` }}
+                    className="bg-amber-400 h-full transition-all"
+                    title={`In Progress: ${inProgressMilestonesCount}`}
+                  />
+                </div>
+                <div className="flex justify-between text-[10px] text-gray-400 mt-1.5">
+                  <span className="text-emerald-400">● {completedMilestonesCount} Done</span>
+                  <span className="text-amber-400">● {inProgressMilestonesCount} Active</span>
+                  <span className="text-gray-400">● {plannedMilestonesCount} Planned</span>
+                </div>
+              </Card>
+
+              {/* Stat 3: Confirmed Venue */}
+              <Card className="bg-[#0D121C] border-[#182334] p-4">
+                <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                  Confirmed Primary Venue
+                </div>
+                <div className="text-sm font-bold text-white line-clamp-1">
+                  AC Hotel by Marriott
+                </div>
+                <div className="text-xs text-[#00D2B4] font-medium mt-0.5">
+                  Outdoor Pool & Event Deck (Ogle)
+                </div>
+                <div className="text-[11px] text-gray-400 mt-2 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Venue Paid & Locked • 2 mins to OGL</span>
+                </div>
+              </Card>
+
+              {/* Stat 4: Ticketing Engine */}
+              <Card className="bg-[#0D121C] border-[#182334] p-4">
+                <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                  Masquerader & Ticket Engine
+                </div>
+                <div className="text-sm font-bold text-white flex items-center gap-1.5">
+                  <span>carnival-planner.com</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-[#00D2B4]" />
+                </div>
+                <div className="text-xs text-gray-400 mt-0.5">
+                  Direct Checkout & Registration
+                </div>
+                <div className="text-[11px] text-[#E5A93C] mt-2 font-medium">
+                  Early Bird $45 • Cabanas $1,250
+                </div>
+              </Card>
+            </div>
+
+            {/* Filter & View Controls */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#080B12] p-3 rounded-lg border border-[#162132]">
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                <span className="text-gray-400 font-medium flex items-center gap-1">
+                  <Filter className="w-3.5 h-3.5 text-[#00D2B4]" /> Hub:
+                </span>
+                {[
+                  { id: "all", label: "All Hubs" },
+                  { id: "NJ/NY Committee", label: "NJ / NY" },
+                  { id: "Guyana Operations", label: "Guyana Ops" },
+                  { id: "UK Logistics", label: "UK Logistics" },
+                  { id: "All Committee", label: "All Board" },
+                ].map((hub) => (
+                  <button
+                    key={hub.id}
+                    onClick={() => setSelectedHubFilter(hub.id)}
+                    className={`px-2.5 py-1 rounded-md text-xs transition-all ${
+                      selectedHubFilter === hub.id
+                        ? "bg-[#0B4F37] text-white font-medium shadow"
+                        : "text-gray-400 hover:text-white bg-[#0E1522] border border-[#1B273A]"
+                    }`}
+                  >
+                    {hub.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                <span className="text-gray-400 font-medium">Status:</span>
+                {[
+                  { id: "all", label: "All" },
+                  { id: "planned", label: "Planned" },
+                  { id: "in_progress", label: "In Progress" },
+                  { id: "completed", label: "Completed" },
+                ].map((st) => (
+                  <button
+                    key={st.id}
+                    onClick={() => setSelectedStatusFilter(st.id)}
+                    className={`px-2.5 py-1 rounded-md text-xs transition-all ${
+                      selectedStatusFilter === st.id
+                        ? "bg-[#E5A93C] text-black font-semibold shadow"
+                        : "text-gray-400 hover:text-white bg-[#0E1522] border border-[#1B273A]"
+                    }`}
+                  >
+                    {st.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Instruction Banner */}
+            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[#00D2B4]/5 border border-[#00D2B4]/20 text-xs text-gray-300">
+              <Sparkles className="w-4 h-4 text-[#00D2B4] shrink-0" />
+              <span>
+                <strong>Committee Live Interaction:</strong> Click the status pill on any milestone card to cycle between <em>Planned → In Progress → Completed</em>. Toggle action checklist items to mark deliverables done. Click <strong>"Save Timeline to Cloud"</strong> when done to sync with all hubs.
+              </span>
+            </div>
+
+            {/* Roadmap Phases & Cards */}
+            {isLoadingTimeline ? (
+              <div className="py-20 text-center">
+                <RefreshCw className="w-8 h-8 animate-spin text-[#00D2B4] mx-auto mb-3" />
+                <p className="text-xs text-gray-400">Loading master committee roadmap...</p>
+              </div>
+            ) : filteredMilestones.length === 0 ? (
+              <Card className="bg-[#0C1018] border-[#182334] p-12 text-center text-gray-400">
+                <Calendar className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                <h3 className="text-base font-semibold text-gray-200">No Milestones Match Filter</h3>
+                <p className="text-xs text-gray-400 max-w-sm mx-auto mt-1 mb-4">
+                  Adjust your hub or status filters, or add a new milestone to this phase.
+                </p>
+                <Button
+                  onClick={() => {
+                    setSelectedHubFilter("all");
+                    setSelectedStatusFilter("all");
+                  }}
+                  className="bg-[#0B4F37] text-white text-xs"
+                >
+                  Clear Filters
+                </Button>
+              </Card>
+            ) : (
+              <div className="space-y-8">
+                {distinctPhases.map((phase) => {
+                  const phaseMilestones = filteredMilestones.filter((m) => m.phase === phase);
+                  const phaseCompleted = phaseMilestones.filter((m) => m.status === "completed").length;
+
+                  return (
+                    <div key={phase} className="space-y-3">
+                      {/* Phase Header */}
+                      <div className="flex items-center justify-between border-b border-[#1A273C] pb-2">
+                        <div className="flex items-center gap-2">
+                          <Flag className="w-4 h-4 text-[#E5A93C]" />
+                          <h3 className="text-sm md:text-base font-bold text-white tracking-wide">
+                            {phase}
+                          </h3>
+                        </div>
+                        <Badge variant="outline" className="text-[11px] border-[#25364E] text-gray-300">
+                          {phaseCompleted}/{phaseMilestones.length} Done
+                        </Badge>
+                      </div>
+
+                      {/* Milestone Cards Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {phaseMilestones.map((m) => {
+                          const getHubBadge = (hub: string) => {
+                            switch (hub) {
+                              case "NJ/NY Committee":
+                                return "bg-purple-950/60 text-purple-300 border-purple-500/30";
+                              case "Guyana Operations":
+                                return "bg-emerald-950/60 text-emerald-300 border-emerald-500/30";
+                              case "UK Logistics":
+                                return "bg-sky-950/60 text-sky-300 border-sky-500/30";
+                              default:
+                                return "bg-amber-950/60 text-amber-300 border-amber-500/30";
+                            }
+                          };
+
+                          return (
+                            <Card
+                              key={m.id}
+                              className={`transition-all duration-200 flex flex-col justify-between ${
+                                m.status === "completed"
+                                  ? "bg-[#0A1412]/95 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.06)]"
+                                  : m.status === "in_progress"
+                                  ? "bg-[#14120B]/95 border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.06)]"
+                                  : "bg-[#0D121B]/95 border-[#1A2638] hover:border-[#263750]"
+                              }`}
+                            >
+                              <CardHeader className="pb-3">
+                                {/* Badges Row */}
+                                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <Badge className={`text-[10px] font-mono border ${getHubBadge(m.hub)}`}>
+                                      {m.hub}
+                                    </Badge>
+                                    <span className="text-[11px] text-gray-400 flex items-center gap-1 font-mono">
+                                      <Clock className="w-3 h-3 text-[#00D2B4]" />
+                                      {m.date}
+                                    </span>
+                                  </div>
+
+                                  {/* 1-Click Status Cycling Button */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCycleMilestoneStatus(m.id)}
+                                    title="Click to cycle status (Planned -> In Progress -> Completed)"
+                                    className={`px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider flex items-center gap-1.5 border transition-all ${
+                                      m.status === "completed"
+                                        ? "bg-emerald-950 text-emerald-300 border-emerald-600 hover:bg-emerald-900"
+                                        : m.status === "in_progress"
+                                        ? "bg-amber-950 text-amber-300 border-amber-600 hover:bg-amber-900"
+                                        : "bg-[#162030] text-gray-300 border-[#283850] hover:bg-[#202E42]"
+                                    }`}
+                                  >
+                                    {m.status === "completed" ? (
+                                      <>
+                                        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                                        Completed
+                                      </>
+                                    ) : m.status === "in_progress" ? (
+                                      <>
+                                        <RefreshCw className="w-3 h-3 text-amber-400 animate-spin" />
+                                        In Progress
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Clock className="w-3 h-3 text-gray-400" />
+                                        Planned
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+
+                                <CardTitle className="text-sm md:text-base font-bold text-white leading-snug">
+                                  {m.title}
+                                </CardTitle>
+
+                                {m.venue && (
+                                  <CardDescription className="text-xs text-gray-400 flex items-center gap-1 pt-1">
+                                    <MapPin className="w-3 h-3 text-[#E5A93C] shrink-0" />
+                                    <span className="truncate">{m.venue}</span>
+                                  </CardDescription>
+                                )}
+                              </CardHeader>
+
+                              <CardContent className="space-y-3 pb-3 text-xs">
+                                <p className="text-gray-300 leading-relaxed">
+                                  {m.description}
+                                </p>
+
+                                {/* Action Checklist Items */}
+                                {m.checklist && m.checklist.length > 0 && (
+                                  <div className="bg-[#070A10] p-2.5 rounded-lg border border-[#162130] space-y-1.5">
+                                    <div className="flex items-center justify-between text-[10px] uppercase font-semibold text-gray-400 tracking-wider">
+                                      <span className="flex items-center gap-1">
+                                        <ListChecks className="w-3 h-3 text-[#00D2B4]" /> Checklist
+                                      </span>
+                                      <span>
+                                        {m.checklist.filter((c) => c.startsWith("[x] ")).length}/{m.checklist.length} Done
+                                      </span>
+                                    </div>
+
+                                    <div className="space-y-1 pt-1">
+                                      {m.checklist.map((item, idx) => {
+                                        const isChecked = item.startsWith("[x] ");
+                                        const cleanText = isChecked ? item.replace("[x] ", "") : item;
+
+                                        return (
+                                          <div
+                                            key={idx}
+                                            onClick={() => handleToggleChecklistItem(m.id, idx)}
+                                            className="flex items-start gap-2 cursor-pointer group hover:bg-[#0E1522] p-1 rounded transition-colors"
+                                          >
+                                            {isChecked ? (
+                                              <CheckSquare className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
+                                            ) : (
+                                              <Square className="w-3.5 h-3.5 text-gray-500 group-hover:text-gray-300 mt-0.5 shrink-0" />
+                                            )}
+                                            <span
+                                              className={`text-[11px] leading-tight ${
+                                                isChecked ? "line-through text-gray-500" : "text-gray-300"
+                                              }`}
+                                            >
+                                              {cleanText}
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+                              </CardContent>
+
+                              {/* Card Footer Actions */}
+                              <CardFooter className="pt-2 border-t border-[#182334] flex items-center justify-between">
+                                <div className="text-[10px] text-gray-400">
+                                  ID: <span className="font-mono text-gray-300">{m.id}</span>
+                                </div>
+
+                                <div className="flex items-center gap-1.5">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleOpenEditMilestone(m)}
+                                    className="border-[#223147] bg-[#0A0E17] hover:bg-[#141E30] text-[11px] text-gray-200 h-7 px-2"
+                                  >
+                                    <Edit3 className="w-3 h-3 mr-1 text-[#00D2B4]" />
+                                    Edit
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleDeleteMilestone(m.id)}
+                                    className="text-gray-400 hover:text-red-400 hover:bg-red-950/20 h-7 px-2"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </CardFooter>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : activeTab === "records" ? (
           /* ------------------------------------------------------------- */
           /* SAVED COMMITTEE RECORDS VIEW (CRUD)                           */
           /* ------------------------------------------------------------- */
@@ -1426,6 +2133,154 @@ export default function CommitteePortal() {
                 className="bg-red-600 hover:bg-red-700 text-white text-xs"
               >
                 {deleteProposalMutation.isPending ? "Deleting..." : "Confirm Delete"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* MODAL: ADD / EDIT TIMELINE MILESTONE */}
+      {isMilestoneModalOpen && (
+        <Dialog open={isMilestoneModalOpen} onOpenChange={setIsMilestoneModalOpen}>
+          <DialogContent className="max-w-xl bg-[#0D121B] border-[#223046] text-white">
+            <DialogHeader>
+              <div className="flex items-center gap-2 mb-1">
+                <Badge className="bg-[#0B4F37] text-[#00D2B4] border-0 text-[10px] uppercase font-mono">
+                  {editingMilestoneId ? "Edit Milestone" : "Add Milestone"}
+                </Badge>
+              </div>
+              <DialogTitle className="text-base md:text-lg text-white font-bold">
+                {editingMilestoneId ? "Update Roadmap Milestone" : "Add New Committee Milestone"}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-gray-400">
+                Configure timeline checkpoints, event venue coordination, and action items.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2 text-xs">
+              {/* Phase Selection */}
+              <div className="space-y-1.5">
+                <label className="text-gray-300 font-medium">Roadmap Phase</label>
+                <select
+                  value={milestoneFormData.phase || "Phase 4: Carnival Week Execution (May 19–26, 2027)"}
+                  onChange={(e) => setMilestoneFormData({ ...milestoneFormData, phase: e.target.value })}
+                  className="w-full bg-[#080B11] border border-[#1C2739] rounded-md px-3 py-2 text-white text-xs focus:border-[#00D2B4]"
+                >
+                  <option value="Phase 1: Concept & Production">Phase 1: Concept & Production</option>
+                  <option value="Phase 2: Tri-State Buildup & Teaser Launch">Phase 2: Tri-State Buildup & Teaser Launch</option>
+                  <option value="Phase 3: Logistics & Arrivals">Phase 3: Logistics & Arrivals</option>
+                  <option value="Phase 4: Carnival Week Execution (May 19–26, 2027)">Phase 4: Carnival Week Execution (May 19–26, 2027)</option>
+                  <option value="Post-Carnival Wrap & Financial Audit">Post-Carnival Wrap & Financial Audit</option>
+                </select>
+              </div>
+
+              {/* Title */}
+              <div className="space-y-1.5">
+                <label className="text-gray-300 font-medium">Milestone / Event Title</label>
+                <Input
+                  value={milestoneFormData.title || ""}
+                  onChange={(e) => setMilestoneFormData({ ...milestoneFormData, title: e.target.value })}
+                  placeholder="e.g. OASIS: The AC Marriott Welcome Pool Party"
+                  className="bg-[#080B11] border-[#1C2739] text-white text-xs focus:border-[#00D2B4]"
+                />
+              </div>
+
+              {/* Target Date & Responsible Hub */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-gray-300 font-medium">Target Date / Window</label>
+                  <Input
+                    value={milestoneFormData.date || ""}
+                    onChange={(e) => setMilestoneFormData({ ...milestoneFormData, date: e.target.value })}
+                    placeholder="e.g. Friday, May 21, 2027"
+                    className="bg-[#080B11] border-[#1C2739] text-white text-xs focus:border-[#00D2B4]"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-gray-300 font-medium">Responsible Hub</label>
+                  <select
+                    value={milestoneFormData.hub || "All Committee"}
+                    onChange={(e) => setMilestoneFormData({ ...milestoneFormData, hub: e.target.value as any })}
+                    className="w-full bg-[#080B11] border border-[#1C2739] rounded-md px-3 py-2 text-white text-xs focus:border-[#00D2B4]"
+                  >
+                    <option value="NJ/NY Committee">NJ / NY Committee</option>
+                    <option value="Guyana Operations">Guyana Operations</option>
+                    <option value="UK Logistics">UK Logistics</option>
+                    <option value="All Committee">All Committee</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Venue & Status */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-gray-300 font-medium">Venue / Space</label>
+                  <Input
+                    value={milestoneFormData.venue || ""}
+                    onChange={(e) => setMilestoneFormData({ ...milestoneFormData, venue: e.target.value })}
+                    placeholder="e.g. AC Hotel by Marriott (Ogle Pool Deck)"
+                    className="bg-[#080B11] border-[#1C2739] text-white text-xs focus:border-[#00D2B4]"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-gray-300 font-medium">Execution Status</label>
+                  <select
+                    value={milestoneFormData.status || "planned"}
+                    onChange={(e) => setMilestoneFormData({ ...milestoneFormData, status: e.target.value as any })}
+                    className="w-full bg-[#080B11] border border-[#1C2739] rounded-md px-3 py-2 text-white text-xs focus:border-[#00D2B4]"
+                  >
+                    <option value="planned">Planned</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-1.5">
+                <label className="text-gray-300 font-medium">Description & Scope</label>
+                <Textarea
+                  value={milestoneFormData.description || ""}
+                  onChange={(e) => setMilestoneFormData({ ...milestoneFormData, description: e.target.value })}
+                  placeholder="Outline key deliverables, operational considerations, or vendor handoffs..."
+                  rows={3}
+                  className="bg-[#080B11] border-[#1C2739] text-white text-xs focus:border-[#00D2B4]"
+                />
+              </div>
+
+              {/* Action Checklist (One per line) */}
+              <div className="space-y-1.5">
+                <label className="text-gray-300 font-medium">Action Checklist (One item per line)</label>
+                <Textarea
+                  value={rawChecklistInput}
+                  onChange={(e) => setRawChecklistInput(e.target.value)}
+                  placeholder="Review venue sound permits&#10;Coordinate carnival-planner tickets&#10;Lock in talent flights"
+                  rows={3}
+                  className="bg-[#080B11] border-[#1C2739] text-white text-xs font-mono focus:border-[#00D2B4]"
+                />
+                <p className="text-[10px] text-gray-400">
+                  Tip: Prefix completed items with "[x] " or toggle them later directly in the roadmap.
+                </p>
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMilestoneModalOpen(false)}
+                className="border-[#24334A] text-xs text-gray-300"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveMilestoneModal}
+                className="bg-[#0B4F37] hover:bg-[#0E6346] text-white text-xs"
+              >
+                {editingMilestoneId ? "Update Milestone" : "Add to Roadmap"}
               </Button>
             </DialogFooter>
           </DialogContent>
