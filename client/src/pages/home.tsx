@@ -54,6 +54,8 @@ const Home = () => {
   const { data: merchDrops = [] } = useQuery<any[]>({
     queryKey: ["/api/merch/catalog"],
     queryFn: () => fetch("/api/merch/catalog").then(res => res.json()).catch(() => []),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   // Fetch active site background video setting

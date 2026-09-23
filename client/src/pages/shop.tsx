@@ -71,6 +71,8 @@ export default function Shop() {
       if (!res.ok) throw new Error("Failed to load catalog");
       return res.json();
     },
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const filteredCatalog = catalog.filter(item => {
