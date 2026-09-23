@@ -26,7 +26,7 @@ async function main() {
     eventId = existingEvents[0].id;
     console.log(`ℹ️ Event already exists with ID: ${eventId}. Updating details...`);
     await db.update(events).set({
-      description: 'Savage Gentlemen presents MOVE YUH RASŚ at The Ainsworth in Hoboken, NJ. Bringing the highest energy Soca, Dancehall, and Afrobeats with 2 of the top selectors in the circuit. 250 capacity intimate luxury waterfront fete. Authentic Caribbean flags, premium bottle service tables, and non-stop energy.',
+      description: 'When de bass rumble and de riddim take over, yuh have no choice but to move. Savage Gentlemen presents MOVE YUH RASŚ — an unapologetic explosion of authentic Caribbean energy, sound, and culture. We bringing pure carnival vibes with non-stop Soca, raw Dancehall heat, and infectious Afrobeats commanded by top-tier selectors. Grab yuh team, rep yuh island, hoist yuh flag high, and prepare for high-octane waistline pressure all night long. Premium bottle service tables available. Lock in and stay ready — official tickets dropping soon. Don\'t stick!',
       date: new Date('2026-11-27T22:00:00-05:00'),
       time: '22:00',
       endTime: '02:30',
@@ -34,9 +34,9 @@ async function main() {
       location: 'The Ainsworth, 310 Sinatra Dr, Hoboken, NJ 07030',
       price: 2000,
       currency: 'USD',
-      imageUrl: '/images/move_yuh_rass_teaser_9x16.jpg',
+      imageUrl: '/images/move_yuh_rass_teaser_4x5_perfect.jpg',
       additionalImages: [
-        '/images/move_yuh_rass_teaser_4x5_perfect.jpg',
+        '/images/move_yuh_rass_teaser_9x16.jpg',
         '/images/move_yuh_rass_teaser_1x1_perfect.jpg'
       ],
       category: 'Nightlife & Caribbean Fete',
@@ -57,7 +57,7 @@ async function main() {
     console.log('✨ Creating new MOVE YUH RASŚ event...');
     const [newEvent] = await db.insert(events).values({
       title: 'MOVE YUH RASŚ',
-      description: 'Savage Gentlemen presents MOVE YUH RASŚ at The Ainsworth in Hoboken, NJ. Bringing the highest energy Soca, Dancehall, and Afrobeats with 2 of the top selectors in the circuit. 250 capacity intimate luxury waterfront fete. Authentic Caribbean flags, premium bottle service tables, and non-stop energy.',
+      description: 'When de bass rumble and de riddim take over, yuh have no choice but to move. Savage Gentlemen presents MOVE YUH RASŚ — an unapologetic explosion of authentic Caribbean energy, sound, and culture. We bringing pure carnival vibes with non-stop Soca, raw Dancehall heat, and infectious Afrobeats commanded by top-tier selectors. Grab yuh team, rep yuh island, hoist yuh flag high, and prepare for high-octane waistline pressure all night long. Premium bottle service tables available. Lock in and stay ready — official tickets dropping soon. Don\'t stick!',
       date: new Date('2026-11-27T22:00:00-05:00'),
       time: '22:00',
       endTime: '02:30',
@@ -65,9 +65,9 @@ async function main() {
       location: 'The Ainsworth, 310 Sinatra Dr, Hoboken, NJ 07030',
       price: 2000,
       currency: 'USD',
-      imageUrl: '/images/move_yuh_rass_teaser_9x16.jpg',
+      imageUrl: '/images/move_yuh_rass_teaser_4x5_perfect.jpg',
       additionalImages: [
-        '/images/move_yuh_rass_teaser_4x5_perfect.jpg',
+        '/images/move_yuh_rass_teaser_9x16.jpg',
         '/images/move_yuh_rass_teaser_1x1_perfect.jpg'
       ],
       category: 'Nightlife & Caribbean Fete',
