@@ -138,12 +138,44 @@ export class PrintifyService {
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data.data) && data.data.length > 0) {
-            // ONLY SHOW ACTIVE / PUBLISHED ITEMS THAT ARE NOT DELETED AND HAVE ACTIVE VARIANTS
-            const activeProducts = data.data.filter((p: any) =>
-              !p.is_deleted &&
-              p.variants &&
-              p.variants.some((v: any) => v.is_enabled && v.is_available)
-            );
+            // Auto-confirm publishing with Printify for products in publishing state
+            // so Printify dashboard graduates them from "Publishing" to "Published"
+            data.data.forEach((p: any) => {
+              if (!p.is_deleted && p.is_locked && (!p.external || !p.external.id)) {
+                fetch(`https://api.printify.com/v1/shops/${this.shopId}/products/${p.id}/publishing_succeeded.json`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    external: {
+                      id: p.id,
+                      handle: `https://www.savgent.com/shop`
+                    }
+                  })
+                }).catch((err) => console.error(`[PrintifyService] Failed to notify publishing_succeeded for ${p.id}:`, err));
+              }
+            });
+
+            // ONLY SHOW ACTIVE & PUBLISHED ITEMS:
+            // 1. Must not be deleted
+            // 2. Must be visible in Printify (not hidden)
+            // 3. Must not be in unpublished draft status (in Printify custom integration,
+            //    unpublished drafts have is_locked === false and no external handle/id).
+            //    Only products submitted for publishing (is_locked === true) or confirmed published (external.id/handle present) are included.
+            // 4. Must have enabled and available variants in stock
+            const activeProducts = data.data.filter((p: any) => {
+              if (p.is_deleted) return false;
+              if (p.visible === false) return false;
+
+              // Filter out unpublished drafts
+              const hasExternal = p.external && Boolean(p.external.id || p.external.handle);
+              const isPublishedOrPublishing = p.is_locked || hasExternal;
+              if (!isPublishedOrPublishing) return false;
+
+              return p.variants && p.variants.some((v: any) => v.is_enabled && v.is_available);
+            });
 
             if (activeProducts.length > 0) {
               return activeProducts.map((p: any) => {

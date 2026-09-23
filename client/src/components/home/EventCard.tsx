@@ -30,6 +30,8 @@ const EventCard = ({
   const { user, isAuthenticated } = useUser();
   const { toast } = useToast();
 
+  const isComingSoon = !isPastEvent && (event.lowestActivePrice === null || event.lowestActivePrice === undefined) && (event.price === null || event.price === undefined);
+
   // Track event view when card is rendered
   React.useEffect(() => {
     trackEventView(id);
@@ -131,10 +133,12 @@ const EventCard = ({
             <div className="flex justify-between items-center">
               <Badge variant="secondary" className={`px-2 py-1 rounded transition-colors ${isPastEvent
                   ? 'bg-gray-800 text-gray-400'
+                  : isComingSoon
+                  ? 'bg-amber-900/60 text-amber-300 border border-amber-500/30'
                   : 'bg-green-900 text-green-300'
                 }`}>
-                <span className="mr-1">{isPastEvent ? '📅' : '🎟️'}</span>
-                {isPastEvent ? 'Event ended' : 'Tickets available'}
+                <span className="mr-1">{isPastEvent ? '📅' : isComingSoon ? '⏳' : '🎟️'}</span>
+                {isPastEvent ? 'Event ended' : isComingSoon ? 'Coming Soon' : 'Tickets available'}
               </Badge>
               <div className="flex space-x-2">
                 <Link href={`/events/${id}`}>
@@ -149,17 +153,28 @@ const EventCard = ({
                     View Details
                   </Button>
                 </Link>
-                <Button
-                  className={`transition-all ${isPastEvent
-                      ? 'bg-gray-700 text-gray-400 cursor-not-allowed hover:bg-gray-700'
-                      : 'bg-primary text-white hover:bg-red-800'
-                    }`}
-                  onClick={handleGetTickets}
-                  disabled={isPastEvent}
-                  data-testid={isPastEvent ? "button-tickets-disabled" : "button-get-tickets"}
-                >
-                  {isPastEvent ? 'Event Ended' : 'Get Tickets'}
-                </Button>
+                {isComingSoon ? (
+                  <Link href={`/events/${id}`}>
+                    <Button
+                      size="sm"
+                      className="bg-gold-500/20 text-gold-400 border border-gold-500/40 hover:bg-gold-500/30 transition-all font-semibold"
+                    >
+                      Coming Soon
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button
+                    className={`transition-all ${isPastEvent
+                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed hover:bg-gray-700'
+                        : 'bg-primary text-white hover:bg-red-800'
+                      }`}
+                    onClick={handleGetTickets}
+                    disabled={isPastEvent}
+                    data-testid={isPastEvent ? "button-tickets-disabled" : "button-get-tickets"}
+                  >
+                    {isPastEvent ? 'Event Ended' : 'Get Tickets'}
+                  </Button>
+                )}
               </div>
             </div>
             {!isPastEvent && (
@@ -227,6 +242,8 @@ const EventCard = ({
           </div>
           <Badge variant="outline" className={`text-xs font-bold px-3 py-1 rounded-full border-0 shadow-lg transition-colors ${isPastEvent
               ? 'bg-gray-700 text-gray-400'
+              : isComingSoon
+              ? 'bg-gold-500/20 text-gold-400 border border-gold-500/40'
               : 'gradient-primary text-white'
             }`}>
             {formatEventPrice(event)}
@@ -252,18 +269,29 @@ const EventCard = ({
                 Details
               </Button>
             </Link>
-            <Button
-              className={`border-0 shadow-lg transition-all duration-300 ${isPastEvent
-                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed hover:bg-gray-700'
-                  : 'btn-modern gradient-primary text-white'
-                }`}
-              size="sm"
-              onClick={handleGetTickets}
-              disabled={isPastEvent}
-              data-testid={isPastEvent ? "button-tickets-disabled" : "button-get-tickets"}
-            >
-              {isPastEvent ? 'Event Ended' : 'Get Tickets'}
-            </Button>
+            {isComingSoon ? (
+              <Link href={`/events/${id}`}>
+                <Button
+                  size="sm"
+                  className="bg-gold-500/20 text-gold-400 border border-gold-500/40 hover:bg-gold-500/30 transition-all font-semibold text-xs"
+                >
+                  Coming Soon
+                </Button>
+              </Link>
+            ) : (
+              <Button
+                className={`border-0 shadow-lg transition-all duration-300 ${isPastEvent
+                    ? 'bg-gray-700 text-gray-400 cursor-not-allowed hover:bg-gray-700'
+                    : 'btn-modern gradient-primary text-white'
+                  }`}
+                size="sm"
+                onClick={handleGetTickets}
+                disabled={isPastEvent}
+                data-testid={isPastEvent ? "button-tickets-disabled" : "button-get-tickets"}
+              >
+                {isPastEvent ? 'Event Ended' : 'Get Tickets'}
+              </Button>
+            )}
           </div>
         </div>
         {!isPastEvent && (

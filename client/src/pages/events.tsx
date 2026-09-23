@@ -113,12 +113,20 @@ const Events = () => {
                 </span>
               </div>
               <div className="flex space-x-3">
-                <Button
-                  className="bg-primary text-white hover:bg-red-800 transition"
-                  onClick={() => handleGetTicket(featuredEvent.id)}
-                >
-                  Get Tickets
-                </Button>
+                {(featuredEvent.lowestActivePrice === null || featuredEvent.lowestActivePrice === undefined) && (featuredEvent.price === null || featuredEvent.price === undefined) ? (
+                  <Link href={`/events/${featuredEvent.id}`}>
+                    <Button className="bg-gold-500/20 text-gold-400 border border-gold-500/40 hover:bg-gold-500/30 transition font-semibold">
+                      Coming Soon
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button
+                    className="bg-primary text-white hover:bg-red-800 transition"
+                    onClick={() => handleGetTicket(featuredEvent.id)}
+                  >
+                    Get Tickets
+                  </Button>
+                )}
                 <Link href={`/events/${featuredEvent.id}`}>
                   <Button variant="outline" className="border-white text-white hover:bg-white/20">
                     View Details

@@ -80,7 +80,8 @@ export function formatEventPrice(event: {
     : event.price;
   
   // Check for both null and 0 values
-  if (displayPrice === null || displayPrice === undefined || displayPrice === 0) return 'Free';
+  if (displayPrice === null || displayPrice === undefined) return 'Coming Soon';
+  if (displayPrice === 0) return 'Free';
   
   // Use event's currency if available, otherwise determine from location
   const currency = (event.currency as CurrencyCode) || getCurrencyFromLocation(event.location);
