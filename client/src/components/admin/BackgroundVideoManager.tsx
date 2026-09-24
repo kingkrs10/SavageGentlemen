@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { getAuthHeaders } from "@/lib/auth-utils";
 import BrandVideo from "@/assets/videos/brand-video.mp4";
 
 interface VideoConfig {
@@ -90,13 +91,27 @@ export const BackgroundVideoManager = () => {
       formData.append("contrast", contrast.toString());
       formData.append("brightness", brightness.toString());
 
+      const authHeaders = getAuthHeaders();
       const res = await fetch("/api/settings/background-video/upload", {
         method: "POST",
+        headers: {
+          ...authHeaders,
+        },
+        credentials: "include",
         body: formData,
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed");
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || `Server responded with status ${res.status}`);
+      }
+
+      if (!res.ok) {
+        throw new Error(data.error || data.message || `Upload failed (${res.status})`);
+      }
 
       toast({
         title: "Video Uploaded Successfully!",
@@ -107,6 +122,7 @@ export const BackgroundVideoManager = () => {
       setFilePreviewUrl(null);
       queryClient.invalidateQueries({ queryKey: ["/api/settings/background-video"] });
     } catch (err: any) {
+      console.error("Video upload error:", err);
       toast({
         title: "Upload Error",
         description: err.message || "Failed to upload video",

@@ -29,11 +29,12 @@ const videoUpload = multer({
   storage: videoStorage,
   limits: { fileSize: 100 * 1024 * 1024 }, // 100 MB max video size
   fileFilter: (_req, file, cb) => {
-    const allowed = /\.(mp4|webm|mov|m4v)$/i.test(path.extname(file.originalname));
-    if (allowed) {
+    const allowedExt = /\.(mp4|webm|mov|m4v|mkv)$/i.test(path.extname(file.originalname));
+    const isVideoMime = file.mimetype?.startsWith("video/") || file.mimetype === "application/octet-stream";
+    if (allowedExt || isVideoMime) {
       cb(null, true);
     } else {
-      cb(new Error("Only video files (.mp4, .webm, .mov, .m4v) are supported"));
+      cb(new Error("Only video files (.mp4, .webm, .mov, .m4v, .mkv) are supported"));
     }
   },
 });
@@ -93,7 +94,15 @@ settingsRouter.post(
   "/background-video/upload",
   authenticateUser,
   authorizeAdmin,
-  videoUpload.single("video"),
+  (req: Request, res: Response, next: any) => {
+    videoUpload.single("video")(req, res, (err: any) => {
+      if (err) {
+        console.error("[Settings] Multer video upload error:", err.message);
+        return res.status(400).json({ error: err.message || "Failed to process video upload" });
+      }
+      next();
+    });
+  },
   async (req: Request, res: Response) => {
     try {
       if (!req.file) {
