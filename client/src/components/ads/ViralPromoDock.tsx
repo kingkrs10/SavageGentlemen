@@ -81,7 +81,7 @@ export function ViralPromoDock() {
   const currentOffer = VIRAL_OFFERS[activeOfferIndex];
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="fixed bottom-[146px] md:bottom-20 left-1/2 -translate-x-1/2 z-30 w-[95%] max-w-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="relative group">
         {/* Ambient Gold Glow Backdrop */}
         <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-500 via-gold-500 to-yellow-400 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500 pointer-events-none" />

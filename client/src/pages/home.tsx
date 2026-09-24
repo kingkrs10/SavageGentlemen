@@ -72,6 +72,7 @@ const Home = () => {
     opacity?: number;
     contrast?: number;
     brightness?: number;
+    blendMode?: "normal" | "screen" | "lighten" | "overlay" | "color-dodge";
     isDefault?: boolean;
   }>({
     queryKey: ["/api/settings/background-video"],
@@ -193,6 +194,7 @@ const Home = () => {
             style={{
               opacity: videoConfig?.opacity ?? 0.45,
               filter: `brightness(${videoConfig?.brightness ?? 90}%) contrast(${videoConfig?.contrast ?? 125}%)`,
+              mixBlendMode: videoConfig?.blendMode || "normal",
             }}
             autoPlay
             muted

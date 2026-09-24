@@ -30,6 +30,7 @@ interface VideoConfig {
   opacity: number;
   contrast: number;
   brightness: number;
+  blendMode?: "normal" | "screen" | "lighten" | "overlay" | "color-dodge";
   isDefault: boolean;
   updatedAt?: string;
 }
@@ -41,7 +42,7 @@ export const BackgroundVideoManager = () => {
 
   const [isPlaying, setIsPlaying] = useState(true);
   const [videoError, setVideoError] = useState<string | null>(null);
-  const [previewMode, setPreviewMode] = useState<"stage" | "clean">("clean");
+  const [previewMode, setPreviewMode] = useState<"stage" | "clean">("stage");
   const [showControls, setShowControls] = useState<boolean>(true);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
@@ -52,6 +53,7 @@ export const BackgroundVideoManager = () => {
   const [opacity, setOpacity] = useState<number>(0.45);
   const [contrast, setContrast] = useState<number>(125);
   const [brightness, setBrightness] = useState<number>(90);
+  const [blendMode, setBlendMode] = useState<"normal" | "screen" | "lighten" | "overlay" | "color-dodge">("normal");
   const [isUploading, setIsUploading] = useState<boolean>(false);
 
   const { data: config, isLoading } = useQuery<VideoConfig>({
@@ -68,6 +70,7 @@ export const BackgroundVideoManager = () => {
       setOpacity(config.opacity ?? 0.45);
       setContrast(config.contrast ?? 125);
       setBrightness(config.brightness ?? 90);
+      setBlendMode(config.blendMode || "normal");
     }
   }, [config]);
 
@@ -126,6 +129,7 @@ export const BackgroundVideoManager = () => {
       formData.append("opacity", opacity.toString());
       formData.append("contrast", contrast.toString());
       formData.append("brightness", brightness.toString());
+      formData.append("blendMode", blendMode);
 
       const authHeaders = getAuthHeaders();
       const res = await fetch("/api/settings/background-video/upload", {
@@ -179,6 +183,7 @@ export const BackgroundVideoManager = () => {
         opacity,
         contrast,
         brightness,
+        blendMode,
       });
 
       const data = await res.json();
@@ -401,6 +406,7 @@ export const BackgroundVideoManager = () => {
               style={{
                 opacity: previewMode === "clean" ? 1 : opacity,
                 filter: previewMode === "clean" ? "none" : `brightness(${brightness}%) contrast(${contrast}%)`,
+                mixBlendMode: previewMode === "clean" ? "normal" : blendMode,
               }}
               onLoadedMetadata={(e) => {
                 const v = e.target as HTMLVideoElement;
@@ -587,11 +593,44 @@ export const BackgroundVideoManager = () => {
                   className="py-1"
                 />
               </div>
+
+              {/* Blend Mode Selector */}
+              <div className="space-y-2 pt-2 border-t border-white/10">
+                <div className="flex justify-between items-center text-xs font-mono text-white/70">
+                  <span className="font-bold text-white">Visual Blend Mode</span>
+                  <span className="text-gold-400 font-bold uppercase">{blendMode}</span>
+                </div>
+                <p className="text-[11px] text-white/50 leading-relaxed">
+                  Select <strong className="text-gold-300">Screen</strong> if your video has a white or light background (e.g. animated logo) to make the background transparent and float the logo directly over the dark obsidian theme.
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                  {[
+                    { id: "normal", label: "Normal", desc: "Default Opaque" },
+                    { id: "screen", label: "Screen", desc: "Drop White (Recommended)" },
+                    { id: "lighten", label: "Lighten", desc: "Highlights Pass" },
+                    { id: "overlay", label: "Overlay", desc: "Deep Contrast" },
+                  ].map((mode) => (
+                    <button
+                      key={mode.id}
+                      type="button"
+                      onClick={() => setBlendMode(mode.id as any)}
+                      className={`p-2 rounded-xl text-left border transition-all text-xs ${
+                        blendMode === mode.id
+                          ? "bg-gold-500/20 border-gold-400 text-gold-300 font-bold shadow-md"
+                          : "bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10"
+                      }`}
+                    >
+                      <div className="font-bold text-xs">{mode.label}</div>
+                      <div className="text-[9px] opacity-70 leading-tight mt-0.5">{mode.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <Button
               onClick={handleSaveSettings}
-              className="w-full bg-gold-500/20 hover:bg-gold-500 text-gold-300 hover:text-obsidian border border-gold-500/40 font-bold text-xs uppercase tracking-wider gap-2"
+              className="w-full bg-gold-500/20 hover:bg-gold-500 text-gold-300 hover:text-obsidian border border-gold-500/40 font-bold text-xs uppercase tracking-wider gap-2 shadow-lg"
             >
               <Save className="w-3.5 h-3.5" />
               Save URL & Display Settings

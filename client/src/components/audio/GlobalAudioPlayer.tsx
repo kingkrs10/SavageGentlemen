@@ -52,7 +52,7 @@ export const GlobalAudioPlayer = () => {
 
   return (
     <div
-      className={`fixed bottom-16 md:bottom-4 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-4xl transition-all duration-500 ease-out`}
+      className={`fixed bottom-[76px] md:bottom-4 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-4xl transition-all duration-500 ease-out`}
     >
       {/* Glow Effect */}
       <div className="absolute -inset-0.5 bg-gradient-to-r from-gold-600 via-amber-500 to-yellow-600 rounded-2xl blur-md opacity-30 group-hover:opacity-60 transition duration-500 pointer-events-none" />

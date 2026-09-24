@@ -162,10 +162,10 @@ export const SavageConcierge = () => {
   return (
     <>
       {/* Floating Concierge Launch Button */}
-      <div className="fixed bottom-24 right-4 md:bottom-24 md:right-8 z-40">
+      <div className="fixed bottom-20 right-3 md:bottom-24 md:right-8 z-40">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="group relative flex items-center gap-2.5 px-4 py-3 rounded-full glass-obsidian-strong border border-gold-500/40 shadow-2xl hover:scale-105 transition-all duration-300 hover:border-gold-400"
+          className="group relative flex items-center gap-2 p-2 sm:px-4 sm:py-3 rounded-full glass-obsidian-strong border border-gold-500/40 shadow-2xl hover:scale-105 transition-all duration-300 hover:border-gold-400"
           aria-label="Toggle Savage Concierge AI"
         >
           <div className="relative">
@@ -178,13 +178,13 @@ export const SavageConcierge = () => {
             <p className="text-[10px] uppercase tracking-widest text-gold-400 font-bold leading-tight">AI Concierge</p>
             <p className="text-xs font-semibold text-white leading-tight">Savage Assistant</p>
           </div>
-          <Sparkles className="w-3.5 h-3.5 text-gold-400 animate-bounce-slow" />
+          <Sparkles className="w-3.5 h-3.5 text-gold-400 hidden sm:block animate-bounce-slow" />
         </button>
       </div>
 
       {/* Concierge Drawer Modal */}
       {isOpen && (
-        <div className="fixed bottom-20 right-4 md:bottom-28 md:right-8 z-50 w-[92vw] sm:w-[420px] max-h-[600px] h-[550px] flex flex-col rounded-2xl glass-obsidian-strong border border-gold-500/30 shadow-2xl shadow-black/90 backdrop-blur-2xl overflow-hidden animate-fade-in-up">
+        <div className="fixed bottom-16 right-2 left-2 sm:left-auto sm:right-8 md:bottom-28 z-50 sm:w-[420px] max-h-[80vh] h-[540px] flex flex-col rounded-2xl glass-obsidian-strong border border-gold-500/30 shadow-2xl shadow-black/90 backdrop-blur-2xl overflow-hidden animate-fade-in-up">
           {/* Header */}
           <div className="p-4 border-b border-white/10 flex items-center justify-between bg-black/40">
             <div className="flex items-center gap-3">

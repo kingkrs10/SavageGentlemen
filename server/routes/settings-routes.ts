@@ -46,6 +46,7 @@ export interface BackgroundVideoConfig {
   opacity: number;
   contrast: number;
   brightness: number;
+  blendMode?: "normal" | "screen" | "lighten" | "overlay" | "color-dodge";
   isDefault: boolean;
   updatedAt?: string;
 }
@@ -56,6 +57,7 @@ const DEFAULT_CONFIG: BackgroundVideoConfig = {
   opacity: 0.45,
   contrast: 125,
   brightness: 90,
+  blendMode: "normal",
   isDefault: true,
 };
 
@@ -145,6 +147,7 @@ settingsRouter.post(
       const opacity = req.body.opacity ? parseFloat(req.body.opacity) : 0.45;
       const contrast = req.body.contrast ? parseInt(req.body.contrast) : 125;
       const brightness = req.body.brightness ? parseInt(req.body.brightness) : 90;
+      const blendMode = req.body.blendMode || "normal";
 
       const newConfig: BackgroundVideoConfig = {
         videoUrl: relativeUrl,
@@ -152,6 +155,7 @@ settingsRouter.post(
         opacity: isNaN(opacity) ? 0.45 : opacity,
         contrast: isNaN(contrast) ? 125 : contrast,
         brightness: isNaN(brightness) ? 90 : brightness,
+        blendMode: blendMode,
         isDefault: false,
         updatedAt: new Date().toISOString(),
       };
@@ -186,7 +190,7 @@ settingsRouter.put(
   authorizeAdmin,
   async (req: Request, res: Response) => {
     try {
-      const { videoUrl, posterUrl, opacity, contrast, brightness } = req.body;
+      const { videoUrl, posterUrl, opacity, contrast, brightness, blendMode } = req.body;
 
       const updatedConfig: BackgroundVideoConfig = {
         videoUrl: videoUrl || "",
@@ -194,6 +198,7 @@ settingsRouter.put(
         opacity: typeof opacity === "number" ? opacity : 0.45,
         contrast: typeof contrast === "number" ? contrast : 125,
         brightness: typeof brightness === "number" ? brightness : 90,
+        blendMode: blendMode || "normal",
         isDefault: !videoUrl,
         updatedAt: new Date().toISOString(),
       };

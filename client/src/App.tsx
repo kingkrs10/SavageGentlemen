@@ -3,6 +3,7 @@ import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
 import BottomNavigation from "@/components/layout/BottomNavigation";
 import AuthModal from "@/components/auth/AuthModal";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -274,6 +275,8 @@ function AppContent() {
           <main className={isIsolatedRoute() || location === '/' || location === '/home' ? "" : "container mx-auto px-4 py-8 pb-28"}>
             <Router />
           </main>
+
+          {!isIsolatedRoute() && <Footer />}
 
           {/* Sticky Global Audio Player for DJ Mixes */}
           {!isCommitteeRoute() && <GlobalAudioPlayer />}
