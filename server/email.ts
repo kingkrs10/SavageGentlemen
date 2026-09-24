@@ -1,12 +1,11 @@
 import sgMail from '@sendgrid/mail';
 import QRCode from 'qrcode';
 
-// Initialize SendGrid with API key
-if (!process.env.SENDGRID_API_KEY) {
-  throw new Error('SENDGRID_API_KEY environment variable must be set');
+// Initialize SendGrid with API key if provided
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // The sender email that will be used for all communications
 // Using a verified SendGrid sender email to bypass DNS authentication issues

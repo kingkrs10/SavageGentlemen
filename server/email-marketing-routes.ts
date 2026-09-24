@@ -12,7 +12,7 @@ import {
   type EmailList,
   type EmailSubscriber
 } from "@shared/schema";
-import { sendEmail } from "./email";
+import { sendEmail } from "./email-provider";
 import { eq, and, like, sql } from "drizzle-orm";
 import { z } from "zod";
 import multer from "multer";
