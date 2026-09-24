@@ -268,7 +268,24 @@ export default function AdminPage() {
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [activeDashboardTab, setActiveDashboardTab] = useState("users");
+  const [activeDashboardTab, setActiveDashboardTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (tabParam) return tabParam;
+    }
+    return "users";
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("tab") !== activeDashboardTab) {
+        url.searchParams.set("tab", activeDashboardTab);
+        window.history.replaceState(null, "", url.toString());
+      }
+    }
+  }, [activeDashboardTab]);
 
   const currentCategory = React.useMemo(() => {
     return ADMIN_CATEGORIES.find(cat => cat.tabs.some(t => t.id === activeDashboardTab)) || ADMIN_CATEGORIES[0];
