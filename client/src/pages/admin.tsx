@@ -197,7 +197,8 @@ import {
   Trash,
   DollarSign,
   BookOpen,
-  Sparkles
+  Sparkles,
+  ArrowLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/context/UserContext";
@@ -1968,7 +1969,7 @@ export default function AdminPage() {
               </div>
               <div>
                 <span className="text-[10px] uppercase font-mono text-white/50 block font-bold">Published Stories</span>
-                <span className="text-xl font-heading font-extrabold text-amber-300">202</span>
+                <span className="text-xl font-heading font-extrabold text-amber-300">{articles?.length || 202}</span>
               </div>
             </div>
             <div className="glass-obsidian border border-gold-500/20 p-4 rounded-2xl flex items-center gap-3 shadow-lg">
