@@ -66,6 +66,7 @@ export default {
         },
         obsidian: {
           DEFAULT: "#0A0B10",
+          card: "#12141A",
           light: "#141722",
           dark: "#050608",
         },

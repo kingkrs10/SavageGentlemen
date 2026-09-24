@@ -82,6 +82,7 @@ import { merchRouter } from "./routes/merch-routes";
 import { settingsRouter } from "./routes/settings-routes";
 import { adAutomationRouter } from "./routes/ad-automation-routes";
 import { sevenDayStrategyRouter } from "./routes/seven-day-strategy-routes";
+import { sevenDayStrategyService } from "./services/seven-day-strategy";
 import { committeeRouter } from "./routes/committee-routes";
 import { magazineBot } from "./workers/magazine-bot";
 
@@ -534,6 +535,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Initialize Autonomous Magazine Bot
   magazineBot.start().catch(err => console.error("Error starting MagazineBot:", err));
+
+  // Initialize 7-Day Caribbean Strategy Auto-Scheduler
+  sevenDayStrategyService.init().catch(err => console.error("Error starting SevenDayStrategyService:", err));
 
   // Register social and enhanced ticketing routes
   registerSocialRoutes(app);
@@ -3030,69 +3034,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User profile picture upload (for regular users)
   router.post("/users/upload-avatar", upload.single('file'), async (req: Request, res: Response) => {
     try {
-      // Check authentication manually since multer needs to run before we access the file
-      const userId = req.headers['user-id'];
+      // Robust multi-strategy authentication
+      let authenticatedUser = req.user;
 
-      if (!userId) {
-        return res.status(401).json({ message: "Authentication required - No user ID" });
+      // 1. Check Authorization Bearer header
+      const authHeader = req.headers['authorization'];
+      if (!authenticatedUser && authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        if (token && token !== 'undefined' && token !== 'null') {
+          try {
+            const decodedToken = await admin.auth().verifyIdToken(token);
+            const userByFb = await storage.getUserByFirebaseId(decodedToken.uid);
+            if (userByFb) authenticatedUser = userByFb;
+          } catch {}
+
+          if (!authenticatedUser) {
+            authenticatedUser = await validateSecureLoginTokenPublic(token);
+          }
+        }
       }
 
+      // 2. Check cookie (sg_auth_token)
+      if (!authenticatedUser && req.headers.cookie) {
+        try {
+          const cookies = req.headers.cookie.split(';').reduce((acc, cookie) => {
+            const [name, ...value] = cookie.split('=');
+            if (name) acc[name.trim()] = value.join('=');
+            return acc;
+          }, {} as Record<string, string>);
+          const authToken = cookies['sg_auth_token'];
+          if (authToken) {
+            authenticatedUser = await validateSecureLoginTokenPublic(authToken);
+          }
+        } catch (cookieErr) {
+          console.error("[Avatar Upload] Error parsing cookie:", cookieErr);
+        }
+      }
+
+      // 3. Fallback to user-id header
+      const userIdHeader = req.headers['user-id'];
+      if (!authenticatedUser && userIdHeader) {
+        const id = parseInt(userIdHeader as string);
+        if (!isNaN(id)) {
+          authenticatedUser = await storage.getUser(id);
+        }
+      }
+
+      // 4. Fallback to session
+      if (!authenticatedUser && (req.session as any)?.user?.id) {
+        authenticatedUser = await storage.getUser((req.session as any).user.id);
+      }
+
+      if (!authenticatedUser) {
+        if (req.file) {
+          try { fs.unlinkSync(req.file.path); } catch {}
+        }
+        return res.status(401).json({ message: "Authentication required - Please sign in to update your profile photo" });
+      }
+
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ message: "No image file provided" });
+      }
+
+      // Validate file type
+      if (!file.mimetype.startsWith('image/')) {
+        try { fs.unlinkSync(file.path); } catch {}
+        return res.status(400).json({ message: "Only image files (JPG, PNG, GIF, WebP) are allowed" });
+      }
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        try { fs.unlinkSync(file.path); } catch {}
+        return res.status(400).json({ message: "File size must be less than 5MB" });
+      }
+
+      console.log(`[Avatar Upload] Uploading avatar for user ${authenticatedUser.id} (${authenticatedUser.username}): ${file.originalname}`);
+
+      // Attempt Firebase upload if bucket configured, otherwise fallback smoothly to local static storage
+      let fileUrl = `/uploads/${file.filename}`;
+      let uploadedToFirebase = false;
+
+      if (process.env.VITE_FIREBASE_STORAGE_BUCKET) {
+        try {
+          fileUrl = await uploadToFirebase(file.path, file.filename);
+          uploadedToFirebase = true;
+          try { fs.unlinkSync(file.path); } catch (e) {}
+        } catch (fbErr: any) {
+          console.warn("[Avatar Upload] Firebase upload failed, falling back to local static storage:", fbErr.message);
+          fileUrl = `/uploads/${file.filename}`;
+        }
+      } else {
+        console.log(`[Avatar Upload] Firebase bucket not configured, serving avatar locally at ${fileUrl}`);
+      }
+
+      // Update user's avatar in the database
+      const updatedUser = await storage.updateUser(authenticatedUser.id, { avatar: fileUrl });
+
+      // Create a record in the media uploads table
       try {
-        const id = parseInt(userId as string);
-        const user = await storage.getUser(id);
-
-        if (!user) {
-          return res.status(401).json({ message: `User not found - ID: ${id}` });
-        }
-
-        const file = req.file;
-
-        if (!file) {
-          return res.status(400).json({ message: "No file uploaded" });
-        }
-
-        // Validate file type
-        if (!file.mimetype.startsWith('image/')) {
-          return res.status(400).json({ message: "Only image files are allowed" });
-        }
-
-        // Validate file size (5MB limit)
-        if (file.size > 5 * 1024 * 1024) {
-          return res.status(400).json({ message: "File size must be less than 5MB" });
-        }
-
-        console.log('Profile picture uploaded:', file.originalname, 'by user ID:', id);
-
-        // Upload to Firebase Storage
-        const fileUrl = await uploadToFirebase(file.path, file.filename);
-        try { fs.unlinkSync(file.path); } catch (e) { console.error('Failed to delete local file:', e); }
-
-        // Update user's avatar in the database
-        const updatedUser = await storage.updateUser(id, { avatar: fileUrl });
-
-        // Create a record in the media uploads table
         await storage.createMediaUpload({
-          userId: id,
+          userId: authenticatedUser.id,
           url: fileUrl,
           fileName: file.originalname,
           fileType: file.mimetype,
           fileSize: file.size,
           relatedEntityType: 'user-avatar',
-          relatedEntityId: id
+          relatedEntityId: authenticatedUser.id
         });
-
-        return res.status(200).json({
-          message: "Profile picture uploaded successfully",
-          avatar: fileUrl,
-          user: updatedUser
-        });
-      } catch (error) {
-        console.error("Authentication error:", error);
-        return res.status(500).json({ message: "Authentication error" });
+      } catch (mediaErr) {
+        console.warn("[Avatar Upload] Non-fatal error creating media upload record:", mediaErr);
       }
-    } catch (err) {
-      console.error("Error uploading profile picture:", err);
-      return res.status(500).json({ message: "Failed to upload profile picture" });
+
+      return res.status(200).json({
+        message: "Profile picture uploaded successfully",
+        avatar: fileUrl,
+        user: updatedUser
+      });
+    } catch (err: any) {
+      console.error("[Avatar Upload] Unexpected error:", err);
+      return res.status(500).json({ message: err.message || "Failed to upload profile picture" });
     }
   });
 
@@ -4243,9 +4304,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Remove undefined values
-      const cleanedData = Object.fromEntries(
+      const cleanedData: Record<string, any> = Object.fromEntries(
         Object.entries(updateData).filter(([_, value]) => value !== undefined && value !== null && value !== '')
       );
+
+      // Allow explicitly clearing avatar if passed as null or empty string
+      if (req.body.avatar === null || req.body.avatar === "") {
+        cleanedData.avatar = null;
+      }
 
       const updatedUser = await storage.updateUser(userId, cleanedData);
       return res.status(200).json(updatedUser);

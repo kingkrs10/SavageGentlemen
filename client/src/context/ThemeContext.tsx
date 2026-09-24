@@ -49,14 +49,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         document.body.classList.remove('theme-luxury', 'theme-tactical');
         document.body.classList.add(`theme-${theme}`);
 
-        // Also toggle dark mode class for Tailwind
-        if (theme === 'tactical') {
-            document.documentElement.classList.add('dark');
-            document.documentElement.classList.remove('light');
-        } else {
-            document.documentElement.classList.remove('dark');
-            document.documentElement.classList.add('light');
-        }
+        // Ensure dark mode class is always active for Tailwind across all nocturnal themes
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
     }, [theme]);
 
     // Initial setup

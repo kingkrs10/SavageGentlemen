@@ -38,10 +38,31 @@
   --foreground: 0 0% 98%;
   /* Crisp White */
 
+  --card: 220 15% 7%;
+  --card-foreground: 0 0% 98%;
+  --popover: 220 15% 5%;
+  --popover-foreground: 0 0% 98%;
+
   /* Gold/Bronze Palette */
   --primary: 43 74% 49%;
   /* #D4AF37 Gold */
   --primary-foreground: 0 0% 100%;
+
+  --secondary: 220 60% 15%;
+  --secondary-foreground: 0 0% 98%;
+
+  --muted: 220 10% 16%;
+  --muted-foreground: 220 5% 65%;
+
+  --accent: 43 74% 49%;
+  --accent-foreground: 0 0% 10%;
+
+  --destructive: 0 70% 40%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 220 12% 18%;
+  --input: 220 12% 18%;
+  --ring: 43 74% 49%;
 
   --void-black: #0A0B10;
   /* Map void-black to dark obsidian */
@@ -620,36 +641,51 @@ select {
 }
 
 :root {
-  /* Base colors - light theme with brand-appropriate colors */
-  --background: 0 0% 98%;
-  --foreground: 220 10% 4%;
-  --card: 0 0% 100%;
-  --card-foreground: 220 10% 4%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 220 10% 4%;
+  /* Base colors - dark obsidian luxury default */
+  --background: 220 15% 5%;
+  --foreground: 0 0% 98%;
+  --card: 220 15% 7%;
+  --card-foreground: 0 0% 98%;
+  --popover: 220 15% 5%;
+  --popover-foreground: 0 0% 98%;
 
-  /* Primary: Rich Red from logo - preserved in light theme */
+  /* Primary: Rich Red from logo */
   --primary: 0 80% 30%;
   --primary-foreground: 0 0% 100%;
 
-  /* Secondary: Lighter navy blue for light theme */
-  --secondary: 220 60% 30%;
+  /* Secondary: Deep navy blue for contrast */
+  --secondary: 220 70% 16%;
   --secondary-foreground: 0 0% 98%;
 
-  /* Muted: Lighter blue-gray tones */
-  --muted: 220 10% 90%;
-  --muted-foreground: 220 5% 40%;
+  /* Muted: Subtle blue-gray tones */
+  --muted: 220 10% 16%;
+  --muted-foreground: 220 5% 65%;
 
-  /* Accent: Gold/amber color from logo - preserved */
+  /* Accent: Gold/amber color from logo */
   --accent: 36 100% 50%;
   --accent-foreground: 0 0% 10%;
 
   /* Utility colors */
-  --destructive: 0 70% 50%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 220 12% 85%;
-  --input: 220 12% 85%;
-  --ring: 220 70% 50%;
+  --destructive: 0 70% 30%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 220 12% 18%;
+  --input: 220 12% 18%;
+  --ring: 43 74% 49%;
+}
+
+/* Dark Autofill Styling - Prevent browser autofill from flashing or forcing white backgrounds */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0px 1000px #12141A inset !important;
+  box-shadow: 0 0 0px 1000px #12141A inset !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+  caret-color: #ffffff !important;
 }
 
 :root.dark {

@@ -1,7 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useUser } from "@/context/UserContext";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { getAuthHeaders } from "@/lib/auth-utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,7 @@ const SettingsPage = () => {
     bio: user?.bio || "",
     location: user?.location || "",
     website: user?.website || "",
+    avatar: user?.avatar || "",
   });
 
   const [notifications, setNotifications] = useState({
@@ -76,6 +78,30 @@ const SettingsPage = () => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Synchronize state with current user session whenever user updates
+  useEffect(() => {
+    if (user) {
+      setProfileData(prev => ({
+        ...prev,
+        displayName: user.displayName ?? prev.displayName,
+        username: user.username ?? prev.username,
+        email: user.email ?? prev.email,
+        bio: user.bio ?? prev.bio,
+        location: user.location ?? prev.location,
+        website: user.website ?? prev.website,
+        avatar: user.avatar ?? prev.avatar,
+      }));
+      setPaymentData({
+        stripeCustomerId: user.stripeCustomerId || "",
+        paypalCustomerId: user.paypalCustomerId || "",
+      });
+      setSecuritySettings({
+        twoFactorEnabled: user.twoFactorEnabled || false,
+        isPrivate: user.isPrivate || false,
+      });
+    }
+  }, [user]);
+
   const updateProfileMutation = useMutation({
     mutationFn: async (data: any) => {
       const response = await apiRequest("PUT", `/api/users/${user?.id}/profile`, data);
@@ -84,6 +110,7 @@ const SettingsPage = () => {
     onSuccess: (data) => {
       updateUser(data);
       queryClient.invalidateQueries({ queryKey: [`/api/users/${user?.id}/profile`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/me'] });
       toast({
         title: "Profile updated",
         description: "Your profile has been successfully updated.",
@@ -102,19 +129,33 @@ const SettingsPage = () => {
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append('file', file);
+
+      const authHeaders = getAuthHeaders();
+      const headers: Record<string, string> = {
+        ...authHeaders,
+      };
+
+      if (user?.id) {
+        headers['user-id'] = user.id.toString();
+      }
+      if (user?.token) {
+        headers['Authorization'] = `Bearer ${user.token}`;
+      }
       
       const response = await fetch('/api/users/upload-avatar', {
         method: 'POST',
-        headers: {
-          'user-id': user?.id?.toString() || '',
-          'Authorization': `Bearer ${user?.token}`,
-        },
+        headers,
         body: formData,
+        credentials: 'include',
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to upload profile picture');
+        let errorMsg = 'Failed to upload profile picture';
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData.message || errorMsg;
+        } catch {}
+        throw new Error(errorMsg);
       }
       
       return response.json();
@@ -124,8 +165,9 @@ const SettingsPage = () => {
       updateUser({ ...user, avatar: data.avatar });
       setProfileData(prev => ({ ...prev, avatar: data.avatar }));
       
-      // Invalidate queries to refresh profile data
+      // Invalidate queries to refresh profile data across entire app
       queryClient.invalidateQueries({ queryKey: [`/api/users/${user?.id}/profile`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/me'] });
       
       toast({
         title: "Profile picture updated",
@@ -136,7 +178,7 @@ const SettingsPage = () => {
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
+        title: "Upload Failed",
         description: error.message || "Failed to upload profile picture. Please try again.",
         variant: "destructive",
       });
@@ -263,20 +305,23 @@ const SettingsPage = () => {
           description: "Profile picture must be less than 5MB",
           variant: "destructive",
         });
+        e.target.value = '';
         return;
       }
       
       if (!file.type.startsWith('image/')) {
         toast({
           title: "Error",
-          description: "Please select a valid image file",
+          description: "Please select a valid image file (JPG, PNG, GIF, WebP)",
           variant: "destructive",
         });
+        e.target.value = '';
         return;
       }
       
       setIsUploading(true);
       profilePictureUploadMutation.mutate(file);
+      e.target.value = '';
     }
   };
 
@@ -348,13 +393,13 @@ const SettingsPage = () => {
               <div className="relative">
                 <Avatar className="w-24 h-24 cursor-pointer ring-2 ring-gold-500/50" onClick={handleAvatarClick}>
                     <AvatarImage src={user?.avatar || profileData.avatar} alt={user?.displayName || user?.username} />
-                    <AvatarFallback className="text-lg">
+                    <AvatarFallback className="bg-obsidian-light text-gold-400 font-bold text-xl border border-gold-500/30">
                       {(user?.displayName || user?.username)?.charAt(0)?.toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   {isUploading && (
-                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                    <div className="absolute inset-0 bg-black/70 rounded-full flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gold-400"></div>
                     </div>
                   )}
                 </div>
@@ -365,24 +410,26 @@ const SettingsPage = () => {
                       variant="outline" 
                       onClick={handleAvatarClick}
                       disabled={isUploading}
+                      className="border-gold-500/40 text-gold-300 hover:bg-gold-500/10"
                     >
                       <Upload className="h-4 w-4 mr-2" />
                       {isUploading ? 'Uploading...' : 'Upload Photo'}
                     </Button>
-                    {user?.avatar && (
+                    {(user?.avatar || profileData.avatar) && (
                       <Button 
                         type="button" 
                         variant="outline" 
                         onClick={() => updateProfileMutation.mutate({ ...profileData, avatar: null })}
                         disabled={updateProfileMutation.isPending}
+                        className="border-red-500/30 text-red-300 hover:bg-red-500/10"
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Remove
                       </Button>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Upload a profile picture. Max file size: 5MB. Supported formats: JPG, PNG, GIF
+                  <p className="text-sm text-gray-400">
+                    Upload a profile picture. Max file size: 5MB. Supported formats: JPG, PNG, GIF, WebP
                   </p>
                   <input
                     ref={fileInputRef}
@@ -396,7 +443,6 @@ const SettingsPage = () => {
             </CardContent>
           </Card>
 
-          {/* Profile Settings */}
           {/* Profile Settings */}
           <Card className="glass-obsidian border border-gold-500/20 rounded-2xl shadow-xl text-white">
             <CardHeader>
@@ -415,7 +461,7 @@ const SettingsPage = () => {
                       value={profileData.displayName}
                       onChange={(e) => setProfileData(prev => ({ ...prev, displayName: e.target.value }))}
                       placeholder="Your display name"
-                      className="bg-obsidian-card/90 border-white/15 text-white rounded-xl"
+                      className="!bg-[#12141A] !border-white/20 !text-white placeholder:!text-gray-400 focus:!border-gold-500 focus:!ring-1 focus:!ring-gold-500/30 rounded-xl"
                     />
                   </div>
                   <div>
@@ -425,7 +471,7 @@ const SettingsPage = () => {
                       value={profileData.username}
                       onChange={(e) => setProfileData(prev => ({ ...prev, username: e.target.value }))}
                       placeholder="Your username"
-                      className="bg-obsidian-card/90 border-white/15 text-white rounded-xl"
+                      className="!bg-[#12141A] !border-white/20 !text-white placeholder:!text-gray-400 focus:!border-gold-500 focus:!ring-1 focus:!ring-gold-500/30 rounded-xl"
                     />
                   </div>
                 </div>
@@ -438,7 +484,7 @@ const SettingsPage = () => {
                     value={profileData.email}
                     onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
                     placeholder="your@email.com"
-                    className="bg-obsidian-card/90 border-white/15 text-white rounded-xl"
+                    className="!bg-[#12141A] !border-white/20 !text-white placeholder:!text-gray-400 focus:!border-gold-500 focus:!ring-1 focus:!ring-gold-500/30 rounded-xl"
                   />
                 </div>
 
@@ -450,7 +496,7 @@ const SettingsPage = () => {
                     onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
                     placeholder="Tell us about yourself"
                     rows={3}
-                    className="bg-obsidian-card/90 border-white/15 text-white rounded-xl"
+                    className="!bg-[#12141A] !border-white/20 !text-white placeholder:!text-gray-400 focus:!border-gold-500 focus:!ring-1 focus:!ring-gold-500/30 rounded-xl"
                   />
                 </div>
 
@@ -462,7 +508,7 @@ const SettingsPage = () => {
                       value={profileData.location}
                       onChange={(e) => setProfileData(prev => ({ ...prev, location: e.target.value }))}
                       placeholder="Your location"
-                      className="bg-obsidian-card/90 border-white/15 text-white rounded-xl"
+                      className="!bg-[#12141A] !border-white/20 !text-white placeholder:!text-gray-400 focus:!border-gold-500 focus:!ring-1 focus:!ring-gold-500/30 rounded-xl"
                     />
                   </div>
                   <div>
@@ -472,7 +518,7 @@ const SettingsPage = () => {
                       value={profileData.website}
                       onChange={(e) => setProfileData(prev => ({ ...prev, website: e.target.value }))}
                       placeholder="https://yourwebsite.com"
-                      className="bg-obsidian-card/90 border-white/15 text-white rounded-xl"
+                      className="!bg-[#12141A] !border-white/20 !text-white placeholder:!text-gray-400 focus:!border-gold-500 focus:!ring-1 focus:!ring-gold-500/30 rounded-xl"
                     />
                   </div>
                 </div>
@@ -507,7 +553,7 @@ const SettingsPage = () => {
                       onChange={(e) => setPaymentData(prev => ({ ...prev, stripeCustomerId: e.target.value }))}
                       placeholder="cus_xxxxxxxxxxxxx"
                       disabled
-                      className="bg-obsidian-card/90 border-white/15 text-gray-400 rounded-xl font-mono text-xs"
+                      className="!bg-[#12141A]/70 !border-white/15 !text-gray-300 rounded-xl font-mono text-xs"
                     />
                     <p className="text-xs font-mono text-gray-400 mt-1">
                       Automatically generated when you make your first purchase
@@ -521,7 +567,7 @@ const SettingsPage = () => {
                       onChange={(e) => setPaymentData(prev => ({ ...prev, paypalCustomerId: e.target.value }))}
                       placeholder="paypal_xxxxxxxxxxxxx"
                       disabled
-                      className="bg-obsidian-card/90 border-white/15 text-gray-400 rounded-xl font-mono text-xs"
+                      className="!bg-[#12141A]/70 !border-white/15 !text-gray-300 rounded-xl font-mono text-xs"
                     />
                     <p className="text-xs font-mono text-gray-400 mt-1">
                       Automatically generated when you use PayPal
@@ -639,7 +685,7 @@ const SettingsPage = () => {
                         type="password"
                         value={passwordForm.currentPassword}
                         onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
-                        className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
+                        className="!bg-[#12141A] !border-white/20 !text-white rounded-xl text-xs"
                       />
                     </div>
                     <div className="space-y-2">
@@ -649,7 +695,7 @@ const SettingsPage = () => {
                         type="password"
                         value={passwordForm.newPassword}
                         onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
-                        className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
+                        className="!bg-[#12141A] !border-white/20 !text-white rounded-xl text-xs"
                       />
                     </div>
                     <div className="space-y-2">
@@ -659,7 +705,7 @@ const SettingsPage = () => {
                         type="password"
                         value={passwordForm.confirmPassword}
                         onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                        className="bg-white/5 border-white/15 text-white rounded-xl text-xs"
+                        className="!bg-[#12141A] !border-white/20 !text-white rounded-xl text-xs"
                       />
                     </div>
                   </div>
