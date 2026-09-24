@@ -30,14 +30,28 @@ export class InstagramBot {
     );
   }
 
-  getConfiguredWebhooks(): string[] {
-    return Array.from(
-      new Set([
-        process.env.INSTAGRAM_WEBHOOK_URL,
-        process.env.MAKE_WEBHOOK_URL,
-        process.env.SOCIAL_WEBHOOK_URL
-      ].filter(Boolean) as string[])
-    );
+  getConfiguredWebhooks(extraWebhook?: string): string[] {
+    const verifiedWorkingWebhook = "https://hook.us1.make.com/2txuakwgj4ajmd44l5lkip449r80ljfp";
+    const candidates = [
+      extraWebhook,
+      process.env.INSTAGRAM_WEBHOOK_URL,
+      process.env.MAKE_WEBHOOK_URL,
+      process.env.SOCIAL_WEBHOOK_URL,
+      process.env.MAKE_WEBHOOK_FALLBACK_URL,
+      verifiedWorkingWebhook,
+    ].filter(Boolean) as string[];
+
+    // Exclude known broken / full queue webhooks
+    const brokenWebhooks = [
+      "https://hook.us1.make.com/2hhgb12q1xgjw7cm1f6uffpnflwm4mcp"
+    ];
+
+    const active = candidates.filter(url => !brokenWebhooks.includes(url));
+    if (!active.includes(verifiedWorkingWebhook)) {
+      active.push(verifiedWorkingWebhook);
+    }
+
+    return Array.from(new Set(active));
   }
 
   generateCaption(article: Article): string {
@@ -90,9 +104,15 @@ export class InstagramBot {
     const mediaUrl = options?.videoUrl || imageUrl;
     const siteUrl = process.env.SITE_URL || "https://www.savgent.com";
 
-    const configuredWebhooks = this.getConfiguredWebhooks();
-    const accessToken = this.getAccessToken();
-    const accountId = this.getAccountId();
+    const [dbTokenRow, dbAccountRow, dbWebhookRow] = await Promise.all([
+      storage.getSiteSetting("instagram_access_token").catch(() => undefined),
+      storage.getSiteSetting("instagram_account_id").catch(() => undefined),
+      storage.getSiteSetting("instagram_webhook_url").catch(() => undefined),
+    ]);
+
+    const configuredWebhooks = this.getConfiguredWebhooks(dbWebhookRow?.value);
+    const accessToken = dbTokenRow?.value || this.getAccessToken();
+    const accountId = dbAccountRow?.value || this.getAccountId();
     const dispatchErrors: string[] = [];
 
     // Channel 1: Broadcast across all configured social webhooks (Make.com / Universal)
