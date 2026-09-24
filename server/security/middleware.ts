@@ -90,6 +90,7 @@ export const securityHeaders = helmet({
       imgSrc: ["'self'", "data:", "https://i.etsystatic.com", "https://printify.com", "https://*.stripe.com", "https://*.paypal.com", "https:"],
       connectSrc: ["'self'", "ws://localhost:*", "wss://*", "https://api.stripe.com", "https://www.paypal.com", "https://fonts.googleapis.com", "https://fonts.gstatic.com", "https://unpkg.com", "https://*.firebaseio.com", "https://*.googleapis.com"],
       frameSrc: ["'self'", "https://js.stripe.com", "https://www.paypal.com", "https://*.stripe.com"],
+      mediaSrc: ["'self'", "https:", "data:", "blob:"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: []
     }

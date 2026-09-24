@@ -82,13 +82,19 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
       res.setHeader('Content-Type', 'video/webm');
     }
 
-    // Set CORS headers for cross-origin requests
+    // Set CORS and streaming headers
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range, Authorization');
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Range, Accept-Ranges, Content-Length');
 
-    // Set cache headers for optimal performance
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    // Video vs Image cache headers & Accept-Ranges
+    if (path.endsWith('.mp4') || path.endsWith('.webm') || path.endsWith('.mov') || path.endsWith('.m4v')) {
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+    } else {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
   }
 }));
 
@@ -137,13 +143,19 @@ app.use('/api/uploads', express.static(path.join(process.cwd(), 'uploads'), {
       res.setHeader('Content-Type', 'video/webm');
     }
 
-    // Set CORS headers for cross-origin requests
+    // Set CORS and streaming headers
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range, Authorization');
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Range, Accept-Ranges, Content-Length');
 
-    // Set cache headers for optimal performance
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    // Video vs Image cache headers & Accept-Ranges
+    if (path.endsWith('.mp4') || path.endsWith('.webm') || path.endsWith('.mov') || path.endsWith('.m4v')) {
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+    } else {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
   }
 }));
 

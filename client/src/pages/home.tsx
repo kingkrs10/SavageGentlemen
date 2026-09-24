@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { 
@@ -77,6 +77,24 @@ const Home = () => {
     queryKey: ["/api/settings/background-video"],
     queryFn: () => fetch("/api/settings/background-video").then(res => res.json()).catch(() => null),
   });
+
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
+  const heroVideoSource = videoConfig?.videoUrl || BrandVideo;
+
+  useEffect(() => {
+    const video = heroVideoRef.current;
+    if (!video) return;
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.load();
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch((err) => {
+        console.warn("[HeroVideo] Autoplay prevented by browser:", err);
+      });
+    }
+  }, [heroVideoSource]);
 
   // Real-time countdown timer to next event or next carnival season
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -158,7 +176,9 @@ const Home = () => {
         {/* Background Cinematic Video with Obsidian & Amber Gradient */}
         <div className="absolute inset-0 z-0">
           <video
-            key={videoConfig?.videoUrl || "default-brand-video"}
+            ref={heroVideoRef}
+            key={heroVideoSource}
+            src={heroVideoSource}
             className="w-full h-full object-cover transition-opacity duration-700"
             style={{
               opacity: videoConfig?.opacity ?? 0.45,
@@ -169,8 +189,14 @@ const Home = () => {
             loop
             playsInline
             poster={videoConfig?.posterUrl || undefined}
+            onLoadedMetadata={(e) => {
+              const v = e.target as HTMLVideoElement;
+              v.muted = true;
+              v.defaultMuted = true;
+              v.play().catch(() => {});
+            }}
           >
-            <source src={videoConfig?.videoUrl || BrandVideo} type="video/mp4" />
+            <source src={heroVideoSource} type="video/mp4" />
           </video>
           {/* Cyber Gradients & Radial Warm Glows */}
           <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/70 to-transparent" />

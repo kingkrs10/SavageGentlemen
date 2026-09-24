@@ -40,6 +40,12 @@ export const BackgroundVideoManager = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const [isPlaying, setIsPlaying] = useState(true);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const [previewMode, setPreviewMode] = useState<"stage" | "clean">("clean");
+  const [showControls, setShowControls] = useState<boolean>(true);
+  const [currentTime, setCurrentTime] = useState<number>(0);
+  const [duration, setDuration] = useState<number>(0);
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
   const [customUrl, setCustomUrl] = useState<string>("");
@@ -66,6 +72,26 @@ export const BackgroundVideoManager = () => {
   }, [config]);
 
   const activeVideoSource = filePreviewUrl || customUrl || BrandVideo;
+
+  // Ensure video element plays automatically in muted state across modern browsers
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    setVideoError(null);
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.load();
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => setIsPlaying(true))
+        .catch((err) => {
+          console.warn("[BackgroundVideo] Autoplay prevented by browser:", err);
+          setIsPlaying(false);
+        });
+    }
+  }, [activeVideoSource]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -192,13 +218,24 @@ export const BackgroundVideoManager = () => {
 
   const togglePlayback = () => {
     if (videoRef.current) {
-      if (isPlaying) {
+      if (videoRef.current.paused) {
+        videoRef.current
+          .play()
+          .then(() => setIsPlaying(true))
+          .catch((err) => {
+            console.warn("Play request prevented:", err);
+          });
+      } else {
         videoRef.current.pause();
         setIsPlaying(false);
-      } else {
-        videoRef.current.play();
-        setIsPlaying(true);
       }
+    }
+  };
+
+  const handleRestartVideo = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
     }
   };
 
@@ -236,34 +273,108 @@ export const BackgroundVideoManager = () => {
       <CardContent className="pt-6 space-y-8">
         {/* Preview Screen */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <Label className="text-sm font-bold text-white flex items-center gap-2">
               <Video className="w-4 h-4 text-gold-400" />
-              Live Stage Preview
+              Live Stage & Video Preview
             </Label>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {config?.isDefault && !filePreviewUrl && !customUrl ? (
                 <Badge variant="outline" className="text-gold-400 border-gold-500/40 text-[10px] font-mono">
-                  Default Brand Video Active
+                  Default Brand Video
                 </Badge>
               ) : (
                 <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-mono">
                   Custom Video Active
                 </Badge>
               )}
+
+              {/* Preview Mode Switcher */}
+              <div className="inline-flex items-center rounded-lg bg-white/5 p-0.5 border border-white/10 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setPreviewMode("clean")}
+                  className={`px-2.5 py-1 rounded-md transition-all text-xs font-medium ${
+                    previewMode === "clean"
+                      ? "bg-gold-500 text-obsidian font-bold shadow"
+                      : "text-white/60 hover:text-white"
+                  }`}
+                  title="View raw video without obsidian gradients or dimming"
+                >
+                  Raw Video
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewMode("stage")}
+                  className={`px-2.5 py-1 rounded-md transition-all text-xs font-medium ${
+                    previewMode === "stage"
+                      ? "bg-gold-500 text-obsidian font-bold shadow"
+                      : "text-white/60 hover:text-white"
+                  }`}
+                  title="View video with homepage ambient lighting & opacity"
+                >
+                  Stage Lighting
+                </button>
+              </div>
+
+              {/* Native Controls Toggle */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowControls(!showControls)}
+                className="h-7 px-2 text-xs border-white/15 text-white/70 hover:text-white"
+                title="Toggle on-video scrubbing and playback controls"
+              >
+                {showControls ? "Hide Controls" : "Show Controls"}
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRestartVideo}
+                className="h-7 px-2 text-xs text-white/60 hover:text-white bg-white/5 border border-white/10"
+                title="Restart from beginning"
+              >
+                <RotateCcw className="w-3 h-3 mr-1" />
+                0s
+              </Button>
+
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={togglePlayback}
-                className="h-7 px-2 text-xs text-white/60 hover:text-white"
+                className="h-7 px-2.5 text-xs text-white/80 hover:text-white bg-white/5 border border-white/10"
               >
-                {isPlaying ? <Pause className="w-3.5 h-3.5 mr-1" /> : <Play className="w-3.5 h-3.5 mr-1" />}
+                {isPlaying ? <Pause className="w-3.5 h-3.5 mr-1 text-gold-400" /> : <Play className="w-3.5 h-3.5 mr-1 text-gold-400" />}
                 {isPlaying ? "Pause" : "Play"}
               </Button>
             </div>
           </div>
 
-          <div className="relative w-full h-64 md:h-80 rounded-2xl overflow-hidden bg-obsidian-dark border border-gold-500/20 shadow-2xl flex items-center justify-center">
+          <div className="relative w-full h-72 md:h-96 rounded-2xl overflow-hidden bg-obsidian-dark border border-gold-500/20 shadow-2xl flex items-center justify-center group">
+            {videoError ? (
+              <div className="flex flex-col items-center justify-center p-6 text-center z-20 max-w-md bg-obsidian/90 rounded-xl border border-red-500/30">
+                <AlertCircle className="w-10 h-10 text-red-400 mb-2 animate-bounce" />
+                <h4 className="text-white font-bold text-sm mb-1">Video Playback Error</h4>
+                <p className="text-red-300 text-xs mb-3">{videoError}</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setVideoError(null);
+                    if (videoRef.current) {
+                      videoRef.current.load();
+                      videoRef.current.play().catch(() => {});
+                    }
+                  }}
+                  className="text-xs border-red-500/40 text-red-300 hover:bg-red-500/10"
+                >
+                  <RotateCcw className="w-3 h-3 mr-1.5" />
+                  Retry Playback
+                </Button>
+              </div>
+            ) : null}
+
             <video
               ref={videoRef}
               key={activeVideoSource}
@@ -272,22 +383,68 @@ export const BackgroundVideoManager = () => {
               loop
               muted
               playsInline
+              controls={showControls}
               className="w-full h-full object-cover transition-all duration-300"
               style={{
-                opacity: opacity,
-                filter: `brightness(${brightness}%) contrast(${contrast}%)`,
+                opacity: previewMode === "clean" ? 1 : opacity,
+                filter: previewMode === "clean" ? "none" : `brightness(${brightness}%) contrast(${contrast}%)`,
               }}
-            />
-            {/* Ambient Overlays to match Home Stage */}
-            <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-transparent pointer-events-none" />
-            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-40 bg-gold-500/15 rounded-full blur-3xl pointer-events-none" />
+              onLoadedMetadata={(e) => {
+                const v = e.target as HTMLVideoElement;
+                v.muted = true;
+                v.defaultMuted = true;
+                setDuration(v.duration || 0);
+                setVideoError(null);
+                v.play().then(() => setIsPlaying(true)).catch(() => {});
+              }}
+              onTimeUpdate={(e) => {
+                const v = e.target as HTMLVideoElement;
+                setCurrentTime(v.currentTime || 0);
+              }}
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+              onError={(e) => {
+                const mediaError = (e.target as HTMLVideoElement).error;
+                let msg = "Could not decode or play video stream.";
+                if (mediaError) {
+                  if (mediaError.code === 2) msg = "Network error loading video stream.";
+                  else if (mediaError.code === 3) msg = "Codec decoding failed (ensure H.264/AAC MP4).";
+                  else if (mediaError.code === 4) msg = "Video format unsupported or file not accessible.";
+                }
+                setVideoError(msg);
+              }}
+            >
+              <source src={activeVideoSource} type="video/mp4" />
+            </video>
+
+            {/* Ambient Overlays to match Home Stage (Only active in "stage" preview mode) */}
+            {previewMode === "stage" && (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-transparent pointer-events-none" />
+                <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-40 bg-gold-500/15 rounded-full blur-3xl pointer-events-none" />
+              </>
+            )}
+
+            {/* Click to play overlay if paused and native controls are hidden */}
+            {!isPlaying && !showControls && !videoError && (
+              <button
+                type="button"
+                onClick={togglePlayback}
+                className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/30 transition-colors z-10"
+              >
+                <div className="w-14 h-14 rounded-full bg-gold-500/90 text-obsidian flex items-center justify-center shadow-lg transform transition-transform hover:scale-110">
+                  <Play className="w-6 h-6 ml-1" />
+                </div>
+              </button>
+            )}
             
-            <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-xs font-mono text-white/80 pointer-events-none">
-              <span className="bg-obsidian/80 px-2.5 py-1 rounded-full border border-white/10">
-                Opacity: {Math.round(opacity * 100)}% | Brightness: {brightness}% | Contrast: {contrast}%
+            <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-[11px] font-mono text-white/80 pointer-events-none z-10">
+              <span className="bg-obsidian/85 px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-sm">
+                {previewMode === "clean" ? "Raw Video (Full Visibility)" : `Opacity: ${Math.round(opacity * 100)}% | Bright: ${brightness}% | Contrast: ${contrast}%`}
+                {duration > 0 && ` | ${Math.floor(currentTime)}s / ${Math.floor(duration)}s`}
               </span>
-              <span className="bg-obsidian/80 px-2.5 py-1 rounded-full border border-white/10 truncate max-w-xs">
-                Source: {filePreviewUrl ? "Local File Preview" : (customUrl ? customUrl : "Brand Video")}
+              <span className="bg-obsidian/85 px-2.5 py-1 rounded-full border border-white/10 truncate max-w-xs backdrop-blur-sm">
+                {filePreviewUrl ? "Local File Preview" : (customUrl ? customUrl : "Brand Video")}
               </span>
             </div>
           </div>
@@ -357,8 +514,8 @@ export const BackgroundVideoManager = () => {
               </p>
               <Input
                 id="video-url"
-                type="url"
-                placeholder="https://your-domain.com/videos/carnival-hero.mp4"
+                type="text"
+                placeholder="https://your-domain.com/videos/carnival-hero.mp4 or /uploads/videos/..."
                 value={customUrl}
                 onChange={(e) => setCustomUrl(e.target.value)}
                 className="bg-obsidian border-white/20 text-xs font-mono"

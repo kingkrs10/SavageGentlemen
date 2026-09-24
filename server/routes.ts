@@ -625,13 +625,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Add CORS headers for cross-origin image requests
       res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range, Authorization');
+      res.setHeader('Access-Control-Expose-Headers', 'Content-Range, Accept-Ranges, Content-Length');
 
-      // Optimize caching for different file types
+      // Optimize caching and Range support for different file types
       if (ext.match(/\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)$/)) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); // 1 year for images
-      } else if (ext.match(/\.(mp4|webm)$/)) {
+      } else if (ext.match(/\.(mp4|webm|mov|m4v)$/)) {
+        res.setHeader('Accept-Ranges', 'bytes');
         res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 day for videos
       }
     }
