@@ -310,7 +310,9 @@ export class SocialAutoPoster {
       this.lastPostTime = nowIso;
       this.lastPostChannel = postResult.simulated 
         ? "Simulated Preview" 
-        : `Make.com (${videoResult?.engine === "moneyprinter" ? "AI Reel" : "Video Ad"})`;
+        : postResult.permalink 
+          ? `Direct Instagram (@savagegentlemen_)`
+          : `Direct Instagram / Social Broadcast`;
       this.totalAutoPosted += 1;
       this.lastError = null;
 

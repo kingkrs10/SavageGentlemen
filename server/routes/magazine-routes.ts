@@ -157,6 +157,9 @@ magazineRouter.post("/admin/publish-ig/:id", authenticateUser, authorizeAdmin, a
   try {
     const id = parseInt(req.params.id);
     const result = await instagramBot.publishArticlePost(id);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
     res.json(result);
   } catch (error: any) {
     console.error("Error publishing to Instagram:", error);

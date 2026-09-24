@@ -247,6 +247,29 @@ export async function publishToSocialMedia(request: PublishRequest): Promise<Mul
             const containerData: any = await containerRes.json();
 
             if (containerData.id) {
+              // Poll until container is finished processing
+              let isReady = false;
+              for (let i = 0; i < 20; i++) {
+                await new Promise((r) => setTimeout(r, 2000));
+                try {
+                  const statusRes = await fetch(`https://graph.facebook.com/v19.0/${containerData.id}?fields=status_code&access_token=${igToken}`);
+                  const statusData: any = await statusRes.json();
+                  if (statusData.status_code === "FINISHED") {
+                    isReady = true;
+                    break;
+                  }
+                  if (statusData.status_code === "ERROR" || statusData.status_code === "EXPIRED") {
+                    throw new Error(`Media container processing failed: ${statusData.status_code}`);
+                  }
+                } catch (statusErr: any) {
+                  if (statusErr.message.includes("failed")) throw statusErr;
+                }
+              }
+
+              if (!isReady) {
+                throw new Error("Timed out waiting for Reel container processing to finish");
+              }
+
               // Publish Reel
               const publishRes = await fetch(`https://graph.facebook.com/v19.0/${igUserId}/media_publish`, {
                 method: "POST",
@@ -257,11 +280,24 @@ export async function publishToSocialMedia(request: PublishRequest): Promise<Mul
                 }),
               });
               const publishData: any = await publishRes.json();
+              if (!publishRes.ok || !publishData.id) {
+                throw new Error(publishData.error?.message || "Failed to publish media container");
+              }
+              const publishedPostId = publishData.id;
+
+              // Fetch permalink
+              let permalink = `https://www.instagram.com/reel/${publishedPostId}`;
+              try {
+                const permalinkRes = await fetch(`https://graph.facebook.com/v19.0/${publishedPostId}?fields=permalink&access_token=${igToken}`);
+                const permalinkData: any = await permalinkRes.json();
+                if (permalinkData.permalink) permalink = permalinkData.permalink;
+              } catch (_) {}
+
               results.push({
                 platform: "instagram",
                 status: "success",
-                postId: publishData.id || containerData.id,
-                postUrl: `https://www.instagram.com/reel/${publishData.id || "preview"}`,
+                postId: publishedPostId,
+                postUrl: permalink,
                 message: "Instagram Reel published successfully."
               });
             } else {

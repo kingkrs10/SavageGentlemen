@@ -52,6 +52,10 @@ interface AutoPosterStatus {
   nextScheduledPostTime: string;
   totalAutoPosted: number;
   isRunning: boolean;
+  videoEngineStatus?: {
+    online: boolean;
+    engine?: string;
+  };
 }
 
 export const MagazineAdminManager = () => {
@@ -159,9 +163,21 @@ export const MagazineAdminManager = () => {
       if (data.success) {
         toast({
           title: data.simulated ? "IG Preview Simulated" : "Published to Instagram!",
-          description: data.simulated
-            ? "Simulated post generated (Make.com webhook handles live distribution)."
-            : "Successfully published across social channels.",
+          description: data.permalink ? (
+            <div className="space-y-1">
+              <p>Successfully posted directly to @savagegentlemen_</p>
+              <a 
+                href={data.permalink} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-pink-300 hover:text-pink-200 underline font-bold flex items-center gap-1 text-xs"
+              >
+                View Live Instagram Post ↗
+              </a>
+            </div>
+          ) : data.simulated
+            ? "Simulated post generated (Sandbox mode)."
+            : "Successfully published to Instagram @savagegentlemen_.",
         });
         queryClient.invalidateQueries({ queryKey: ["/api/magazine/articles"] });
         refetchAutopilot();
@@ -206,7 +222,7 @@ export const MagazineAdminManager = () => {
                 Autonomous Social Distribution Engine
               </CardTitle>
               <CardDescription className="text-white/60 text-xs">
-                Automatically curates, generates, and broadcasts Caribbean culture dispatches to Instagram, Facebook, YouTube, & TikTok via Make.com.
+                Directly publishes and schedules Caribbean culture dispatches to Instagram (@savagegentlemen_) with multi-platform social distribution.
               </CardDescription>
             </div>
 
@@ -390,9 +406,22 @@ export const MagazineAdminManager = () => {
 
                       <TableCell>
                         {article.igPosted ? (
-                          <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-mono gap-1">
-                            <CheckCircle2 className="w-3 h-3" /> Auto-Posted
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-mono gap-1">
+                              <CheckCircle2 className="w-3 h-3" /> Live on IG
+                            </Badge>
+                            {article.igPostId && (
+                              <a
+                                href={article.igPostId.startsWith("http") ? article.igPostId : `https://www.instagram.com/savagegentlemen_`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-pink-400 hover:text-pink-300 transition-colors p-1 hover:bg-pink-500/10 rounded flex items-center gap-0.5 text-[10px]"
+                                title="View on Instagram"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                          </div>
                         ) : (
                           <Badge variant="outline" className="text-white/40 border-white/20 text-[10px] font-mono">
                             Pending Schedule
