@@ -195,9 +195,7 @@ const Home = () => {
               v.defaultMuted = true;
               v.play().catch(() => {});
             }}
-          >
-            <source src={heroVideoSource} type="video/mp4" />
-          </video>
+          />
           {/* Cyber Gradients & Radial Warm Glows */}
           <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/70 to-transparent" />
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-gold-500/15 rounded-full blur-[120px] pointer-events-none" />

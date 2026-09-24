@@ -7,6 +7,7 @@ import path from 'path';
 import { securityHeaders, auditLogger, sanitizeInput } from './security/middleware';
 import { syncUsersFromFirebase } from './services/user-sync';
 import { initializeDatabaseTables } from './services/db-init';
+import { streamVideoFile } from './services/video-streamer';
 
 const app = express();
 
@@ -56,6 +57,17 @@ app.use((req, res, next) => {
   express.json()(req, res, next);
 });
 app.use(express.urlencoded({ extended: false }));
+
+// Dedicated HTTP 206 Byte-Range Video Streaming for WebKit (Safari, iOS Safari, DuckDuckGo Mac) & Cloudflare
+app.get([
+  '/uploads/videos/:filename',
+  '/api/video-stream/:filename',
+  '/api/uploads/videos/:filename'
+], (req: Request, res: Response) => {
+  const filename = path.basename(req.params.filename);
+  const filePath = path.join(process.cwd(), 'uploads', 'videos', filename);
+  streamVideoFile(filePath, req, res);
+});
 
 // Static file serving for uploads directory with proper MIME types and caching
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {

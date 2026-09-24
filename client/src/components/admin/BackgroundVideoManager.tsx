@@ -413,9 +413,7 @@ export const BackgroundVideoManager = () => {
                 }
                 setVideoError(msg);
               }}
-            >
-              <source src={activeVideoSource} type="video/mp4" />
-            </video>
+            />
 
             {/* Ambient Overlays to match Home Stage (Only active in "stage" preview mode) */}
             {previewMode === "stage" && (

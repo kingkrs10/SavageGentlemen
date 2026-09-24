@@ -4,6 +4,7 @@ import path from "path";
 import fs from "fs";
 import { storage } from "../storage";
 import { authenticateUser, authorizeAdmin } from "../auth-middleware";
+import { streamVideoFile } from "../services/video-streamer";
 
 export const settingsRouter = Router();
 
@@ -83,6 +84,37 @@ settingsRouter.get("/background-video", async (_req: Request, res: Response) => 
   } catch (error: any) {
     console.error("[Settings] Error fetching background video setting:", error);
     return res.status(500).json({ error: "Failed to fetch background video setting" });
+  }
+});
+
+/**
+ * GET /api/settings/background-video/stream
+ * Dedicated byte-range streaming endpoint for the active background video
+ */
+settingsRouter.get("/background-video/stream", async (req: Request, res: Response) => {
+  try {
+    const rawSetting = await storage.getSiteSetting("background_video");
+    let videoUrl = "";
+    if (rawSetting && rawSetting.value) {
+      try {
+        const parsed = JSON.parse(rawSetting.value);
+        videoUrl = parsed.videoUrl || "";
+      } catch {}
+    }
+
+    if (videoUrl.startsWith("/uploads/videos/")) {
+      const filename = path.basename(videoUrl);
+      const filePath = path.join(process.cwd(), "uploads", "videos", filename);
+      return streamVideoFile(filePath, req, res);
+    } else if (videoUrl.startsWith("http://") || videoUrl.startsWith("https://")) {
+      return res.redirect(videoUrl);
+    } else {
+      const defaultPath = path.join(process.cwd(), "client", "src", "assets", "videos", "brand-video.mp4");
+      return streamVideoFile(defaultPath, req, res);
+    }
+  } catch (err: any) {
+    console.error("[Settings] Error streaming active background video:", err);
+    return res.status(500).json({ error: "Failed to stream video" });
   }
 });
 
