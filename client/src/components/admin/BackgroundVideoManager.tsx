@@ -71,7 +71,17 @@ export const BackgroundVideoManager = () => {
     }
   }, [config]);
 
-  const activeVideoSource = filePreviewUrl || customUrl || BrandVideo;
+  // Normalize source URL: if it's stored as /uploads/videos/:name, route it through the dedicated byte-range streaming API to bypass Cloudflare whole-file cache
+  const resolveStreamingUrl = (url: string) => {
+    if (!url) return "";
+    if (url.startsWith("/uploads/videos/")) {
+      const filename = url.replace("/uploads/videos/", "");
+      return `/api/video-stream/${filename}`;
+    }
+    return url;
+  };
+
+  const activeVideoSource = filePreviewUrl || resolveStreamingUrl(customUrl) || BrandVideo;
 
   // Ensure video element plays automatically in muted state across modern browsers
   useEffect(() => {
@@ -144,6 +154,9 @@ export const BackgroundVideoManager = () => {
         description: "Your new background video is now live across the site.",
       });
 
+      if (data.config?.videoUrl) {
+        setCustomUrl(data.config.videoUrl);
+      }
       setSelectedFile(null);
       setFilePreviewUrl(null);
       queryClient.invalidateQueries({ queryKey: ["/api/settings/background-video"] });

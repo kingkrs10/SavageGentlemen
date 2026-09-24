@@ -141,7 +141,7 @@ settingsRouter.post(
         return res.status(400).json({ error: "No video file provided" });
       }
 
-      const relativeUrl = `/uploads/videos/${req.file.filename}`;
+      const relativeUrl = `/api/video-stream/${req.file.filename}`;
       const opacity = req.body.opacity ? parseFloat(req.body.opacity) : 0.45;
       const contrast = req.body.contrast ? parseInt(req.body.contrast) : 125;
       const brightness = req.body.brightness ? parseInt(req.body.brightness) : 90;

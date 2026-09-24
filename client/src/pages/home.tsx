@@ -79,7 +79,17 @@ const Home = () => {
   });
 
   const heroVideoRef = useRef<HTMLVideoElement>(null);
-  const heroVideoSource = videoConfig?.videoUrl || BrandVideo;
+
+  const resolveStreamingUrl = (url?: string) => {
+    if (!url) return "";
+    if (url.startsWith("/uploads/videos/")) {
+      const filename = url.replace("/uploads/videos/", "");
+      return `/api/video-stream/${filename}`;
+    }
+    return url;
+  };
+
+  const heroVideoSource = resolveStreamingUrl(videoConfig?.videoUrl) || BrandVideo;
 
   useEffect(() => {
     const video = heroVideoRef.current;
