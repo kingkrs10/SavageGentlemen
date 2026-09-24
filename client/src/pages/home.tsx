@@ -58,6 +58,13 @@ const Home = () => {
     refetchOnMount: "always",
   });
 
+  // Fetch available mixes to determine if preview soundtrack button should show
+  const { data: availableMixes = [] } = useQuery<any[]>({
+    queryKey: ["/api/music/mixes"],
+    queryFn: () => fetch("/api/music/mixes").then(res => res.ok ? res.json() : []).catch(() => []),
+    staleTime: 30000,
+  });
+
   // Fetch active site background video setting
   const { data: videoConfig } = useQuery<{
     videoUrl?: string;
@@ -106,17 +113,19 @@ const Home = () => {
   };
 
   const handlePlaySampleMix = () => {
+    if (availableMixes.length === 0) return;
+    const mix = availableMixes[0];
     playTrack({
-      id: "savgent-anthem",
-      title: "Caribbean Nocturne Official Mix",
-      artist: "DJ Private Ryan x Savage Gentlemen",
-      src: "/attached_assets/savgent-oct-25-mix.m4v",
-      artwork: SGFlyerLogoPng,
-      price: 199,
+      id: mix.id,
+      title: mix.title,
+      artist: mix.artist || mix.description || "Savage Gentlemen",
+      src: mix.previewUrl || mix.fileUrl || `/api/music/mixes/${mix.id}/preview`,
+      artwork: mix.artworkUrl || SGFlyerLogoPng,
+      price: mix.priceInCents || 199,
     });
     toast({
       title: "Audio Stream Active",
-      description: "Streaming Caribbean Nocturne audio preview in the bottom dock.",
+      description: `Streaming ${mix.title} preview in the bottom dock.`,
     });
   };
 
@@ -250,15 +259,17 @@ const Home = () => {
               SOCA PASSPORT 1.0
             </Button>
 
-            <Button
-              size="lg"
-              variant="ghost"
-              onClick={handlePlaySampleMix}
-              className="text-white/80 hover:text-gold-300 hover:bg-white/5 font-semibold text-xs tracking-wider uppercase px-4 py-6 rounded-2xl"
-            >
-              <Play className="w-4 h-4 mr-2 fill-current text-gold-400" />
-              PREVIEW SOUNDTRACK
-            </Button>
+            {availableMixes.length > 0 && (
+              <Button
+                size="lg"
+                variant="ghost"
+                onClick={handlePlaySampleMix}
+                className="text-white/80 hover:text-gold-300 hover:bg-white/5 font-semibold text-xs tracking-wider uppercase px-4 py-6 rounded-2xl"
+              >
+                <Play className="w-4 h-4 mr-2 fill-current text-gold-400" />
+                PREVIEW SOUNDTRACK
+              </Button>
+            )}
           </div>
         </div>
 

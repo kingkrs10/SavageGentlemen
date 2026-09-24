@@ -28,14 +28,7 @@ interface AudioPlayerContextType {
 const AudioPlayerContext = createContext<AudioPlayerContextType | undefined>(undefined);
 
 export const AudioPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentTrack, setCurrentTrack] = useState<Track | null>({
-    id: "default-mix-1",
-    title: "Savage Vibes: Carnival Warmup 2026",
-    artist: "DJ Private Ryan x Savage Gentlemen",
-    src: "/attached_assets/savgent-oct-25-mix.m4v",
-    artwork: "/SGFLYERLOGO.png",
-    price: 199,
-  });
+  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);

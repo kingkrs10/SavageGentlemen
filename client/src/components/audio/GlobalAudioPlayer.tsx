@@ -1,16 +1,54 @@
 import React, { useState } from "react";
-import { useAudioPlayer } from "@/context/AudioPlayerContext";
-import { Play, Pause, Volume2, VolumeX, ChevronUp, ChevronDown, Music, Sparkles, ShoppingBag, X } from "lucide-react";
+import { useAudioPlayer, Track } from "@/context/AudioPlayerContext";
+import { Play, Pause, Volume2, VolumeX, Music, Sparkles, ShoppingBag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import SGFlyerLogoPng from "@assets/SGFLYERLOGO.png";
 
 export const GlobalAudioPlayer = () => {
-  const { currentTrack, isPlaying, progress, togglePlay, seek, volume, setVolume, closePlayer } = useAudioPlayer();
-  const [isMinimized, setIsMinimized] = useState(false);
+  const { currentTrack, isPlaying, progress, togglePlay, seek, volume, setVolume, closePlayer, playTrack } = useAudioPlayer();
+  const [isDismissed, setIsDismissed] = useState(false);
   const [, navigate] = useLocation();
 
-  if (!currentTrack) return null;
+  // Query published mixes - only show when mixes are available
+  const { data: mixes = [] } = useQuery<any[]>({
+    queryKey: ['/api/music/mixes'],
+    queryFn: () => fetch('/api/music/mixes').then(r => r.ok ? r.json() : []).catch(() => []),
+    staleTime: 30000,
+  });
+
+  // Only show when there are mixes available, and user has not dismissed it
+  if (!mixes || mixes.length === 0 || isDismissed) {
+    return null;
+  }
+
+  // Active track is either the currently playing/selected track, or the first available mix
+  const activeTrack: Track = currentTrack || {
+    id: mixes[0].id,
+    title: mixes[0].title,
+    artist: mixes[0].artist || mixes[0].description || "Savage Gentlemen Audio",
+    src: mixes[0].previewUrl || mixes[0].fileUrl || `/api/music/mixes/${mixes[0].id}/preview`,
+    artwork: mixes[0].artworkUrl || SGFlyerLogoPng,
+    price: mixes[0].priceInCents || 199,
+    duration: mixes[0].durationSeconds,
+  };
+
+  const handlePlayToggle = () => {
+    if (!currentTrack) {
+      playTrack(activeTrack);
+    } else {
+      togglePlay();
+    }
+  };
+
+  const handleClose = () => {
+    setIsDismissed(true);
+    closePlayer();
+  };
+
+  const formattedPrice = activeTrack.price ? `$${(activeTrack.price / 100).toFixed(2)}` : "$1.99";
 
   return (
     <div
@@ -41,8 +79,8 @@ export const GlobalAudioPlayer = () => {
           {/* Track Info & Equalizer */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="relative w-11 h-11 rounded-xl overflow-hidden bg-obsidian-light flex-shrink-0 border border-gold-500/20 shadow-inner flex items-center justify-center">
-              {currentTrack.artwork ? (
-                <img src={currentTrack.artwork} alt={currentTrack.title} className="w-full h-full object-cover" />
+              {activeTrack.artwork ? (
+                <img src={activeTrack.artwork} alt={activeTrack.title} className="w-full h-full object-cover" />
               ) : (
                 <Music className="w-5 h-5 text-gold-400" />
               )}
@@ -62,14 +100,14 @@ export const GlobalAudioPlayer = () => {
                   LIVE PREVIEW
                 </span>
                 <span className="hidden sm:inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-gold-500/10 text-gold-300 border border-gold-500/20 font-mono">
-                  $1.99 HQ STEMS
+                  {formattedPrice} HQ STEMS
                 </span>
               </div>
               <h4 className="text-sm font-semibold text-white truncate max-w-[200px] sm:max-w-[320px] md:max-w-md">
-                {currentTrack.title}
+                {activeTrack.title}
               </h4>
               <p className="text-xs text-white/50 truncate hidden sm:block">
-                {currentTrack.artist || "Savage Gentlemen Audio"}
+                {activeTrack.artist || "Savage Gentlemen Audio"}
               </p>
             </div>
           </div>
@@ -79,7 +117,7 @@ export const GlobalAudioPlayer = () => {
             <Button
               size="icon"
               variant="ghost"
-              onClick={togglePlay}
+              onClick={handlePlayToggle}
               className="w-10 h-10 rounded-full bg-gradient-to-r from-gold-500 to-amber-500 hover:from-gold-400 hover:to-amber-400 text-black font-bold shadow-lg shadow-gold-500/20 hover:scale-105 transition-all"
             >
               {isPlaying ? <Pause className="w-5 h-5 fill-black" /> : <Play className="w-5 h-5 fill-black ml-0.5" />}
@@ -92,7 +130,7 @@ export const GlobalAudioPlayer = () => {
               className="hidden md:flex items-center gap-1.5 bg-white/10 hover:bg-gold-500/20 text-white hover:text-gold-300 border border-gold-500/30 hover:border-gold-500 text-xs font-semibold uppercase tracking-wider px-4 py-2 rounded-xl transition-all"
             >
               <ShoppingBag className="w-3.5 h-3.5 text-gold-400" />
-              Unlock Full Mix ($1.99)
+              Unlock Full Mix ({formattedPrice})
             </Button>
 
             {/* Volume Control on Desktop */}
@@ -115,7 +153,7 @@ export const GlobalAudioPlayer = () => {
 
             {/* Close Button */}
             <button
-              onClick={closePlayer}
+              onClick={handleClose}
               className="text-white/40 hover:text-white p-1 transition"
               aria-label="Close Player"
             >
