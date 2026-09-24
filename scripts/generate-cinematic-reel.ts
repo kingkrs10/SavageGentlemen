@@ -17,9 +17,10 @@ async function generateCinematicReel() {
     "tropical concert stage"
   ];
 
+  const selectedVoice = process.env.VOICE_NAME || "en-US-BrianMultilingualNeural";
   console.log("\n[1/4] 📡 Submitting Cinematic Reel Task to MoneyPrinterTurbo Engine...");
   console.log(`   - Subject: ${subject}`);
-  console.log(`   - Voice: en-US-ChristopherNeural`);
+  console.log(`   - Voice: ${selectedVoice}`);
   console.log(`   - Keywords: ${terms.join(", ")}`);
 
   const taskId = await moneyprinterService.submitTask({
@@ -27,7 +28,7 @@ async function generateCinematicReel() {
     videoScript: script,
     videoTerms: terms,
     videoAspect: "9:16",
-    voiceName: "en-US-ChristopherNeural",
+    voiceName: selectedVoice,
     subtitlesEnabled: true
   });
 

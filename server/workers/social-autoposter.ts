@@ -51,6 +51,7 @@ export class SocialAutoPoster {
   private postsPerDay: number = 2;
   private scheduledHoursEST: number[] = [11, 19]; // 11:00 AM & 7:00 PM EST
   private lastPostDateSlot: string = ""; // e.g. "2026-08-16_11"
+  private completedSlots: string[] = [];
   private lastPostTitle: string | null = null;
   private lastPostTime: string | null = null;
   private lastPostChannel: string | null = null;
@@ -100,6 +101,9 @@ export class SocialAutoPoster {
         this.enabled = parsed.enabled ?? true;
         this.postsPerDay = parsed.postsPerDay ?? 2;
         this.lastPostDateSlot = parsed.lastPostDateSlot || "";
+        this.completedSlots = Array.isArray(parsed.completedSlots)
+          ? parsed.completedSlots
+          : (this.lastPostDateSlot ? this.lastPostDateSlot.split(",").filter(Boolean) : []);
         this.lastPostTitle = parsed.lastPostTitle || null;
         this.lastPostTime = parsed.lastPostTime || null;
         this.lastPostChannel = parsed.lastPostChannel || null;
@@ -117,6 +121,7 @@ export class SocialAutoPoster {
         enabled: this.enabled,
         postsPerDay: this.postsPerDay,
         lastPostDateSlot: this.lastPostDateSlot,
+        completedSlots: this.completedSlots,
         lastPostTitle: this.lastPostTitle,
         lastPostTime: this.lastPostTime,
         lastPostChannel: this.lastPostChannel,
@@ -213,7 +218,7 @@ export class SocialAutoPoster {
 
     for (const slotHour of eligibleSlots) {
       const slotKey = `${est.dateStr}_${slotHour}`;
-      if (this.lastPostDateSlot === slotKey) {
+      if (this.completedSlots.includes(slotKey) || this.lastPostDateSlot.split(",").includes(slotKey)) {
         // Slot already posted successfully today
         continue;
       }
@@ -292,7 +297,15 @@ export class SocialAutoPoster {
 
       // 4. Update tracking metadata only when broadcast truly succeeded
       const nowIso = new Date().toISOString();
-      this.lastPostDateSlot = slotKey || `${new Date().toISOString().split("T")[0]}_manual`;
+      if (slotKey) {
+        if (!this.completedSlots.includes(slotKey)) {
+          this.completedSlots.push(slotKey);
+        }
+        this.completedSlots = this.completedSlots.slice(-10);
+        this.lastPostDateSlot = this.completedSlots.join(",");
+      } else {
+        this.lastPostDateSlot = `${new Date().toISOString().split("T")[0]}_manual`;
+      }
       this.lastPostTitle = candidate.title;
       this.lastPostTime = nowIso;
       this.lastPostChannel = postResult.simulated 

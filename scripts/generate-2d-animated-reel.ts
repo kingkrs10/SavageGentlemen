@@ -27,7 +27,7 @@ async function run2DAnimatedReel() {
     videoScript: script,
     videoTerms: terms,
     videoAspect: "9:16",
-    voiceName: "en-US-ChristopherNeural",
+    voiceName: process.env.VOICE_NAME || "en-US-BrianMultilingualNeural",
     subtitlesEnabled: true
   });
 

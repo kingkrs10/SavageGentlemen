@@ -71,7 +71,7 @@ export const SEVEN_DAY_CARIBBEAN_STRATEGY: StrategyDayPlan[] = [
       priceFormatted: "$78.00",
       shopUrl: `${SITE_URL}/shop`,
       imageUrl: "/mockups/sg_luxury_hoodie.jpg",
-      videoUrl: "/generated-ads/ad_savage_hoodie_drop_9x16_1787011882978.mp4",
+      videoUrl: "https://files.catbox.moe/9kjk70.mp4",
     },
     promoCode: "CARIBBEAN10",
     growthMultiplier: "High WhatsApp & Group DM Share Rate + Comment debate on J'ouvert survival.",
@@ -115,7 +115,7 @@ export const SEVEN_DAY_CARIBBEAN_STRATEGY: StrategyDayPlan[] = [
       priceFormatted: "$42.00",
       shopUrl: `${SITE_URL}/shop`,
       imageUrl: "/mockups/sg_soundclash_tee.jpg",
-      videoUrl: "/generated-ads/ad_soundclash_dubplates_16x9_1787011907148.mp4",
+      videoUrl: "https://files.catbox.moe/4vt4w1.mp4",
     },
     promoCode: "CARIBBEAN10",
     growthMultiplier: "High Comment Debate on legendary sound systems + Audio Saves.",
@@ -161,7 +161,7 @@ export const SEVEN_DAY_CARIBBEAN_STRATEGY: StrategyDayPlan[] = [
       priceFormatted: "$48.00",
       shopUrl: `${SITE_URL}/shop`,
       imageUrl: "/mockups/sg_barology_flask.jpg",
-      videoUrl: "/generated-ads/ad_savage_flask_set_16x9_1787011902190.mp4",
+      videoUrl: "https://files.catbox.moe/igsf07.mp4",
     },
     promoCode: "CARIBBEAN10",
     growthMultiplier: "Fierce regional pride comments (Bajan vs. Grenadian) + Travel itinerary saves.",
@@ -204,6 +204,7 @@ export const SEVEN_DAY_CARIBBEAN_STRATEGY: StrategyDayPlan[] = [
       priceFormatted: "$55.00",
       shopUrl: `${SITE_URL}/shop`,
       imageUrl: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=800&h=1000&fit=crop",
+      videoUrl: "https://files.catbox.moe/vbp89b.mp4",
     },
     promoCode: "CARIBBEAN10",
     growthMultiplier: "Lucian diaspora group chat shares + high-tempo audio sync.",
@@ -246,6 +247,7 @@ export const SEVEN_DAY_CARIBBEAN_STRATEGY: StrategyDayPlan[] = [
       priceFormatted: "$32.00",
       shopUrl: `${SITE_URL}/shop`,
       imageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&h=1000&fit=crop",
+      videoUrl: "https://files.catbox.moe/ww254b.mp4",
     },
     promoCode: "CARIBBEAN10",
     growthMultiplier: "Saves for carnival packing checklists + Vincy patriot shares.",
@@ -288,7 +290,7 @@ export const SEVEN_DAY_CARIBBEAN_STRATEGY: StrategyDayPlan[] = [
       priceFormatted: "$25.99",
       shopUrl: `${SITE_URL}/shop`,
       imageUrl: "/generated-ads/sg_lion_tee_exact_product.png",
-      videoUrl: "/generated-ads/ad_colorful_heart_mosaic_sg_lion_tee_9x16_1787790859258.mp4",
+      videoUrl: "https://files.catbox.moe/y9n7px.mp4",
     },
     promoCode: "CARIBBEAN10",
     growthMultiplier: "Viral Junkanoo audio sync + Guyanese and Bahamian community pride.",
@@ -331,7 +333,7 @@ export const SEVEN_DAY_CARIBBEAN_STRATEGY: StrategyDayPlan[] = [
       priceFormatted: "FREE PASSPORT + MERCH",
       shopUrl: `${SITE_URL}/shop`,
       imageUrl: "/mockups/sg_luxury_hoodie.jpg",
-      videoUrl: "/generated-ads/ad_soca_passport_vip_9x16_1787011889520.mp4",
+      videoUrl: "https://files.catbox.moe/bl4xrg.mp4",
     },
     promoCode: "CARIBBEAN10",
     growthMultiplier: "Universal diaspora unification + High saves for Soca Passport loyalty signup.",
@@ -361,8 +363,73 @@ export class SevenDayStrategyService {
     history: []
   };
 
+  private schedulerTimer: NodeJS.Timeout | null = null;
+
   async init() {
     await this.loadState();
+    this.startAutoScheduler();
+  }
+
+  startAutoScheduler() {
+    if (this.schedulerTimer) return;
+    console.log("[SevenDayStrategy] ⏰ Starting 7-Day Auto-Progression Scheduler (Daily check at 11:00 AM EST)...");
+    
+    // Check every 15 minutes
+    const intervalMs = 15 * 60 * 1000;
+    this.schedulerTimer = setInterval(() => {
+      this.checkAndAutoPost().catch(err => {
+        console.error("[SevenDayStrategy] Auto-post check error:", err);
+      });
+    }, intervalMs);
+
+    // Initial check 10 seconds after server startup
+    setTimeout(() => {
+      this.checkAndAutoPost().catch(err => {
+        console.error("[SevenDayStrategy] Initial auto-post check error:", err);
+      });
+    }, 10000);
+  }
+
+  getCurrentESTDate(): { dateStr: string; hour: number } {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "numeric",
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(new Date());
+    const year = parts.find(p => p.type === "year")?.value || "";
+    const month = parts.find(p => p.type === "month")?.value || "";
+    const day = parts.find(p => p.type === "day")?.value || "";
+    const hour = parseInt(parts.find(p => p.type === "hour")?.value || "0", 10);
+    return { dateStr: `${year}-${month}-${day}`, hour };
+  }
+
+  async checkAndAutoPost() {
+    await this.loadState();
+    if (!this.state.isAutoProgressionEnabled) return;
+
+    const est = this.getCurrentESTDate();
+    // Only post after 11:00 AM EST
+    if (est.hour < 11) return;
+
+    // Check if we already posted today in EST
+    const lastExecutedDate = this.state.lastExecutedAt 
+      ? new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(this.state.lastExecutedAt))
+      : "";
+    const todayEstFormatted = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+
+    if (lastExecutedDate === todayEstFormatted) {
+      // Already posted today
+      return;
+    }
+
+    if (this.state.currentActiveDay <= 7) {
+      console.log(`[SevenDayStrategy] ⏰ Auto-triggering Day ${this.state.currentActiveDay} broadcast for ${est.dateStr}...`);
+      await this.executeDayPost(this.state.currentActiveDay);
+    }
   }
 
   private async loadState() {

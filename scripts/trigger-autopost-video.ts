@@ -3,6 +3,7 @@ import { storage } from "../server/storage";
 import { moneyprinterService } from "../server/services/moneyprinter-service";
 import { instagramBot } from "../server/workers/instagram-bot";
 import { magazineBot } from "../server/workers/magazine-bot";
+import { isSocaArticle } from "../server/workers/social-autoposter";
 
 async function runAutoPostVideo() {
   console.log("================================================================================");
@@ -16,30 +17,33 @@ async function runAutoPostVideo() {
   console.log(`   - Endpoint: ${health.apiUrl}`);
   console.log(`   - Message: ${health.message}`);
 
-  // 2. Select Candidate Article from Database
-  console.log("\n[Step 2/5] 📰 Selecting Story for Video Generation & Publishing...");
-  let allArticles = await storage.getAllArticles({ isPublished: true, limit: 50 });
-  let candidate = allArticles.find(a => !a.igPosted);
+  // 2. Select Soca Candidate Article from Database
+  console.log("\n[Step 2/5] 📰 Selecting Soca Story for Video Generation & Publishing...");
+  let allArticles = await storage.getAllArticles({ isPublished: true, limit: 100 });
+  let socaArticles = allArticles.filter(isSocaArticle);
+  let candidate = socaArticles.find(a => !a.igPosted);
 
   if (!candidate) {
-    console.log("   - No unposted articles found. Ingesting fresh Caribbean culture stories...");
+    console.log("   - No unposted Soca articles found. Ingesting fresh Caribbean carnival feeds...");
     await magazineBot.syncFeeds();
-    allArticles = await storage.getAllArticles({ isPublished: true, limit: 50 });
-    candidate = allArticles.find(a => !a.igPosted);
+    allArticles = await storage.getAllArticles({ isPublished: true, limit: 100 });
+    socaArticles = allArticles.filter(isSocaArticle);
+    candidate = socaArticles.find(a => !a.igPosted);
   }
 
-  if (!candidate && allArticles.length > 0) {
-    candidate = allArticles[0]; // Fallback to latest article
+  if (!candidate && socaArticles.length > 0) {
+    candidate = socaArticles[0]; // Fallback to latest Soca article
   }
 
   if (!candidate) {
-    throw new Error("No published articles found in database.");
+    throw new Error("No Soca or Carnival articles found in database.");
   }
 
+  const siteUrl = process.env.SITE_URL || "https://www.savgent.com";
   console.log(`   - Selected Story: "${candidate.title}" (ID: ${candidate.id})`);
   console.log(`   - Category: ${candidate.category.toUpperCase()}`);
   console.log(`   - Summary: "${candidate.summary}"`);
-  console.log(`   - Article URL: https://savagegentlemen.onrender.com/magazine/${candidate.slug}`);
+  console.log(`   - Article URL: ${siteUrl}/magazine/${candidate.slug}`);
 
   // 3. Render 9:16 Vertical Video Reel
   console.log("\n[Step 3/5] 🎥 Compiling 9:16 Vertical Video Reel...");

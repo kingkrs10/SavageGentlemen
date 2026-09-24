@@ -53,8 +53,8 @@ export async function uploadLocalVideoToPublicCDN(mediaUrl: string): Promise<str
       console.log(`[SocialPublisher] Uploading local asset (${path.basename(localFile)}) to public CDN...`);
       try {
         const cdnUrl = execSync(
-          `curl -s -m 15 -F "reqtype=fileupload" -F "fileToUpload=@${localFile}" https://catbox.moe/user/api.php`,
-          { encoding: "utf-8", timeout: 16000 }
+          `curl -s -m 60 -F "reqtype=fileupload" -F "fileToUpload=@${localFile}" https://catbox.moe/user/api.php`,
+          { encoding: "utf-8", timeout: 65000 }
         ).trim();
         if (cdnUrl && cdnUrl.startsWith("http")) {
           console.log(`[SocialPublisher] ✅ Public CDN URL generated: ${cdnUrl}`);
@@ -98,7 +98,8 @@ export async function publishToSocialMedia(request: PublishRequest): Promise<Mul
       process.env.INSTAGRAM_WEBHOOK_URL,
       process.env.YOUTUBE_WEBHOOK_URL,
       process.env.MAKE_WEBHOOK_URL,
-      process.env.SOCIAL_WEBHOOK_URL
+      process.env.SOCIAL_WEBHOOK_URL,
+      process.env.MAKE_WEBHOOK_FALLBACK_URL
     ].filter(Boolean) as string[])
   );
 
