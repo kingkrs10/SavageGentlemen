@@ -2,11 +2,141 @@ import { Router, Request, Response } from "express";
 import { db } from "../db";
 import { committeeProposals, insertCommitteeProposalSchema, siteSettings } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
+import fs from "fs";
+import path from "path";
+import multer from "multer";
 
 export const committeeRouter = Router();
 
 // Committee Access Key (defaults to EUPHORIA2027)
 const COMMITTEE_PASSCODE = (process.env.COMMITTEE_ACCESS_KEY || "EUPHORIA2027").trim().toUpperCase();
+
+export interface CommitteeMember {
+  id: string;
+  name: string;
+  role: string;
+  hub: "NJ/NY Committee" | "Guyana Operations" | "UK Logistics" | "All Committee";
+  email?: string;
+  phone?: string;
+  avatar?: string;
+  bio?: string;
+  status: "active" | "lead" | "advisor";
+  joinedAt: string;
+}
+
+export interface CommitteeComment {
+  id: string;
+  authorId?: string;
+  authorName: string;
+  authorRole?: string;
+  authorHub: string;
+  targetType: "proposal" | "milestone" | "media" | "general";
+  targetId?: string;
+  targetTitle?: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface CommitteeMediaItem {
+  id: string;
+  title: string;
+  description?: string;
+  category: "flyer" | "layout" | "merch" | "moodboard" | "stage" | "general";
+  url: string;
+  uploadedBy: string;
+  uploadedByHub: string;
+  targetEvent?: string;
+  fileSize?: number;
+  createdAt: string;
+}
+
+// Multer Storage for Committee Media Uploads
+const committeeUploadDir = path.join(process.cwd(), "uploads", "committee");
+if (!fs.existsSync(committeeUploadDir)) {
+  try {
+    fs.mkdirSync(committeeUploadDir, { recursive: true });
+  } catch (err) {
+    console.warn("[CommitteeRouter] Could not create uploads/committee directory:", err);
+  }
+}
+
+const committeeStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, committeeUploadDir);
+  },
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const sanitizedBase = path
+      .basename(file.originalname, ext)
+      .replace(/[^a-zA-Z0-9_-]/g, "_")
+      .substring(0, 40);
+    const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+    cb(null, `${sanitizedBase}-${unique}${ext}`);
+  },
+});
+
+const uploadCommitteeMedia = multer({
+  storage: committeeStorage,
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB max
+  fileFilter: (_req, file, cb) => {
+    const allowed = /jpeg|jpg|png|webp|gif|svg|pdf/;
+    const ext = path.extname(file.originalname).toLowerCase().replace(".", "");
+    const mime = file.mimetype;
+    if (allowed.test(ext) || allowed.test(mime)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only images (PNG, JPG, WebP, GIF, SVG) and PDF layout schematics are allowed"));
+    }
+  },
+});
+
+// Helper functions for DB JSON settings persistence with fallback
+async function getCommitteeSettingJson<T>(key: string, fallback: T): Promise<T> {
+  if (db) {
+    try {
+      const [record] = await db
+        .select()
+        .from(siteSettings)
+        .where(eq(siteSettings.key, key))
+        .limit(1);
+      if (record && record.value) {
+        const parsed = JSON.parse(record.value);
+        return parsed as T;
+      }
+    } catch (e) {
+      console.warn(`[CommitteeRouter] Failed to fetch ${key} from DB:`, (e as Error).message);
+    }
+  }
+  return fallback;
+}
+
+async function saveCommitteeSettingJson<T>(key: string, value: T): Promise<void> {
+  if (db) {
+    try {
+      const jsonValue = JSON.stringify(value);
+      const [existing] = await db
+        .select()
+        .from(siteSettings)
+        .where(eq(siteSettings.key, key))
+        .limit(1);
+
+      if (existing) {
+        await db
+          .update(siteSettings)
+          .set({ value: jsonValue, updatedAt: new Date() })
+          .where(eq(siteSettings.key, key));
+      } else {
+        await db.insert(siteSettings).values({
+          key,
+          value: jsonValue,
+          updatedAt: new Date(),
+        });
+      }
+    } catch (e) {
+      console.warn(`[CommitteeRouter] Failed to save ${key} to DB:`, (e as Error).message);
+    }
+  }
+}
 
 // In-memory fallback cache to ensure uninterrupted committee workflow
 let fallbackProposals: any[] = [];
@@ -160,9 +290,10 @@ committeeRouter.post("/generate", (req: Request, res: Response) => {
       merchTitle = "",
       merchPrice = 68,
       estimatedProductionCost = 14000,
+      coverImageUrl = "",
     } = req.body;
 
-    const eventTitle = title || (category === "merch" ? "Amazonian Botanical Apparel Drop" : "Oasis: The AC Marriott Welcome Pool Party");
+    const eventTitle = title || (category === "merch" ? "Amazonian Botanical Apparel Drop" : "Guyana Carnival 2027 Event Proposal");
     const numCapacity = Number(capacity) || 450;
     const numEarlyBird = Number(earlyBirdPrice) || 45;
     const numTier1 = Number(tier1Price) || 65;
@@ -190,6 +321,7 @@ committeeRouter.post("/generate", (req: Request, res: Response) => {
         countdownTarget: "2027-05-21T14:00:00-04:00",
         dateBadge: targetDate,
         venueBadge: venue,
+        coverImageUrl: coverImageUrl || "",
         checkoutUrl: "https://www.carnival-planner.com",
         highlights: [
           "Curated Poolside Lounge & Cabana Bottle Service",
@@ -500,6 +632,343 @@ committeeRouter.post("/timeline", async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error("[CommitteeRouter] Error updating timeline:", err);
     res.status(500).json({ error: "Failed to update timeline" });
+  }
+});
+
+// -------------------------------------------------------------
+// 1. Committee Members Directory & Roster
+// -------------------------------------------------------------
+const DEFAULT_MEMBERS: CommitteeMember[] = [
+  {
+    id: "mem-1",
+    name: "Executive Committee Chair",
+    role: "Overall Executive Director & Strategic Partnerships",
+    hub: "All Committee",
+    email: "committee@savgent.com",
+    phone: "+1 (917) 555-0199",
+    status: "lead",
+    bio: "Lead orchestrator of Guyana Carnival 2027 operations across Tri-State, UK, and Guyana.",
+    joinedAt: "2026-08-01",
+  },
+  {
+    id: "mem-2",
+    name: "Tri-State Buildup Lead",
+    role: "NJ / NY Diaspora Events & Masquerader Relations",
+    hub: "NJ/NY Committee",
+    email: "tristate@savgent.com",
+    phone: "+1 (201) 555-0144",
+    status: "active",
+    bio: "Directs Tri-State promotional pop-ups, diaspora masquerader registration, and NY/NJ buildup events.",
+    joinedAt: "2026-09-01",
+  },
+  {
+    id: "mem-3",
+    name: "Guyana On-Site Operations Director",
+    role: "Venue Production, AC Marriott Liaison & Local Logistics",
+    hub: "Guyana Operations",
+    email: "guyana@savgent.com",
+    phone: "+592 623 0100",
+    status: "active",
+    bio: "Coordinates AC Hotel Marriott Ogle pool deck staging, airport transfers (OGL/GEO), and security protocol.",
+    joinedAt: "2026-09-10",
+  },
+  {
+    id: "mem-4",
+    name: "UK & International Logistics Coordinator",
+    role: "Apparel Sampling, Print Production & UK Masqueraders",
+    hub: "UK Logistics",
+    email: "uk@savgent.com",
+    phone: "+44 7700 900123",
+    status: "active",
+    bio: "Manages Amazonian botanical apparel sublimation proofs, sampling QC, and international shipping lanes.",
+    joinedAt: "2026-09-12",
+  },
+];
+
+let fallbackMembers: CommitteeMember[] = [...DEFAULT_MEMBERS];
+
+// GET /api/committee/members - Fetch roster
+committeeRouter.get("/members", async (_req: Request, res: Response) => {
+  try {
+    const list = await getCommitteeSettingJson<CommitteeMember[]>("committee_members_2027", fallbackMembers);
+    fallbackMembers = list;
+    return res.json(list);
+  } catch (err: any) {
+    console.error("[CommitteeRouter] Error fetching members:", err);
+    res.status(500).json({ error: "Failed to fetch committee members" });
+  }
+});
+
+// POST /api/committee/members - Add or update member
+committeeRouter.post("/members", async (req: Request, res: Response) => {
+  try {
+    const { id, name, role, hub, email, phone, bio, status, avatar } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: "Member name is required" });
+    }
+
+    const currentList = await getCommitteeSettingJson<CommitteeMember[]>("committee_members_2027", fallbackMembers);
+    let updatedList: CommitteeMember[];
+
+    if (id) {
+      // Update existing
+      updatedList = currentList.map((m) =>
+        m.id === id
+          ? {
+              ...m,
+              name: name.trim(),
+              role: role || m.role,
+              hub: hub || m.hub,
+              email: email !== undefined ? email : m.email,
+              phone: phone !== undefined ? phone : m.phone,
+              bio: bio !== undefined ? bio : m.bio,
+              status: status || m.status,
+              avatar: avatar !== undefined ? avatar : m.avatar,
+            }
+          : m
+      );
+    } else {
+      // Create new
+      const newMember: CommitteeMember = {
+        id: `mem-${Date.now()}`,
+        name: name.trim(),
+        role: role || "Committee Member",
+        hub: hub || "NJ/NY Committee",
+        email: email || "",
+        phone: phone || "",
+        bio: bio || "",
+        status: status || "active",
+        avatar: avatar || "",
+        joinedAt: new Date().toISOString().split("T")[0],
+      };
+      updatedList = [newMember, ...currentList];
+    }
+
+    fallbackMembers = updatedList;
+    await saveCommitteeSettingJson("committee_members_2027", updatedList);
+    return res.json({ success: true, member: id ? updatedList.find((m) => m.id === id) : updatedList[0], members: updatedList });
+  } catch (err: any) {
+    console.error("[CommitteeRouter] Error saving member:", err);
+    res.status(500).json({ error: "Failed to save member" });
+  }
+});
+
+// DELETE /api/committee/members/:id - Remove member
+committeeRouter.delete("/members/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const currentList = await getCommitteeSettingJson<CommitteeMember[]>("committee_members_2027", fallbackMembers);
+    const updatedList = currentList.filter((m) => m.id !== id);
+    fallbackMembers = updatedList;
+    await saveCommitteeSettingJson("committee_members_2027", updatedList);
+    return res.json({ success: true, message: "Member removed", members: updatedList });
+  } catch (err: any) {
+    console.error("[CommitteeRouter] Error deleting member:", err);
+    res.status(500).json({ error: "Failed to delete member" });
+  }
+});
+
+// -------------------------------------------------------------
+// 2. Committee Comments & Live Feedback Thread
+// -------------------------------------------------------------
+let fallbackComments: CommitteeComment[] = [];
+
+// GET /api/committee/comments - Fetch comments (optional filter by targetType / targetId)
+committeeRouter.get("/comments", async (req: Request, res: Response) => {
+  try {
+    const { targetType, targetId } = req.query;
+    const allComments = await getCommitteeSettingJson<CommitteeComment[]>("committee_comments_2027", fallbackComments);
+    fallbackComments = allComments;
+
+    let filtered = allComments;
+    if (targetType) {
+      filtered = filtered.filter((c) => c.targetType === targetType);
+    }
+    if (targetId) {
+      filtered = filtered.filter((c) => c.targetId === targetId);
+    }
+
+    return res.json(filtered);
+  } catch (err: any) {
+    console.error("[CommitteeRouter] Error fetching comments:", err);
+    res.status(500).json({ error: "Failed to fetch comments" });
+  }
+});
+
+// POST /api/committee/comments - Add new comment
+committeeRouter.post("/comments", async (req: Request, res: Response) => {
+  try {
+    const { authorName, authorRole, authorHub, targetType = "general", targetId, targetTitle, content } = req.body;
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: "Comment content is required" });
+    }
+
+    const currentList = await getCommitteeSettingJson<CommitteeComment[]>("committee_comments_2027", fallbackComments);
+    const newComment: CommitteeComment = {
+      id: `comm-${Date.now()}`,
+      authorName: (authorName && authorName.trim()) || "Committee Member",
+      authorRole: authorRole || "Executive Committee",
+      authorHub: authorHub || "All Committee",
+      targetType: targetType || "general",
+      targetId: targetId || undefined,
+      targetTitle: targetTitle || undefined,
+      content: content.trim(),
+      createdAt: new Date().toISOString(),
+    };
+
+    const updatedList = [newComment, ...currentList];
+    fallbackComments = updatedList;
+    await saveCommitteeSettingJson("committee_comments_2027", updatedList);
+
+    return res.status(201).json({ success: true, comment: newComment, comments: updatedList });
+  } catch (err: any) {
+    console.error("[CommitteeRouter] Error posting comment:", err);
+    res.status(500).json({ error: "Failed to post comment" });
+  }
+});
+
+// DELETE /api/committee/comments/:id - Remove comment
+committeeRouter.delete("/comments/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const currentList = await getCommitteeSettingJson<CommitteeComment[]>("committee_comments_2027", fallbackComments);
+    const updatedList = currentList.filter((c) => c.id !== id);
+    fallbackComments = updatedList;
+    await saveCommitteeSettingJson("committee_comments_2027", updatedList);
+
+    return res.json({ success: true, message: "Comment deleted", comments: updatedList });
+  } catch (err: any) {
+    console.error("[CommitteeRouter] Error deleting comment:", err);
+    res.status(500).json({ error: "Failed to delete comment" });
+  }
+});
+
+// -------------------------------------------------------------
+// 3. Executive Visual Media & Event Asset Vault
+// -------------------------------------------------------------
+let fallbackMedia: CommitteeMediaItem[] = [];
+
+// GET /api/committee/media - Fetch visual assets
+committeeRouter.get("/media", async (_req: Request, res: Response) => {
+  try {
+    const list = await getCommitteeSettingJson<CommitteeMediaItem[]>("committee_media_vault_2027", fallbackMedia);
+    fallbackMedia = list;
+    return res.json(list);
+  } catch (err: any) {
+    console.error("[CommitteeRouter] Error fetching media:", err);
+    res.status(500).json({ error: "Failed to fetch media assets" });
+  }
+});
+
+// POST /api/committee/media - Add or link visual asset
+committeeRouter.post("/media", async (req: Request, res: Response) => {
+  try {
+    const { title, description, category = "general", url, uploadedBy, uploadedByHub, targetEvent, fileSize } = req.body;
+    if (!title || !title.trim()) {
+      return res.status(400).json({ error: "Media title is required" });
+    }
+    if (!url || !url.trim()) {
+      return res.status(400).json({ error: "Media URL is required" });
+    }
+
+    const currentList = await getCommitteeSettingJson<CommitteeMediaItem[]>("committee_media_vault_2027", fallbackMedia);
+    const newItem: CommitteeMediaItem = {
+      id: `media-${Date.now()}`,
+      title: title.trim(),
+      description: description ? description.trim() : "",
+      category: category || "general",
+      url: url.trim(),
+      uploadedBy: uploadedBy || "Committee Member",
+      uploadedByHub: uploadedByHub || "All Committee",
+      targetEvent: targetEvent || "",
+      fileSize: fileSize || undefined,
+      createdAt: new Date().toISOString(),
+    };
+
+    const updatedList = [newItem, ...currentList];
+    fallbackMedia = updatedList;
+    await saveCommitteeSettingJson("committee_media_vault_2027", updatedList);
+
+    return res.status(201).json({ success: true, item: newItem, media: updatedList });
+  } catch (err: any) {
+    console.error("[CommitteeRouter] Error saving media:", err);
+    res.status(500).json({ error: "Failed to save media asset" });
+  }
+});
+
+// DELETE /api/committee/media/:id - Delete visual asset
+committeeRouter.delete("/media/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const currentList = await getCommitteeSettingJson<CommitteeMediaItem[]>("committee_media_vault_2027", fallbackMedia);
+    const updatedList = currentList.filter((m) => m.id !== id);
+    fallbackMedia = updatedList;
+    await saveCommitteeSettingJson("committee_media_vault_2027", updatedList);
+
+    return res.json({ success: true, message: "Media asset deleted", media: updatedList });
+  } catch (err: any) {
+    console.error("[CommitteeRouter] Error deleting media:", err);
+    res.status(500).json({ error: "Failed to delete media asset" });
+  }
+});
+
+// POST /api/committee/upload - Upload file to server
+committeeRouter.post("/upload", uploadCommitteeMedia.single("file"), (req: Request, res: Response) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "No file provided" });
+  }
+
+  const publicUrl = `/uploads/committee/${req.file.filename}`;
+  return res.json({
+    success: true,
+    url: publicUrl,
+    filename: req.file.filename,
+    originalName: req.file.originalname,
+    size: req.file.size,
+    mimetype: req.file.mimetype,
+  });
+});
+
+// -------------------------------------------------------------
+// 4. Clean Slate / Reset Demo Data (Ready for Live Input)
+// -------------------------------------------------------------
+committeeRouter.post("/reset-data", async (req: Request, res: Response) => {
+  try {
+    const { scope = "proposals" } = req.body;
+
+    if (scope === "proposals" || scope === "all") {
+      fallbackProposals = [];
+      if (db) {
+        try {
+          await db.delete(committeeProposals);
+        } catch (dbErr) {
+          console.warn("[CommitteeRouter] DB proposals clean failed:", dbErr);
+        }
+      }
+    }
+
+    if (scope === "timeline" || scope === "all") {
+      fallbackTimeline = [];
+      await saveCommitteeSettingJson("committee_timeline_2027", []);
+    }
+
+    if (scope === "comments" || scope === "all") {
+      fallbackComments = [];
+      await saveCommitteeSettingJson("committee_comments_2027", []);
+    }
+
+    if (scope === "media" || scope === "all") {
+      fallbackMedia = [];
+      await saveCommitteeSettingJson("committee_media_vault_2027", []);
+    }
+
+    return res.json({
+      success: true,
+      message: `Cleared ${scope}. Committee workspace is now in clean live input mode.`,
+    });
+  } catch (err: any) {
+    console.error("[CommitteeRouter] Error resetting data:", err);
+    res.status(500).json({ error: "Failed to reset committee data" });
   }
 });
 

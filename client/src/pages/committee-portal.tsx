@@ -37,6 +37,20 @@ import {
   Flag,
   AlertCircle,
   ListChecks,
+  MessageSquare,
+  MessageCircle,
+  Send,
+  Image as ImageIcon,
+  UploadCloud,
+  UserPlus,
+  UserCheck,
+  RotateCcw,
+  Download,
+  ZoomIn,
+  Search,
+  Mail,
+  Phone,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -58,9 +72,49 @@ export interface TimelineMilestone {
   checklist: string[];
 }
 
+export interface CommitteeMember {
+  id: string;
+  name: string;
+  role: string;
+  hub: "NJ/NY Committee" | "Guyana Operations" | "UK Logistics" | "All Committee";
+  email?: string;
+  phone?: string;
+  avatar?: string;
+  bio?: string;
+  status: "active" | "lead" | "advisor";
+  joinedAt: string;
+}
+
+export interface CommitteeComment {
+  id: string;
+  authorId?: string;
+  authorName: string;
+  authorRole?: string;
+  authorHub: string;
+  targetType: "proposal" | "milestone" | "media" | "general";
+  targetId?: string;
+  targetTitle?: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface CommitteeMediaItem {
+  id: string;
+  title: string;
+  description?: string;
+  category: "flyer" | "layout" | "merch" | "moodboard" | "stage" | "general";
+  url: string;
+  uploadedBy: string;
+  uploadedByHub: string;
+  targetEvent?: string;
+  fileSize?: number;
+  createdAt: string;
+}
+
 // Fallback default passcode (case-insensitive)
 const DEFAULT_ACCESS_KEY = "EUPHORIA2027";
 const AUTH_STORAGE_KEY = "sg_committee_auth_2027";
+const ACTIVE_MEMBER_STORAGE_KEY = "sg_committee_active_member_2027";
 
 interface GeneratedDeliverable {
   summary: string;
@@ -162,22 +216,69 @@ export default function CommitteePortal() {
   });
   const [rawChecklistInput, setRawChecklistInput] = useState<string>("");
 
-  // Form State
+  // Active Committee Member Identity
+  const [activeMember, setActiveMember] = useState<{ name: string; hub: string; role: string } | null>(null);
+  const [isMemberIdentityModalOpen, setIsMemberIdentityModalOpen] = useState<boolean>(false);
+  const [identityInputName, setIdentityInputName] = useState<string>("");
+  const [identityInputHub, setIdentityInputHub] = useState<string>("NJ/NY Committee");
+  const [identityInputRole, setIdentityInputRole] = useState<string>("Committee Member");
+
+  // Member Directory state
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState<boolean>(false);
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [memberFormData, setMemberFormData] = useState<Partial<CommitteeMember>>({
+    name: "",
+    role: "Operations Lead",
+    hub: "NJ/NY Committee",
+    email: "",
+    phone: "",
+    bio: "",
+    status: "active",
+  });
+
+  // Media Vault state & filters
+  const [selectedMediaCategory, setSelectedMediaCategory] = useState<string>("all");
+  const [isUploadMediaModalOpen, setIsUploadMediaModalOpen] = useState<boolean>(false);
+  const [previewMediaUrl, setPreviewMediaUrl] = useState<string | null>(null);
+  const [mediaFormData, setMediaFormData] = useState({
+    title: "",
+    description: "",
+    category: "flyer",
+    url: "",
+    targetEvent: "Oasis Pool Party",
+  });
+  const [uploadingFile, setUploadingFile] = useState<boolean>(false);
+  const [selectedImageForLightbox, setSelectedImageForLightbox] = useState<CommitteeMediaItem | null>(null);
+
+  // Comments state & filters
+  const [commentFilterHub, setCommentFilterHub] = useState<string>("all");
+  const [commentFilterTarget, setCommentFilterTarget] = useState<string>("all");
+  const [newCommentText, setNewCommentText] = useState<string>("");
+  const [commentTargetType, setCommentTargetType] = useState<"general" | "proposal" | "milestone">("general");
+  const [commentTargetTitle, setCommentTargetTitle] = useState<string>("");
+  const [commentSearchTerm, setCommentSearchTerm] = useState<string>("");
+  const [expandedDiscussionMilestoneId, setExpandedDiscussionMilestoneId] = useState<string | null>(null);
+
+  // Admin Reset Dialog State
+  const [isResetDataModalOpen, setIsResetDataModalOpen] = useState<boolean>(false);
+
+  // Clean Slate Live Input Form State (ready for live input)
   const [formData, setFormData] = useState({
-    title: "Oasis: The AC Marriott Welcome Pool Party",
+    title: "",
     category: "event",
     author: "NJ/NY Committee",
-    targetDate: "May 21, 2027 (Guyana Independence Weekend)",
-    venue: "AC Hotel by Marriott (Ogle, Guyana) Outdoor Pool & Event Lounge",
-    concept: "Luxury daytime pool fete bridging international arrivals with local VIPs. High-energy soca, cabana bottle service, and Amazonian botanical atmosphere.",
-    talentWishlist: "DJ Private Ryan, Dr. Esan, DJ Kevin, Savage Soundsystem",
+    targetDate: "",
+    venue: "",
+    concept: "",
+    talentWishlist: "",
     capacity: 450,
     earlyBirdPrice: 45,
     tier1Price: 65,
     vipCabanaPrice: 1250,
-    merchTitle: "Amazonian Botanical AOP Basketball Jersey & Beach Shorts",
+    merchTitle: "",
     merchPrice: 68,
-    estimatedProductionCost: 14500,
+    estimatedProductionCost: 14000,
+    coverImageUrl: "",
   });
 
   const [activeOutput, setActiveOutput] = useState<GeneratedDeliverable | null>(null);
@@ -373,6 +474,268 @@ export default function CommitteePortal() {
     },
   });
 
+  // -------------------------------------------------------------
+  // Queries & Mutations: Committee Members
+  // -------------------------------------------------------------
+  const { data: committeeMembers = [], isLoading: isLoadingMembers } = useQuery<CommitteeMember[]>({
+    queryKey: ["/api/committee/members"],
+    enabled: isAuthenticated,
+  });
+
+  const saveMemberMutation = useMutation({
+    mutationFn: async (payload: Partial<CommitteeMember>) => {
+      const res = await apiRequest("POST", "/api/committee/members", payload);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/committee/members"] });
+      setIsAddMemberModalOpen(false);
+      setEditingMemberId(null);
+      toast({
+        title: "Member Saved",
+        description: "Committee roster updated.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Save Failed",
+        description: "Could not save committee member.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMemberMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("DELETE", `/api/committee/members/${id}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/committee/members"] });
+      toast({
+        title: "Member Removed",
+        description: "Removed from committee directory.",
+      });
+    },
+  });
+
+  // -------------------------------------------------------------
+  // Queries & Mutations: Committee Comments
+  // -------------------------------------------------------------
+  const { data: committeeComments = [], isLoading: isLoadingComments } = useQuery<CommitteeComment[]>({
+    queryKey: ["/api/committee/comments"],
+    enabled: isAuthenticated,
+  });
+
+  const postCommentMutation = useMutation({
+    mutationFn: async (payload: Partial<CommitteeComment>) => {
+      const res = await apiRequest("POST", "/api/committee/comments", payload);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/committee/comments"] });
+      setNewCommentText("");
+      toast({
+        title: "Comment Posted",
+        description: "Feedback logged to committee record.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Post Failed",
+        description: "Could not post comment.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("DELETE", `/api/committee/comments/${id}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/committee/comments"] });
+      toast({
+        title: "Comment Removed",
+        description: "Comment deleted from record.",
+      });
+    },
+  });
+
+  // -------------------------------------------------------------
+  // Queries & Mutations: Media & Visual Assets
+  // -------------------------------------------------------------
+  const { data: mediaAssets = [], isLoading: isLoadingMedia } = useQuery<CommitteeMediaItem[]>({
+    queryKey: ["/api/committee/media"],
+    enabled: isAuthenticated,
+  });
+
+  const saveMediaMutation = useMutation({
+    mutationFn: async (payload: Partial<CommitteeMediaItem>) => {
+      const res = await apiRequest("POST", "/api/committee/media", payload);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/committee/media"] });
+      setIsUploadMediaModalOpen(false);
+      setPreviewMediaUrl(null);
+      setMediaFormData({
+        title: "",
+        description: "",
+        category: "flyer",
+        url: "",
+        targetEvent: "Oasis Pool Party",
+      });
+      toast({
+        title: "Asset Saved",
+        description: "Visual asset added to Executive Media Vault.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Save Failed",
+        description: "Could not save media asset.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMediaMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("DELETE", `/api/committee/media/${id}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/committee/media"] });
+      toast({
+        title: "Asset Removed",
+        description: "Visual asset deleted from vault.",
+      });
+    },
+  });
+
+  // -------------------------------------------------------------
+  // Mutation: Reset / Clean Demo Data
+  // -------------------------------------------------------------
+  const resetDataMutation = useMutation({
+    mutationFn: async (payload: { scope: string }) => {
+      const res = await apiRequest("POST", "/api/committee/reset-data", payload);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/committee/proposals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/committee/timeline"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/committee/comments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/committee/media"] });
+      setMilestones([]);
+      setActiveOutput(null);
+      setIsResetDataModalOpen(false);
+      toast({
+        title: "Workspace Cleaned",
+        description: data.message || "All demo data removed. System ready for live input.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Reset Failed",
+        description: "Could not clean workspace data.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Load Active Member from localStorage on mount
+  useEffect(() => {
+    const savedIdentity = localStorage.getItem(ACTIVE_MEMBER_STORAGE_KEY);
+    if (savedIdentity) {
+      try {
+        const parsed = JSON.parse(savedIdentity);
+        setActiveMember(parsed);
+      } catch (e) {}
+    }
+  }, []);
+
+  const handleSaveActiveMemberIdentity = (name: string, hub: string, role: string) => {
+    const memberObj = { name: name.trim(), hub, role };
+    setActiveMember(memberObj);
+    localStorage.setItem(ACTIVE_MEMBER_STORAGE_KEY, JSON.stringify(memberObj));
+    setFormData((prev) => ({ ...prev, author: `${memberObj.name} (${memberObj.hub})` }));
+    setIsMemberIdentityModalOpen(false);
+    toast({
+      title: "Identity Confirmed",
+      description: `Active as ${memberObj.name} • ${memberObj.hub}`,
+    });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingFile(true);
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+
+      const res = await fetch("/api/committee/upload", {
+        method: "POST",
+        body: uploadFormData,
+      });
+
+      const data = await res.json();
+      if (data.success && data.url) {
+        setMediaFormData((prev) => ({
+          ...prev,
+          url: data.url,
+          title: prev.title || file.name.replace(/\.[^/.]+$/, ""),
+        }));
+        setPreviewMediaUrl(data.url);
+        toast({
+          title: "File Uploaded",
+          description: `${file.name} uploaded successfully.`,
+        });
+      } else {
+        toast({
+          title: "Upload Failed",
+          description: data.error || "Could not upload file.",
+          variant: "destructive",
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: "Upload Error",
+        description: err.message || "Failed to upload file.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
+  const handleLoadExampleTemplate = () => {
+    setFormData({
+      title: "Oasis: The AC Marriott Welcome Pool Party",
+      category: "event",
+      author: activeMember ? `${activeMember.name} (${activeMember.hub})` : "NJ/NY Committee",
+      targetDate: "May 21, 2027 (Guyana Independence Weekend)",
+      venue: "AC Hotel by Marriott (Ogle, Guyana) Outdoor Pool & Event Lounge",
+      concept: "Luxury daytime pool fete bridging international arrivals with local VIPs. High-energy soca, cabana bottle service, and Amazonian botanical atmosphere.",
+      talentWishlist: "DJ Private Ryan, Dr. Esan, DJ Kevin, Savage Soundsystem",
+      capacity: 450,
+      earlyBirdPrice: 45,
+      tier1Price: 65,
+      vipCabanaPrice: 1250,
+      merchTitle: "Amazonian Botanical AOP Basketball Jersey & Beach Shorts",
+      merchPrice: 68,
+      estimatedProductionCost: 14500,
+      coverImageUrl: "",
+    });
+    toast({
+      title: "Sample Template Loaded",
+      description: "Sample event parameters populated into form.",
+    });
+  };
+
   // Helper: Cycle milestone status
   const handleCycleMilestoneStatus = (id: string) => {
     const updated = milestones.map((m) => {
@@ -512,55 +875,25 @@ export default function CommitteePortal() {
     }
   };
 
-  // Trigger initial generation on first auth
-  useEffect(() => {
-    if (isAuthenticated && !activeOutput) {
-      generateMutation.mutate(formData);
-    }
-  }, [isAuthenticated]);
-
-  const handleCopy = (text: string, keyName: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(keyName);
-    setTimeout(() => setCopiedKey(null), 2000);
-    toast({
-      title: "Copied to Clipboard",
-      description: "Ready to paste into WhatsApp, Slack, or email.",
-    });
-  };
-
-  const handleLoadProposal = (prop: ProposalItem) => {
-    setCurrentEditingId(prop.id || null);
-    if (prop.inputData) {
-      setFormData(prop.inputData);
-    }
-    if (prop.generatedOutput) {
-      setActiveOutput(prop.generatedOutput);
-    }
-    setActiveTab("generator");
-    toast({
-      title: "Proposal Loaded",
-      description: `Opened "${prop.title}" in workspace.`,
-    });
-  };
-
+  // Clean handleCreateNew for live input
   const handleCreateNew = () => {
     setCurrentEditingId(null);
     setFormData({
-      title: "New Pool & Lounge Experience",
+      title: "",
       category: "event",
-      author: "NJ/NY Committee",
-      targetDate: "May 21, 2027 (Guyana Independence Weekend)",
-      venue: "AC Hotel by Marriott (Ogle, Guyana) Outdoor Pool & Event Lounge",
-      concept: "Exclusive daytime event concept for Guyana Carnival 2027.",
-      talentWishlist: "DJ Private Ryan, Savage Soundsystem",
-      capacity: 400,
-      earlyBirdPrice: 40,
-      tier1Price: 60,
-      vipCabanaPrice: 1200,
-      merchTitle: "Amazonian Botanical Jersey & Shorts",
-      merchPrice: 65,
-      estimatedProductionCost: 12000,
+      author: activeMember ? `${activeMember.name} (${activeMember.hub})` : "NJ/NY Committee",
+      targetDate: "",
+      venue: "",
+      concept: "",
+      talentWishlist: "",
+      capacity: 450,
+      earlyBirdPrice: 45,
+      tier1Price: 65,
+      vipCabanaPrice: 1250,
+      merchTitle: "",
+      merchPrice: 68,
+      estimatedProductionCost: 14000,
+      coverImageUrl: "",
     });
     setActiveOutput(null);
     setActiveTab("generator");
@@ -724,12 +1057,12 @@ export default function CommitteePortal() {
 
           <div className="flex items-center gap-2 flex-wrap">
             {/* Main Committee Navigation Tabs */}
-            <div className="bg-[#080C14] p-1 rounded-lg border border-[#1C2739] flex items-center gap-1">
+            <div className="bg-[#080C14] p-1 rounded-lg border border-[#1C2739] flex items-center gap-1 flex-wrap">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setActiveTab("generator")}
-                className={`text-xs h-8 px-3 rounded-md transition-all ${
+                className={`text-xs h-8 px-2.5 rounded-md transition-all ${
                   activeTab === "generator"
                     ? "bg-[#00D2B4]/20 text-[#00D2B4] font-semibold"
                     : "text-gray-300 hover:text-white hover:bg-[#131B2A]"
@@ -743,16 +1076,16 @@ export default function CommitteePortal() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setActiveTab("timeline")}
-                className={`text-xs h-8 px-3 rounded-md relative transition-all ${
+                className={`text-xs h-8 px-2.5 rounded-md relative transition-all ${
                   activeTab === "timeline"
                     ? "bg-[#E5A93C]/20 text-[#E5A93C] font-semibold"
                     : "text-gray-300 hover:text-white hover:bg-[#131B2A]"
                 }`}
               >
                 <Calendar className="w-3.5 h-3.5 mr-1.5 text-[#E5A93C]" />
-                Visual Master Roadmap
+                Roadmap
                 {hasUnsavedTimeline && (
-                  <span className="ml-1.5 inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-500 text-black animate-pulse">
+                  <span className="ml-1 inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-500 text-black animate-pulse">
                     Unsaved
                   </span>
                 )}
@@ -761,17 +1094,88 @@ export default function CommitteePortal() {
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={() => setActiveTab("media")}
+                className={`text-xs h-8 px-2.5 rounded-md transition-all ${
+                  activeTab === "media"
+                    ? "bg-[#00D2B4]/20 text-[#00D2B4] font-semibold"
+                    : "text-gray-300 hover:text-white hover:bg-[#131B2A]"
+                }`}
+              >
+                <ImageIcon className="w-3.5 h-3.5 mr-1.5 text-[#00D2B4]" />
+                Media Vault ({mediaAssets.length})
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setActiveTab("roster")}
+                className={`text-xs h-8 px-2.5 rounded-md transition-all ${
+                  activeTab === "roster"
+                    ? "bg-purple-500/20 text-purple-300 font-semibold"
+                    : "text-gray-300 hover:text-white hover:bg-[#131B2A]"
+                }`}
+              >
+                <Users className="w-3.5 h-3.5 mr-1.5 text-purple-400" />
+                Directory ({committeeMembers.length})
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setActiveTab("comments")}
+                className={`text-xs h-8 px-2.5 rounded-md transition-all ${
+                  activeTab === "comments"
+                    ? "bg-blue-500/20 text-blue-300 font-semibold"
+                    : "text-gray-300 hover:text-white hover:bg-[#131B2A]"
+                }`}
+              >
+                <MessageSquare className="w-3.5 h-3.5 mr-1.5 text-blue-400" />
+                Activity ({committeeComments.length})
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setActiveTab("records")}
-                className={`text-xs h-8 px-3 rounded-md transition-all ${
+                className={`text-xs h-8 px-2.5 rounded-md transition-all ${
                   activeTab === "records"
                     ? "bg-[#0B4F37] text-white font-semibold"
                     : "text-gray-300 hover:text-white hover:bg-[#131B2A]"
                 }`}
               >
                 <FileText className="w-3.5 h-3.5 mr-1.5 text-gray-300" />
-                Saved Records ({savedProposals.length})
+                Records ({savedProposals.length})
               </Button>
             </div>
+
+            {/* Active Member Identity Badge / Switcher */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsMemberIdentityModalOpen(true)}
+              className={`text-xs h-8 px-2.5 border transition-all ${
+                activeMember
+                  ? "border-[#00D2B4]/50 bg-[#00D2B4]/10 text-white hover:bg-[#00D2B4]/20"
+                  : "border-amber-500/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
+              }`}
+              title="Click to view or switch active committee identity"
+            >
+              <UserCheck className="w-3.5 h-3.5 mr-1 text-[#00D2B4]" />
+              <span className="truncate max-w-[130px]">
+                {activeMember ? `${activeMember.name} • ${activeMember.hub.split(" ")[0]}` : "Set Identity"}
+              </span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsResetDataModalOpen(true)}
+              className="border-red-900/40 bg-red-950/20 hover:bg-red-950/40 text-red-300 text-xs h-8 px-2"
+              title="Reset Demo Data for Live Input"
+            >
+              <RotateCcw className="w-3 h-3 mr-1 text-red-400" />
+              Clean Slate
+            </Button>
 
             <Button
               variant="outline"
@@ -1200,6 +1604,30 @@ export default function CommitteePortal() {
                                 <div className="flex items-center gap-1.5">
                                   <Button
                                     size="sm"
+                                    variant="ghost"
+                                    onClick={() =>
+                                      setExpandedDiscussionMilestoneId(
+                                        expandedDiscussionMilestoneId === m.id ? null : m.id
+                                      )
+                                    }
+                                    className={`h-7 px-2 text-[11px] transition-colors ${
+                                      expandedDiscussionMilestoneId === m.id
+                                        ? "bg-[#00D2B4]/20 text-[#00D2B4]"
+                                        : "text-gray-400 hover:text-white"
+                                    }`}
+                                    title="View milestone feedback & comments"
+                                  >
+                                    <MessageCircle className="w-3 h-3 mr-1" />
+                                    {
+                                      committeeComments.filter(
+                                        (c) =>
+                                          c.targetTitle === m.title ||
+                                          (c.targetType === "milestone" && c.targetTitle.includes(m.title.slice(0, 15)))
+                                      ).length
+                                    }
+                                  </Button>
+                                  <Button
+                                    size="sm"
                                     variant="outline"
                                     onClick={() => handleOpenEditMilestone(m)}
                                     className="border-[#223147] bg-[#0A0E17] hover:bg-[#141E30] text-[11px] text-gray-200 h-7 px-2"
@@ -1217,6 +1645,100 @@ export default function CommitteePortal() {
                                   </Button>
                                 </div>
                               </CardFooter>
+
+                              {/* Inline Milestone Comments Section */}
+                              {expandedDiscussionMilestoneId === m.id && (
+                                <div className="p-3 bg-[#080B12] border-t border-[#182334] text-xs space-y-2.5">
+                                  <div className="flex items-center justify-between text-[11px] font-semibold text-gray-300">
+                                    <span className="flex items-center gap-1.5 text-[#00D2B4]">
+                                      <MessageSquare className="w-3 h-3" />
+                                      Committee Notes on this Milestone
+                                    </span>
+                                    <span className="text-[10px] text-gray-400">
+                                      {activeMember ? activeMember.name : "NJ/NY Committee"}
+                                    </span>
+                                  </div>
+
+                                  {/* Milestone Comments Feed */}
+                                  <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                                    {committeeComments
+                                      .filter(
+                                        (c) =>
+                                          c.targetTitle === m.title ||
+                                          (c.targetType === "milestone" && c.targetTitle.includes(m.title.slice(0, 15)))
+                                      ).length === 0 ? (
+                                      <div className="text-[10px] text-gray-400 py-1 italic">
+                                        No notes logged yet for this milestone.
+                                      </div>
+                                    ) : (
+                                      committeeComments
+                                        .filter(
+                                          (c) =>
+                                            c.targetTitle === m.title ||
+                                            (c.targetType === "milestone" &&
+                                              c.targetTitle.includes(m.title.slice(0, 15)))
+                                        )
+                                        .map((c) => (
+                                          <div
+                                            key={c.id}
+                                            className="p-2 rounded bg-[#0D121B] border border-[#1B273A] text-[11px] space-y-0.5"
+                                          >
+                                            <div className="flex items-center justify-between text-[10px]">
+                                              <span className="font-semibold text-white">
+                                                {c.author} ({c.authorHub.replace("Committee", "").trim()})
+                                              </span>
+                                              <span className="text-gray-400">
+                                                {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "Active"}
+                                              </span>
+                                            </div>
+                                            <p className="text-gray-300">{c.text}</p>
+                                          </div>
+                                        ))
+                                    )}
+                                  </div>
+
+                                  {/* Quick Comment Input */}
+                                  <div className="flex items-center gap-1.5 pt-1">
+                                    <Input
+                                      placeholder="Leave note on this milestone..."
+                                      className="bg-[#05070C] border-[#182334] text-white text-[11px] h-7"
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter" && (e.target as any).value.trim()) {
+                                          postCommentMutation.mutate({
+                                            author: activeMember ? activeMember.name : "Committee Member",
+                                            authorHub: activeMember ? activeMember.hub : "NJ/NY Committee",
+                                            authorRole: activeMember ? activeMember.role : "Member",
+                                            text: (e.target as any).value.trim(),
+                                            targetType: "milestone",
+                                            targetTitle: m.title,
+                                          });
+                                          (e.target as any).value = "";
+                                        }
+                                      }}
+                                    />
+                                    <Button
+                                      size="sm"
+                                      className="bg-[#0B4F37] hover:bg-[#0E6346] text-white text-[10px] h-7 px-2"
+                                      onClick={(e) => {
+                                        const inputEl = e.currentTarget.previousElementSibling as HTMLInputElement;
+                                        if (inputEl && inputEl.value.trim()) {
+                                          postCommentMutation.mutate({
+                                            author: activeMember ? activeMember.name : "Committee Member",
+                                            authorHub: activeMember ? activeMember.hub : "NJ/NY Committee",
+                                            authorRole: activeMember ? activeMember.role : "Member",
+                                            text: inputEl.value.trim(),
+                                            targetType: "milestone",
+                                            targetTitle: m.title,
+                                          });
+                                          inputEl.value = "";
+                                        }
+                                      }}
+                                    >
+                                      Send
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
                             </Card>
                           );
                         })}
@@ -1350,6 +1872,625 @@ export default function CommitteePortal() {
               </div>
             )}
           </div>
+        ) : activeTab === "media" ? (
+          /* ------------------------------------------------------------- */
+          /* VISUAL MEDIA & EVENT ASSET VAULT                              */
+          /* ------------------------------------------------------------- */
+          <div className="space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0A0E17] border border-[#1A2639] p-4 lg:p-5 rounded-xl shadow-lg">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Badge className="bg-[#0B4F37] text-[#00D2B4] border-0 text-[10px] font-mono uppercase tracking-wider">
+                    Executive Asset Vault
+                  </Badge>
+                  <span className="text-[11px] text-gray-400">
+                    {mediaAssets.length} Visual Assets Stored
+                  </span>
+                </div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <ImageIcon className="w-5 h-5 text-[#00D2B4]" />
+                  Executive Visual Media & Event Asset Vault
+                </h2>
+                <p className="text-xs text-gray-400 mt-1 max-w-3xl">
+                  Upload and review promotional flyers, 3D pool deck stage plots, merchandise mockups, and venue layouts.
+                  Assets can be previewed in high resolution and attached directly to live microsite proposals.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  onClick={() => setIsUploadMediaModalOpen(true)}
+                  className="bg-gradient-to-r from-[#0B4F37] via-[#008F6B] to-[#E5A93C] text-white text-xs h-9 font-semibold shadow-md"
+                >
+                  <UploadCloud className="w-3.5 h-3.5 mr-1.5" />
+                  Upload Visual Asset
+                </Button>
+              </div>
+            </div>
+
+            {/* Category Filter Pills */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+              {[
+                { id: "all", label: `All Assets (${mediaAssets.length})` },
+                { id: "flyer", label: `Flyers & Posters (${mediaAssets.filter((m) => m.category === "flyer").length})` },
+                { id: "stage_plot", label: `Venue & Stage Plots (${mediaAssets.filter((m) => m.category === "stage_plot").length})` },
+                { id: "apparel", label: `Apparel & Merch (${mediaAssets.filter((m) => m.category === "apparel").length})` },
+                { id: "moodboard", label: `Moodboards (${mediaAssets.filter((m) => m.category === "moodboard").length})` },
+                { id: "photo", label: `Event Photos (${mediaAssets.filter((m) => m.category === "photo").length})` },
+              ].map((pill) => (
+                <button
+                  key={pill.id}
+                  onClick={() => setSelectedMediaCategory(pill.id)}
+                  className={`text-xs px-3 py-1.5 rounded-lg border whitespace-nowrap transition-all ${
+                    selectedMediaCategory === pill.id
+                      ? "border-[#00D2B4] bg-[#00D2B4]/20 text-[#00D2B4] font-semibold"
+                      : "border-[#1B273A] bg-[#0A0E17] text-gray-400 hover:text-white hover:border-[#2C3E5B]"
+                  }`}
+                >
+                  {pill.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Assets Grid */}
+            {isLoadingMedia ? (
+              <div className="py-20 text-center">
+                <RefreshCw className="w-8 h-8 animate-spin text-[#00D2B4] mx-auto mb-3" />
+                <p className="text-xs text-gray-400">Loading visual asset vault...</p>
+              </div>
+            ) : mediaAssets.filter((m) => selectedMediaCategory === "all" || m.category === selectedMediaCategory).length === 0 ? (
+              <Card className="bg-[#0C1018] border-[#182334] p-12 text-center text-gray-400">
+                <ImageIcon className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                <h3 className="text-base font-semibold text-gray-200">No Visual Assets In This View</h3>
+                <p className="text-xs text-gray-400 max-w-sm mx-auto mt-1 mb-6">
+                  Upload event flyers, pool venue diagrams, or apparel mockups for the committee to review and attach to deliverables.
+                </p>
+                <Button
+                  onClick={() => setIsUploadMediaModalOpen(true)}
+                  className="bg-gradient-to-r from-[#0B4F37] to-[#E5A93C] text-white text-xs"
+                >
+                  <UploadCloud className="w-3.5 h-3.5 mr-1.5" />
+                  Upload First Asset
+                </Button>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {mediaAssets
+                  .filter((m) => selectedMediaCategory === "all" || m.category === selectedMediaCategory)
+                  .map((item) => (
+                    <Card
+                      key={item.id}
+                      className="bg-[#0D121B] border-[#1C2638] hover:border-[#00D2B4]/50 transition-all flex flex-col justify-between overflow-hidden group shadow-lg"
+                    >
+                      {/* Image Thumbnail with Lightbox click */}
+                      <div
+                        onClick={() => setSelectedImageForLightbox(item)}
+                        className="relative h-44 w-full bg-[#06080E] cursor-pointer overflow-hidden border-b border-[#182334]"
+                      >
+                        <img
+                          src={item.url}
+                          alt={item.title}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          onError={(e) => {
+                            (e.currentTarget as any).src = "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=600&q=80";
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <span className="p-2 rounded-full bg-black/70 text-white border border-white/20">
+                            <ZoomIn className="w-4 h-4 text-[#00D2B4]" />
+                          </span>
+                        </div>
+                        <Badge className="absolute top-2 left-2 bg-black/70 text-[#00D2B4] border border-[#00D2B4]/30 text-[10px] uppercase backdrop-blur-sm">
+                          {item.category.replace("_", " ")}
+                        </Badge>
+                      </div>
+
+                      <CardHeader className="p-3.5 pb-2">
+                        <CardTitle className="text-sm font-bold text-white line-clamp-1">
+                          {item.title}
+                        </CardTitle>
+                        {item.description && (
+                          <CardDescription className="text-[11px] text-gray-400 line-clamp-2 mt-0.5">
+                            {item.description}
+                          </CardDescription>
+                        )}
+                        <div className="flex items-center justify-between text-[10px] text-gray-400 pt-1">
+                          <span>{item.targetEvent || "Oasis Pool Party"}</span>
+                          <span>{item.uploadedBy || "Committee"}</span>
+                        </div>
+                      </CardHeader>
+
+                      <CardFooter className="p-3 pt-2 border-t border-[#182334] flex items-center justify-between gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setFormData((prev) => ({ ...prev, coverImageUrl: item.url }));
+                            setActiveTab("generator");
+                            toast({
+                              title: "Asset Attached",
+                              description: `Set "${item.title}" as active proposal cover image.`,
+                            });
+                          }}
+                          className="border-[#213045] bg-[#090D15] hover:bg-[#121B2A] text-[11px] h-7 px-2 text-[#00D2B4]"
+                        >
+                          Use in Proposal
+                        </Button>
+
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleCopy(item.url, `media-${item.id}`)}
+                            className="h-7 px-2 text-gray-400 hover:text-white"
+                            title="Copy Direct Link"
+                          >
+                            {copiedKey === `media-${item.id}` ? (
+                              <Check className="w-3.5 h-3.5 text-green-400" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deleteMediaMutation.mutate(item.id)}
+                            className="h-7 px-2 text-gray-400 hover:text-red-400"
+                            title="Delete Asset"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </CardFooter>
+                    </Card>
+                  ))}
+              </div>
+            )}
+          </div>
+        ) : activeTab === "roster" ? (
+          /* ------------------------------------------------------------- */
+          /* COMMITTEE DIRECTORY & MEMBER ROSTER                           */
+          /* ------------------------------------------------------------- */
+          <div className="space-y-6">
+            {/* Active Session Identity Card */}
+            <div className="p-4 rounded-xl bg-gradient-to-r from-[#0B4F37]/30 via-[#0A0E17] to-[#E5A93C]/15 border border-[#1E2D42] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-[#00D2B4]/20 border border-[#00D2B4]/40 flex items-center justify-center text-[#00D2B4] font-bold text-lg">
+                  {activeMember ? activeMember.name.slice(0, 2).toUpperCase() : "EX"}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400">Current Portal Operator:</span>
+                    <Badge className="bg-[#00D2B4]/20 text-[#00D2B4] border border-[#00D2B4]/40 text-[10px]">
+                      {activeMember ? activeMember.hub : "NJ/NY Committee"}
+                    </Badge>
+                  </div>
+                  <h3 className="text-base font-bold text-white">
+                    {activeMember ? activeMember.name : "Not Identified (Operating as Guest)"}
+                    {activeMember?.role && (
+                      <span className="text-xs font-normal text-gray-400 ml-2">
+                        • {activeMember.role}
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-[11px] text-gray-400">
+                    All proposals generated, comments posted, and roadmap changes will be signed with this identity.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => setIsMemberIdentityModalOpen(true)}
+                  className="bg-[#121B2A] hover:bg-[#1A263B] text-white border border-[#24354D] text-xs h-9"
+                >
+                  <UserCheck className="w-3.5 h-3.5 mr-1.5 text-[#00D2B4]" />
+                  Switch Active Identity
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setEditingMemberId(null);
+                    setMemberFormData({
+                      name: "",
+                      role: "Operations Lead",
+                      hub: "NJ/NY Committee",
+                      email: "",
+                      phone: "",
+                      bio: "",
+                      status: "active",
+                    });
+                    setIsAddMemberModalOpen(true);
+                  }}
+                  className="bg-gradient-to-r from-[#0B4F37] to-[#E5A93C] text-white text-xs h-9 font-semibold"
+                >
+                  <UserPlus className="w-3.5 h-3.5 mr-1.5" />
+                  Register Member
+                </Button>
+              </div>
+            </div>
+
+            {/* Hub Filters & Summary */}
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Users className="w-5 h-5 text-purple-400" />
+                  Executive Committee Directory ({committeeMembers.length})
+                </h2>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Leadership, hub coordinators, and operational leads driving Guyana Carnival 2027.
+                </p>
+              </div>
+            </div>
+
+            {/* Member Cards Grid */}
+            {isLoadingMembers ? (
+              <div className="py-20 text-center">
+                <RefreshCw className="w-8 h-8 animate-spin text-purple-400 mx-auto mb-3" />
+                <p className="text-xs text-gray-400">Loading committee roster...</p>
+              </div>
+            ) : committeeMembers.length === 0 ? (
+              <Card className="bg-[#0C1018] border-[#182334] p-12 text-center text-gray-400">
+                <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                <h3 className="text-base font-semibold text-gray-200">No Committee Members Registered</h3>
+                <p className="text-xs text-gray-400 max-w-sm mx-auto mt-1 mb-6">
+                  Add committee members to assign roles, track feedback, and streamline inter-hub coordination.
+                </p>
+                <Button
+                  onClick={() => setIsAddMemberModalOpen(true)}
+                  className="bg-gradient-to-r from-[#0B4F37] to-[#E5A93C] text-white text-xs"
+                >
+                  <UserPlus className="w-3.5 h-3.5 mr-1.5" />
+                  Add First Member
+                </Button>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {committeeMembers.map((member) => {
+                  const isCurrentActive = activeMember?.name.toLowerCase() === member.name.toLowerCase();
+                  return (
+                    <Card
+                      key={member.id}
+                      className={`bg-[#0D121B] border transition-all flex flex-col justify-between ${
+                        isCurrentActive
+                          ? "border-[#00D2B4] shadow-[0_0_20px_rgba(0,210,180,0.15)]"
+                          : "border-[#1C2638] hover:border-[#2C3E5B]"
+                      }`}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-[#121A28] to-[#1E2C42] border border-[#23354E] flex items-center justify-center font-bold text-white text-sm">
+                              {member.name.slice(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <CardTitle className="text-sm font-bold text-white flex items-center gap-1.5">
+                                {member.name}
+                                {isCurrentActive && (
+                                  <Badge className="bg-[#00D2B4]/20 text-[#00D2B4] border-[#00D2B4]/40 text-[9px] px-1.5 py-0">
+                                    You
+                                  </Badge>
+                                )}
+                              </CardTitle>
+                              <CardDescription className="text-xs text-[#E5A93C] font-medium">
+                                {member.role}
+                              </CardDescription>
+                            </div>
+                          </div>
+
+                          <Badge
+                            className={`text-[10px] uppercase font-mono border-0 ${
+                              member.hub.includes("NJ/NY")
+                                ? "bg-emerald-950/60 text-emerald-400"
+                                : member.hub.includes("Guyana")
+                                ? "bg-amber-950/60 text-amber-400"
+                                : "bg-blue-950/60 text-blue-400"
+                            }`}
+                          >
+                            {member.hub.replace("Committee", "").replace("Operations", "").trim()}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+
+                      <CardContent className="space-y-3 pb-3 text-xs">
+                        {member.bio && (
+                          <p className="text-gray-400 text-[11px] leading-relaxed">
+                            {member.bio}
+                          </p>
+                        )}
+
+                        <div className="space-y-1.5 pt-2 border-t border-[#182334] text-[11px]">
+                          {member.email && (
+                            <a
+                              href={`mailto:${member.email}`}
+                              className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+                            >
+                              <Mail className="w-3.5 h-3.5 text-gray-500" />
+                              <span className="truncate">{member.email}</span>
+                            </a>
+                          )}
+                          {member.phone && (
+                            <a
+                              href={`https://wa.me/${member.phone.replace(/[^0-9]/g, "")}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-gray-400 hover:text-green-400 transition-colors"
+                            >
+                              <Phone className="w-3.5 h-3.5 text-green-500" />
+                              <span>{member.phone}</span>
+                            </a>
+                          )}
+                        </div>
+                      </CardContent>
+
+                      <CardFooter className="pt-2 border-t border-[#182334] flex items-center justify-between">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleSaveActiveMemberIdentity(member.name, member.hub, member.role)}
+                          disabled={isCurrentActive}
+                          className={`text-xs h-7 px-2.5 ${
+                            isCurrentActive
+                              ? "border-[#00D2B4]/40 bg-[#00D2B4]/10 text-[#00D2B4]"
+                              : "border-[#223147] bg-[#0A0E17] hover:bg-[#131C2B] text-gray-300"
+                          }`}
+                        >
+                          {isCurrentActive ? "Active Session" : "Operate as this Member"}
+                        </Button>
+
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingMemberId(member.id);
+                              setMemberFormData({ ...member });
+                              setIsAddMemberModalOpen(true);
+                            }}
+                            className="h-7 px-2 text-gray-400 hover:text-white"
+                            title="Edit Member"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deleteMemberMutation.mutate(member.id)}
+                            className="h-7 px-2 text-gray-400 hover:text-red-400"
+                            title="Remove Member"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </CardFooter>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : activeTab === "comments" ? (
+          /* ------------------------------------------------------------- */
+          /* COMMITTEE ACTIVITY & FEEDBACK STREAM                          */
+          /* ------------------------------------------------------------- */
+          <div className="space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0A0E17] border border-[#1A2639] p-4 lg:p-5 rounded-xl shadow-lg">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Badge className="bg-[#0B4F37] text-[#00D2B4] border-0 text-[10px] font-mono uppercase tracking-wider">
+                    Executive Audit Trail
+                  </Badge>
+                  <span className="text-[11px] text-gray-400">
+                    {committeeComments.length} Total Feedback Records
+                  </span>
+                </div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-blue-400" />
+                  Committee Activity & Feedback Stream
+                </h2>
+                <p className="text-xs text-gray-400 mt-1 max-w-3xl">
+                  Centralized log of feedback, operational questions, venue approvals, and milestone updates.
+                  Every note captures author name, hub affiliation, and timestamp.
+                </p>
+              </div>
+            </div>
+
+            {/* Post New Comment Box */}
+            <Card className="bg-[#0C1018] border-[#1C2638] text-white shadow-xl">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-white flex items-center gap-2">
+                    <Send className="w-3.5 h-3.5 text-[#00D2B4]" />
+                    Post Operational Note or Feedback
+                  </span>
+                  <span className="text-[11px] text-gray-400">
+                    Posting as: <strong className="text-[#00D2B4]">{activeMember ? activeMember.name : "NJ/NY Committee"}</strong>
+                    {activeMember && <span className="text-gray-400"> ({activeMember.hub})</span>}
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-gray-400">Target Type</label>
+                    <select
+                      value={commentTargetType}
+                      onChange={(e) => setCommentTargetType(e.target.value as any)}
+                      className="w-full bg-[#080B11] border border-[#1C2739] rounded-md px-3 py-1.5 text-white text-xs"
+                    >
+                      <option value="general">General Committee Discussion</option>
+                      <option value="proposal">Specific Proposal / Event Build</option>
+                      <option value="milestone">Roadmap Milestone / Logistics</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-gray-400">Topic / Target Reference</label>
+                    <Input
+                      value={commentTargetTitle}
+                      onChange={(e) => setCommentTargetTitle(e.target.value)}
+                      placeholder="e.g. AC Marriott Pool Deck Sound Setup or Oasis Tickets"
+                      className="bg-[#080B11] border-[#1C2739] text-white text-xs h-8"
+                    />
+                  </div>
+                </div>
+
+                <Textarea
+                  value={newCommentText}
+                  onChange={(e) => setNewCommentText(e.target.value)}
+                  placeholder="Type your question, suggestion, or approval note for the committee..."
+                  rows={3}
+                  className="bg-[#080B11] border-[#1C2739] text-white text-xs"
+                />
+
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-[10px] text-gray-400">
+                    Notes are visible to all verified committee members with the access key.
+                  </span>
+                  <Button
+                    size="sm"
+                    disabled={postCommentMutation.isPending || !newCommentText.trim()}
+                    onClick={() =>
+                      postCommentMutation.mutate({
+                        author: activeMember ? activeMember.name : "Committee Member",
+                        authorHub: activeMember ? activeMember.hub : "NJ/NY Committee",
+                        authorRole: activeMember ? activeMember.role : "Member",
+                        text: newCommentText.trim(),
+                        targetType: commentTargetType,
+                        targetTitle: commentTargetTitle.trim() || (commentTargetType === "general" ? "General Committee Note" : "Event Discussion"),
+                      })
+                    }
+                    className="bg-gradient-to-r from-[#0B4F37] to-[#008F6B] text-white text-xs h-8 px-4"
+                  >
+                    {postCommentMutation.isPending ? "Posting..." : "Post Note"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Filter & Search Bar */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#0A0E17] p-3 rounded-xl border border-[#1A2639]">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Search className="w-4 h-4 text-gray-400 shrink-0" />
+                <Input
+                  value={commentSearchTerm}
+                  onChange={(e) => setCommentSearchTerm(e.target.value)}
+                  placeholder="Search comments or author..."
+                  className="bg-[#07090F] border-[#1C2739] text-white text-xs h-8 w-full sm:w-60"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                <select
+                  value={commentFilterHub}
+                  onChange={(e) => setCommentFilterHub(e.target.value)}
+                  className="bg-[#07090F] border border-[#1C2739] rounded-md px-2.5 py-1 text-xs text-gray-300 h-8"
+                >
+                  <option value="all">All Hubs</option>
+                  <option value="NJ/NY">NJ/NY Committee</option>
+                  <option value="Guyana">Guyana Operations</option>
+                  <option value="UK">UK Logistics</option>
+                </select>
+
+                <select
+                  value={commentFilterTarget}
+                  onChange={(e) => setCommentFilterTarget(e.target.value)}
+                  className="bg-[#07090F] border border-[#1C2739] rounded-md px-2.5 py-1 text-xs text-gray-300 h-8"
+                >
+                  <option value="all">All Targets</option>
+                  <option value="general">General Notes</option>
+                  <option value="proposal">Proposals</option>
+                  <option value="milestone">Milestones</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Comments List */}
+            {isLoadingComments ? (
+              <div className="py-20 text-center">
+                <RefreshCw className="w-8 h-8 animate-spin text-blue-400 mx-auto mb-3" />
+                <p className="text-xs text-gray-400">Loading activity feed...</p>
+              </div>
+            ) : committeeComments.length === 0 ? (
+              <Card className="bg-[#0C1018] border-[#182334] p-12 text-center text-gray-400">
+                <MessageSquare className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                <h3 className="text-base font-semibold text-gray-200">No Committee Comments Yet</h3>
+                <p className="text-xs text-gray-400 max-w-sm mx-auto mt-1 mb-4">
+                  All demo data has been cleared. Use the input box above to post your first operational note or question.
+                </p>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {committeeComments
+                  .filter((c) => {
+                    const hubMatches = commentFilterHub === "all" || c.authorHub.includes(commentFilterHub);
+                    const targetMatches = commentFilterTarget === "all" || c.targetType === commentFilterTarget;
+                    const searchMatches =
+                      !commentSearchTerm.trim() ||
+                      c.text.toLowerCase().includes(commentSearchTerm.toLowerCase()) ||
+                      c.author.toLowerCase().includes(commentSearchTerm.toLowerCase()) ||
+                      (c.targetTitle && c.targetTitle.toLowerCase().includes(commentSearchTerm.toLowerCase()));
+                    return hubMatches && targetMatches && searchMatches;
+                  })
+                  .map((comment) => (
+                    <Card key={comment.id} className="bg-[#0D121B] border-[#1C2638] text-white">
+                      <CardContent className="p-4 space-y-2">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#121A28] to-[#1E2C42] border border-[#23354E] flex items-center justify-center font-bold text-white text-xs">
+                              {comment.author.slice(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-white text-xs">{comment.author}</span>
+                                <Badge
+                                  className={`text-[9px] uppercase font-mono border-0 ${
+                                    comment.authorHub.includes("NJ/NY")
+                                      ? "bg-emerald-950/60 text-emerald-400"
+                                      : comment.authorHub.includes("Guyana")
+                                      ? "bg-amber-950/60 text-amber-400"
+                                      : "bg-blue-950/60 text-blue-400"
+                                  }`}
+                                >
+                                  {comment.authorHub.replace("Committee", "").replace("Operations", "").trim()}
+                                </Badge>
+                                {comment.authorRole && (
+                                  <span className="text-[10px] text-gray-400">({comment.authorRole})</span>
+                                )}
+                              </div>
+                              <span className="text-[10px] text-gray-400">
+                                {comment.createdAt ? new Date(comment.createdAt).toLocaleString() : "Recently"}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {comment.targetTitle && (
+                              <Badge variant="outline" className="border-[#23354E] text-gray-300 text-[10px]">
+                                {comment.targetTitle}
+                              </Badge>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => deleteCommentMutation.mutate(comment.id)}
+                              className="text-gray-400 hover:text-red-400 h-6 w-6 p-0"
+                              title="Delete note"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-gray-200 leading-relaxed pl-10 whitespace-pre-wrap">
+                          {comment.text}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+              </div>
+            )}
+          </div>
         ) : (
           /* ------------------------------------------------------------- */
           /* GENERATOR STUDIO & LIVE OUTPUT WORKSPACE                      */
@@ -1366,15 +2507,37 @@ export default function CommitteePortal() {
                         Auto-Site & Strategy Intake
                       </span>
                     </div>
-                    {currentEditingId && (
-                      <Badge variant="outline" className="text-[10px] border-[#E5A93C] text-[#E5A93C]">
-                        Editing Record #{currentEditingId}
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleLoadExampleTemplate}
+                        className="text-[11px] text-[#00D2B4] hover:bg-[#00D2B4]/10 h-6 px-2"
+                        title="Fill sample parameters"
+                      >
+                        Sample Template
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleCreateNew}
+                        className="text-[11px] text-gray-400 hover:text-white h-6 px-2"
+                        title="Clear all fields"
+                      >
+                        Clear
+                      </Button>
+                      {currentEditingId && (
+                        <Badge variant="outline" className="text-[10px] border-[#E5A93C] text-[#E5A93C]">
+                          #{currentEditingId}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   <CardTitle className="text-lg text-white">Committee Form</CardTitle>
                   <CardDescription className="text-xs text-gray-400">
-                    Input raw ideas, dates, or vendor logistics. Generates live sites & deliverables instantly.
+                    Input live concepts, dates, or vendor logistics. Generates live sites & deliverables instantly.
                   </CardDescription>
                 </CardHeader>
 
@@ -1475,6 +2638,65 @@ export default function CommitteePortal() {
                       placeholder="DJ Private Ryan, Dr. Esan, DJ Kevin..."
                       className="bg-[#080B11] border-[#1C2739] text-white text-xs"
                     />
+                  </div>
+
+                  {/* Visual / Cover Image Attachment */}
+                  <div className="p-3 rounded-lg bg-[#090D15] border border-[#172132] space-y-2">
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-[#00D2B4]">
+                      <span className="flex items-center gap-1.5">
+                        <ImageIcon className="w-3.5 h-3.5" />
+                        Cover / Visual Asset
+                      </span>
+                      <span className="text-gray-400 font-normal">Optional</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={formData.coverImageUrl}
+                        onChange={(e) => setFormData({ ...formData, coverImageUrl: e.target.value })}
+                        placeholder="Image URL or pick from vault..."
+                        className="bg-[#06090E] border-[#1A2537] text-white text-xs"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsUploadMediaModalOpen(true)}
+                        className="border-[#213045] bg-[#0A0E17] hover:bg-[#121B2A] text-xs h-9 px-2 text-gray-300 shrink-0"
+                        title="Upload file from device"
+                      >
+                        <UploadCloud className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setActiveTab("media")}
+                        className="border-[#213045] bg-[#0A0E17] hover:bg-[#121B2A] text-xs h-9 px-2 text-[#00D2B4] shrink-0"
+                        title="Browse Media Vault"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                    {formData.coverImageUrl && (
+                      <div className="relative mt-2 rounded-lg overflow-hidden border border-[#213047] h-28 w-full group">
+                        <img
+                          src={formData.coverImageUrl}
+                          alt="Cover Preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as any).src = "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=600&q=80";
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, coverImageUrl: "" })}
+                          className="absolute top-1 right-1 bg-red-600/80 hover:bg-red-600 text-white rounded p-1 text-[10px]"
+                          title="Remove Image"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Ticket Pricing & Capacity */}
@@ -1669,6 +2891,20 @@ export default function CommitteePortal() {
 
                         {/* Microsite Hero */}
                         <div className="relative p-6 md:p-8 bg-gradient-to-b from-[#0B4F37]/30 via-[#070A0F] to-[#070A0F] border-b border-[#182334] text-center space-y-4">
+                          {(activeOutput.coverImageUrl || formData.coverImageUrl) && (
+                            <div className="relative w-full h-44 md:h-56 rounded-xl overflow-hidden mb-4 border border-[#1E293B] shadow-lg">
+                              <img
+                                src={activeOutput.coverImageUrl || formData.coverImageUrl}
+                                alt="Event Visual"
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.currentTarget as any).src = "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80";
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-[#070A0F] via-black/20 to-transparent" />
+                            </div>
+                          )}
+
                           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00D2B4]/10 border border-[#00D2B4]/30 text-[#00D2B4] text-xs font-semibold uppercase tracking-wider">
                             <Calendar className="w-3.5 h-3.5" />
                             {activeOutput.microsite.dateBadge}
@@ -2281,6 +3517,543 @@ export default function CommitteePortal() {
                 className="bg-[#0B4F37] hover:bg-[#0E6346] text-white text-xs"
               >
                 {editingMilestoneId ? "Update Milestone" : "Add to Roadmap"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* MODAL: SELECT ACTIVE COMMITTEE IDENTITY */}
+      {isMemberIdentityModalOpen && (
+        <Dialog open={isMemberIdentityModalOpen} onOpenChange={setIsMemberIdentityModalOpen}>
+          <DialogContent className="max-w-lg bg-[#0D121B] border-[#223046] text-white">
+            <DialogHeader>
+              <div className="flex items-center gap-2 mb-1">
+                <Badge className="bg-[#0B4F37] text-[#00D2B4] border-0 text-[10px] uppercase font-mono">
+                  Committee Identity Session
+                </Badge>
+              </div>
+              <DialogTitle className="text-base md:text-lg text-white font-bold flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-[#00D2B4]" />
+                Select Your Active Committee Identity
+              </DialogTitle>
+              <DialogDescription className="text-xs text-gray-400">
+                Choose your profile so your feedback, proposals, and roadmap updates are attributed to you.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2 text-xs">
+              {/* Quick Select from Registered Roster */}
+              {committeeMembers.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-gray-300 font-semibold uppercase tracking-wider text-[11px]">
+                    Quick Select from Committee Roster
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                    {committeeMembers.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => handleSaveActiveMemberIdentity(m.name, m.hub, m.role)}
+                        className={`p-2.5 rounded-lg border text-left flex items-center justify-between transition-all ${
+                          activeMember?.name.toLowerCase() === m.name.toLowerCase()
+                            ? "border-[#00D2B4] bg-[#00D2B4]/15 text-white"
+                            : "border-[#1E293B] bg-[#080B11] text-gray-300 hover:border-gray-500 hover:bg-[#121927]"
+                        }`}
+                      >
+                        <div className="truncate pr-2">
+                          <div className="font-semibold text-white truncate">{m.name}</div>
+                          <div className="text-[10px] text-gray-400 truncate">{m.role} • {m.hub.replace("Committee", "").trim()}</div>
+                        </div>
+                        {activeMember?.name.toLowerCase() === m.name.toLowerCase() && (
+                          <CheckCircle2 className="w-4 h-4 text-[#00D2B4] shrink-0" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Or Manual Identity Entry */}
+              <div className="space-y-3 pt-3 border-t border-[#1C2739]">
+                <label className="text-gray-300 font-semibold uppercase tracking-wider text-[11px]">
+                  Or Enter Custom Identity
+                </label>
+                <div className="space-y-1.5">
+                  <label className="text-gray-400">Your Full Name</label>
+                  <Input
+                    value={identityInputName}
+                    onChange={(e) => setIdentityInputName(e.target.value)}
+                    placeholder="e.g. Marcus Alleyne"
+                    className="bg-[#080B11] border-[#1C2739] text-white text-xs"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1.5">
+                    <label className="text-gray-400">Hub</label>
+                    <select
+                      value={identityInputHub}
+                      onChange={(e) => setIdentityInputHub(e.target.value)}
+                      className="w-full bg-[#080B11] border border-[#1C2739] rounded-md px-3 py-2 text-white text-xs"
+                    >
+                      <option value="NJ/NY Committee">NJ/NY Committee</option>
+                      <option value="Guyana Operations">Guyana Operations</option>
+                      <option value="UK Logistics">UK Logistics</option>
+                      <option value="Executive Board">Executive Board</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-gray-400">Role / Title</label>
+                    <Input
+                      value={identityInputRole}
+                      onChange={(e) => setIdentityInputRole(e.target.value)}
+                      placeholder="e.g. Talent Director"
+                      className="bg-[#080B11] border-[#1C2739] text-white text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMemberIdentityModalOpen(false)}
+                className="border-[#24334A] text-xs text-gray-300"
+              >
+                Close
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  if (identityInputName.trim()) {
+                    handleSaveActiveMemberIdentity(identityInputName, identityInputHub, identityInputRole);
+                  } else {
+                    setIsMemberIdentityModalOpen(false);
+                  }
+                }}
+                className="bg-[#0B4F37] hover:bg-[#0E6346] text-white text-xs"
+              >
+                Set Custom Identity
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* MODAL: REGISTER / EDIT COMMITTEE MEMBER */}
+      {isAddMemberModalOpen && (
+        <Dialog open={isAddMemberModalOpen} onOpenChange={setIsAddMemberModalOpen}>
+          <DialogContent className="max-w-lg bg-[#0D121B] border-[#223046] text-white">
+            <DialogHeader>
+              <div className="flex items-center gap-2 mb-1">
+                <Badge className="bg-[#0B4F37] text-[#00D2B4] border-0 text-[10px] uppercase font-mono">
+                  {editingMemberId ? "Update Member" : "Directory Registration"}
+                </Badge>
+              </div>
+              <DialogTitle className="text-base md:text-lg text-white font-bold flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-purple-400" />
+                {editingMemberId ? "Edit Committee Profile" : "Register Committee Member"}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-gray-400">
+                Maintain directory accreditation, operational contacts, and hub assignments.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3 py-2 text-xs">
+              <div className="space-y-1.5">
+                <label className="text-gray-300 font-medium">Full Name</label>
+                <Input
+                  value={memberFormData.name || ""}
+                  onChange={(e) => setMemberFormData({ ...memberFormData, name: e.target.value })}
+                  placeholder="e.g. Kevin Williams"
+                  className="bg-[#080B11] border-[#1C2739] text-white text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-gray-300 font-medium">Operational Role</label>
+                  <Input
+                    value={memberFormData.role || ""}
+                    onChange={(e) => setMemberFormData({ ...memberFormData, role: e.target.value })}
+                    placeholder="e.g. Venue & Staging Lead"
+                    className="bg-[#080B11] border-[#1C2739] text-white text-xs"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-gray-300 font-medium">Committee Hub</label>
+                  <select
+                    value={memberFormData.hub || "NJ/NY Committee"}
+                    onChange={(e) => setMemberFormData({ ...memberFormData, hub: e.target.value as any })}
+                    className="w-full bg-[#080B11] border border-[#1C2739] rounded-md px-3 py-2 text-white text-xs"
+                  >
+                    <option value="NJ/NY Committee">NJ / NY Committee</option>
+                    <option value="Guyana Operations">Guyana Operations</option>
+                    <option value="UK Logistics">UK Logistics</option>
+                    <option value="Executive Board">Executive Board</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-gray-300 font-medium">Email Address</label>
+                  <Input
+                    type="email"
+                    value={memberFormData.email || ""}
+                    onChange={(e) => setMemberFormData({ ...memberFormData, email: e.target.value })}
+                    placeholder="name@euphoriamas.com"
+                    className="bg-[#080B11] border-[#1C2739] text-white text-xs"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-gray-300 font-medium">Phone / WhatsApp</label>
+                  <Input
+                    value={memberFormData.phone || ""}
+                    onChange={(e) => setMemberFormData({ ...memberFormData, phone: e.target.value })}
+                    placeholder="+1 201-555-0199"
+                    className="bg-[#080B11] border-[#1C2739] text-white text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-gray-300 font-medium">Responsibilities / Bio</label>
+                <Textarea
+                  value={memberFormData.bio || ""}
+                  onChange={(e) => setMemberFormData({ ...memberFormData, bio: e.target.value })}
+                  placeholder="Key deliverables, AC Marriott liaison, ticketing support, talent coordination..."
+                  rows={2}
+                  className="bg-[#080B11] border-[#1C2739] text-white text-xs"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsAddMemberModalOpen(false)}
+                className="border-[#24334A] text-xs text-gray-300"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                disabled={saveMemberMutation.isPending || !memberFormData.name?.trim()}
+                onClick={() =>
+                  saveMemberMutation.mutate({
+                    ...(editingMemberId ? { id: editingMemberId } : {}),
+                    ...memberFormData,
+                  })
+                }
+                className="bg-[#0B4F37] hover:bg-[#0E6346] text-white text-xs"
+              >
+                {saveMemberMutation.isPending ? "Saving..." : editingMemberId ? "Update Member" : "Add to Directory"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* MODAL: UPLOAD VISUAL ASSET */}
+      {isUploadMediaModalOpen && (
+        <Dialog open={isUploadMediaModalOpen} onOpenChange={setIsUploadMediaModalOpen}>
+          <DialogContent className="max-w-lg bg-[#0D121B] border-[#223046] text-white">
+            <DialogHeader>
+              <div className="flex items-center gap-2 mb-1">
+                <Badge className="bg-[#0B4F37] text-[#00D2B4] border-0 text-[10px] uppercase font-mono">
+                  Asset Ingestion
+                </Badge>
+              </div>
+              <DialogTitle className="text-base md:text-lg text-white font-bold flex items-center gap-2">
+                <UploadCloud className="w-5 h-5 text-[#00D2B4]" />
+                Upload Visual Event Asset
+              </DialogTitle>
+              <DialogDescription className="text-xs text-gray-400">
+                Upload image flyers, 3D pool stage plots, or apparel proofs directly to committee storage.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2 text-xs">
+              {/* File Upload Box */}
+              <div className="border-2 border-dashed border-[#1E293B] hover:border-[#00D2B4]/50 rounded-xl p-5 text-center bg-[#07090F] transition-colors relative cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  disabled={uploadingFile}
+                />
+                <div className="space-y-2 pointer-events-none">
+                  {uploadingFile ? (
+                    <RefreshCw className="w-8 h-8 animate-spin text-[#00D2B4] mx-auto" />
+                  ) : (
+                    <UploadCloud className="w-8 h-8 text-gray-500 mx-auto" />
+                  )}
+                  <div className="text-xs font-semibold text-gray-300">
+                    {uploadingFile ? "Uploading file to server..." : "Click or drag image file here"}
+                  </div>
+                  <div className="text-[10px] text-gray-400">
+                    Supports PNG, JPG, WEBP up to 25MB • Stored in uploads/committee/
+                  </div>
+                </div>
+              </div>
+
+              {/* Uploaded Image Preview */}
+              {(previewMediaUrl || mediaFormData.url) && (
+                <div className="relative rounded-lg overflow-hidden border border-[#223249] h-36 w-full bg-[#06080E]">
+                  <img
+                    src={previewMediaUrl || mediaFormData.url}
+                    alt="Uploaded Preview"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-2 right-2">
+                    <Badge className="bg-black/70 text-[#00D2B4] border border-[#00D2B4]/30 text-[10px]">
+                      Ready
+                    </Badge>
+                  </div>
+                </div>
+              )}
+
+              {/* Asset Metadata Form */}
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-gray-300 font-medium">Asset Title</label>
+                  <Input
+                    value={mediaFormData.title}
+                    onChange={(e) => setMediaFormData({ ...mediaFormData, title: e.target.value })}
+                    placeholder="e.g. Oasis Pool Party Official Flyer"
+                    className="bg-[#080B11] border-[#1C2739] text-white text-xs"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-gray-300 font-medium">Category</label>
+                    <select
+                      value={mediaFormData.category}
+                      onChange={(e) => setMediaFormData({ ...mediaFormData, category: e.target.value as any })}
+                      className="w-full bg-[#080B11] border border-[#1C2739] rounded-md px-3 py-2 text-white text-xs"
+                    >
+                      <option value="flyer">Flyer / Poster</option>
+                      <option value="stage_plot">Stage & Venue Plot</option>
+                      <option value="apparel">Apparel / Merch Proof</option>
+                      <option value="moodboard">Moodboard</option>
+                      <option value="photo">Venue Photo</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-gray-300 font-medium">Target Event / Venue</label>
+                    <Input
+                      value={mediaFormData.targetEvent}
+                      onChange={(e) => setMediaFormData({ ...mediaFormData, targetEvent: e.target.value })}
+                      placeholder="e.g. AC Marriott Pool"
+                      className="bg-[#080B11] border-[#1C2739] text-white text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-gray-300 font-medium">Direct Image URL (or uploaded link)</label>
+                  <Input
+                    value={mediaFormData.url}
+                    onChange={(e) => setMediaFormData({ ...mediaFormData, url: e.target.value })}
+                    placeholder="https://... or uploaded file path"
+                    className="bg-[#080B11] border-[#1C2739] text-white text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-gray-300 font-medium">Description & Notes (Optional)</label>
+                  <Input
+                    value={mediaFormData.description}
+                    onChange={(e) => setMediaFormData({ ...mediaFormData, description: e.target.value })}
+                    placeholder="Notes on resolution, design revisions, print specifications..."
+                    className="bg-[#080B11] border-[#1C2739] text-white text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsUploadMediaModalOpen(false)}
+                className="border-[#24334A] text-xs text-gray-300"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                disabled={saveMediaMutation.isPending || !mediaFormData.url.trim() || !mediaFormData.title.trim()}
+                onClick={() =>
+                  saveMediaMutation.mutate({
+                    ...mediaFormData,
+                    uploadedBy: activeMember ? `${activeMember.name} (${activeMember.hub.split(" ")[0]})` : "Committee Member",
+                  })
+                }
+                className="bg-[#0B4F37] hover:bg-[#0E6346] text-white text-xs"
+              >
+                {saveMediaMutation.isPending ? "Saving..." : "Save to Vault"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* MODAL: FULLSCREEN LIGHTBOX IMAGE VIEWER */}
+      {selectedImageForLightbox && (
+        <Dialog open={Boolean(selectedImageForLightbox)} onOpenChange={() => setSelectedImageForLightbox(null)}>
+          <DialogContent className="max-w-4xl bg-[#090D15] border-[#223147] text-white p-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#182334]">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-[#0B4F37] text-[#00D2B4] text-[10px] uppercase">
+                    {selectedImageForLightbox.category.replace("_", " ")}
+                  </Badge>
+                  <span className="text-xs text-gray-400">
+                    Target: {selectedImageForLightbox.targetEvent || "Oasis Pool Party"}
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-white mt-1">
+                  {selectedImageForLightbox.title}
+                </h3>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setFormData((prev) => ({ ...prev, coverImageUrl: selectedImageForLightbox.url }));
+                    setSelectedImageForLightbox(null);
+                    setActiveTab("generator");
+                    toast({
+                      title: "Cover Image Set",
+                      description: `Attached "${selectedImageForLightbox.title}" to proposal form.`,
+                    });
+                  }}
+                  className="border-[#00D2B4]/40 bg-[#00D2B4]/10 hover:bg-[#00D2B4]/20 text-[#00D2B4] text-xs h-8"
+                >
+                  Use in Proposal
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleCopy(selectedImageForLightbox.url, "lightbox-url")}
+                  className="text-gray-300 hover:text-white text-xs h-8"
+                >
+                  <Copy className="w-3.5 h-3.5 mr-1" />
+                  Copy Link
+                </Button>
+              </div>
+            </div>
+
+            <div className="relative w-full max-h-[70vh] flex items-center justify-center my-2 overflow-hidden rounded-lg bg-[#05070B] border border-[#162132]">
+              <img
+                src={selectedImageForLightbox.url}
+                alt={selectedImageForLightbox.title}
+                className="max-h-[68vh] w-auto max-w-full object-contain"
+                onError={(e) => {
+                  (e.currentTarget as any).src = "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1200&q=80";
+                }}
+              />
+            </div>
+
+            {selectedImageForLightbox.description && (
+              <p className="text-xs text-gray-400 pt-1">
+                {selectedImageForLightbox.description}
+              </p>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* MODAL: RESET / CLEAN SLATE CONFIRMATION */}
+      {isResetDataModalOpen && (
+        <Dialog open={isResetDataModalOpen} onOpenChange={setIsResetDataModalOpen}>
+          <DialogContent className="max-w-md bg-[#0D121B] border-red-900/40 text-white">
+            <DialogHeader>
+              <div className="flex items-center gap-2 mb-1">
+                <Badge className="bg-red-950/60 text-red-400 border border-red-800/40 text-[10px] uppercase font-mono">
+                  Administrative Tool
+                </Badge>
+              </div>
+              <DialogTitle className="text-base text-white font-bold flex items-center gap-2">
+                <RotateCcw className="w-4 h-4 text-red-400" />
+                Reset Workspace for Live Input
+              </DialogTitle>
+              <DialogDescription className="text-xs text-gray-400 leading-relaxed">
+                Clear out demonstration records to ensure the executive portal is 100% clean and ready for real committee data input.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3 py-3 text-xs">
+              <div className="p-3 rounded-lg bg-red-950/20 border border-red-900/40 text-red-300 text-[11px] space-y-1">
+                <div className="font-semibold flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 text-red-400" />
+                  Live Readiness Action
+                </div>
+                <p>
+                  You can reset all demo data at once or target specific modules. This clears sample proposals, comments, or media.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Button
+                  onClick={() => resetDataMutation.mutate({ scope: "all" })}
+                  disabled={resetDataMutation.isPending}
+                  className="w-full bg-red-600 hover:bg-red-700 text-white text-xs h-9 font-semibold justify-start px-3"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 mr-2" />
+                  Full Clean Slate: Reset All Demo Data (Live Mode)
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => resetDataMutation.mutate({ scope: "proposals" })}
+                  disabled={resetDataMutation.isPending}
+                  className="w-full border-[#223046] bg-[#090D15] hover:bg-[#121B2A] text-gray-300 text-xs h-8 justify-start px-3"
+                >
+                  <FileText className="w-3.5 h-3.5 mr-2 text-[#00D2B4]" />
+                  Clear Saved Proposals Only
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => resetDataMutation.mutate({ scope: "comments" })}
+                  disabled={resetDataMutation.isPending}
+                  className="w-full border-[#223046] bg-[#090D15] hover:bg-[#121B2A] text-gray-300 text-xs h-8 justify-start px-3"
+                >
+                  <MessageSquare className="w-3.5 h-3.5 mr-2 text-blue-400" />
+                  Clear Feedback & Comments Only
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => resetDataMutation.mutate({ scope: "timeline" })}
+                  disabled={resetDataMutation.isPending}
+                  className="w-full border-[#223046] bg-[#090D15] hover:bg-[#121B2A] text-gray-300 text-xs h-8 justify-start px-3"
+                >
+                  <Calendar className="w-3.5 h-3.5 mr-2 text-[#E5A93C]" />
+                  Reset Timeline to Fresh Milestones
+                </Button>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsResetDataModalOpen(false)}
+                className="text-gray-400 hover:text-white text-xs"
+              >
+                Cancel
               </Button>
             </DialogFooter>
           </DialogContent>
