@@ -77,6 +77,7 @@ export interface CommitteeMember {
   name: string;
   role: string;
   hub: "NJ/NY Committee" | "Guyana Operations" | "UK Logistics" | "All Committee";
+  whatsapp?: string;
   email?: string;
   phone?: string;
   avatar?: string;
@@ -230,6 +231,7 @@ export default function CommitteePortal() {
     name: "",
     role: "Operations Lead",
     hub: "NJ/NY Committee",
+    whatsapp: "",
     email: "",
     phone: "",
     bio: "",
@@ -930,17 +932,25 @@ export default function CommitteePortal() {
   // -------------------------------------------------------------
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen w-full bg-[#07090E] text-white flex flex-col items-center justify-center p-4 selection:bg-[#E5A93C] selection:text-black">
-        <div className="w-full max-w-md">
-          {/* Header Card */}
+      <div className="min-h-screen w-full bg-[#07090E] text-white flex flex-col items-center justify-center p-4 selection:bg-[#E5A93C] selection:text-black relative overflow-hidden">
+        {/* Background ambient lighting */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[350px] bg-gradient-to-tr from-[#D91B82]/15 via-[#FF2A85]/10 to-[#E5A93C]/15 blur-3xl rounded-full pointer-events-none" />
+
+        <div className="w-full max-w-md relative z-10">
+          {/* Official 3D Brand Logo Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#0B4F37] via-[#00D2B4]/20 to-[#E5A93C]/30 border border-[#00D2B4]/40 mb-4 shadow-[0_0_35px_rgba(0,210,180,0.15)]">
-              <Shield className="w-8 h-8 text-[#E5A93C]" />
+            <div className="relative inline-flex items-center justify-center mb-3">
+              <div className="absolute inset-0 bg-gradient-to-tr from-[#D91B82]/30 via-[#FF2A85]/20 to-[#E5A93C]/30 blur-2xl rounded-full" />
+              <img
+                src="/images/euphoria-mas-logo.png"
+                alt="Euphoria Mas"
+                className="relative w-52 sm:w-60 h-auto object-contain drop-shadow-[0_0_35px_rgba(217,27,130,0.45)]"
+              />
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-white uppercase font-sans">
               Guyana Carnival 2027
             </h1>
-            <p className="text-sm font-semibold tracking-wider text-[#00D2B4] uppercase mt-1">
+            <p className="text-sm font-semibold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-[#D91B82] via-[#FF5CA8] to-[#E5A93C] uppercase mt-1">
               Executive Committee Portal
             </p>
             <p className="text-xs text-gray-400 mt-2">
@@ -948,9 +958,9 @@ export default function CommitteePortal() {
             </p>
           </div>
 
-          <Card className="bg-[#0D111A] border-[#1C2638] shadow-2xl text-white">
+          <Card className="bg-[#0D111A]/90 backdrop-blur-md border-[#1C2638] border-t-2 border-t-[#D91B82] shadow-[0_10px_45px_rgba(217,27,130,0.12)] text-white">
             <CardHeader className="space-y-1 pb-4">
-              <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#E5A93C] uppercase tracking-wider">
                 <Key className="w-4 h-4 text-[#E5A93C]" />
                 Security Verification
               </div>
@@ -969,7 +979,7 @@ export default function CommitteePortal() {
                       placeholder="Enter committee code..."
                       value={passcode}
                       onChange={(e) => setPasscode(e.target.value)}
-                      className="bg-[#080B11] border-[#1E293B] text-white placeholder:text-gray-500 pr-10 focus:border-[#00D2B4] focus:ring-[#00D2B4]/20 text-center tracking-widest text-lg font-mono"
+                      className="bg-[#080B11] border-[#1E293B] text-white placeholder:text-gray-500 pr-10 focus:border-[#D91B82] focus:ring-[#D91B82]/25 text-center tracking-widest text-lg font-mono"
                       autoFocus
                     />
                     <Lock className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -985,7 +995,7 @@ export default function CommitteePortal() {
                 <div className="bg-[#090D15] p-3 rounded-lg border border-[#162030] text-[11px] text-gray-400 space-y-1">
                   <div className="flex items-center justify-between text-gray-300 font-medium">
                     <span>Committee Hubs</span>
-                    <span className="text-[#00D2B4]">NJ / NY • Guyana • UK</span>
+                    <span className="text-[#E5A93C]">NJ / NY • Guyana • UK</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span>Confirmed Venue</span>
@@ -998,7 +1008,7 @@ export default function CommitteePortal() {
                 <Button
                   type="submit"
                   disabled={isVerifying || !passcode.trim()}
-                  className="w-full bg-gradient-to-r from-[#0B4F37] via-[#008F6B] to-[#E5A93C] hover:opacity-95 text-white font-semibold shadow-lg shadow-[#0B4F37]/40 h-11"
+                  className="w-full bg-gradient-to-r from-[#D91B82] via-[#A81566] to-[#E5A93C] hover:opacity-95 text-white font-semibold shadow-lg shadow-[#D91B82]/30 h-11 transition-all"
                 >
                   {isVerifying ? (
                     <>
@@ -1030,18 +1040,22 @@ export default function CommitteePortal() {
   return (
     <div className="min-h-screen bg-[#07090E] text-white font-sans selection:bg-[#E5A93C] selection:text-black">
       {/* Top Executive Header Bar */}
-      <header className="sticky top-0 z-50 bg-[#0B0F17]/95 backdrop-blur-md border-b border-[#182234] px-4 lg:px-8 py-3.5">
+      <header className="sticky top-0 z-50 bg-[#0B0F17]/95 backdrop-blur-md border-b border-[#D91B82]/20 px-4 lg:px-8 py-3.5 shadow-[0_4px_25px_rgba(217,27,130,0.06)]">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#0B4F37] to-[#E5A93C] flex items-center justify-center border border-[#00D2B4]/30 shadow-md">
-              <Shield className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#1b0816] to-[#2b0e22] flex items-center justify-center border border-[#D91B82]/50 shadow-[0_0_15px_rgba(217,27,130,0.3)] overflow-hidden shrink-0">
+              <img
+                src="/images/euphoria-mas-emblem.png"
+                alt="Euphoria Mas Emblem"
+                className="w-8 h-8 object-contain"
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-sm md:text-base font-bold tracking-tight text-white uppercase">
                   Guyana Carnival 2027 Executive Committee Portal
                 </h1>
-                <Badge className="bg-[#0B4F37] text-[#00D2B4] border-[#00D2B4]/30 text-[10px] uppercase tracking-wider px-2 py-0.5">
+                <Badge className="bg-[#D91B82]/20 text-[#FF5CA8] border-[#D91B82]/40 text-[10px] uppercase tracking-wider px-2 py-0.5">
                   Private Access
                 </Badge>
               </div>
@@ -1050,7 +1064,7 @@ export default function CommitteePortal() {
                 <span>•</span>
                 <span>Venue: <strong className="text-gray-300">AC Hotel Marriott Ogle Pool</strong></span>
                 <span>•</span>
-                <span>Checkout: <strong className="text-[#00D2B4]">carnival-planner.com</strong></span>
+                <span>Checkout: <strong className="text-[#E5A93C]">carnival-planner.com</strong></span>
               </p>
             </div>
           </div>
@@ -1064,11 +1078,11 @@ export default function CommitteePortal() {
                 onClick={() => setActiveTab("generator")}
                 className={`text-xs h-8 px-2.5 rounded-md transition-all ${
                   activeTab === "generator"
-                    ? "bg-[#00D2B4]/20 text-[#00D2B4] font-semibold"
+                    ? "bg-[#D91B82]/25 text-[#FF5CA8] border border-[#D91B82]/40 font-semibold shadow-[0_0_10px_rgba(217,27,130,0.2)]"
                     : "text-gray-300 hover:text-white hover:bg-[#131B2A]"
                 }`}
               >
-                <Sparkles className="w-3.5 h-3.5 mr-1.5 text-[#00D2B4]" />
+                <Sparkles className="w-3.5 h-3.5 mr-1.5 text-[#FF5CA8]" />
                 Auto-Site Studio
               </Button>
 
@@ -1078,7 +1092,7 @@ export default function CommitteePortal() {
                 onClick={() => setActiveTab("timeline")}
                 className={`text-xs h-8 px-2.5 rounded-md relative transition-all ${
                   activeTab === "timeline"
-                    ? "bg-[#E5A93C]/20 text-[#E5A93C] font-semibold"
+                    ? "bg-[#E5A93C]/20 text-[#E5A93C] border border-[#E5A93C]/40 font-semibold"
                     : "text-gray-300 hover:text-white hover:bg-[#131B2A]"
                 }`}
               >
@@ -1097,11 +1111,11 @@ export default function CommitteePortal() {
                 onClick={() => setActiveTab("media")}
                 className={`text-xs h-8 px-2.5 rounded-md transition-all ${
                   activeTab === "media"
-                    ? "bg-[#00D2B4]/20 text-[#00D2B4] font-semibold"
+                    ? "bg-[#D91B82]/20 text-[#FF5CA8] border border-[#D91B82]/40 font-semibold"
                     : "text-gray-300 hover:text-white hover:bg-[#131B2A]"
                 }`}
               >
-                <ImageIcon className="w-3.5 h-3.5 mr-1.5 text-[#00D2B4]" />
+                <ImageIcon className="w-3.5 h-3.5 mr-1.5 text-[#FF5CA8]" />
                 Media Vault ({mediaAssets.length})
               </Button>
 
@@ -1111,11 +1125,11 @@ export default function CommitteePortal() {
                 onClick={() => setActiveTab("roster")}
                 className={`text-xs h-8 px-2.5 rounded-md transition-all ${
                   activeTab === "roster"
-                    ? "bg-purple-500/20 text-purple-300 font-semibold"
+                    ? "bg-[#E5A93C]/20 text-[#E5A93C] border border-[#E5A93C]/40 font-semibold"
                     : "text-gray-300 hover:text-white hover:bg-[#131B2A]"
                 }`}
               >
-                <Users className="w-3.5 h-3.5 mr-1.5 text-purple-400" />
+                <Users className="w-3.5 h-3.5 mr-1.5 text-[#E5A93C]" />
                 Directory ({committeeMembers.length})
               </Button>
 
@@ -1139,7 +1153,7 @@ export default function CommitteePortal() {
                 onClick={() => setActiveTab("records")}
                 className={`text-xs h-8 px-2.5 rounded-md transition-all ${
                   activeTab === "records"
-                    ? "bg-[#0B4F37] text-white font-semibold"
+                    ? "bg-purple-500/20 text-purple-300 font-semibold"
                     : "text-gray-300 hover:text-white hover:bg-[#131B2A]"
                 }`}
               >
@@ -1155,12 +1169,12 @@ export default function CommitteePortal() {
               onClick={() => setIsMemberIdentityModalOpen(true)}
               className={`text-xs h-8 px-2.5 border transition-all ${
                 activeMember
-                  ? "border-[#00D2B4]/50 bg-[#00D2B4]/10 text-white hover:bg-[#00D2B4]/20"
+                  ? "border-[#D91B82]/50 bg-[#D91B82]/15 text-white hover:bg-[#D91B82]/25 shadow-[0_0_10px_rgba(217,27,130,0.15)]"
                   : "border-amber-500/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
               }`}
               title="Click to view or switch active committee identity"
             >
-              <UserCheck className="w-3.5 h-3.5 mr-1 text-[#00D2B4]" />
+              <UserCheck className="w-3.5 h-3.5 mr-1 text-[#E5A93C]" />
               <span className="truncate max-w-[130px]">
                 {activeMember ? `${activeMember.name} • ${activeMember.hub.split(" ")[0]}` : "Set Identity"}
               </span>
@@ -2053,22 +2067,26 @@ export default function CommitteePortal() {
           /* ------------------------------------------------------------- */
           <div className="space-y-6">
             {/* Active Session Identity Card */}
-            <div className="p-4 rounded-xl bg-gradient-to-r from-[#0B4F37]/30 via-[#0A0E17] to-[#E5A93C]/15 border border-[#1E2D42] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-lg">
+            <div className="p-4 rounded-xl bg-gradient-to-r from-[#D91B82]/15 via-[#0A0E17] to-[#E5A93C]/15 border border-[#D91B82]/30 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-[0_4px_25px_rgba(217,27,130,0.08)]">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-[#00D2B4]/20 border border-[#00D2B4]/40 flex items-center justify-center text-[#00D2B4] font-bold text-lg">
-                  {activeMember ? activeMember.name.slice(0, 2).toUpperCase() : "EX"}
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-[#1b0816] to-[#2b0e22] border border-[#D91B82]/50 flex items-center justify-center p-1.5 shadow-[0_0_15px_rgba(217,27,130,0.25)] shrink-0">
+                  <img
+                    src="/images/euphoria-mas-emblem.png"
+                    alt="Euphoria Mas"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-400">Current Portal Operator:</span>
-                    <Badge className="bg-[#00D2B4]/20 text-[#00D2B4] border border-[#00D2B4]/40 text-[10px]">
+                    <Badge className="bg-[#D91B82]/20 text-[#FF5CA8] border border-[#D91B82]/40 text-[10px]">
                       {activeMember ? activeMember.hub : "NJ/NY Committee"}
                     </Badge>
                   </div>
                   <h3 className="text-base font-bold text-white">
                     {activeMember ? activeMember.name : "Not Identified (Operating as Guest)"}
                     {activeMember?.role && (
-                      <span className="text-xs font-normal text-gray-400 ml-2">
+                      <span className="text-xs font-normal text-[#E5A93C] ml-2">
                         • {activeMember.role}
                       </span>
                     )}
@@ -2085,7 +2103,7 @@ export default function CommitteePortal() {
                   onClick={() => setIsMemberIdentityModalOpen(true)}
                   className="bg-[#121B2A] hover:bg-[#1A263B] text-white border border-[#24354D] text-xs h-9"
                 >
-                  <UserCheck className="w-3.5 h-3.5 mr-1.5 text-[#00D2B4]" />
+                  <UserCheck className="w-3.5 h-3.5 mr-1.5 text-[#E5A93C]" />
                   Switch Active Identity
                 </Button>
                 <Button
@@ -2096,6 +2114,7 @@ export default function CommitteePortal() {
                       name: "",
                       role: "Operations Lead",
                       hub: "NJ/NY Committee",
+                      whatsapp: "",
                       email: "",
                       phone: "",
                       bio: "",
@@ -2103,7 +2122,7 @@ export default function CommitteePortal() {
                     });
                     setIsAddMemberModalOpen(true);
                   }}
-                  className="bg-gradient-to-r from-[#0B4F37] to-[#E5A93C] text-white text-xs h-9 font-semibold"
+                  className="bg-gradient-to-r from-[#D91B82] via-[#A81566] to-[#E5A93C] text-white text-xs h-9 font-semibold shadow-md shadow-[#D91B82]/20 hover:opacity-95 transition-all"
                 >
                   <UserPlus className="w-3.5 h-3.5 mr-1.5" />
                   Register Member
@@ -2115,7 +2134,7 @@ export default function CommitteePortal() {
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Users className="w-5 h-5 text-purple-400" />
+                  <Users className="w-5 h-5 text-[#E5A93C]" />
                   Executive Committee Directory ({committeeMembers.length})
                 </h2>
                 <p className="text-xs text-gray-400 mt-0.5">
@@ -2127,7 +2146,7 @@ export default function CommitteePortal() {
             {/* Member Cards Grid */}
             {isLoadingMembers ? (
               <div className="py-20 text-center">
-                <RefreshCw className="w-8 h-8 animate-spin text-purple-400 mx-auto mb-3" />
+                <RefreshCw className="w-8 h-8 animate-spin text-[#D91B82] mx-auto mb-3" />
                 <p className="text-xs text-gray-400">Loading committee roster...</p>
               </div>
             ) : committeeMembers.length === 0 ? (
@@ -2139,7 +2158,7 @@ export default function CommitteePortal() {
                 </p>
                 <Button
                   onClick={() => setIsAddMemberModalOpen(true)}
-                  className="bg-gradient-to-r from-[#0B4F37] to-[#E5A93C] text-white text-xs"
+                  className="bg-gradient-to-r from-[#D91B82] to-[#E5A93C] text-white text-xs"
                 >
                   <UserPlus className="w-3.5 h-3.5 mr-1.5" />
                   Add First Member
@@ -2154,21 +2173,30 @@ export default function CommitteePortal() {
                       key={member.id}
                       className={`bg-[#0D121B] border transition-all flex flex-col justify-between ${
                         isCurrentActive
-                          ? "border-[#00D2B4] shadow-[0_0_20px_rgba(0,210,180,0.15)]"
-                          : "border-[#1C2638] hover:border-[#2C3E5B]"
+                          ? "border-[#D91B82] shadow-[0_0_20px_rgba(217,27,130,0.2)]"
+                          : "border-[#1C2638] hover:border-[#D91B82]/40"
                       }`}
                     >
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-[#121A28] to-[#1E2C42] border border-[#23354E] flex items-center justify-center font-bold text-white text-sm">
-                              {member.name.slice(0, 2).toUpperCase()}
+                            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-[#160B14] to-[#250F22] border border-[#D91B82]/40 flex items-center justify-center font-bold text-white text-sm overflow-hidden relative shadow-[0_0_10px_rgba(217,27,130,0.15)] shrink-0">
+                              {member.avatar ? (
+                                <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center relative">
+                                  <img src="/images/euphoria-mas-emblem.png" alt="" className="w-7 h-7 object-contain opacity-80" />
+                                  <span className="absolute bottom-0.5 right-1 text-[8px] font-black text-[#E5A93C] font-mono leading-none">
+                                    {member.name.slice(0, 2).toUpperCase()}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                             <div>
                               <CardTitle className="text-sm font-bold text-white flex items-center gap-1.5">
                                 {member.name}
                                 {isCurrentActive && (
-                                  <Badge className="bg-[#00D2B4]/20 text-[#00D2B4] border-[#00D2B4]/40 text-[9px] px-1.5 py-0">
+                                  <Badge className="bg-[#D91B82]/20 text-[#FF5CA8] border-[#D91B82]/40 text-[9px] px-1.5 py-0">
                                     You
                                   </Badge>
                                 )}
@@ -2200,26 +2228,33 @@ export default function CommitteePortal() {
                           </p>
                         )}
 
-                        <div className="space-y-1.5 pt-2 border-t border-[#182334] text-[11px]">
-                          {member.email && (
+                        <div className="pt-2 border-t border-[#182334] text-[11px]">
+                          {member.whatsapp || member.phone ? (
                             <a
-                              href={`mailto:${member.email}`}
-                              className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-                            >
-                              <Mail className="w-3.5 h-3.5 text-gray-500" />
-                              <span className="truncate">{member.email}</span>
-                            </a>
-                          )}
-                          {member.phone && (
-                            <a
-                              href={`https://wa.me/${member.phone.replace(/[^0-9]/g, "")}`}
+                              href={`https://wa.me/${(member.whatsapp || member.phone || "").replace(/[^0-9]/g, "")}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-2 text-gray-400 hover:text-green-400 transition-colors"
+                              className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] hover:bg-[#25D366]/20 transition-all font-medium text-xs w-full group shadow-sm"
                             >
-                              <Phone className="w-3.5 h-3.5 text-green-500" />
-                              <span>{member.phone}</span>
+                              <MessageCircle className="w-3.5 h-3.5 fill-[#25D366]/20 text-[#25D366] group-hover:scale-110 transition-transform" />
+                              <span className="truncate">WhatsApp: {member.whatsapp || member.phone}</span>
                             </a>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingMemberId(member.id);
+                                setMemberFormData({
+                                  ...member,
+                                  whatsapp: member.whatsapp || member.phone || "",
+                                });
+                                setIsAddMemberModalOpen(true);
+                              }}
+                              className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-[#24354D] text-gray-400 hover:text-white hover:border-[#D91B82]/60 text-xs w-full transition-colors bg-[#080B11]/50"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
+                              <span>+ Add WhatsApp Number</span>
+                            </button>
                           )}
                         </div>
                       </CardContent>
@@ -2232,7 +2267,7 @@ export default function CommitteePortal() {
                           disabled={isCurrentActive}
                           className={`text-xs h-7 px-2.5 ${
                             isCurrentActive
-                              ? "border-[#00D2B4]/40 bg-[#00D2B4]/10 text-[#00D2B4]"
+                              ? "border-[#D91B82]/50 bg-[#D91B82]/15 text-[#FF5CA8]"
                               : "border-[#223147] bg-[#0A0E17] hover:bg-[#131C2B] text-gray-300"
                           }`}
                         >
@@ -3529,12 +3564,12 @@ export default function CommitteePortal() {
           <DialogContent className="max-w-lg bg-[#0D121B] border-[#223046] text-white">
             <DialogHeader>
               <div className="flex items-center gap-2 mb-1">
-                <Badge className="bg-[#0B4F37] text-[#00D2B4] border-0 text-[10px] uppercase font-mono">
+                <Badge className="bg-[#D91B82]/20 text-[#FF5CA8] border border-[#D91B82]/30 text-[10px] uppercase font-mono">
                   Committee Identity Session
                 </Badge>
               </div>
               <DialogTitle className="text-base md:text-lg text-white font-bold flex items-center gap-2">
-                <UserCheck className="w-5 h-5 text-[#00D2B4]" />
+                <UserCheck className="w-5 h-5 text-[#E5A93C]" />
                 Select Your Active Committee Identity
               </DialogTitle>
               <DialogDescription className="text-xs text-gray-400">
@@ -3557,7 +3592,7 @@ export default function CommitteePortal() {
                         onClick={() => handleSaveActiveMemberIdentity(m.name, m.hub, m.role)}
                         className={`p-2.5 rounded-lg border text-left flex items-center justify-between transition-all ${
                           activeMember?.name.toLowerCase() === m.name.toLowerCase()
-                            ? "border-[#00D2B4] bg-[#00D2B4]/15 text-white"
+                            ? "border-[#D91B82] bg-[#D91B82]/15 text-white shadow-[0_0_10px_rgba(217,27,130,0.2)]"
                             : "border-[#1E293B] bg-[#080B11] text-gray-300 hover:border-gray-500 hover:bg-[#121927]"
                         }`}
                       >
@@ -3566,7 +3601,7 @@ export default function CommitteePortal() {
                           <div className="text-[10px] text-gray-400 truncate">{m.role} • {m.hub.replace("Committee", "").trim()}</div>
                         </div>
                         {activeMember?.name.toLowerCase() === m.name.toLowerCase() && (
-                          <CheckCircle2 className="w-4 h-4 text-[#00D2B4] shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-[#E5A93C] shrink-0" />
                         )}
                       </button>
                     ))}
@@ -3633,7 +3668,7 @@ export default function CommitteePortal() {
                     setIsMemberIdentityModalOpen(false);
                   }
                 }}
-                className="bg-[#0B4F37] hover:bg-[#0E6346] text-white text-xs"
+                className="bg-gradient-to-r from-[#D91B82] via-[#A81566] to-[#E5A93C] hover:opacity-95 text-white text-xs font-semibold shadow-md shadow-[#D91B82]/20"
               >
                 Set Custom Identity
               </Button>
@@ -3648,12 +3683,12 @@ export default function CommitteePortal() {
           <DialogContent className="max-w-lg bg-[#0D121B] border-[#223046] text-white">
             <DialogHeader>
               <div className="flex items-center gap-2 mb-1">
-                <Badge className="bg-[#0B4F37] text-[#00D2B4] border-0 text-[10px] uppercase font-mono">
+                <Badge className="bg-[#D91B82]/20 text-[#FF5CA8] border border-[#D91B82]/30 text-[10px] uppercase font-mono">
                   {editingMemberId ? "Update Member" : "Directory Registration"}
                 </Badge>
               </div>
               <DialogTitle className="text-base md:text-lg text-white font-bold flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-purple-400" />
+                <UserPlus className="w-5 h-5 text-[#E5A93C]" />
                 {editingMemberId ? "Edit Committee Profile" : "Register Committee Member"}
               </DialogTitle>
               <DialogDescription className="text-xs text-gray-400">
@@ -3697,26 +3732,26 @@ export default function CommitteePortal() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-gray-300 font-medium">Email Address</label>
-                  <Input
-                    type="email"
-                    value={memberFormData.email || ""}
-                    onChange={(e) => setMemberFormData({ ...memberFormData, email: e.target.value })}
-                    placeholder="name@euphoriamas.com"
-                    className="bg-[#080B11] border-[#1C2739] text-white text-xs"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-gray-300 font-medium">Phone / WhatsApp</label>
-                  <Input
-                    value={memberFormData.phone || ""}
-                    onChange={(e) => setMemberFormData({ ...memberFormData, phone: e.target.value })}
-                    placeholder="+1 201-555-0199"
-                    className="bg-[#080B11] border-[#1C2739] text-white text-xs"
-                  />
-                </div>
+              <div className="space-y-1.5">
+                <label className="text-gray-300 font-medium flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
+                    <span>WhatsApp Direct Number</span>
+                  </span>
+                  <span className="text-[10px] text-gray-400 font-normal">Direct committee messaging (include country code)</span>
+                </label>
+                <Input
+                  value={memberFormData.whatsapp ?? memberFormData.phone ?? ""}
+                  onChange={(e) =>
+                    setMemberFormData({
+                      ...memberFormData,
+                      whatsapp: e.target.value,
+                      phone: e.target.value,
+                    })
+                  }
+                  placeholder="+1 201 555 0199 or +592 623 0100"
+                  className="bg-[#080B11] border-[#1C2739] text-white text-xs focus:border-[#25D366]/70 focus:ring-1 focus:ring-[#25D366]/30 font-mono"
+                />
               </div>
 
               <div className="space-y-1.5">
@@ -3749,7 +3784,7 @@ export default function CommitteePortal() {
                     ...memberFormData,
                   })
                 }
-                className="bg-[#0B4F37] hover:bg-[#0E6346] text-white text-xs"
+                className="bg-gradient-to-r from-[#D91B82] via-[#A81566] to-[#E5A93C] text-white text-xs font-semibold shadow-md shadow-[#D91B82]/20 hover:opacity-95"
               >
                 {saveMemberMutation.isPending ? "Saving..." : editingMemberId ? "Update Member" : "Add to Directory"}
               </Button>

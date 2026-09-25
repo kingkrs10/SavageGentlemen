@@ -16,8 +16,9 @@ export interface CommitteeMember {
   name: string;
   role: string;
   hub: "NJ/NY Committee" | "Guyana Operations" | "UK Logistics" | "All Committee";
-  email?: string;
+  whatsapp?: string;
   phone?: string;
+  email?: string;
   avatar?: string;
   bio?: string;
   status: "active" | "lead" | "advisor";
@@ -646,8 +647,7 @@ const DEFAULT_MEMBERS: CommitteeMember[] = [
     name: "Executive Committee Chair",
     role: "Overall Executive Director & Strategic Partnerships",
     hub: "All Committee",
-    email: "committee@savgent.com",
-    phone: "+1 (917) 555-0199",
+    whatsapp: "",
     status: "lead",
     bio: "Lead orchestrator of Guyana Carnival 2027 operations across Tri-State, UK, and Guyana.",
     joinedAt: "2026-08-01",
@@ -657,8 +657,7 @@ const DEFAULT_MEMBERS: CommitteeMember[] = [
     name: "Tri-State Buildup Lead",
     role: "NJ / NY Diaspora Events & Masquerader Relations",
     hub: "NJ/NY Committee",
-    email: "tristate@savgent.com",
-    phone: "+1 (201) 555-0144",
+    whatsapp: "",
     status: "active",
     bio: "Directs Tri-State promotional pop-ups, diaspora masquerader registration, and NY/NJ buildup events.",
     joinedAt: "2026-09-01",
@@ -668,8 +667,7 @@ const DEFAULT_MEMBERS: CommitteeMember[] = [
     name: "Guyana On-Site Operations Director",
     role: "Venue Production, AC Marriott Liaison & Local Logistics",
     hub: "Guyana Operations",
-    email: "guyana@savgent.com",
-    phone: "+592 623 0100",
+    whatsapp: "",
     status: "active",
     bio: "Coordinates AC Hotel Marriott Ogle pool deck staging, airport transfers (OGL/GEO), and security protocol.",
     joinedAt: "2026-09-10",
@@ -679,8 +677,7 @@ const DEFAULT_MEMBERS: CommitteeMember[] = [
     name: "UK & International Logistics Coordinator",
     role: "Apparel Sampling, Print Production & UK Masqueraders",
     hub: "UK Logistics",
-    email: "uk@savgent.com",
-    phone: "+44 7700 900123",
+    whatsapp: "",
     status: "active",
     bio: "Manages Amazonian botanical apparel sublimation proofs, sampling QC, and international shipping lanes.",
     joinedAt: "2026-09-12",
@@ -704,11 +701,12 @@ committeeRouter.get("/members", async (_req: Request, res: Response) => {
 // POST /api/committee/members - Add or update member
 committeeRouter.post("/members", async (req: Request, res: Response) => {
   try {
-    const { id, name, role, hub, email, phone, bio, status, avatar } = req.body;
+    const { id, name, role, hub, email, phone, whatsapp, bio, status, avatar } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ error: "Member name is required" });
     }
 
+    const cleanWhatsapp = (whatsapp || phone || "").trim();
     const currentList = await getCommitteeSettingJson<CommitteeMember[]>("committee_members_2027", fallbackMembers);
     let updatedList: CommitteeMember[];
 
@@ -721,8 +719,9 @@ committeeRouter.post("/members", async (req: Request, res: Response) => {
               name: name.trim(),
               role: role || m.role,
               hub: hub || m.hub,
-              email: email !== undefined ? email : m.email,
-              phone: phone !== undefined ? phone : m.phone,
+              whatsapp: cleanWhatsapp !== undefined ? cleanWhatsapp : m.whatsapp,
+              phone: cleanWhatsapp !== undefined ? cleanWhatsapp : m.phone,
+              email: email !== undefined ? email : (m.email || ""),
               bio: bio !== undefined ? bio : m.bio,
               status: status || m.status,
               avatar: avatar !== undefined ? avatar : m.avatar,
@@ -736,8 +735,9 @@ committeeRouter.post("/members", async (req: Request, res: Response) => {
         name: name.trim(),
         role: role || "Committee Member",
         hub: hub || "NJ/NY Committee",
+        whatsapp: cleanWhatsapp,
+        phone: cleanWhatsapp,
         email: email || "",
-        phone: phone || "",
         bio: bio || "",
         status: status || "active",
         avatar: avatar || "",
@@ -852,7 +852,32 @@ committeeRouter.delete("/comments/:id", async (req: Request, res: Response) => {
 // -------------------------------------------------------------
 // 3. Executive Visual Media & Event Asset Vault
 // -------------------------------------------------------------
-let fallbackMedia: CommitteeMediaItem[] = [];
+const DEFAULT_MEDIA: CommitteeMediaItem[] = [
+  {
+    id: "media-brand-logo",
+    title: "Euphoria Mas Official 3D Metallic Emblem & Logo",
+    description: "Official master identity asset: metallic magenta 'e' emblem with 3D sculptured golden typography.",
+    category: "flyer",
+    url: "/images/euphoria-mas-logo.png",
+    uploadedBy: "Executive Committee",
+    uploadedByHub: "All Committee",
+    targetEvent: "Master Brand Identity",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "media-brand-emblem",
+    title: "Euphoria Mas 3D Circular Metallic Swirl Badge",
+    description: "High-resolution circular emblem for official stamps, merchandise badges, and credentials.",
+    category: "apparel",
+    url: "/images/euphoria-mas-emblem.png",
+    uploadedBy: "Executive Committee",
+    uploadedByHub: "All Committee",
+    targetEvent: "Official Badge",
+    createdAt: new Date().toISOString(),
+  },
+];
+
+let fallbackMedia: CommitteeMediaItem[] = [...DEFAULT_MEDIA];
 
 // GET /api/committee/media - Fetch visual assets
 committeeRouter.get("/media", async (_req: Request, res: Response) => {
@@ -963,9 +988,17 @@ committeeRouter.post("/reset-data", async (req: Request, res: Response) => {
       await saveCommitteeSettingJson("committee_comments_2027", []);
     }
 
-    if (scope === "media" || scope === "all") {
-      fallbackMedia = [];
-      await saveCommitteeSettingJson("committee_media_vault_2027", []);
+    if (scope === "media") {
+      fallbackMedia = [...DEFAULT_MEDIA];
+      await saveCommitteeSettingJson("committee_media_vault_2027", DEFAULT_MEDIA);
+    } else if (scope === "all") {
+      fallbackMedia = [...DEFAULT_MEDIA];
+      await saveCommitteeSettingJson("committee_media_vault_2027", DEFAULT_MEDIA);
+    }
+
+    if (scope === "members" || scope === "all") {
+      fallbackMembers = [...DEFAULT_MEMBERS];
+      await saveCommitteeSettingJson("committee_members_2027", DEFAULT_MEMBERS);
     }
 
     return res.json({
