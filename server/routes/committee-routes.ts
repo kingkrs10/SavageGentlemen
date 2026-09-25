@@ -28,12 +28,14 @@ export interface CommitteeComment {
   id: string;
   authorId?: string;
   authorName: string;
+  author?: string;
   authorRole?: string;
   authorHub: string;
   targetType: "proposal" | "milestone" | "media" | "general";
   targetId?: string;
   targetTitle?: string;
   content: string;
+  text?: string;
   createdAt: string;
 }
 
@@ -798,21 +800,25 @@ committeeRouter.get("/comments", async (req: Request, res: Response) => {
 // POST /api/committee/comments - Add new comment
 committeeRouter.post("/comments", async (req: Request, res: Response) => {
   try {
-    const { authorName, authorRole, authorHub, targetType = "general", targetId, targetTitle, content } = req.body;
-    if (!content || !content.trim()) {
+    const { authorName, author, authorRole, authorHub, targetType = "general", targetId, targetTitle, content, text } = req.body;
+    const commentText = (text || content || "").trim();
+    if (!commentText) {
       return res.status(400).json({ error: "Comment content is required" });
     }
 
+    const commentAuthor = (author || authorName || "Committee Member").trim();
     const currentList = await getCommitteeSettingJson<CommitteeComment[]>("committee_comments_2027", fallbackComments);
     const newComment: CommitteeComment = {
       id: `comm-${Date.now()}`,
-      authorName: (authorName && authorName.trim()) || "Committee Member",
+      authorName: commentAuthor,
+      author: commentAuthor,
       authorRole: authorRole || "Executive Committee",
       authorHub: authorHub || "All Committee",
       targetType: targetType || "general",
       targetId: targetId || undefined,
       targetTitle: targetTitle || undefined,
-      content: content.trim(),
+      content: commentText,
+      text: commentText,
       createdAt: new Date().toISOString(),
     };
 
