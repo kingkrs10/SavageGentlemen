@@ -431,6 +431,39 @@ export interface TimelineMilestone {
 
 const DEFAULT_TIMELINE_MILESTONES: TimelineMilestone[] = [
   {
+    id: "m-jaguar",
+    phase: "Phase 1: Costume Production",
+    title: "Jaguar Section Prototype Delivery (Rhion Romany)",
+    date: "October 22, 2026",
+    hub: "Guyana Operations",
+    venue: "Rhion Romany Studio / Port of Spain & Georgetown",
+    status: "in_progress",
+    description: "Final prototype delivery of Jaguar section: Frontline, Curvy, Backline (monokini), Male, extra bodysuit, and 3 backpack options. Total contract: $5,800 USD ($3,500 design fee + $2,300 materials).",
+    checklist: ["Contract executed", "Mobilization deposit disbursed ($4,050 USD: 100% supplies + 50% design)", "Prototypes delivered by Oct 22, 2026", "Completion balance disbursed ($1,750 USD)"]
+  },
+  {
+    id: "m-zephira",
+    phase: "Phase 1: Costume Production",
+    title: "Zèphira Section Prototype Review (Randy Madray)",
+    date: "November 2026",
+    hub: "Guyana Operations",
+    venue: "Randy Madray Atelier (Georgetown, Guyana)",
+    status: "in_progress",
+    description: "Mint swallowtail butterflies, mint/aqua/teal with sunny orange & charcoal accents, cascading feather tassels, 3D iridescent wings.",
+    checklist: ["Approve 3D butterfly feather wing samples", "Review Frontline, Backline, and Curvy fit models", "Georgetown promotional video shoot"]
+  },
+  {
+    id: "m-nymphae",
+    phase: "Phase 1: Costume Production",
+    title: "Nymphae (Lilly) Section Sample Completion (Annaixe)",
+    date: "November 2026",
+    hub: "Guyana Operations",
+    venue: "Annaixe Creative Studio",
+    status: "in_progress",
+    description: "Victoria Amazonica water lily botanical luxury concept. Lotus pink, lily white, deep emerald green, and liquid gold.",
+    checklist: ["Approve floral petal backpack prototypes", "Stone & rhinestone assembly sign-off", "Integration into Euphoria Mas promotional lookbook"]
+  },
+  {
     id: "m-1",
     phase: "Phase 1: Concept & Production",
     title: "Apparel Sampling: Amazonian Botanical Jerseys & Shorts",
@@ -569,6 +602,7 @@ let fallbackTimeline: TimelineMilestone[] = [...DEFAULT_TIMELINE_MILESTONES];
 // GET /api/committee/timeline - Fetch master committee timeline
 committeeRouter.get("/timeline", async (req: Request, res: Response) => {
   try {
+    let currentList = fallbackTimeline;
     if (db) {
       try {
         const [record] = await db
@@ -580,15 +614,31 @@ committeeRouter.get("/timeline", async (req: Request, res: Response) => {
         if (record && record.value) {
           const parsed = JSON.parse(record.value);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            fallbackTimeline = parsed;
-            return res.json(parsed);
+            currentList = parsed;
           }
         }
       } catch (dbErr) {
         console.warn("[CommitteeRouter] DB timeline fetch failed, using fallback:", (dbErr as Error).message);
       }
     }
-    return res.json(fallbackTimeline);
+
+    const existingIds = new Set(currentList.map((m) => m.id));
+    let hasAdditions = false;
+    for (const defMilestone of DEFAULT_TIMELINE_MILESTONES) {
+      if (!existingIds.has(defMilestone.id)) {
+        currentList.push(defMilestone);
+        hasAdditions = true;
+      }
+    }
+    if (hasAdditions && db) {
+      try {
+        await saveCommitteeSettingJson("committee_timeline_2027", currentList);
+      } catch (e) {
+        // ignore
+      }
+    }
+    fallbackTimeline = currentList;
+    return res.json(currentList);
   } catch (err: any) {
     console.error("[CommitteeRouter] Error fetching timeline:", err);
     res.status(500).json({ error: "Failed to fetch timeline" });
@@ -643,14 +693,44 @@ committeeRouter.post("/timeline", async (req: Request, res: Response) => {
 // -------------------------------------------------------------
 const DEFAULT_MEMBERS: CommitteeMember[] = [
   {
-    id: "mem-1",
-    name: "Executive Committee Chair",
-    role: "Overall Executive Director & Strategic Partnerships",
+    id: "mem-kris",
+    name: "Kris",
+    role: "Band Leader & Executive Director",
     hub: "All Committee",
     whatsapp: "",
     status: "lead",
-    bio: "Lead orchestrator of Guyana Carnival 2027 operations across Tri-State, UK, and Guyana.",
+    bio: "Founder & Executive Director of Euphoria Mas. Orchestrating Guyana Carnival 2027 operations, designer agreements, venue activations, and road logistics.",
     joinedAt: "2026-08-01",
+  },
+  {
+    id: "mem-rhion",
+    name: "Rhion Romany",
+    role: "Lead Costume Designer — Jaguar Section 🐆",
+    hub: "Guyana Operations",
+    whatsapp: "",
+    status: "lead",
+    bio: "Renowned Caribbean couture & carnival designer (@rhionromany / ЯR). Creative director for Jaguar. Total contract: $5,800 USD ($3,500 design fee + $2,300 materials). Delivery deadline: Oct 22, 2026.",
+    joinedAt: "2026-09-28",
+  },
+  {
+    id: "mem-randy",
+    name: "Randy Madray",
+    role: "Lead Costume Designer — Zèphira Section 🦋",
+    hub: "Guyana Operations",
+    whatsapp: "",
+    status: "lead",
+    bio: "Guyana's very own celebrated international fashion designer (@randymadray). Creative director for Zèphira. Inspired by mint swallowtail butterflies, freedom, air, and movement. Mint/aqua/teal with sunny yellows, bold orange, cascading feather tassels, and 3D iridescent wings.",
+    joinedAt: "2026-09-30",
+  },
+  {
+    id: "mem-annaixe",
+    name: "Annaixe",
+    role: "Lead Costume Designer — Nymphae (Lilly) Section 🪷",
+    hub: "Guyana Operations",
+    whatsapp: "",
+    status: "lead",
+    bio: "Visionary carnival designer (@annaixe). Creative director for Nymphae, inspired by Guyana's national flower, the Victoria Amazonica giant water lily. Lotus pink, pure lily white, deep aquatic emerald green, and liquid gold.",
+    joinedAt: "2026-09-29",
   },
   {
     id: "mem-2",
@@ -689,7 +769,18 @@ let fallbackMembers: CommitteeMember[] = [...DEFAULT_MEMBERS];
 // GET /api/committee/members - Fetch roster
 committeeRouter.get("/members", async (_req: Request, res: Response) => {
   try {
-    const list = await getCommitteeSettingJson<CommitteeMember[]>("committee_members_2027", fallbackMembers);
+    let list = await getCommitteeSettingJson<CommitteeMember[]>("committee_members_2027", fallbackMembers);
+    const existingIds = new Set(list.map((m) => m.id));
+    let hasAdditions = false;
+    for (const defMember of DEFAULT_MEMBERS) {
+      if (!existingIds.has(defMember.id)) {
+        list.push(defMember);
+        hasAdditions = true;
+      }
+    }
+    if (hasAdditions) {
+      await saveCommitteeSettingJson("committee_members_2027", list);
+    }
     fallbackMembers = list;
     return res.json(list);
   } catch (err: any) {
@@ -854,6 +945,39 @@ committeeRouter.delete("/comments/:id", async (req: Request, res: Response) => {
 // -------------------------------------------------------------
 const DEFAULT_MEDIA: CommitteeMediaItem[] = [
   {
+    id: "media-jaguar-contract",
+    title: "Jaguar Section — Official Designer Agreement (Rhion Romany)",
+    description: "Single-page binding agreement ($5,800 USD: $3,500 design fee + $2,300 materials). Delivery deadline: Oct 22, 2026.",
+    category: "layout",
+    url: "/Euphoria_Mas_Rhion_Romany_Jaguar_Contract.pdf",
+    uploadedBy: "Rhion Romany / Executive Board",
+    uploadedByHub: "Guyana Operations",
+    targetEvent: "Jaguar Section 🐆",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "media-zephira-concept",
+    title: "Zèphira Section — Official Moodboard & Designer Spec (Randy Madray)",
+    description: "Mint swallowtail butterflies, mint/aqua/teal/Tiffany blue with bold orange & sunny yellow accents, cascading feather tassels, 3D iridescent wings.",
+    category: "moodboard",
+    url: "/images/zephira_concept.png",
+    uploadedBy: "Randy Madray",
+    uploadedByHub: "Guyana Operations",
+    targetEvent: "Zèphira Section 🦋",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "media-nymphae-concept",
+    title: "Nymphae (Lilly) Section — Victoria Amazonica Concept (Annaixe)",
+    description: "Guyana's national flower, pristine water flora elegance, lotus petal tones, deep emerald, and liquid gold.",
+    category: "moodboard",
+    url: "/images/euphoria-mas-emblem.png",
+    uploadedBy: "Annaixe",
+    uploadedByHub: "Guyana Operations",
+    targetEvent: "Nymphae (Lilly) Section 🪷",
+    createdAt: new Date().toISOString(),
+  },
+  {
     id: "media-brand-logo",
     title: "Euphoria Mas Official 3D Metallic Emblem & Logo",
     description: "Official master identity asset: metallic magenta 'e' emblem with 3D sculptured golden typography.",
@@ -868,7 +992,7 @@ const DEFAULT_MEDIA: CommitteeMediaItem[] = [
     id: "media-brand-emblem",
     title: "Euphoria Mas 3D Circular Metallic Swirl Badge",
     description: "High-resolution circular emblem for official stamps, merchandise badges, and credentials.",
-    category: "apparel",
+    category: "merch",
     url: "/images/euphoria-mas-emblem.png",
     uploadedBy: "Executive Committee",
     uploadedByHub: "All Committee",
@@ -882,7 +1006,18 @@ let fallbackMedia: CommitteeMediaItem[] = [...DEFAULT_MEDIA];
 // GET /api/committee/media - Fetch visual assets
 committeeRouter.get("/media", async (_req: Request, res: Response) => {
   try {
-    const list = await getCommitteeSettingJson<CommitteeMediaItem[]>("committee_media_vault_2027", fallbackMedia);
+    let list = await getCommitteeSettingJson<CommitteeMediaItem[]>("committee_media_vault_2027", fallbackMedia);
+    const existingIds = new Set(list.map((m) => m.id));
+    let hasAdditions = false;
+    for (const defMedia of DEFAULT_MEDIA) {
+      if (!existingIds.has(defMedia.id)) {
+        list.push(defMedia);
+        hasAdditions = true;
+      }
+    }
+    if (hasAdditions) {
+      await saveCommitteeSettingJson("committee_media_vault_2027", list);
+    }
     fallbackMedia = list;
     return res.json(list);
   } catch (err: any) {

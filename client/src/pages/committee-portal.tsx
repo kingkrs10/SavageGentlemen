@@ -51,6 +51,8 @@ import {
   Mail,
   Phone,
   SlidersHorizontal,
+  Crown,
+  Palette,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -116,6 +118,158 @@ export interface CommitteeMediaItem {
 const DEFAULT_ACCESS_KEY = "EUPHORIA2027";
 const AUTH_STORAGE_KEY = "sg_committee_auth_2027";
 const ACTIVE_MEMBER_STORAGE_KEY = "sg_committee_active_member_2027";
+
+export interface CostumeSectionItem {
+  id: string;
+  name: string;
+  slug: string;
+  emoji: string;
+  designerName: string;
+  designerInstagram: string;
+  designerInstagramUrl: string;
+  designerBio: string;
+  theme: string;
+  tagline: string;
+  palette: { name: string; hex: string }[];
+  elements: string[];
+  deliverables: {
+    lineup: string[];
+    backpackOptions: string;
+    extraBodysuit?: string;
+  };
+  contractDetails: {
+    designFee?: number;
+    materialsFee?: number;
+    total?: number;
+    deposit?: number;
+    balance?: number;
+    deadline?: string;
+    pdfUrl?: string;
+    conceptUrl?: string;
+  };
+  sampleImage?: string;
+  status: "contract_locked" | "concept_approved" | "in_development";
+}
+
+export const COSTUME_SECTIONS: CostumeSectionItem[] = [
+  {
+    id: "section-jaguar",
+    name: "Jaguar",
+    slug: "jaguar",
+    emoji: "🐆",
+    designerName: "Rhion Romany",
+    designerInstagram: "@rhionromany",
+    designerInstagramUrl: "https://www.instagram.com/rhionromany/",
+    designerBio: "Renowned Caribbean couture & carnival designer (ЯR). Known for architectural silhouettes, raw luxury, and untamed elegance.",
+    tagline: "Power. Grace. Untamed Elegance. 🇬🇾✨🐆",
+    theme: "Unleash your wild side and embody the spirit of Guyana with Jaguar—a fierce and captivating masterpiece inspired by the majestic national animal of Guyana. Blends untamed beauty with irresistible elegance. Adorned with rich shades of gold, black, and emerald green, Jaguar features shimmering stones, intricate beadwork, and dramatic feather accents that mirror the power and mystery of the rainforest.",
+    palette: [
+      { name: "Raw Gold", hex: "#D4AF37" },
+      { name: "Rainforest Emerald", hex: "#0B4F37" },
+      { name: "Midnight Obsidian", hex: "#121212" },
+      { name: "Shimmering Amber", hex: "#FFBF00" },
+    ],
+    elements: [
+      "Intricate hand-stitched stone & crystal beadwork",
+      "Dramatic rainforest plumage & cascading feather accents",
+      "Sculptured jaguar motif breastplates & accents",
+      "High-compression custom monokini & body architecture",
+      "Reinforced road-ready wire harnesses",
+    ],
+    deliverables: {
+      lineup: [
+        "1 Frontline",
+        "1 Curvy",
+        "1 Backline (monokini)",
+        "1 Male",
+        "1 Additional Frontline (bodyweight only) extra bodysuit",
+      ],
+      backpackOptions: "3 Interchangeable Backpack options (Lightweight, Standard, Feather Cascade)",
+      extraBodysuit: "1 Additional Frontline bodysuit included",
+    },
+    contractDetails: {
+      designFee: 3500,
+      materialsFee: 2300,
+      total: 5800,
+      deposit: 4050,
+      balance: 1750,
+      deadline: "October 22, 2026",
+      pdfUrl: "/Euphoria_Mas_Rhion_Romany_Jaguar_Contract.pdf",
+    },
+    status: "contract_locked",
+  },
+  {
+    id: "section-nymphae",
+    name: "Nymphae (Lilly)",
+    slug: "nymphae",
+    emoji: "🪷",
+    designerName: "Annaixe",
+    designerInstagram: "@annaixe",
+    designerInstagramUrl: "https://www.instagram.com/annaixe/",
+    designerBio: "Celebrated carnival artisan and couture designer renowned for organic silhouettes, botanical fantasy, and aquatic luxury.",
+    tagline: "Aquatic Botanical Luxury. Victoria Amazonica Royalty. 🪷💧✨",
+    theme: "Inspired by Guyana's iconic national flower, the Victoria Amazonica giant water lily (Nymphaeaceae), flourishing in serenity upon pristine Amazonian waterways. Embodying purity, botanical grace, and aquatic mystique, Nymphae captures the delicate balance between regal royalty and untouchable elegance with floating petal structures and crystalline dew accents.",
+    palette: [
+      { name: "Lotus Petal Pink", hex: "#E86A92" },
+      { name: "Amazon Lily White", hex: "#F7F4EA" },
+      { name: "Deep River Emerald", hex: "#0E5A44" },
+      { name: "Liquid Gold", hex: "#E5A93C" },
+      { name: "Crystalline Dewdrop", hex: "#70D6FF" },
+    ],
+    elements: [
+      "Multi-layered floating petal backpack architecture",
+      "Dewdrop iridescent crystal embroidery",
+      "Organic curved wireforms imitating Victoria Amazonica leaves",
+      "Pearlescent aquatic sequin textures",
+      "Ethereal feather crowns with botanical accents",
+    ],
+    deliverables: {
+      lineup: ["1 Frontline", "1 Curvy", "1 Backline (monokini)", "1 Male"],
+      backpackOptions: "Cascading Petal & Water Lily Backpacks",
+    },
+    contractDetails: {
+      deadline: "November 2026",
+    },
+    status: "concept_approved",
+  },
+  {
+    id: "section-zephira",
+    name: "Zèphira",
+    slug: "zephira",
+    emoji: "🦋",
+    designerName: "Randy Madray",
+    designerInstagram: "@randymadray",
+    designerInstagramUrl: "https://www.instagram.com/randymadray/",
+    designerBio: "Guyana's very own international fashion designer. Renowned globally for high-fashion runway spectacles, immaculate stonecraft, and theatrical pageantry.",
+    tagline: "A Butterfly Fantasy Ready to Flutter Its Wings. 🦋✨🇬🇾",
+    theme: "Inspired by the mint swallowtail butterflies, this section embodies movement, air, freedom and a tantalizing kind of elegance. It features vibrant hues of mint, aqua, teal, Tiffany blue and turquoise juxtaposed alongside bold orange, charcoal and sunny yellows. The costumes feature intricate stone work; holographic butterflies and butterfly motifs; playful fringe; and elaborate feathery backpacks cascading down the sides of the costume sporting hanging feather tassels, lace pendants, well arranged feathers in curated colors, and 3D iridescent butterflies.",
+    palette: [
+      { name: "Mint Frost", hex: "#A8E6CF" },
+      { name: "Tiffany Blue", hex: "#0ABAB5" },
+      { name: "Aqua Teal", hex: "#009688" },
+      { name: "Vibrant Tangerine", hex: "#FF6F00" },
+      { name: "Sunny Yellow", hex: "#FFD54F" },
+      { name: "Charcoal Obsidian", hex: "#263238" },
+    ],
+    elements: [
+      "Intricate stone work & holographic butterfly motifs",
+      "Playful dynamic fringe capturing movement & air",
+      "Elaborate feathery cascading backpacks",
+      "Hanging feather tassels & handcrafted lace pendants",
+      "3D iridescent swallowtail butterflies",
+    ],
+    deliverables: {
+      lineup: ["1 Frontline", "1 Curvy", "1 Backline (monokini)", "1 Male"],
+      backpackOptions: "Cascading Feathery Wings with Tassels & Iridescent 3D Butterflies",
+    },
+    contractDetails: {
+      deadline: "November 2026",
+      conceptUrl: "/images/zephira_concept.png",
+    },
+    sampleImage: "/images/zephira_concept.png",
+    status: "concept_approved",
+  },
+];
 
 interface GeneratedDeliverable {
   summary: string;
@@ -191,12 +345,15 @@ export default function CommitteePortal() {
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
 
   // Active View State
-  const [activeTab, setActiveTab] = useState<string>("generator");
+  const [activeTab, setActiveTab] = useState<string>("costumes");
   const [outputSubTab, setOutputSubTab] = useState<string>("microsite");
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const [selectedProposalForModal, setSelectedProposalForModal] = useState<ProposalItem | null>(null);
   const [proposalToDelete, setProposalToDelete] = useState<ProposalItem | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [isWhatsAppBroadcastModalOpen, setIsWhatsAppBroadcastModalOpen] = useState<boolean>(false);
+  const [copiedBroadcastText, setCopiedBroadcastText] = useState<boolean>(false);
+  const [selectedCostumeForModal, setSelectedCostumeForModal] = useState<CostumeSectionItem | null>(null);
 
   // Timeline State
   const [milestones, setMilestones] = useState<TimelineMilestone[]>([]);
@@ -738,6 +895,131 @@ export default function CommitteePortal() {
     });
   };
 
+  const handleLoadJaguarSection = () => {
+    const data = {
+      title: "Jaguar Costume Section (Rhion Romany)",
+      category: "merch",
+      author: "Rhion Romany (Section Lead - Jaguar)",
+      targetDate: "Guyana Carnival 2027 (Delivery: Oct 22, 2026)",
+      venue: "Guyana Carnival Road Parade & AC Marriott Pool Deck Showcase",
+      concept: "Unleash your wild side and embody the spirit of Guyana with Jaguar—a fierce and captivating masterpiece inspired by the majestic national animal of Guyana. Blends untamed beauty with irresistible elegance. Rich shades of gold, black, and emerald green featuring shimmering stones, intricate beadwork, and dramatic feather accents mirroring the rainforest. Lineup: 1 Frontline, 1 Curvy, 1 Backline (monokini), 1 Male, 1 extra Frontline bodysuit, 3 backpack options. Power. Grace. Untamed Elegance. 🇬🇾✨🐆",
+      talentWishlist: "Rhion Romany Couture (@rhionromany), ЯR Design House, International Masqueraders",
+      capacity: 250,
+      earlyBirdPrice: 495,
+      tier1Price: 750,
+      vipCabanaPrice: 1350,
+      merchTitle: "Jaguar Masquerader Registration & Custom Monokini Suite",
+      merchPrice: 495,
+      estimatedProductionCost: 5800,
+      coverImageUrl: "/Euphoria_Mas_Rhion_Romany_Jaguar_Contract.pdf",
+    };
+    setFormData(data);
+    setActiveTab("generator");
+    generateMutation.mutate(data);
+    toast({
+      title: "Jaguar Section Loaded 🐆",
+      description: "Rhion Romany's Jaguar parameters populated and deliverables generated.",
+    });
+  };
+
+  const handleLoadNymphaeSection = () => {
+    const data = {
+      title: "Nymphae (Lilly) Costume Section (Annaixe)",
+      category: "merch",
+      author: "Annaixe (Section Lead - Nymphae)",
+      targetDate: "Guyana Carnival 2027 (Review: Nov 2026)",
+      venue: "Guyana Carnival Road Parade & AC Marriott Pool Deck Showcase",
+      concept: "Inspired by Guyana's iconic national flower, the Victoria Amazonica giant water lily, flourishing in serenity upon pristine Amazonian waterways. Embodying purity, botanical grace, and aquatic mystique with floating petal structures and crystalline dew accents. Color palette: Lotus pink, lily blossom white, deep aquatic emerald green, and liquid gold. Lineup: 1 Frontline, 1 Curvy, 1 Backline, 1 Male with cascading petal backpacks. 🪷💧✨",
+      talentWishlist: "Annaixe Designs (@annaixe), Caribbean Floral Mas Artisans",
+      capacity: 250,
+      earlyBirdPrice: 495,
+      tier1Price: 750,
+      vipCabanaPrice: 1350,
+      merchTitle: "Nymphae (Lilly) Victoria Amazonica Couture Package",
+      merchPrice: 495,
+      estimatedProductionCost: 5500,
+      coverImageUrl: "",
+    };
+    setFormData(data);
+    setActiveTab("generator");
+    generateMutation.mutate(data);
+    toast({
+      title: "Nymphae (Lilly) Section Loaded 🪷",
+      description: "Annaixe's Victoria Amazonica water lily parameters populated and deliverables generated.",
+    });
+  };
+
+  const handleLoadZephiraSection = () => {
+    const data = {
+      title: "Zèphira Costume Section (Randy Madray)",
+      category: "merch",
+      author: "Randy Madray (Section Lead - Zèphira)",
+      targetDate: "Guyana Carnival 2027 (Review: Nov 2026)",
+      venue: "Guyana Carnival Road Parade & AC Marriott Pool Deck Showcase",
+      concept: "Inspired by the mint swallowtail butterflies, this section embodies movement, air, freedom and a tantalizing kind of elegance. It features vibrant hues of mint, aqua, teal, Tiffany blue and turquoise juxtaposed alongside bold orange, charcoal and sunny yellows. Costumes feature intricate stone work, holographic butterflies and butterfly motifs, playful fringe, and elaborate feathery backpacks cascading down the sides of the costume sporting hanging feather tassels, lace pendants, well arranged feathers in curated colors, and 3D iridescent butterflies. 🦋✨🇬🇾",
+      talentWishlist: "Randy Madray International (@randymadray), Guyana Fashion Week Artisans",
+      capacity: 250,
+      earlyBirdPrice: 495,
+      tier1Price: 750,
+      vipCabanaPrice: 1350,
+      merchTitle: "Zèphira Mint Swallowtail Butterfly Couture Package",
+      merchPrice: 495,
+      estimatedProductionCost: 6000,
+      coverImageUrl: "/images/zephira_concept.png",
+    };
+    setFormData(data);
+    setActiveTab("generator");
+    generateMutation.mutate(data);
+    toast({
+      title: "Zèphira Section Loaded 🦋",
+      description: "Randy Madray's mint swallowtail butterfly parameters populated and deliverables generated.",
+    });
+  };
+
+  const WHATSAPP_BROADCAST_MESSAGE = `🇬🇾✨ *EUPHORIA MAS — GUYANA CARNIVAL 2027 EXECUTIVE UPDATE* ✨🇬🇾
+
+Hey family! 🇬🇾🔥 Welcome to the official Euphoria Mas Executive Committee space! The energy is building, momentum is real, and Guyana Carnival 2027 is going to be legendary. Here is where we stand, what is locked in, and what is coming next!
+
+👑 *OFFICIAL THEME & 3 CONFIRMED COSTUME SECTIONS:*
+We have officially locked in our three showstopping sections and elite international designer lineup:
+
+1️⃣ 🐆 *JAGUAR* — Designed by *Rhion Romany* (@rhionromany / ЯR)
+• *Vibe:* Power. Grace. Untamed Elegance. Inspired by Guyana’s national animal.
+• *Palette:* Rich gold, midnight black & rainforest emerald green with shimmering stones, intricate beadwork, and dramatic feather accents.
+• *Lineup:* 1 Frontline, 1 Curvy, 1 Backline (monokini), 1 Male, 1 extra Frontline bodysuit + 3 backpack options.
+• *Status:* Contract locked ($5,800 total: $3,500 design fee + $2,300 supplies). Prototype delivery: *October 22, 2026*.
+
+2️⃣ 🪷 *NYMPHAE (LILLY)* — Designed by *Annaixe* (@annaixe)
+• *Vibe:* Aquatic botanical luxury inspired by the Victoria Amazonica giant water lily, Guyana’s national flower.
+• *Palette:* Lotus petal pink, pure lily white, deep aquatic emerald green, and liquid gold.
+• *Lineup:* Frontline, Curvy, Backline, Male with floating petal backpacks & crystal dew accents.
+
+3️⃣ 🦋 *ZÈPHIRA* — Designed by *Randy Madray* (@randymadray)
+• *Vibe:* A butterfly fantasy ready to flutter its wings! Embodying movement, air, freedom, and tantalizing elegance inspired by mint swallowtail butterflies.
+• *Palette:* Mint, aqua, teal, Tiffany blue, and turquoise juxtaposed with bold orange, charcoal, and sunny yellows.
+• *Details:* Intricate stonework, holographic motifs, playful fringe, cascading feathery backpacks sporting feather tassels, lace pendants, and 3D iridescent butterflies!
+
+🏨 *VENUE & EXPERIENCE:*
+• *Headquarters:* AC Hotel by Marriott (Ogle, Guyana) Outdoor Pool & Event Lounge — 2 minutes from Ogle Airport (OGL).
+• *Ticketing & Masquerader Portal:* https://carnival-planner.com
+
+🚀 *UPCOMING EVENTS & BUILDUPS:*
+• *Move Yuh Rass* & diaspora buildup fete activations across NJ/NY Tri-State and Guyana.
+• Teaser video drops & master photoshoot reveals.
+
+🙋🏽‍♀️ *CALL FOR VOLUNTEERS — WE NEED YOU!*
+To make this band run like clockwork, we need committee hands on deck:
+• Instagram & Social Media Managers (managing grid drops, reels & stories)
+• Community & DM Responders (answering masquerader questions promptly)
+• Event & Logistics Planning Assistants
+👉 *Note:* You don’t have to wait on Kris to chat or take initiative! lol 😆 Drop your ideas, speak up, share links, and keep the vibes moving. This is OUR band!
+
+🔐 *EXECUTIVE COMMITTEE PORTAL:*
+All live proposal tools, timeline milestones, designer contracts, and visual media vault are live:
+👉 https://savgent.com/committee?key=EUPHORIA2027
+
+Let’s bring the heat and show Guyana and the world what Euphoria Mas is made of! Drop a 🇬🇾🔥 in the chat if you’re ready!`;
+
   // Helper: Cycle milestone status
   const handleCycleMilestoneStatus = (id: string) => {
     const updated = milestones.map((m) => {
@@ -1075,6 +1357,20 @@ export default function CommitteePortal() {
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={() => setActiveTab("costumes")}
+                className={`text-xs h-8 px-2.5 rounded-md transition-all ${
+                  activeTab === "costumes"
+                    ? "bg-gradient-to-r from-[#D91B82]/30 via-[#A81566]/30 to-[#E5A93C]/30 text-white border border-[#E5A93C]/50 font-semibold shadow-[0_0_12px_rgba(229,169,60,0.25)]"
+                    : "text-gray-300 hover:text-white hover:bg-[#131B2A]"
+                }`}
+              >
+                <Crown className="w-3.5 h-3.5 mr-1.5 text-[#E5A93C]" />
+                Costumes (3 Sections)
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setActiveTab("generator")}
                 className={`text-xs h-8 px-2.5 rounded-md transition-all ${
                   activeTab === "generator"
@@ -1162,6 +1458,18 @@ export default function CommitteePortal() {
               </Button>
             </div>
 
+            {/* WhatsApp Broadcast Quick Action */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsWhatsAppBroadcastModalOpen(true)}
+              className="text-xs h-8 px-2.5 bg-[#25D366]/10 border-[#25D366]/40 text-[#25D366] hover:bg-[#25D366]/20 transition-all font-medium flex items-center shadow-sm"
+              title="Open executive WhatsApp broadcast announcement"
+            >
+              <MessageCircle className="w-3.5 h-3.5 mr-1.5 fill-[#25D366]/20" />
+              WhatsApp Broadcast
+            </Button>
+
             {/* Active Member Identity Badge / Switcher */}
             <Button
               variant="outline"
@@ -1217,7 +1525,288 @@ export default function CommitteePortal() {
 
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 lg:px-8 py-6">
-        {activeTab === "timeline" ? (
+        {activeTab === "costumes" ? (
+          /* ------------------------------------------------------------- */
+          /* OFFICIAL COSTUME SECTIONS & DESIGNER SUITES                   */
+          /* ------------------------------------------------------------- */
+          <div className="space-y-8">
+            {/* Top Showcase Hero Card */}
+            <div className="p-6 rounded-2xl bg-gradient-to-r from-[#180915] via-[#0C1018] to-[#171307] border border-[#D91B82]/40 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-96 h-96 bg-[#D91B82]/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="space-y-2 max-w-3xl">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge className="bg-[#D91B82]/20 text-[#FF5CA8] border border-[#D91B82]/50 text-[10px] font-mono uppercase tracking-wider px-2 py-0.5">
+                      Guyana Carnival 2027 Lineup
+                    </Badge>
+                    <Badge className="bg-[#E5A93C]/20 text-[#E5A93C] border border-[#E5A93C]/40 text-[10px] font-mono uppercase tracking-wider px-2 py-0.5">
+                      3 Confirmed Sections Locked
+                    </Badge>
+                    <Badge className="bg-[#00D2B4]/20 text-[#00D2B4] border border-[#00D2B4]/40 text-[10px] font-mono uppercase tracking-wider px-2 py-0.5">
+                      International Designer Roster
+                    </Badge>
+                  </div>
+                  <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+                    Official Costume Sections & Designer Suites
+                  </h2>
+                  <p className="text-xs md:text-sm text-gray-300 leading-relaxed">
+                    Embodying the spirit of Guyana across three premier sections designed by world-class couture artisans:
+                    <strong className="text-[#D4AF37] ml-1">Jaguar 🐆 (Rhion Romany)</strong>,
+                    <strong className="text-[#FF85A1] ml-1">Nymphae 🪷 (Annaixe)</strong>, and
+                    <strong className="text-[#00D2B4] ml-1">Zèphira 🦋 (Randy Madray)</strong>.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+                  <Button
+                    size="sm"
+                    onClick={() => setIsWhatsAppBroadcastModalOpen(true)}
+                    className="bg-[#25D366] hover:bg-[#20ba5a] text-black font-bold text-xs h-9 shadow-md shadow-[#25D366]/20 transition-all"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 mr-1.5 fill-black/20" />
+                    Share WhatsApp Update
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => setActiveTab("generator")}
+                    className="bg-[#121B2A] hover:bg-[#1A263B] text-white border border-[#24354D] text-xs h-9"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 mr-1.5 text-[#00D2B4]" />
+                    Auto-Site Studio
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* 3 Section Showcase Cards Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {COSTUME_SECTIONS.map((section) => {
+                const isJaguar = section.slug === "jaguar";
+                const isZephira = section.slug === "zephira";
+                const isNymphae = section.slug === "nymphae";
+
+                const accentColor = isJaguar ? "#D4AF37" : isZephira ? "#00D2B4" : "#E86A92";
+                const borderColor = isJaguar ? "border-[#D4AF37]/40" : isZephira ? "border-[#00D2B4]/40" : "border-[#E86A92]/40";
+                const glowBg = isJaguar
+                  ? "from-[#1b1506]/90 via-[#0B0F17] to-[#0A120E]"
+                  : isZephira
+                  ? "from-[#051614]/90 via-[#0B0F17] to-[#140D05]"
+                  : "from-[#1a0814]/90 via-[#0B0F17] to-[#08130f]";
+
+                return (
+                  <Card
+                    key={section.id}
+                    className={`bg-gradient-to-b ${glowBg} ${borderColor} text-white shadow-xl flex flex-col justify-between hover:shadow-[0_0_25px_rgba(217,27,130,0.15)] transition-all`}
+                  >
+                    <CardHeader className="pb-3 border-b border-[#182334]">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-2xl">{section.emoji}</span>
+                            <Badge
+                              className="text-[10px] font-mono uppercase tracking-wider border-0"
+                              style={{ backgroundColor: `${accentColor}25`, color: accentColor }}
+                            >
+                              Section 0{isJaguar ? 1 : isNymphae ? 2 : 3}
+                            </Badge>
+                            {section.status === "contract_locked" && (
+                              <Badge className="bg-emerald-950/70 text-emerald-400 border border-emerald-500/40 text-[9px] uppercase">
+                                Contract Locked
+                              </Badge>
+                            )}
+                            {section.status === "concept_approved" && (
+                              <Badge className="bg-blue-950/70 text-blue-300 border border-blue-500/40 text-[9px] uppercase">
+                                Concept Locked
+                              </Badge>
+                            )}
+                          </div>
+                          <CardTitle className="text-xl font-black text-white tracking-wide">
+                            {section.name}
+                          </CardTitle>
+                          <p className="text-xs font-semibold mt-0.5" style={{ color: accentColor }}>
+                            {section.tagline}
+                          </p>
+                        </div>
+
+                        <a
+                          href={section.designerInstagramUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#111927] hover:bg-[#1A263B] border border-[#23334D] text-[11px] text-gray-300 hover:text-white transition-all shrink-0"
+                          title="Open Designer Instagram"
+                        >
+                          <span className="font-bold text-[#E5A93C]">{section.designerInstagram}</span>
+                          <ExternalLink className="w-3 h-3 text-gray-400" />
+                        </a>
+                      </div>
+
+                      <div className="mt-2 text-[11px] text-gray-300 flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-[#E5A93C]" />
+                        <span>Lead Designer: <strong className="text-white">{section.designerName}</strong></span>
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="space-y-4 pt-4 text-xs">
+                      {/* Theme Description */}
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                          Theme & Concept
+                        </span>
+                        <p className="text-gray-300 text-[11px] leading-relaxed line-clamp-4">
+                          {section.theme}
+                        </p>
+                      </div>
+
+                      {/* Color Palette Swatches */}
+                      <div className="space-y-1.5 pt-2 border-t border-[#182334]">
+                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <Palette className="w-3.5 h-3.5 text-[#E5A93C]" />
+                          Official Color Palette
+                        </span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {section.palette.map((color, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center gap-1.5 bg-[#090D15] px-2 py-1 rounded-md border border-[#1A2638]"
+                              title={`${color.name} (${color.hex})`}
+                            >
+                              <div
+                                className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-sm"
+                                style={{ backgroundColor: color.hex }}
+                              />
+                              <span className="text-[10px] text-gray-300 font-medium">{color.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Key Design Elements */}
+                      <div className="space-y-1.5 pt-2 border-t border-[#182334]">
+                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-[#00D2B4]" />
+                          Signature Elements & Architecture
+                        </span>
+                        <ul className="space-y-1 text-[11px] text-gray-300">
+                          {section.elements.slice(0, 3).map((el, idx) => (
+                            <li key={idx} className="flex items-start gap-1.5">
+                              <span className="text-[#E5A93C] mt-0.5">•</span>
+                              <span>{el}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Section Deliverables Lineup */}
+                      <div className="space-y-1.5 pt-2 border-t border-[#182334]">
+                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <Layers className="w-3.5 h-3.5 text-[#FF5CA8]" />
+                          Masquerader Lineup
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {section.deliverables.lineup.map((item, idx) => (
+                            <Badge
+                              key={idx}
+                              variant="outline"
+                              className="bg-[#0B101A] border-[#223147] text-gray-300 text-[10px]"
+                            >
+                              {item}
+                            </Badge>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-gray-400 mt-1 italic">
+                          Backpacks: {section.deliverables.backpackOptions}
+                        </p>
+                      </div>
+
+                      {/* Contract or Production Financials */}
+                      {section.contractDetails && section.contractDetails.total && (
+                        <div className="p-2.5 rounded-lg bg-[#070B12] border border-[#1A2638] space-y-1 text-[11px]">
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-400">Total Contract Value:</span>
+                            <span className="font-bold text-[#E5A93C]">${section.contractDetails.total.toLocaleString()} USD</span>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] text-gray-400">
+                            <span>Creative Fee: ${section.contractDetails.designFee?.toLocaleString()} USD</span>
+                            <span>Materials: ${section.contractDetails.materialsFee?.toLocaleString()} USD</span>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] text-gray-400 border-t border-[#141D2D] pt-1 mt-1">
+                            <span>Mobilization Deposit:</span>
+                            <span className="text-emerald-400 font-medium">${section.contractDetails.deposit?.toLocaleString()} USD</span>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] text-gray-400">
+                            <span>Delivery Deadline:</span>
+                            <span className="text-amber-300 font-semibold">{section.contractDetails.deadline}</span>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+
+                    <CardFooter className="pt-3 border-t border-[#182334] flex flex-col gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          if (isJaguar) handleLoadJaguarSection();
+                          else if (isNymphae) handleLoadNymphaeSection();
+                          else if (isZephira) handleLoadZephiraSection();
+                        }}
+                        className="w-full text-xs font-semibold h-8 shadow-sm transition-all"
+                        style={{
+                          backgroundColor: `${accentColor}20`,
+                          borderColor: `${accentColor}50`,
+                          color: "white",
+                          borderWidth: "1px",
+                        }}
+                      >
+                        <Sparkles className="w-3.5 h-3.5 mr-1.5" style={{ color: accentColor }} />
+                        Load in Auto-Site Studio & Generate
+                      </Button>
+
+                      <div className="grid grid-cols-2 gap-2 w-full">
+                        {section.contractDetails?.pdfUrl && (
+                          <a
+                            href={section.contractDetails.pdfUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md bg-[#101724] hover:bg-[#182335] border border-[#213149] text-xs text-gray-300 hover:text-white transition-all text-center"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-red-400" />
+                            <span>Contract PDF</span>
+                          </a>
+                        )}
+
+                        {section.contractDetails?.conceptUrl && (
+                          <a
+                            href={section.contractDetails.conceptUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md bg-[#101724] hover:bg-[#182335] border border-[#213149] text-xs text-gray-300 hover:text-white transition-all text-center"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-[#00D2B4]" />
+                            <span>Concept Sheet</span>
+                          </a>
+                        )}
+
+                        <a
+                          href={`https://wa.me/?text=${encodeURIComponent(
+                            `Euphoria Mas 2027 — Section ${section.name} designed by ${section.designerName} (${section.designerInstagram})! Check the executive suite: https://savgent.com/committee?key=EUPHORIA2027`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-xs text-[#25D366] transition-all text-center ${
+                            !section.contractDetails?.pdfUrl && !section.contractDetails?.conceptUrl ? "col-span-2" : ""
+                          }`}
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>WhatsApp Share</span>
+                        </a>
+                      </div>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        ) : activeTab === "timeline" ? (
           /* ------------------------------------------------------------- */
           /* VISUAL MASTER ROADMAP & TIMELINE (INTERACTIVE & EDITABLE)     */
           /* ------------------------------------------------------------- */
@@ -2531,6 +3120,51 @@ export default function CommitteePortal() {
           /* GENERATOR STUDIO & LIVE OUTPUT WORKSPACE                      */
           /* ------------------------------------------------------------- */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Quick-Load Confirmed Costume Sections Bar (12 cols) */}
+            <div className="lg:col-span-12 p-4 rounded-xl bg-gradient-to-r from-[#180915] via-[#0D121B] to-[#171307] border border-[#D91B82]/40 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-[#E5A93C]/10 border border-[#E5A93C]/30 flex items-center justify-center shrink-0">
+                  <Crown className="w-5 h-5 text-[#E5A93C]" />
+                </div>
+                <div>
+                  <h4 className="text-xs md:text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    Quick-Load Confirmed Costume Sections
+                    <Badge className="bg-[#D91B82]/20 text-[#FF5CA8] text-[9px] uppercase border-0">2027 Roster</Badge>
+                  </h4>
+                  <p className="text-[11px] text-gray-400">
+                    Auto-fill all specs, lineup tiers, designer profiles & trigger real-time deliverables with 1 click:
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleLoadJaguarSection}
+                  className="bg-[#D4AF37]/15 hover:bg-[#D4AF37]/25 border border-[#D4AF37]/50 text-[#D4AF37] text-xs h-8 px-3 font-semibold shadow-sm transition-all"
+                >
+                  🐆 Jaguar (Rhion Romany)
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleLoadNymphaeSection}
+                  className="bg-[#E86A92]/15 hover:bg-[#E86A92]/25 border border-[#E86A92]/50 text-[#FF85A1] text-xs h-8 px-3 font-semibold shadow-sm transition-all"
+                >
+                  🪷 Nymphae (Annaixe)
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleLoadZephiraSection}
+                  className="bg-[#00D2B4]/15 hover:bg-[#00D2B4]/25 border border-[#00D2B4]/50 text-[#00D2B4] text-xs h-8 px-3 font-semibold shadow-sm transition-all"
+                >
+                  🦋 Zèphira (Randy Madray)
+                </Button>
+              </div>
+            </div>
+
             {/* LEFT COLUMN: Intake Form (5 cols) */}
             <div className="lg:col-span-5 space-y-6">
               <Card className="bg-[#0C1018] border-[#192436] shadow-xl text-white">
@@ -4005,6 +4639,91 @@ export default function CommitteePortal() {
                 {selectedImageForLightbox.description}
               </p>
             )}
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* MODAL: OFFICIAL WHATSAPP BROADCAST ANNOUNCEMENT */}
+      {isWhatsAppBroadcastModalOpen && (
+        <Dialog open={isWhatsAppBroadcastModalOpen} onOpenChange={setIsWhatsAppBroadcastModalOpen}>
+          <DialogContent className="max-w-2xl bg-[#0B0F17] border-[#25D366]/40 text-white max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <div className="flex items-center gap-2 mb-1">
+                <Badge className="bg-[#25D366]/20 text-[#25D366] border border-[#25D366]/40 text-[10px] uppercase font-mono">
+                  Committee Broadcast Dispatch
+                </Badge>
+                <Badge className="bg-[#E5A93C]/20 text-[#E5A93C] border border-[#E5A93C]/40 text-[10px] uppercase font-mono">
+                  3 Confirmed Sections
+                </Badge>
+              </div>
+              <DialogTitle className="text-lg text-white font-bold flex items-center gap-2">
+                <MessageCircle className="w-5 h-5 text-[#25D366] fill-[#25D366]/20" />
+                Executive WhatsApp Broadcast Announcement
+              </DialogTitle>
+              <DialogDescription className="text-xs text-gray-400">
+                Official message ready to broadcast to the WhatsApp committee group. Includes the 3 confirmed sections, designer lineup, upcoming Move Yuh Rass events, and volunteer call.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 my-2">
+              <div className="p-4 rounded-xl bg-[#06090F] border border-[#192437] font-mono text-xs text-gray-200 whitespace-pre-wrap leading-relaxed max-h-[50vh] overflow-y-auto select-all selection:bg-[#25D366]/30">
+                {WHATSAPP_BROADCAST_MESSAGE}
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] text-gray-400">
+                <span>Direct portal link included: <strong className="text-white">savgent.com/committee?key=EUPHORIA2027</strong></span>
+                <span className="text-[#25D366]">Formatted with WhatsApp markdown (*bold*, _italic_)</span>
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsWhatsAppBroadcastModalOpen(false)}
+                className="text-gray-400 hover:text-white text-xs"
+              >
+                Close
+              </Button>
+
+              <div className="flex items-center gap-2">
+                <a
+                  href={`https://web.whatsapp.com/send?text=${encodeURIComponent(WHATSAPP_BROADCAST_MESSAGE)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center rounded-md text-xs font-semibold h-9 px-3 bg-[#131D2D] border border-[#23354E] text-gray-200 hover:text-white hover:bg-[#1A283E] transition-all"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 mr-1.5 text-[#25D366]" />
+                  Open WhatsApp Web
+                </a>
+
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(WHATSAPP_BROADCAST_MESSAGE);
+                    setCopiedBroadcastText(true);
+                    setTimeout(() => setCopiedBroadcastText(false), 3000);
+                    toast({
+                      title: "Message Copied! 📋",
+                      description: "Official WhatsApp welcome message copied to clipboard. Ready to paste in the committee group.",
+                    });
+                  }}
+                  className="bg-[#25D366] hover:bg-[#20ba5a] text-black font-bold text-xs h-9 px-4 shadow-md shadow-[#25D366]/20 transition-all"
+                >
+                  {copiedBroadcastText ? (
+                    <>
+                      <Check className="w-4 h-4 mr-1.5" />
+                      Copied to Clipboard!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 mr-1.5" />
+                      Copy Broadcast Message
+                    </>
+                  )}
+                </Button>
+              </div>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
