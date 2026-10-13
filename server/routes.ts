@@ -1549,6 +1549,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  router.get("/events/:id/gender-sales", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const data = await storage.getTicketSalesByGender(id);
+      return res.status(200).json(data);
+    } catch (err: any) {
+      console.error("Error fetching gender sales:", err);
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
   // Verify a secret/comp code for a specific event's tickets
   router.post("/events/:id/verify-code", async (req: Request, res: Response) => {
     try {
