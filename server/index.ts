@@ -237,12 +237,21 @@ app.use((req, res, next) => {
     });
   });
 
-  // Explicitly serve the apps to bypass Vite catch-all loops
+  // Explicitly serve static apps, images, and public assets to bypass Vite catch-all loops
   const pianoAppDir = path.join(process.cwd(), 'client', 'public', 'apps', 'piana-learning-app');
   const superReaderDir = path.join(process.cwd(), 'client', 'public', 'apps', 'super-reader');
-  
   app.use('/apps/piana-learning-app', express.static(pianoAppDir));
   app.use('/apps/super-reader', express.static(superReaderDir));
+
+  const clientImagesDir = path.join(process.cwd(), 'client', 'public', 'images');
+  const publicImagesDir = path.join(process.cwd(), 'public', 'images');
+  const distImagesDir = path.join(process.cwd(), 'dist', 'public', 'images');
+  
+  app.use('/images', express.static(clientImagesDir, { maxAge: '30d', etag: true }));
+  app.use('/images', express.static(publicImagesDir, { maxAge: '30d', etag: true }));
+  app.use('/images', express.static(distImagesDir, { maxAge: '30d', etag: true }));
+  app.use(express.static(path.join(process.cwd(), 'client', 'public'), { maxAge: '30d' }));
+  app.use(express.static(path.join(process.cwd(), 'public'), { maxAge: '30d' }));
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route

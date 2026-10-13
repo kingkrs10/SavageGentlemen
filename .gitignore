@@ -29,3 +29,16 @@ scratch/
 uploads/
 public/generated-ads/*.mp4
 !public/generated-ads/.gitkeep
+
+# Ephemeral media and scratch assets
+client/public/*.mp4
+public/*.mp4
+trailer/
+client/public/trailer/
+public/trailer/
+courtvision-android/
+logs/
+print_files/
+__pycache__/
+*.pyc
+

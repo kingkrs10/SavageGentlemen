@@ -11,8 +11,8 @@ export function getNormalizedImageUrl(url: string | null | undefined): string {
     return '';
   }
 
-  // If it's already a full URL, return it as is
-  if (url.startsWith('http://') || url.startsWith('https://')) {
+  // If it's already a full URL or data URI, return it as is
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
     return url;
   }
 
@@ -46,6 +46,11 @@ export function getNormalizedImageUrl(url: string | null | undefined): string {
   if (url.includes('drive.google.com/drive/folders/')) {
     // Cannot directly use folder URLs as images
     return 'https://placehold.co/600x400/222222/FF4136?text=Folder+Image';
+  }
+
+  // If it's a relative path without leading slash, add leading slash so it resolves from site root
+  if (!url.startsWith('/')) {
+    return `/${url}`;
   }
 
   // For other URLs, return as is

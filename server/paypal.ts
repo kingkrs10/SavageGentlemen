@@ -324,12 +324,23 @@ export async function capturePaypalOrder(req: Request, res: Response) {
             purchaseDate: new Date(),
             qrCodeData: `EVENT-${event.id}-ORDER-${order.id}-${Date.now()}`,
             ticketType: ticketName || 'General Admission',
+            gender: (ticketName?.toLowerCase().includes('female') ? 'female' : ticketName?.toLowerCase().includes('male') ? 'male' : 'unisex'),
             price: Math.round(amount * 100).toString(), // Convert to cents and stringify
             attendeeEmail: payerEmail,
             attendeeName: payerName || user.displayName
           };
           
           const ticket = await storage.createTicketPurchase(ticketData);
+
+          // Decrement inventory and check tier progression
+          if (ticketId) {
+            try {
+              const { TicketDatabaseSync } = await import('./storage');
+              await TicketDatabaseSync.updateTicketInventory(Number(ticketId), -1);
+            } catch (invErr: any) {
+              console.error('Failed to update ticket inventory for PayPal payment:', invErr.message);
+            }
+          }
           
           // Send ticket email automatically with delivery monitoring
           if (payerEmail) {

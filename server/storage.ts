@@ -326,6 +326,13 @@ export interface IStorage {
   getTicketPurchase(id: number): Promise<TicketPurchase | undefined>;
   getTicketPurchaseByQrCodeData(qrCodeData: string): Promise<TicketPurchase | undefined>;
   getFreeTicketPurchases(): Promise<any[]>;
+  getTicketSalesByGender(eventId: number): Promise<{
+    female: { count: number; revenue: number };
+    male: { count: number; revenue: number };
+    unisex: { count: number; revenue: number };
+    total: { count: number; revenue: number };
+    ratio: { femalePercent: number; malePercent: number };
+  }>;
 
   // Ticket scan operations
   createTicketScan(ticketScan: InsertTicketScan): Promise<TicketScan>;
@@ -4050,6 +4057,53 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(ticketPurchases.purchaseDate));
   }
 
+  async getTicketSalesByGender(eventId: number): Promise<{
+    female: { count: number; revenue: number };
+    male: { count: number; revenue: number };
+    unisex: { count: number; revenue: number };
+    total: { count: number; revenue: number };
+    ratio: { femalePercent: number; malePercent: number };
+  }> {
+    const purchases = await db
+      .select()
+      .from(ticketPurchases)
+      .where(and(eq(ticketPurchases.eventId, eventId), eq(ticketPurchases.status, 'valid')));
+
+    let femaleCount = 0, femaleRev = 0;
+    let maleCount = 0, maleRev = 0;
+    let unisexCount = 0, unisexRev = 0;
+
+    for (const p of purchases) {
+      const price = Number(p.price) || 0;
+      const g = (p.gender || 'unisex').toLowerCase();
+      if (g === 'female') {
+        femaleCount++;
+        femaleRev += price;
+      } else if (g === 'male') {
+        maleCount++;
+        maleRev += price;
+      } else {
+        unisexCount++;
+        unisexRev += price;
+      }
+    }
+
+    const totalCount = femaleCount + maleCount + unisexCount;
+    const totalRev = femaleRev + maleRev + unisexRev;
+    const genderedTotal = femaleCount + maleCount;
+
+    return {
+      female: { count: femaleCount, revenue: femaleRev },
+      male: { count: maleCount, revenue: maleRev },
+      unisex: { count: unisexCount, revenue: unisexRev },
+      total: { count: totalCount, revenue: totalRev },
+      ratio: {
+        femalePercent: genderedTotal > 0 ? Math.round((femaleCount / genderedTotal) * 100) : 50,
+        malePercent: genderedTotal > 0 ? Math.round((maleCount / genderedTotal) * 100) : 50,
+      }
+    };
+  }
+
   async getTicketPurchase(id: number): Promise<TicketPurchase | undefined> {
     const [ticketPurchase] = await db
       .select()
@@ -6496,6 +6550,17 @@ export class TicketDatabaseSync {
           END`
         })
         .where(eq(tickets.id, ticketId));
+
+      // Trigger autonomous Event Coordinator to check tier progression, activate next tier, and email ticket holders
+      import('./services/event-coordinator')
+        .then(({ eventCoordinatorService }) => {
+          eventCoordinatorService.checkTierProgression(ticketId).catch(err => {
+            console.error('[TicketInventory] Error in coordinator tier progression check:', err.message);
+          });
+        })
+        .catch(err => {
+          console.warn('[TicketInventory] Could not load event-coordinator:', err.message);
+        });
     } catch (error) {
       console.error('Error updating ticket inventory:', error);
       throw error;

@@ -577,6 +577,7 @@ export const tickets = pgTable("tickets", {
   meetGreet: boolean("meet_greet").default(false), // Meet & greet access
   backstageAccess: boolean("backstage_access").default(false), // Backstage access
   seatingPriority: text("seating_priority").default("general"), // general, reserved, premium, vip
+  gender: text("gender").default("unisex"), // 'unisex', 'female', 'male'
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -617,6 +618,7 @@ export const insertTicketSchema = createInsertSchema(tickets)
     meetGreet: true,
     backstageAccess: true,
     seatingPriority: true,
+    gender: true,
   })
   .extend({
     // Handle dates as strings and convert them in the transform
@@ -627,6 +629,7 @@ export const insertTicketSchema = createInsertSchema(tickets)
     includedItems: z.array(z.string()).optional(),
     tierLevel: z.enum(['standard', 'premium', 'vip', 'ultra_vip']).default('standard'),
     seatingPriority: z.enum(['general', 'reserved', 'premium', 'vip']).default('general'),
+    gender: z.enum(['unisex', 'female', 'male']).default('unisex'),
   })
   .transform((data) => {
     // Convert string dates to Date objects if present
@@ -758,6 +761,7 @@ export const ticketPurchases = pgTable("ticket_purchases", {
   status: text("status").default("valid"), // valid, used, cancelled, refunded
   qrCodeData: text("qr_code_data").notNull().unique(),
   ticketType: text("ticket_type").default("standard"),
+  gender: text("gender").default("unisex"), // 'unisex', 'female', 'male'
   price: numeric("price"),
   attendeeEmail: text("attendee_email"),
   attendeeName: text("attendee_name"),

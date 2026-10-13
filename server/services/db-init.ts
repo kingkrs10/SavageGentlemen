@@ -2,6 +2,7 @@ import { db } from "../db";
 import { sql } from "drizzle-orm";
 import { magazineBot } from "../workers/magazine-bot";
 import { socialAutoPoster } from "../workers/social-autoposter";
+import { eventCoordinatorService } from "./event-coordinator";
 import { cleanTitle, cleanCaption, isDuplicateStory } from "@shared/text-sanitizer";
 
 /**
@@ -241,6 +242,13 @@ export async function initializeDatabaseTables(): Promise<void> {
       await socialAutoPoster.init();
     } catch (postErr: any) {
       console.error("[DBInit] ⚠️ Error starting SocialAutoPoster:", postErr.message);
+    }
+
+    // 9. Initialize and start the Autonomous Event Coordinator & Connoisseur Engine
+    try {
+      await eventCoordinatorService.init();
+    } catch (coordErr: any) {
+      console.error("[DBInit] ⚠️ Error starting EventCoordinatorService:", coordErr.message);
     }
   } catch (error: any) {
     console.error("[DBInit] ⚠️ Error during database table initialization:", error.message);

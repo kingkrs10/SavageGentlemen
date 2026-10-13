@@ -85,6 +85,7 @@ import { sevenDayStrategyRouter } from "./routes/seven-day-strategy-routes";
 import { sevenDayStrategyService } from "./services/seven-day-strategy";
 import { committeeRouter } from "./routes/committee-routes";
 import { magazineBot } from "./workers/magazine-bot";
+import { eventCoordinatorService } from "./services/event-coordinator";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -449,10 +450,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         purchaseDate: new Date(),
         qrCodeData: `EVENT-${event.id}-ORDER-${order.id}-${Date.now()}`,
         ticketType: selectedTicket?.name || 'General Admission',
+        gender: (selectedTicket as any)?.gender || 'unisex',
         price: 0,
         attendeeEmail: deliveryEmail,
         attendeeName: user.displayName || user.username || null
       });
+
+      // Decrement inventory and check tier progression
+      if (selectedTicket?.id) {
+        try {
+          const { TicketDatabaseSync } = await import('./storage');
+          await TicketDatabaseSync.updateTicketInventory(selectedTicket.id, -1);
+        } catch (invErr: any) {
+          console.error("Failed to update ticket inventory for free registration:", invErr.message);
+        }
+      }
 
       // Email & Analytics
       if (deliveryEmail) {
@@ -538,6 +550,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Initialize 7-Day Caribbean Strategy Auto-Scheduler
   sevenDayStrategyService.init().catch(err => console.error("Error starting SevenDayStrategyService:", err));
+
+  // Initialize Autonomous Event Coordinator & Connoisseur Bot (ensures live tickets, tier auto-seeding, emails ticket holders)
+  eventCoordinatorService.init().catch(err => console.error("Error starting EventCoordinatorService:", err));
+
+  // Autonomous Event Coordinator & Connoisseur Bot API Routes
+  app.get("/api/event-coordinator/status", async (_req, res) => {
+    try {
+      const status = await eventCoordinatorService.getStatus();
+      res.json(status);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/event-coordinator/ensure-live", async (req, res) => {
+    try {
+      const eventId = req.body?.eventId ? Number(req.body.eventId) : undefined;
+      const result = await eventCoordinatorService.ensureTicketsLive(eventId);
+      const status = await eventCoordinatorService.getStatus();
+      res.json({ success: true, result, status });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/event-coordinator/check-progression", async (req, res) => {
+    try {
+      const ticketId = req.body?.ticketId ? Number(req.body.ticketId) : undefined;
+      const result = await eventCoordinatorService.checkTierProgression(ticketId);
+      const status = await eventCoordinatorService.getStatus();
+      res.json({ success: true, result, status });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/event-coordinator/run-strategy", async (req, res) => {
+    try {
+      const day = req.body?.day ? Number(req.body.day) : undefined;
+      let result;
+      if (day) {
+        result = await sevenDayStrategyService.executeDayPost(day);
+      } else {
+        await sevenDayStrategyService.checkAndAutoPost();
+        result = await sevenDayStrategyService.getCalendar();
+      }
+      res.json({ success: true, result });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/event-coordinator/set-live-enabled", async (req, res) => {
+    try {
+      const enabled = Boolean(req.body?.enabled);
+      const result = await eventCoordinatorService.setLiveEnabled(enabled);
+      const status = await eventCoordinatorService.getStatus();
+      res.json({ success: true, result, status });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
 
   // Register social and enhanced ticketing routes
   registerSocialRoutes(app);
@@ -1751,6 +1825,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         price: amount || event.price || 0,
         purchaseDate: new Date(),
         ticketType: ticketType,
+        gender: (selectedTicket as any)?.gender || 'unisex',
         attendeeEmail: user.email || null,
         attendeeName: user.displayName || user.username || null
       });
@@ -5870,6 +5945,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       purchaseDate: new Date(),
                       qrCodeData: `EVENT-${eventId}-ORDER-${order.id}-TKT-${i}-${Date.now()}`,
                       ticketType: ticketName,
+                      gender: (ticketName?.toLowerCase().includes('female') ? 'female' : ticketName?.toLowerCase().includes('male') ? 'male' : 'unisex'),
                       price: unitPrice,
                       attendeeEmail: email,
                       attendeeName: customerName
@@ -5896,6 +5972,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       console.log(`Ticket ${i + 1}/${quantity} email delivery initiated for ${email} for Stripe payment ${paymentIntent.id}`);
                     } catch (emailError) {
                       console.error(`Failed to initiate ticket ${i + 1} email delivery:`, emailError);
+                    }
+                  }
+
+                  // Decrement inventory and check tier progression
+                  if (ticketId) {
+                    try {
+                      const { TicketDatabaseSync } = await import('./storage');
+                      await TicketDatabaseSync.updateTicketInventory(Number(ticketId), -quantity);
+                    } catch (invErr: any) {
+                      console.error("Failed to update ticket inventory for Stripe payment:", invErr.message);
                     }
                   }
 

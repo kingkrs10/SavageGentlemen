@@ -624,8 +624,23 @@ const EventDetail = () => {
                               <div className="ticket-cutout-r" />
 
                               <div className="flex justify-between items-start mb-2">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                   <h4 className="font-bold text-lg text-white">{ticket.name}</h4>
+                                  {(ticket as any).gender === 'female' && (
+                                    <span className="px-2 py-0.5 rounded-full text-xs font-bold font-mono bg-pink-500/20 text-pink-300 border border-pink-500/40">
+                                      ♀ FEMALE
+                                    </span>
+                                  )}
+                                  {(ticket as any).gender === 'male' && (
+                                    <span className="px-2 py-0.5 rounded-full text-xs font-bold font-mono bg-blue-500/20 text-blue-300 border border-blue-500/40">
+                                      ♂ MALE
+                                    </span>
+                                  )}
+                                  {(ticket as any).gender === 'unisex' && (
+                                    <span className="px-2 py-0.5 rounded-full text-xs font-bold font-mono bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                                      ⚥ UNISEX
+                                    </span>
+                                  )}
                                   {ticket.tierLevel && ticket.tierLevel !== 'standard' && (
                                     <span className="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-gold-500/20 text-gold-300 border border-gold-500/40">
                                       {tierIcons[ticket.tierLevel]} {ticket.tierLevel.toUpperCase()}

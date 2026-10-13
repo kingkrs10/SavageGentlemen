@@ -151,6 +151,21 @@ analyticsRouter.get("/events/:eventId/analytics", async (req: Request, res: Resp
   }
 });
 
+// Get event ticket sales breakdown by gender (Male vs Female vs Unisex)
+analyticsRouter.get("/events/:eventId/ticket-sales-by-gender", async (req: Request, res: Response) => {
+  try {
+    const eventId = parseInt(req.params.eventId);
+    if (isNaN(eventId)) {
+      return res.status(400).json({ message: "Invalid event ID" });
+    }
+    const breakdown = await storage.getTicketSalesByGender(eventId);
+    return res.status(200).json(breakdown);
+  } catch (err) {
+    console.error("Error fetching ticket sales by gender:", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 // Product views tracking
 analyticsRouter.post("/products/:productId/view", async (req: Request, res: Response) => {
   try {
