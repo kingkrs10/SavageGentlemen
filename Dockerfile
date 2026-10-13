@@ -30,6 +30,7 @@ COPY shared/ ./shared/
 COPY client/ ./client/
 COPY server/ ./server/
 COPY attached_assets/ ./attached_assets/
+COPY public/ ./public/
 
 # Build Vite SPA (to dist/public) and server (to dist/index.js)
 RUN npm run build
@@ -65,6 +66,7 @@ COPY --from=builder /app/dist ./dist
 
 # Copy static assets and sub-apps
 COPY client/public/ ./client/public/
+COPY public/ ./public/
 
 # Create runtime directories for samples and uploads
 RUN mkdir -p /app/samples /app/uploads/videos /app/uploads/mixes /app/uploads/lyric-videos
