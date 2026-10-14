@@ -1195,35 +1195,41 @@ export default function AdminPage() {
         credentials: 'include',
       });
 
-      if (!response.ok) throw new Error('Failed to update event');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || `Failed to update event (HTTP ${response.status})`);
+      }
 
-      toast({ title: "AdminEvent Updated", description: `AdminEvent "${eventForm.title}" updated successfully` });
+      toast({ title: "Event Updated", description: `Event "${eventForm.title}" updated successfully` });
       setEventDialogOpen(false);
       setEditingEvent(null);
       resetEventFormState();
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update event:", error);
-      toast({ title: "Error", description: "Failed to update event. Please try again.", variant: "destructive" });
+      toast({ title: "Error", description: error?.message || "Failed to update event. Please try again.", variant: "destructive" });
     }
   };
 
-  // Helper to build FormData for event create/update
+  // Helper to build FormData for event create/update safely
   const buildEventFormData = (): FormData => {
     const formData = new FormData();
-    const priceInCents = Math.round(eventForm.price * 100);
-    const dateTimeString = `${eventForm.date}T${eventForm.time || '00:00:00'}`;
-    const eventDate = new Date(dateTimeString);
+    const rawPrice = typeof eventForm.price === 'number' ? eventForm.price : parseFloat(String(eventForm.price) || '0');
+    const priceInCents = isNaN(rawPrice) ? 0 : Math.round(rawPrice * 100);
+    const timeValue = eventForm.time ? (eventForm.time.includes(':') ? eventForm.time : `${eventForm.time}:00`) : '22:00';
+    const dateTimeString = eventForm.date ? `${eventForm.date}T${timeValue}:00` : new Date().toISOString();
+    const parsedDate = new Date(dateTimeString);
+    const eventDate = isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
 
-    formData.append('title', eventForm.title);
+    formData.append('title', eventForm.title || '');
     formData.append('date', eventDate.toISOString());
     formData.append('location', eventForm.location || 'TBD');
     formData.append('price', priceInCents.toString());
     if (eventForm.description) formData.append('description', eventForm.description);
-    formData.append('category', eventForm.category || 'party');
+    formData.append('category', eventForm.category || 'Nightlife & Caribbean Fete');
     formData.append('featured', String(eventForm.featured));
     formData.append('isSocaPassportEnabled', String(eventForm.isSocaPassportEnabled));
-    formData.append('stampPointsDefault', String(eventForm.stampPointsDefault));
+    formData.append('stampPointsDefault', String(eventForm.stampPointsDefault || 50));
     if (eventForm.countryCode) formData.append('countryCode', eventForm.countryCode);
     if (eventForm.carnivalCircuit) formData.append('carnivalCircuit', eventForm.carnivalCircuit);
 
@@ -1277,14 +1283,27 @@ export default function AdminPage() {
     if (firebaseToken) {
       headers['Authorization'] = `Bearer ${firebaseToken}`;
     }
+    const authToken = localStorage.getItem('authToken');
+    if (authToken && !headers['Authorization']) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
         const user = JSON.parse(storedUser);
         const userData = user?.data?.data || user?.data || user;
-        if (userData?.token) headers['Authorization'] = `Bearer ${userData.token}`;
+        if (userData?.token && !headers['Authorization']) headers['Authorization'] = `Bearer ${userData.token}`;
         if (userData?.id) headers['user-id'] = userData.id.toString();
+        headers['x-user-data'] = JSON.stringify({
+          id: userData?.id,
+          username: userData?.username,
+          role: userData?.role || 'admin'
+        });
       } catch { }
+    }
+    if (!headers['user-id']) {
+      const standaloneUserId = localStorage.getItem('userId');
+      if (standaloneUserId) headers['user-id'] = standaloneUserId;
     }
     return headers;
   };
@@ -1306,16 +1325,19 @@ export default function AdminPage() {
         credentials: 'include',
       });
 
-      if (!response.ok) throw new Error('Failed to create event');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || `Failed to create event (HTTP ${response.status})`);
+      }
       await response.json();
 
-      toast({ title: "AdminEvent Created", description: `AdminEvent "${eventForm.title}" created successfully` });
+      toast({ title: "Event Created", description: `Event "${eventForm.title}" created successfully` });
       setEventDialogOpen(false);
       resetEventFormState();
       queryClient.invalidateQueries({ queryKey: ["/api/events"] });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create event:", error);
-      toast({ title: "Error", description: "Failed to create event. Please try again.", variant: "destructive" });
+      toast({ title: "Error", description: error?.message || "Failed to create event. Please try again.", variant: "destructive" });
     }
   };
 
@@ -2415,8 +2437,11 @@ export default function AdminPage() {
                         <div className="relative rounded-lg overflow-hidden border border-slate-600">
                           <img
                             src={imagePreview || getNormalizedImageUrl(eventForm.imageUrl)}
-                            alt="AdminEvent preview"
+                            alt="Event preview"
                             className="w-full h-40 object-cover"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = "/images/early_bird_official_9x16.jpg";
+                            }}
                           />
                           <button
                             type="button"
@@ -2430,7 +2455,7 @@ export default function AdminPage() {
                         <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-500 rounded-lg cursor-pointer bg-slate-700/50 hover:bg-slate-700 transition-colors">
                           <Upload className="h-8 w-8 text-slate-400 mb-2" />
                           <span className="text-sm text-slate-400">Click to upload image</span>
-                          <span className="text-xs text-slate-500 mt-1">JPG, PNG, GIF, WebP</span>
+                          <span className="text-xs text-slate-500 mt-1">JPG, PNG, GIF, WebP, AVIF, HEIC</span>
                           <input
                             type="file"
                             accept="image/*"
@@ -2439,7 +2464,11 @@ export default function AdminPage() {
                               const file = e.target.files?.[0];
                               if (file) {
                                 setEventImageFile(file);
-                                setImagePreview(URL.createObjectURL(file));
+                                const reader = new FileReader();
+                                reader.onload = (re) => {
+                                  setImagePreview(re.target?.result as string);
+                                };
+                                reader.readAsDataURL(file);
                               }
                             }}
                           />

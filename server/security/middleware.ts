@@ -87,7 +87,7 @@ export const securityHeaders = helmet({
       scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://unpkg.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
-      imgSrc: ["'self'", "data:", "https://i.etsystatic.com", "https://printify.com", "https://*.stripe.com", "https://*.paypal.com", "https:"],
+      imgSrc: ["'self'", "data:", "blob:", "https://i.etsystatic.com", "https://printify.com", "https://*.stripe.com", "https://*.paypal.com", "https:"],
       connectSrc: ["'self'", "ws://localhost:*", "wss://*", "https://api.stripe.com", "https://www.paypal.com", "https://fonts.googleapis.com", "https://fonts.gstatic.com", "https://unpkg.com", "https://*.firebaseio.com", "https://*.googleapis.com"],
       frameSrc: ["'self'", "https://js.stripe.com", "https://www.paypal.com", "https://*.stripe.com"],
       mediaSrc: ["'self'", "https:", "data:", "blob:"],

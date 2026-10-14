@@ -173,14 +173,14 @@ const upload = multer({
     fileSize: 100 * 1024 * 1024, // 100MB limit for videos
   },
   fileFilter: (req, file, cb) => {
-    // Accept images, videos, and audio files for media management
-    if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp|mp4|webm|mov|avi|mkv|m4v|mp3|m4a|wav|aac)$/i)) {
+    // Accept images (including modern mobile/mac formats), videos, and audio files
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp|avif|heic|heif|svg|mp4|webm|mov|avi|mkv|m4v|mp3|m4a|wav|aac)$/i)) {
       return cb(new Error('Only image, video, and audio files are allowed!'), false);
     }
 
     // Also check MIME type for additional security
     const validMimeTypes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/heic', 'image/heif', 'image/svg+xml',
       'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska', 'video/x-m4v',
       'audio/mp4', 'audio/mpeg', 'audio/x-m4a', 'audio/wav', 'audio/aac'
     ];
@@ -3598,13 +3598,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Coerce FormData string values to proper types
-      if (typeof requestData.price === 'string') requestData.price = requestData.price === '' ? null : Number(requestData.price);
+      // Coerce FormData string values to proper types safely (avoiding NaN in integer columns)
+      if (typeof requestData.price === 'string') {
+        const num = Number(requestData.price);
+        requestData.price = (requestData.price === '' || isNaN(num)) ? null : Math.round(num);
+      }
       if (typeof requestData.featured === 'string') requestData.featured = requestData.featured === 'true';
       if (typeof requestData.isSocaPassportEnabled === 'string') requestData.isSocaPassportEnabled = requestData.isSocaPassportEnabled === 'true';
       if (typeof requestData.isPremiumPassport === 'string') requestData.isPremiumPassport = requestData.isPremiumPassport === 'true';
-      if (typeof requestData.stampPointsDefault === 'string') requestData.stampPointsDefault = Number(requestData.stampPointsDefault);
-      if (typeof requestData.checkinRadiusMeters === 'string') requestData.checkinRadiusMeters = Number(requestData.checkinRadiusMeters);
+      if (typeof requestData.stampPointsDefault === 'string') {
+        const num = Number(requestData.stampPointsDefault);
+        requestData.stampPointsDefault = isNaN(num) ? 50 : Math.round(num);
+      }
+      if (typeof requestData.checkinRadiusMeters === 'string') {
+        const num = Number(requestData.checkinRadiusMeters);
+        requestData.checkinRadiusMeters = isNaN(num) ? 200 : Math.round(num);
+      }
 
       // Log the update details
       console.log(`Updating event ${id} with date:`, requestData.date);
@@ -3757,13 +3766,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Coerce FormData string values to proper types
-      if (typeof requestData.price === 'string') requestData.price = requestData.price === '' ? null : Number(requestData.price);
+      // Coerce FormData string values to proper types safely (avoiding NaN in integer columns)
+      if (typeof requestData.price === 'string') {
+        const num = Number(requestData.price);
+        requestData.price = (requestData.price === '' || isNaN(num)) ? null : Math.round(num);
+      }
       if (typeof requestData.featured === 'string') requestData.featured = requestData.featured === 'true';
       if (typeof requestData.isSocaPassportEnabled === 'string') requestData.isSocaPassportEnabled = requestData.isSocaPassportEnabled === 'true';
       if (typeof requestData.isPremiumPassport === 'string') requestData.isPremiumPassport = requestData.isPremiumPassport === 'true';
-      if (typeof requestData.stampPointsDefault === 'string') requestData.stampPointsDefault = Number(requestData.stampPointsDefault);
-      if (typeof requestData.checkinRadiusMeters === 'string') requestData.checkinRadiusMeters = Number(requestData.checkinRadiusMeters);
+      if (typeof requestData.stampPointsDefault === 'string') {
+        const num = Number(requestData.stampPointsDefault);
+        requestData.stampPointsDefault = isNaN(num) ? 50 : Math.round(num);
+      }
+      if (typeof requestData.checkinRadiusMeters === 'string') {
+        const num = Number(requestData.checkinRadiusMeters);
+        requestData.checkinRadiusMeters = isNaN(num) ? 200 : Math.round(num);
+      }
 
       // Log the update details
       console.log(`Updating event ${id} with date:`, requestData.date);
