@@ -79,7 +79,7 @@ export class EventCoordinatorService {
 
     // 4. Start recurring maintenance loop
     this.timer = setInterval(() => {
-      this.runPeriodicCheck().catch((err) => {
+      this.runPeriodicCheck().catch((err: any) => {
         console.error("[EventCoordinator] Periodic maintenance error:", err.message);
       });
     }, this.checkIntervalMs);
@@ -132,23 +132,23 @@ export class EventCoordinatorService {
         const allTickets = await db.select().from(tickets).where(eq(tickets.eventId, event.id)).orderBy(asc(tickets.price));
 
         // Separate admission tickets from table packages
-        const isTable = (t: Ticket) =>
+        const isTable = (t: any) =>
           t.tierLevel === "vip" ||
           t.tierLevel === "ultra_vip" ||
           t.name.toLowerCase().includes("table") ||
           t.name.toLowerCase().includes("bottle") ||
           t.price >= 15000;
 
-        const admissionTickets = allTickets.filter((t) => !isTable(t));
-        const tablePackages = allTickets.filter(isTable);
+        const admissionTickets = allTickets.filter((t: any) => !isTable(t));
+        const tablePackages = allTickets.filter((t: any) => isTable(t));
 
         // 1. Check admission tickets: Ensure initial Free Tier is on sale, or next queued tiers if free is sold out
-        const liveAdmission = admissionTickets.filter((t) => t.isActive && t.status === "on_sale" && (t.remainingQuantity === null || t.remainingQuantity > 0));
+        const liveAdmission = admissionTickets.filter((t: any) => t.isActive && t.status === "on_sale" && (t.remainingQuantity === null || t.remainingQuantity > 0));
 
         if (liveAdmission.length === 0) {
           // Check if Free Unisex tier is available
           const freeTier = admissionTickets.find(
-            (t) => t.price === 0 && t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0)
+            (t: any) => t.price === 0 && t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0)
           );
 
           if (freeTier) {
@@ -166,9 +166,9 @@ export class EventCoordinatorService {
           } else {
             // Free tier already sold out: activate Early Bird Female & Male
             const earlyBirds = admissionTickets.filter(
-              (t) => t.name.toLowerCase().includes("early bird") && t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0)
+              (t: any) => t.name.toLowerCase().includes("early bird") && t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0)
             );
-            const toActivate = earlyBirds.length > 0 ? earlyBirds : admissionTickets.filter(t => t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0)).slice(0, 2);
+            const toActivate = earlyBirds.length > 0 ? earlyBirds : admissionTickets.filter((t: any) => t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0)).slice(0, 2);
             for (const t of toActivate) {
               console.log(`[EventCoordinator] 🎟️ Activating Early Bird Tier: "${t.name}" ($${t.price / 100}) for Event "${event.title}"...`);
               await db
@@ -246,14 +246,14 @@ export class EventCoordinatorService {
       for (const event of eventsToCheck) {
         const allTickets = await db.select().from(tickets).where(eq(tickets.eventId, event.id)).orderBy(asc(tickets.price));
 
-        const isTable = (t: Ticket) =>
+        const isTable = (t: any) =>
           t.tierLevel === "vip" ||
           t.tierLevel === "ultra_vip" ||
           t.name.toLowerCase().includes("table") ||
           t.name.toLowerCase().includes("bottle") ||
           t.price >= 15000;
 
-        const admissionTiers = allTickets.filter((t) => !isTable(t));
+        const admissionTiers = allTickets.filter((t: any) => !isTable(t));
 
         // Mark any sold-out tiers in DB
         for (const tier of admissionTiers) {
@@ -275,20 +275,20 @@ export class EventCoordinatorService {
         }
 
         // Gender queues
-        const isFemale = (t: Ticket) => (t as any).gender === "female" || t.name.toLowerCase().includes("female");
-        const isMale = (t: Ticket) => (t as any).gender === "male" || t.name.toLowerCase().includes("male");
-        const isFree = (t: Ticket) => t.price === 0;
+        const isFemale = (t: any) => (t as any).gender === "female" || t.name.toLowerCase().includes("female");
+        const isMale = (t: any) => (t as any).gender === "male" || t.name.toLowerCase().includes("male");
+        const isFree = (t: any) => t.price === 0;
 
         const freeTier = admissionTiers.find(isFree);
-        const femaleTiers = admissionTiers.filter(isFemale).sort((a, b) => a.price - b.price);
-        const maleTiers = admissionTiers.filter(isMale).sort((a, b) => a.price - b.price);
+        const femaleTiers = admissionTiers.filter(isFemale).sort((a: any, b: any) => a.price - b.price);
+        const maleTiers = admissionTiers.filter(isMale).sort((a: any, b: any) => a.price - b.price);
 
         // CASE 1: Free Unisex Tier Just Sold Out -> Unlock BOTH Early Bird Female and Early Bird Male
         if (freeTier && (freeTier.status === "sold_out" || (freeTier.remainingQuantity !== null && freeTier.remainingQuantity <= 0))) {
           // Check if Female has an active on-sale tier
-          const hasActiveFemale = femaleTiers.some((t) => t.isActive && t.status === "on_sale" && (t.remainingQuantity === null || t.remainingQuantity > 0));
+          const hasActiveFemale = femaleTiers.some((t: any) => t.isActive && t.status === "on_sale" && (t.remainingQuantity === null || t.remainingQuantity > 0));
           if (!hasActiveFemale) {
-            const nextFemale = femaleTiers.find((t) => t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0));
+            const nextFemale = femaleTiers.find((t: any) => t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0));
             if (nextFemale) {
               console.log(`[EventCoordinator] 🚀 Free Tier Sold Out! Auto-activating Female Tier: "${nextFemale.name}" ($${nextFemale.price / 100})`);
               await db
@@ -308,9 +308,9 @@ export class EventCoordinatorService {
           }
 
           // Check if Male has an active on-sale tier
-          const hasActiveMale = maleTiers.some((t) => t.isActive && t.status === "on_sale" && (t.remainingQuantity === null || t.remainingQuantity > 0));
+          const hasActiveMale = maleTiers.some((t: any) => t.isActive && t.status === "on_sale" && (t.remainingQuantity === null || t.remainingQuantity > 0));
           if (!hasActiveMale) {
-            const nextMale = maleTiers.find((t) => t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0));
+            const nextMale = maleTiers.find((t: any) => t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0));
             if (nextMale) {
               console.log(`[EventCoordinator] 🚀 Free Tier Sold Out! Auto-activating Male Tier: "${nextMale.name}" ($${nextMale.price / 100})`);
               await db
@@ -329,9 +329,9 @@ export class EventCoordinatorService {
         }
 
         // CASE 2: Female Tier Progression (Early Bird Female -> General Admission Female -> Late Release Female -> Door Female)
-        const activeFemale = femaleTiers.find((t) => t.isActive && t.status === "on_sale" && (t.remainingQuantity === null || t.remainingQuantity > 0));
+        const activeFemale = femaleTiers.find((t: any) => t.isActive && t.status === "on_sale" && (t.remainingQuantity === null || t.remainingQuantity > 0));
         if (!activeFemale && freeTier?.status === "sold_out") {
-          const nextFemale = femaleTiers.find((t) => t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0));
+          const nextFemale = femaleTiers.find((t: any) => t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0));
           if (nextFemale) {
             console.log(`[EventCoordinator] 🚀 Female tier auto-transition: "${nextFemale.name}" ($${nextFemale.price / 100}) is now LIVE!`);
             await db
@@ -349,9 +349,9 @@ export class EventCoordinatorService {
         }
 
         // CASE 3: Male Tier Progression (Early Bird Male -> General Admission Male -> Late Release Male -> Door Male)
-        const activeMale = maleTiers.find((t) => t.isActive && t.status === "on_sale" && (t.remainingQuantity === null || t.remainingQuantity > 0));
+        const activeMale = maleTiers.find((t: any) => t.isActive && t.status === "on_sale" && (t.remainingQuantity === null || t.remainingQuantity > 0));
         if (!activeMale && freeTier?.status === "sold_out") {
-          const nextMale = maleTiers.find((t) => t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0));
+          const nextMale = maleTiers.find((t: any) => t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0));
           if (nextMale) {
             console.log(`[EventCoordinator] 🚀 Male tier auto-transition: "${nextMale.name}" ($${nextMale.price / 100}) is now LIVE!`);
             await db
