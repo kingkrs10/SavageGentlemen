@@ -1,10 +1,9 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
+import pg from 'pg';
+import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
+import { Pool as NeonPool, neonConfig } from '@neondatabase/serverless';
+import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
 import * as schema from "@shared/schema";
-
-// Configure Neon with WebSocket constructor
-neonConfig.webSocketConstructor = ws;
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -12,12 +11,34 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Create pool with connection options for better error handling
-export const pool = new Pool({ 
-  connectionString: process.env.DATABASE_URL,
-  max: 10,
-  connectionTimeoutMillis: 10000,
-  idleTimeoutMillis: 30000,
-});
+const databaseUrl = process.env.DATABASE_URL;
+const isNeon = databaseUrl.includes('neon.tech');
 
-export const db = drizzle({ client: pool, schema });
+let pool: any;
+let db: any;
+
+if (isNeon) {
+  // Configure Neon with WebSocket constructor
+  neonConfig.webSocketConstructor = ws;
+  pool = new NeonPool({ 
+    connectionString: databaseUrl,
+    max: 10,
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
+  });
+  db = drizzleNeon({ client: pool, schema });
+} else {
+  // Standard PostgreSQL (Coolify, Docker, Local, AWS RDS)
+  const { Pool: PgPool } = pg;
+  const requiresSsl = databaseUrl.includes('sslmode=require') || databaseUrl.includes('ssl=true');
+  pool = new PgPool({ 
+    connectionString: databaseUrl,
+    max: 20,
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
+    ssl: requiresSsl ? { rejectUnauthorized: false } : undefined,
+  });
+  db = drizzlePg({ client: pool, schema });
+}
+
+export { pool, db };
