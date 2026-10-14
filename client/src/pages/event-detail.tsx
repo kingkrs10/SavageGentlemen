@@ -317,17 +317,26 @@ const EventDetail = () => {
                 />
               </div>
             ) : (
-              <div className="relative w-full h-[300px] md:h-[500px]">
-                <LazyImage
-                  src={event.imageUrl || ''}
-                  alt={event.title}
-                  className="w-full h-full"
-                  fallbackSrc={SGFlyerLogoPng}
-                  placeholderColor="#1f2937"
-                  loadingClassName="w-full h-full bg-gray-800 animate-pulse"
-                  objectFit="contain"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+              <div className="relative w-full h-[320px] md:h-[520px] overflow-hidden bg-black/60 flex items-center justify-center">
+                {/* Atmospheric blurred ambient backdrop */}
+                {event.imageUrl && (
+                  <div
+                    className="absolute inset-0 bg-cover bg-center blur-2xl opacity-25 scale-110 pointer-events-none"
+                    style={{ backgroundImage: `url(${getNormalizedImageUrl(event.imageUrl)})` }}
+                  />
+                )}
+                <div className="relative z-10 w-full h-full flex items-center justify-center">
+                  <LazyImage
+                    src={event.imageUrl || ''}
+                    alt={event.title}
+                    className="w-full h-full"
+                    fallbackSrc={SGFlyerLogoPng}
+                    placeholderColor="#1f2937"
+                    loadingClassName="w-full h-full bg-gray-800 animate-pulse"
+                    objectFit="contain"
+                  />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none z-20" />
               </div>
             )}
           </div>

@@ -15,11 +15,11 @@ interface LazyImageProps {
 }
 
 /**
- * LazyImage component for optimized image loading
- * - Only loads images when they come into viewport
- * - Shows a skeleton loader during loading
- * - Provides fallback for failed images
- * - Uses native browser lazy loading
+ * LazyImage component for optimized, resilient image loading.
+ * - Uses native browser lazy loading (never sets broken empty string src)
+ * - Fades in gracefully when loaded
+ * - Checks cached images on mount to avoid stuck skeleton state
+ * - Automatically falls back to fallbackSrc only if primary URL fails
  * - Automatically handles image URL normalization
  */
 export function LazyImage({
@@ -36,49 +36,14 @@ export function LazyImage({
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
-  const [inView, setInView] = useState(false);
   const [attemptedFallback, setAttemptedFallback] = useState(false);
   const [currentSrc, setCurrentSrc] = useState<string | null>(null);
 
-  // Guard against null/undefined src and no fallback
-  if (!src && !fallbackSrc) {
-    return (
-      <div className={`relative w-full h-full ${placeholderColor}`}>
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900" />
-      </div>
-    );
-  }
-
   // Determine the final source URL to use
-  let finalSrc = getNormalizedImageUrl(currentSrc || src || fallbackSrc || '');
+  const targetRaw = currentSrc || src || fallbackSrc || '';
+  const finalSrc = getNormalizedImageUrl(targetRaw);
 
-  // Use Intersection Observer to detect when image is in viewport
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setInView(true);
-          // Once we've started loading the image, we can stop observing
-          if (imgRef.current) {
-            observer.unobserve(imgRef.current);
-          }
-        }
-      },
-      { rootMargin: "200px" } // Start loading when image is 200px from viewport
-    );
-
-    if (imgRef.current) {
-      observer.observe(imgRef.current);
-    }
-
-    return () => {
-      if (imgRef.current) {
-        observer.unobserve(imgRef.current);
-      }
-    };
-  }, []);
-
-  // Reset component state when src changes
+  // Reset component state when the primary source prop changes
   useEffect(() => {
     setIsLoaded(false);
     setError(false);
@@ -86,19 +51,26 @@ export function LazyImage({
     setCurrentSrc(null);
   }, [src]);
 
+  // Check if image is already cached/complete on mount or when finalSrc changes
+  useEffect(() => {
+    if (imgRef.current && imgRef.current.complete && finalSrc) {
+      if (imgRef.current.naturalWidth > 0) {
+        setIsLoaded(true);
+      }
+    }
+  }, [finalSrc]);
+
   // Handle image load success
   const onLoad = () => {
-    // Only show logs in development to avoid console spam in production
     if (process.env.NODE_ENV !== 'production') {
       console.log("Image loaded successfully:", finalSrc);
     }
-
     setIsLoaded(true);
+    setError(false);
   };
 
   // Handle image load error
   const onError = () => {
-    // Only show error in development to avoid console spam in production
     if (process.env.NODE_ENV !== 'production') {
       console.error("Error loading image:", finalSrc);
     }
@@ -106,81 +78,72 @@ export function LazyImage({
     // Try alternative URL formats if this is a local upload and we haven't tried fallbacks yet
     if (src?.includes('uploads/') && !attemptedFallback) {
       setAttemptedFallback(true);
-
-      // Try multiple alternative formats for better compatibility
       let alternativeSrc;
       if (src.startsWith('/uploads/')) {
-        // Try without the leading slash
         alternativeSrc = src.substring(1);
       } else if (src.startsWith('uploads/')) {
-        // Try with a leading slash
         alternativeSrc = `/${src}`;
       } else {
-        // Try with uploads/ prefix
         alternativeSrc = `uploads/${src.replace(/^\/+/, '')}`;
       }
-
       setCurrentSrc(alternativeSrc);
-
-      if (process.env.NODE_ENV !== 'production') {
-        console.log("Trying alternative image URL format:", alternativeSrc);
-      }
       return;
     }
 
+    // If fallbackSrc is available and hasn't been used yet, switch to it
+    const normalizedFallback = fallbackSrc ? getNormalizedImageUrl(fallbackSrc) : '';
+    if (fallbackSrc && currentSrc !== fallbackSrc && finalSrc !== normalizedFallback) {
+      setCurrentSrc(fallbackSrc);
+      setIsLoaded(false);
+      return;
+    }
+
+    // Both primary and fallback failed (or no fallback)
     setError(true);
-    setIsLoaded(true); // Mark as loaded even though it's an error
+    setIsLoaded(true);
   };
+
+  // Guard against completely empty src and no fallback
+  if (!finalSrc && !fallbackSrc) {
+    return (
+      <div className={`relative w-full h-full ${placeholderColor}`}>
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900" />
+      </div>
+    );
+  }
 
   // Compute object-fit style based on prop
   const objectFitClass = `object-${objectFit}`;
 
-  // Log image source for debugging
-  if (process.env.NODE_ENV === 'development') {
-    console.log('LazyImage original src:', src);
-    console.log('LazyImage final src:', finalSrc);
-  }
-
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full overflow-hidden">
       {/* Show skeleton while loading */}
-      {!isLoaded && (
+      {!isLoaded && !error && (
         <Skeleton
           className={`absolute inset-0 ${placeholderColor} ${loadingClassName}`}
         />
       )}
-      
-      {/* Show placeholder if error and NO fallback available */}
-      {error && !fallbackSrc && (
+
+      {/* Show placeholder if error and NO working fallback */}
+      {error && (
         <div className={`absolute inset-0 ${placeholderColor} flex items-center justify-center`}>
           <div className="absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900" />
         </div>
       )}
 
-      {/* Show fallback image if error and fallback available */}
-      {error && fallbackSrc ? (
+      {/* The actual image */}
+      {!error && finalSrc && (
         <img
           ref={imgRef}
-          src={fallbackSrc}
-          alt={alt || "Fallback image"}
-          className={`w-full h-full ${objectFitClass} ${className} transition-opacity duration-300 ${
-            isLoaded ? "opacity-100" : "opacity-0"
-          }`}
-          loading="lazy"
-          onLoad={onLoad}
-        />
-      ) : !error ? (
-        /* The actual image */
-        <img
-          ref={imgRef}
-          src={inView ? finalSrc : ""}
+          src={finalSrc}
           alt={alt}
           className={`${className} ${objectFitClass} ${isLoaded ? "opacity-100" : "opacity-0"} transition-opacity duration-300`}
           onLoad={onLoad}
           onError={onError}
           loading="lazy"
+          decoding="async"
         />
-      ) : null}
+      )}
     </div>
   );
 }
