@@ -13,9 +13,12 @@ This guide walks you through provisioning a self-hosted PostgreSQL database in y
 
 ## 2. Step-by-Step Provisioning (2 Minutes)
 
-### Step 1: Add PostgreSQL Resource in Coolify
-1. Log into your **Coolify Dashboard**.
-2. Open your Project (e.g., `SavageGentlemen`) and select your Production environment.
+### Step 1: Log into Coolify & Add PostgreSQL Resource
+1. Open your **Coolify Dashboard**:
+   - **URL:** [http://2.29.43.46:8000](http://2.29.43.46:8000/login)
+   - **Login Email:** `savgmen@gmail.com`
+   - **Password:** Your Coolify master password *(if forgotten, let me know and I can generate a reset token immediately via SSH)*.
+2. Open your Project (`SavageGentlemen`) and select your Production environment.
 3. Click **+ New Resource** (top right) &rarr; Select **Database** &rarr; Click **PostgreSQL**.
 4. Configure database settings:
    - **Name:** `savage-postgres`
