@@ -127,7 +127,7 @@ export function getFreeTicketsEmailHtml(recipientName: string = 'Soca Family') {
                       ⚡ How the Drop Works:
                     </div>
                     <div style="font-size: 14px; line-height: 1.6; color: #D1D5DB;">
-                      There are strictly <strong style="color: #FFFFFF;">20 free passes</strong> in the vault. The moment pass #20 is claimed, our ticketing engine will <strong style="color: #FFFFFF;">immediately lock the free tier and auto-activate Early Bird pricing</strong> ($20 Female / $25 Male).
+                      There are strictly <strong style="color: #FFFFFF;">20 free passes</strong> in the vault. The moment pass #20 is claimed, our ticketing engine will <strong style="color: #FFFFFF;">immediately lock the free tier and auto-activate Early Bird pricing</strong> ($20 for both Female and Male).
                     </div>
                   </td>
                 </tr>
@@ -212,7 +212,7 @@ export function getFreeTicketsEmailHtml(recipientName: string = 'Soca Family') {
                     <!-- Tiers Progression Matrix -->
                     <div style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed #333333;">
                       <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #9CA3AF; margin-bottom: 10px;">
-                        📊 Tier Progression Schedule:
+                        📊 Tier Progression Schedule (Equal Pricing for Female &amp; Male):
                       </div>
                       <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="font-size: 13px; color: #9CA3AF;">
                         <tr>
@@ -220,16 +220,20 @@ export function getFreeTicketsEmailHtml(recipientName: string = 'Soca Family') {
                           <td align="right" style="padding: 4px 0; color: #10B981; font-weight: 700;">$0.00 (LIVE)</td>
                         </tr>
                         <tr>
-                          <td style="padding: 4px 0;">• Tier 2: Early Bird Female</td>
-                          <td align="right" style="padding: 4px 0; color: #FFFFFF;">$20.00</td>
+                          <td style="padding: 4px 0;">• Tier 2: Early Bird (Female &amp; Male)</td>
+                          <td align="right" style="padding: 4px 0; color: #FFFFFF;">$20.00 each</td>
                         </tr>
                         <tr>
-                          <td style="padding: 4px 0;">• Tier 2: Early Bird Male</td>
-                          <td align="right" style="padding: 4px 0; color: #FFFFFF;">$25.00</td>
+                          <td style="padding: 4px 0;">• Tier 3: General Admission (Female &amp; Male)</td>
+                          <td align="right" style="padding: 4px 0; color: #FFFFFF;">$30.00 each</td>
                         </tr>
                         <tr>
-                          <td style="padding: 4px 0;">• Tier 3: General Admission</td>
-                          <td align="right" style="padding: 4px 0; color: #9CA3AF;">$30 F / $35 M</td>
+                          <td style="padding: 4px 0;">• Tier 4: Late Release (Female &amp; Male)</td>
+                          <td align="right" style="padding: 4px 0; color: #9CA3AF;">$40.00 each</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 4px 0;">• Tier 5: Door Admission (Female &amp; Male)</td>
+                          <td align="right" style="padding: 4px 0; color: #9CA3AF;">$50.00 each</td>
                         </tr>
                         <tr>
                           <td style="padding: 4px 0;">• VIP Bottle Service Tables</td>

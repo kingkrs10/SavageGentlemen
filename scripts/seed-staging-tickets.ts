@@ -93,7 +93,7 @@ async function main() {
       eventId,
       name: 'Early Bird Male Admission',
       description: 'Limited early bird rate for gentlemen. General admission into Move Yuh Rass at The Ainsworth.',
-      price: 2500, // $25
+      price: 2000, // $20 (Same price for male and female)
       quantity: 20,
       remainingQuantity: 20,
       gender: 'male',
@@ -131,7 +131,7 @@ async function main() {
       eventId,
       name: 'General Admission (Male)',
       description: 'Standard admission for gentlemen into Move Yuh Rass. Access to main room, bar, and dancefloor.',
-      price: 3500, // $35
+      price: 3000, // $30 (Same price for male and female)
       quantity: 40,
       remainingQuantity: 40,
       gender: 'male',
@@ -169,7 +169,7 @@ async function main() {
       eventId,
       name: 'Late Release (Male)',
       description: 'Final tier online admission for gentlemen. Lock in your spot before door prices.',
-      price: 4500, // $45
+      price: 4000, // $40 (Same price for male and female)
       quantity: 25,
       remainingQuantity: 25,
       gender: 'male',
@@ -207,7 +207,7 @@ async function main() {
       eventId,
       name: 'Door Admission (Male)',
       description: 'Admission at the door for gentlemen. Subject to venue capacity limit.',
-      price: 6000, // $60
+      price: 5000, // $50 (Same price for male and female)
       quantity: 15,
       remainingQuantity: 15,
       gender: 'male',
