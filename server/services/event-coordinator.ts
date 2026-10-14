@@ -142,27 +142,46 @@ export class EventCoordinatorService {
         const admissionTickets = allTickets.filter((t) => !isTable(t));
         const tablePackages = allTickets.filter(isTable);
 
-        // 1. Check admission tickets: Ensure exactly one live admission tier is on sale
+        // 1. Check admission tickets: Ensure initial Free Tier is on sale, or next queued tiers if free is sold out
         const liveAdmission = admissionTickets.filter((t) => t.isActive && t.status === "on_sale" && (t.remainingQuantity === null || t.remainingQuantity > 0));
 
         if (liveAdmission.length === 0) {
-          // No admission tier is live! Find the first available tier that hasn't sold out
-          const availableTier = admissionTickets.find(
-            (t) => t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0)
+          // Check if Free Unisex tier is available
+          const freeTier = admissionTickets.find(
+            (t) => t.price === 0 && t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0)
           );
 
-          if (availableTier) {
-            console.log(`[EventCoordinator] 🎟️ Activating Tier 1 / Live Tickets: "${availableTier.name}" ($${availableTier.price / 100}) for Event "${event.title}"...`);
+          if (freeTier) {
+            console.log(`[EventCoordinator] 🎟️ Activating Free Member Tier: "${freeTier.name}" ($0) for Event "${event.title}"...`);
             await db
               .update(tickets)
               .set({
                 isActive: true,
                 status: "on_sale",
-                remainingQuantity: availableTier.remainingQuantity ?? availableTier.quantity,
+                remainingQuantity: freeTier.remainingQuantity ?? freeTier.quantity,
                 updatedAt: new Date(),
               })
-              .where(eq(tickets.id, availableTier.id));
+              .where(eq(tickets.id, freeTier.id));
             activatedCount++;
+          } else {
+            // Free tier already sold out: activate Early Bird Female & Male
+            const earlyBirds = admissionTickets.filter(
+              (t) => t.name.toLowerCase().includes("early bird") && t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0)
+            );
+            const toActivate = earlyBirds.length > 0 ? earlyBirds : admissionTickets.filter(t => t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0)).slice(0, 2);
+            for (const t of toActivate) {
+              console.log(`[EventCoordinator] 🎟️ Activating Early Bird Tier: "${t.name}" ($${t.price / 100}) for Event "${event.title}"...`);
+              await db
+                .update(tickets)
+                .set({
+                  isActive: true,
+                  status: "on_sale",
+                  remainingQuantity: t.remainingQuantity ?? t.quantity,
+                  updatedAt: new Date(),
+                })
+                .where(eq(tickets.id, t.id));
+              activatedCount++;
+            }
           }
         }
 
@@ -197,10 +216,14 @@ export class EventCoordinatorService {
   }
 
   /**
-   * Checks if any live tier has sold out. If sold out:
-   * 1. Marks sold-out tier as status: 'sold_out'
-   * 2. Promotes or auto-seeds the next tier to LIVE (status: 'on_sale')
-   * 3. Emails existing ticket holders celebrating their locked-in tickets and sharing the next tier
+   * Checks if any live tier has sold out.
+   * Progression Chain:
+   * 1. Free Unisex Admission (20 tickets) Sells Out -> Auto-activates BOTH Early Bird Female & Early Bird Male
+   * 2. Early Bird Female Sells Out -> Auto-activates General Admission (Female)
+   * 3. Early Bird Male Sells Out -> Auto-activates General Admission (Male)
+   * 4. General Admission Sells Out -> Auto-activates Late Release (Female/Male)
+   * 5. Late Release Sells Out -> Auto-activates Door Admission (Female/Male)
+   * 6. Emails ticket holders celebrating their locked-in tickets
    */
   async checkTierProgression(ticketId?: number): Promise<{ progressed: boolean; soldOutTier?: string; nextTier?: string }> {
     try {
@@ -232,15 +255,11 @@ export class EventCoordinatorService {
 
         const admissionTiers = allTickets.filter((t) => !isTable(t));
 
-        for (let i = 0; i < admissionTiers.length; i++) {
-          const currentTier = admissionTiers[i];
-
-          // Check if current tier is sold out
-          const isSoldOut = currentTier.remainingQuantity !== null && currentTier.remainingQuantity <= 0;
-
-          if (isSoldOut && currentTier.status !== "sold_out") {
-            // Update to sold_out in DB
-            console.log(`[EventCoordinator] 🚨 TIER SOLD OUT: "${currentTier.name}" for "${event.title}"!`);
+        // Mark any sold-out tiers in DB
+        for (const tier of admissionTiers) {
+          const isSoldOut = tier.remainingQuantity !== null && tier.remainingQuantity <= 0;
+          if (isSoldOut && tier.status !== "sold_out") {
+            console.log(`[EventCoordinator] 🚨 TIER SOLD OUT: "${tier.name}" for "${event.title}"!`);
             await db
               .update(tickets)
               .set({
@@ -249,76 +268,103 @@ export class EventCoordinatorService {
                 remainingQuantity: 0,
                 updatedAt: new Date(),
               })
-              .where(eq(tickets.id, currentTier.id));
+              .where(eq(tickets.id, tier.id));
+            tier.status = "sold_out";
+            tier.isActive = false;
+          }
+        }
+
+        // Gender queues
+        const isFemale = (t: Ticket) => (t as any).gender === "female" || t.name.toLowerCase().includes("female");
+        const isMale = (t: Ticket) => (t as any).gender === "male" || t.name.toLowerCase().includes("male");
+        const isFree = (t: Ticket) => t.price === 0;
+
+        const freeTier = admissionTiers.find(isFree);
+        const femaleTiers = admissionTiers.filter(isFemale).sort((a, b) => a.price - b.price);
+        const maleTiers = admissionTiers.filter(isMale).sort((a, b) => a.price - b.price);
+
+        // CASE 1: Free Unisex Tier Just Sold Out -> Unlock BOTH Early Bird Female and Early Bird Male
+        if (freeTier && (freeTier.status === "sold_out" || (freeTier.remainingQuantity !== null && freeTier.remainingQuantity <= 0))) {
+          // Check if Female has an active on-sale tier
+          const hasActiveFemale = femaleTiers.some((t) => t.isActive && t.status === "on_sale" && (t.remainingQuantity === null || t.remainingQuantity > 0));
+          if (!hasActiveFemale) {
+            const nextFemale = femaleTiers.find((t) => t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0));
+            if (nextFemale) {
+              console.log(`[EventCoordinator] 🚀 Free Tier Sold Out! Auto-activating Female Tier: "${nextFemale.name}" ($${nextFemale.price / 100})`);
+              await db
+                .update(tickets)
+                .set({
+                  isActive: true,
+                  status: "on_sale",
+                  remainingQuantity: nextFemale.remainingQuantity ?? nextFemale.quantity,
+                  updatedAt: new Date(),
+                })
+                .where(eq(tickets.id, nextFemale.id));
+              progressed = true;
+              lastSoldOutName = freeTier.name;
+              lastNextTierName = nextFemale.name;
+              await this.emailTicketHoldersAboutNextTier(event, freeTier, nextFemale);
+            }
           }
 
-          if (isSoldOut || currentTier.status === "sold_out") {
-            // Check if there is already a live admission tier on sale
-            const hasActiveOnSale = admissionTiers.some(
-              (t) => t.id !== currentTier.id && t.isActive && t.status === "on_sale" && (t.remainingQuantity === null || t.remainingQuantity > 0)
-            );
-
-            if (!hasActiveOnSale) {
-              // Activate or auto-seed the NEXT tier!
-              const nextTier = admissionTiers.find(
-                (t) => t.id !== currentTier.id && t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0)
-              );
-
-              let activatedNextTier: Ticket | null = null;
-
-              if (nextTier) {
-                // Next staged tier exists: activate it
-                console.log(`[EventCoordinator] 🚀 Auto-transitioning: Next tier "${nextTier.name}" ($${nextTier.price / 100}) is now LIVE!`);
-                const [updated] = await db
-                  .update(tickets)
-                  .set({
-                    isActive: true,
-                    status: "on_sale",
-                    remainingQuantity: nextTier.remainingQuantity ?? nextTier.quantity,
-                    updatedAt: new Date(),
-                  })
-                  .where(eq(tickets.id, nextTier.id))
-                  .returning();
-                activatedNextTier = updated;
-              } else {
-                // No pre-staged tier left: Auto-seed a new tier so ticket sales never stop!
-                const newPrice = currentTier.price + 1000; // +$10 increase
-                const newName = `Late Release Admission (Tier ${admissionTiers.length + 1})`;
-                console.log(`[EventCoordinator] 🌟 Auto-seeding brand new tier: "${newName}" ($${newPrice / 100})...`);
-
-                const [inserted] = await db
-                  .insert(tickets)
-                  .values({
-                    eventId: event.id,
-                    name: newName,
-                    description: `High-demand release for ${event.title}. Lock in your spot before venue doors open.`,
-                    price: newPrice,
-                    quantity: 40,
-                    remainingQuantity: 40,
-                    isActive: true,
-                    status: "on_sale",
-                    tierLevel: "standard",
-                    badgeColor: "#F59E0B",
-                    badgeIcon: "flame",
-                    benefits: ["Guaranteed Entry", "75 Soca Passport Credits"],
-                    includedItems: ["Admission Ticket"],
-                    maxPerPurchase: 6,
-                    salesStartDate: new Date(),
-                    salesEndDate: event.date,
-                  })
-                  .returning();
-                activatedNextTier = inserted;
-              }
-
-              if (activatedNextTier) {
-                progressed = true;
-                lastSoldOutName = currentTier.name;
-                lastNextTierName = activatedNextTier.name;
-
-                // 3. Email existing ticket holders about the tier sellout and next tier release
-                await this.emailTicketHoldersAboutNextTier(event, currentTier, activatedNextTier);
-              }
+          // Check if Male has an active on-sale tier
+          const hasActiveMale = maleTiers.some((t) => t.isActive && t.status === "on_sale" && (t.remainingQuantity === null || t.remainingQuantity > 0));
+          if (!hasActiveMale) {
+            const nextMale = maleTiers.find((t) => t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0));
+            if (nextMale) {
+              console.log(`[EventCoordinator] 🚀 Free Tier Sold Out! Auto-activating Male Tier: "${nextMale.name}" ($${nextMale.price / 100})`);
+              await db
+                .update(tickets)
+                .set({
+                  isActive: true,
+                  status: "on_sale",
+                  remainingQuantity: nextMale.remainingQuantity ?? nextMale.quantity,
+                  updatedAt: new Date(),
+                })
+                .where(eq(tickets.id, nextMale.id));
+              progressed = true;
+              lastNextTierName = `${lastNextTierName} & ${nextMale.name}`;
             }
+          }
+        }
+
+        // CASE 2: Female Tier Progression (Early Bird Female -> General Admission Female -> Late Release Female -> Door Female)
+        const activeFemale = femaleTiers.find((t) => t.isActive && t.status === "on_sale" && (t.remainingQuantity === null || t.remainingQuantity > 0));
+        if (!activeFemale && freeTier?.status === "sold_out") {
+          const nextFemale = femaleTiers.find((t) => t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0));
+          if (nextFemale) {
+            console.log(`[EventCoordinator] 🚀 Female tier auto-transition: "${nextFemale.name}" ($${nextFemale.price / 100}) is now LIVE!`);
+            await db
+              .update(tickets)
+              .set({
+                isActive: true,
+                status: "on_sale",
+                remainingQuantity: nextFemale.remainingQuantity ?? nextFemale.quantity,
+                updatedAt: new Date(),
+              })
+              .where(eq(tickets.id, nextFemale.id));
+            progressed = true;
+            lastNextTierName = nextFemale.name;
+          }
+        }
+
+        // CASE 3: Male Tier Progression (Early Bird Male -> General Admission Male -> Late Release Male -> Door Male)
+        const activeMale = maleTiers.find((t) => t.isActive && t.status === "on_sale" && (t.remainingQuantity === null || t.remainingQuantity > 0));
+        if (!activeMale && freeTier?.status === "sold_out") {
+          const nextMale = maleTiers.find((t) => t.status !== "sold_out" && (t.remainingQuantity === null || t.remainingQuantity > 0));
+          if (nextMale) {
+            console.log(`[EventCoordinator] 🚀 Male tier auto-transition: "${nextMale.name}" ($${nextMale.price / 100}) is now LIVE!`);
+            await db
+              .update(tickets)
+              .set({
+                isActive: true,
+                status: "on_sale",
+                remainingQuantity: nextMale.remainingQuantity ?? nextMale.quantity,
+                updatedAt: new Date(),
+              })
+              .where(eq(tickets.id, nextMale.id));
+            progressed = true;
+            lastNextTierName = nextMale.name;
           }
         }
       }
