@@ -121,7 +121,11 @@ export async function syncUsersFromFirebase(): Promise<SyncStats> {
       `[UserSync] 🏁 Sync complete! Total: ${stats.totalFirebaseUsers} | New: ${stats.syncedNewUsers} | Updated: ${stats.updatedExistingUsers} | Unchanged: ${stats.skippedUsers}`
     );
   } catch (error: any) {
-    console.error("[UserSync] Fatal error during user synchronization:", error);
+    if (error?.message?.includes("Could not load the default credentials") || error?.code === "app/invalid-credential") {
+      console.log("[UserSync] ℹ️ Firebase Admin service account not configured; skipping live Firebase Auth sync (community users loaded from persistent database seed).");
+    } else {
+      console.error("[UserSync] Note during user synchronization:", error.message || error);
+    }
     stats.errors.push(error.message);
   }
 

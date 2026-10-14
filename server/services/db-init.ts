@@ -5,6 +5,8 @@ import { magazineBot } from "../workers/magazine-bot";
 import { socialAutoPoster } from "../workers/social-autoposter";
 import { eventCoordinatorService } from "./event-coordinator";
 import { cleanTitle, cleanCaption, isDuplicateStory } from "@shared/text-sanitizer";
+import crypto from "crypto";
+import { RESTORED_COMMUNITY_MEMBERS } from "./restored-users";
 
 /**
  * Self-healing database initialization.
@@ -113,6 +115,57 @@ export async function initializeDatabaseTables(): Promise<void> {
       console.log("[DBInit] ✅ Primary admin account krsone12 verified and active.");
     } catch (adminErr: any) {
       console.error("[DBInit] Admin account sync note:", adminErr.message);
+    }
+
+    // 4.5 Ensure historical community members, attendees, and registered users exist
+    try {
+      let addedCount = 0;
+      for (const m of RESTORED_COMMUNITY_MEMBERS) {
+        const cleanEmail = m.email.toLowerCase().trim();
+        const cleanUsername = m.username;
+        const cleanDisplayName = m.displayName;
+        const fbId = m.firebaseId || null;
+        const pwdHash = crypto.createHash("sha256").update(cleanEmail + "Savage2026!").digest("hex");
+
+        const existing = await db.execute(sql`
+          SELECT id FROM users WHERE LOWER(email) = ${cleanEmail} OR LOWER(username) = ${cleanUsername} LIMIT 1;
+        `);
+
+        let userId: number;
+        if (existing.rows.length === 0) {
+          const insertRes = await db.execute(sql`
+            INSERT INTO users (username, password, display_name, email, role, is_guest, is_pro, firebase_id, created_at, updated_at)
+            VALUES (${cleanUsername}, ${pwdHash}, ${cleanDisplayName}, ${cleanEmail}, 'user', false, false, ${fbId}, NOW(), NOW())
+            RETURNING id;
+          `);
+          userId = (insertRes.rows[0] as any).id;
+          addedCount++;
+        } else {
+          userId = (existing.rows[0] as any).id;
+        }
+
+        // Ensure Soca Passport profile
+        await db.execute(sql`
+          INSERT INTO passport_profiles (user_id, handle, total_points, current_tier, created_at, updated_at)
+          VALUES (${userId}, ${cleanUsername}, 100, 'BRONZE', NOW(), NOW())
+          ON CONFLICT (user_id) DO NOTHING;
+        `);
+
+        // Ensure email subscriber entry
+        await db.execute(sql`
+          INSERT INTO email_subscribers (email, first_name, status, source, user_id, created_at, updated_at)
+          VALUES (${cleanEmail}, ${cleanDisplayName.split(' ')[0]}, 'active', ${m.source}, ${userId}, NOW(), NOW())
+          ON CONFLICT DO NOTHING;
+        `);
+      }
+
+      if (addedCount > 0) {
+        console.log(`[DBInit] 👥 Restored and seeded ${addedCount} community members into database.`);
+      } else {
+        console.log(`[DBInit] ✅ Community members verified (${RESTORED_COMMUNITY_MEMBERS.length} active in database).`);
+      }
+    } catch (usersHealErr: any) {
+      console.error("[DBInit] Community user self-healing note:", usersHealErr.message);
     }
 
     // 5. Seed default high-converting viral ads for all 5 site placements if empty

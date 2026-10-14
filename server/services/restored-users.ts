@@ -1,0 +1,381 @@
+export interface RestoredCommunityMember {
+  username: string;
+  email: string;
+  displayName: string;
+  firebaseId: string | null;
+  source: string;
+}
+
+export const RESTORED_COMMUNITY_MEMBERS: RestoredCommunityMember[] = [
+  {
+    "username": "k_w",
+    "email": "djkrss1@gmail.com",
+    "displayName": "K W",
+    "firebaseId": "0TZysyhYlZN0hVLcTPTxgAwOYQM2",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "semoy_de_four",
+    "email": "defoursemoy@gmail.com",
+    "displayName": "Semoy De Four",
+    "firebaseId": "0a53n5cQxgax0scH3z8vo9sF1gL2",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "osvaldoriveradej",
+    "email": "osvaldoriveradejesus@gmail.com",
+    "displayName": "osvaldoriveradejesus",
+    "firebaseId": "2J8arb8s4bYXlgIDl8GtsGEQYRD3",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "testuser28117",
+    "email": "testuser28117@example.com",
+    "displayName": "testuser28117",
+    "firebaseId": "3M1Unjl12uNOKzwagGOXO7T932g2",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "semoy_de_fou_1",
+    "email": "semoy2024@gmail.com",
+    "displayName": "Semoy De Four",
+    "firebaseId": "4qGPOqbrzJRNPpn0tLQO5gabfzU2",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "rochelle_mcsween",
+    "email": "rmcsween4@gmail.com",
+    "displayName": "Rochelle Mcsween",
+    "firebaseId": "4ySzFUckJ4a1bz0KFlV4TZyw2Zt1",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "hello_tenika",
+    "email": "hello.tenika@gmail.com",
+    "displayName": "hello.tenika",
+    "firebaseId": "8el8gKHyF6YYoriwvmw7vjTfp5w1",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "maika_cooke",
+    "email": "maikacooke2@gmail.com",
+    "displayName": "Maika Cooke",
+    "firebaseId": "AxZjQPMbKOQEBEytqenMuS9h3Nr1",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "poly_demo",
+    "email": "heuristix@hotmail.com",
+    "displayName": "Poly Demo",
+    "firebaseId": "CcUYBr897aQiUZRYMkHZM1Am3HB3",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "christinalynch83",
+    "email": "christinalynch833@gmail.com",
+    "displayName": "christinalynch833",
+    "firebaseId": "GEibLAbKZRZQ3TkoJvGoD1ByR7A2",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "vee_wash",
+    "email": "viannawashington@gmail.com",
+    "displayName": "Vee Wash",
+    "firebaseId": "GT9uX3Ikc8drVkocpzXoOE6IQFp2",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "kris_washington",
+    "email": "kris.washington@me.com",
+    "displayName": "kris.washington",
+    "firebaseId": "Kr2TUbPiOYUCoDxyOhodpq6818H3",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "shauntel_pierre",
+    "email": "shaunteljunk@gmail.com",
+    "displayName": "Shauntel Pierre",
+    "firebaseId": "RIyOk1vvP1gRVk05PyUzksWiO8I2",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "cmentore",
+    "email": "cmentore36@gmail.com",
+    "displayName": "cmentore",
+    "firebaseId": "VNAeLJ7mNsYxhhWsujoTluC3JHm2",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "daniella_m_adoni",
+    "email": "daniellaadonis@gmail.com",
+    "displayName": "Daniella M. Adonis",
+    "firebaseId": "XOzdUNzerPbJMNacmdB3nt3oCqN2",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "b_edwards",
+    "email": "bedwards0711@gmail.com",
+    "displayName": "B Edwards",
+    "firebaseId": "XWijhIeZxoP2FU6o3qWtHqijwfu1",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "ednah_s",
+    "email": "ednah.t.c.sibanda@gmail.com",
+    "displayName": "Ednah S",
+    "firebaseId": "YFqkE8bteKcogQGrOXooListIWr1",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "test",
+    "email": "test@test.com",
+    "displayName": "test",
+    "firebaseId": "YlmUusxiAYXOEIqJB8mSWUkxOzO2",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "reyanna_m",
+    "email": "reyrey6300@gmail.com",
+    "displayName": "Reyanna M",
+    "firebaseId": "g4cuMgIIInOtIk5ylp1D0Fv6SWD3",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "rodney",
+    "email": "zorosasuke201@gmail.com",
+    "displayName": "Rodney",
+    "firebaseId": "oAuKMl3Eg5QSNzoY5qwspnE0ImH2",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "maika_cooke_1",
+    "email": "maikacooke@gmail.com",
+    "displayName": "Maika Cooke",
+    "firebaseId": "q3xmpdLR2jasGBnSmQSDEUKfxR02",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "carolyn_franklin",
+    "email": "stylistblossom@gmail.com",
+    "displayName": "Carolyn Franklin",
+    "firebaseId": "rmUq7QdgBDabiz3684RElsXLgBr2",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "smooth_drea",
+    "email": "andreabaptiste21@gmail.com",
+    "displayName": "Smooth Drea",
+    "firebaseId": "vgAx4MTAGHgAu0E8cjUH1MlWooF2",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "la_e_greene",
+    "email": "la.e.greene@gmail.com",
+    "displayName": "la.e.greene",
+    "firebaseId": "zba2sOUwGJbTDCV4fBLeieXUFU03",
+    "source": "Firebase Auth"
+  },
+  {
+    "username": "michael_hilliman",
+    "email": "luga.ea@gmail.com",
+    "displayName": "Michael Hilliman",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "brandon_parrish",
+    "email": "bdparrish@live.com",
+    "displayName": "Brandon Parrish",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "jumoke_charles",
+    "email": "jumoke.charles1@gmail.com",
+    "displayName": "Jumoke Charles",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "jordan_tapia",
+    "email": "jordan.tapia133@gmail.com",
+    "displayName": "Jordan Tapia",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "samantha_marchan",
+    "email": "smarchan1892@gmail.com",
+    "displayName": "Samantha Marchan",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "lawrence_campbel",
+    "email": "lcampbell973@gmail.com",
+    "displayName": "Lawrence Campbell",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "brandon_white",
+    "email": "brandonwhite2020@gmail.com",
+    "displayName": "Brandon White",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "jeff_gee",
+    "email": "jeffvisualarts@gmail.com",
+    "displayName": "Jeff Gee",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "jeff_campbell",
+    "email": "campbelljeff18@gmail.com",
+    "displayName": "JEFF CAMPBELL",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "janelle_clayton",
+    "email": "clayton7j@gmail.com",
+    "displayName": "Janelle Clayton",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "indira_singh",
+    "email": "empressinde@icloud.com",
+    "displayName": "Indira Singh",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "jaye_dee",
+    "email": "queenj101@gmail.com",
+    "displayName": "Jaye Dee",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "janaye_williams",
+    "email": "janayeimani@gmail.com",
+    "displayName": "Janaye Williams",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "ruben_jean-bapti",
+    "email": "ianess550@gmail.com",
+    "displayName": "Ruben Jean-Baptiste",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "nadialine_moody",
+    "email": "nadialine.moody@yahoo.com",
+    "displayName": "Nadialine Moody",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "carlton_carty_jr",
+    "email": "carlton.cartyjr@gmail.com",
+    "displayName": "Carlton Carty Jr",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "jasmine_moore",
+    "email": "jazzybrown35@gmail.com",
+    "displayName": "Jasmine Moore",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "wanda_morose",
+    "email": "wandamorose12@gmail.com",
+    "displayName": "Wanda Morose",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "paulette_marks",
+    "email": "paulettemarks@gmail.com",
+    "displayName": "Paulette Marks",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "denise_williams",
+    "email": "d.mindful1@gmail.com",
+    "displayName": "Denise Williams",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "kea_coleman",
+    "email": "xolove0711xo@gmail.com",
+    "displayName": "Kea Coleman",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "shauntel_pie_1",
+    "email": "shauntelp90210@gmail.com",
+    "displayName": "Shauntel Pierre",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "tiffany_sobers",
+    "email": "sobers34@gmail.com",
+    "displayName": "Tiffany Sobers",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "jeremy_parchment",
+    "email": "jparch77@gmail.com",
+    "displayName": "Jeremy Parchment",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "gerrie_cummings",
+    "email": "gerriemcummings@gmail.com",
+    "displayName": "Gerrie Cummings",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "zaratu_umar",
+    "email": "zaratuu@gmail.com",
+    "displayName": "Zaratu Umar",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "odetta_arthur",
+    "email": "samath8975@aol.com",
+    "displayName": "ODETTA ARTHUR",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "emmanuela_jean-b",
+    "email": "ejeanbaptiste92@yahoo.com",
+    "displayName": "Emmanuela Jean-Baptiste",
+    "firebaseId": null,
+    "source": "RIR Attendee"
+  },
+  {
+    "username": "greene_e_lati",
+    "email": "greene.e.lati@gmail.com",
+    "displayName": "greene.e.lati",
+    "firebaseId": null,
+    "source": "Ticket Purchaser"
+  }
+];
