@@ -1,5 +1,6 @@
 import { db } from "../db";
-import { sql } from "drizzle-orm";
+import { sql, eq, ilike } from "drizzle-orm";
+import { events, tickets, siteSettings } from "@shared/schema";
 import { magazineBot } from "../workers/magazine-bot";
 import { socialAutoPoster } from "../workers/social-autoposter";
 import { eventCoordinatorService } from "./event-coordinator";
@@ -242,6 +243,312 @@ export async function initializeDatabaseTables(): Promise<void> {
       await socialAutoPoster.init();
     } catch (postErr: any) {
       console.error("[DBInit] ⚠️ Error starting SocialAutoPoster:", postErr.message);
+    }
+
+    // 8.5 Autonomous Self-Healing: Verify and restore MOVE YUH RASS Event & Ticket Tiers
+    try {
+      console.log("[DBInit] 🎟️ Verifying events and ticket tiers in database...");
+
+      // Ensure tickets_live_enabled setting exists and defaults to 'true'
+      const liveGateRow = await db.select().from(siteSettings).where(eq(siteSettings.key, "tickets_live_enabled")).limit(1);
+      if (liveGateRow.length === 0) {
+        await db.insert(siteSettings).values({
+          key: "tickets_live_enabled",
+          value: "true",
+          description: "Controls whether ticket sales are live or locked in staging mode",
+        });
+        console.log("[DBInit] ✅ Created site setting 'tickets_live_enabled' = 'true'.");
+      }
+
+      // Check if MOVE YUH RASS or any upcoming event exists
+      const existingEvents = await db.select().from(events).where(ilike(events.title, "%move%yuh%"));
+      let eventId: number;
+
+      if (existingEvents.length === 0) {
+        console.log("[DBInit] 🚀 Auto-healing: Primary event 'MOVE YUH RASS' missing from database. Seeding now...");
+        const [newEvent] = await db.insert(events).values({
+          title: "MOVE YUH RASS",
+          description: "When de bass rumble and de riddim take over, yuh have no choice but to move. Savage Gentlemen presents MOVE YUH RASS — an unapologetic explosion of authentic Caribbean energy, sound, and culture. We bringing pure carnival vibes with non-stop Soca, raw Dancehall heat, and infectious Afrobeats commanded by top-tier selectors. Grab yuh team, rep yuh island, hoist yuh flag high, and prepare for high-octane waistline pressure all night long. Premium bottle service tables available. Lock in and stay ready — official tickets dropping soon. Don't stick!",
+          date: new Date("2026-11-27T22:00:00-05:00"),
+          time: "22:00",
+          endTime: "02:30",
+          duration: 270,
+          location: "The Ainsworth, 310 Sinatra Dr, Hoboken, NJ 07030",
+          price: 2000,
+          currency: "USD",
+          imageUrl: "/images/early_bird_official_9x16.jpg",
+          additionalImages: [
+            "/images/sexy_waterfront_fete_square.jpg",
+            "/images/sexy_waterfront_fete_story.jpg",
+            "/images/vip_bottle_service_flyer_1790806993340.jpg",
+            "/images/cyber_carnival_poster_9x16.jpg"
+          ],
+          category: "Nightlife & Caribbean Fete",
+          featured: true,
+          organizerName: "Savage Gentlemen",
+          organizerEmail: "info@savgent.com",
+          isSocaPassportEnabled: true,
+          stampPointsDefault: 75,
+          isPremiumPassport: true,
+          countryCode: "US",
+          carnivalCircuit: "Hoboken / NYC Caribbean Circuit",
+          venueLatitude: "40.7408",
+          venueLongitude: "-74.0270",
+          checkinRadiusMeters: 250,
+          updatedAt: new Date(),
+        }).returning({ id: events.id });
+        eventId = newEvent.id;
+        console.log(`[DBInit] ✅ Auto-healed: Created MOVE YUH RASS event (ID: ${eventId}).`);
+      } else {
+        eventId = existingEvents[0].id;
+        // Verify image and featured state
+        if (!existingEvents[0].featured || !existingEvents[0].imageUrl) {
+          await db.update(events).set({
+            featured: true,
+            imageUrl: existingEvents[0].imageUrl || "/images/early_bird_official_9x16.jpg",
+            updatedAt: new Date(),
+          }).where(eq(events.id, eventId));
+        }
+      }
+
+      // Check if ticket tiers exist for this event
+      const existingTickets = await db.select().from(tickets).where(eq(tickets.eventId, eventId));
+      if (existingTickets.length === 0) {
+        console.log(`[DBInit] 🎟️ Auto-healing: Seeding 11 ticket tiers for Event ID ${eventId}...`);
+        const stagedTiers = [
+          {
+            eventId,
+            name: "Free Unisex Admission",
+            description: "Complimentary unisex RSVP admission before 11:30 PM. Very limited (20 tickets total). Arrive early.",
+            price: 0,
+            quantity: 20,
+            remainingQuantity: 20,
+            gender: "unisex",
+            tierLevel: "standard",
+            badgeColor: "#06B6D4",
+            badgeIcon: "sparkles",
+            benefits: ["Complimentary Admission before 11:30 PM", "75 Soca Passport Credits", "Guaranteed Entry with Early Arrival"],
+            includedItems: ["Complimentary Admission Ticket"],
+            maxPerPurchase: 2,
+            isActive: true,
+            status: "on_sale",
+            salesStartDate: new Date("2026-10-16T00:00:00-04:00"),
+            salesEndDate: new Date("2026-11-27T23:30:00-05:00"),
+          },
+          {
+            eventId,
+            name: "Early Bird Female Admission",
+            description: "Limited early bird rate for ladies. General admission into Move Yuh Rass at The Ainsworth.",
+            price: 2000,
+            quantity: 30,
+            remainingQuantity: 30,
+            gender: "female",
+            tierLevel: "standard",
+            badgeColor: "#EC4899",
+            badgeIcon: "sparkles",
+            benefits: ["Express Entry line before 11 PM", "75 Soca Passport Credits", "Guaranteed Entry"],
+            includedItems: ["Female Admission Ticket"],
+            maxPerPurchase: 4,
+            isActive: false,
+            status: "off_sale",
+            salesStartDate: new Date("2026-10-16T00:00:00-04:00"),
+            salesEndDate: new Date("2026-10-29T23:59:59-04:00"),
+          },
+          {
+            eventId,
+            name: "Early Bird Male Admission",
+            description: "Limited early bird rate for gentlemen. General admission into Move Yuh Rass at The Ainsworth.",
+            price: 2000,
+            quantity: 20,
+            remainingQuantity: 20,
+            gender: "male",
+            tierLevel: "standard",
+            badgeColor: "#3B82F6",
+            badgeIcon: "sparkles",
+            benefits: ["Express Entry line before 11 PM", "75 Soca Passport Credits", "Guaranteed Entry"],
+            includedItems: ["Male Admission Ticket"],
+            maxPerPurchase: 4,
+            isActive: false,
+            status: "off_sale",
+            salesStartDate: new Date("2026-10-16T00:00:00-04:00"),
+            salesEndDate: new Date("2026-10-29T23:59:59-04:00"),
+          },
+          {
+            eventId,
+            name: "General Admission (Female)",
+            description: "Official ladies admission into Move Yuh Rass at The Ainsworth waterfront Hoboken.",
+            price: 3000,
+            quantity: 50,
+            remainingQuantity: 50,
+            gender: "female",
+            tierLevel: "standard",
+            badgeColor: "#F43F5E",
+            badgeIcon: "flame",
+            benefits: ["General Admission Entry", "75 Soca Passport Credits"],
+            includedItems: ["Female General Admission Ticket"],
+            maxPerPurchase: 6,
+            isActive: false,
+            status: "off_sale",
+            salesStartDate: new Date("2026-10-16T00:00:00-04:00"),
+            salesEndDate: new Date("2026-11-20T23:59:59-05:00"),
+          },
+          {
+            eventId,
+            name: "General Admission (Male)",
+            description: "Official gentlemen admission into Move Yuh Rass at The Ainsworth waterfront Hoboken.",
+            price: 3000,
+            quantity: 40,
+            remainingQuantity: 40,
+            gender: "male",
+            tierLevel: "standard",
+            badgeColor: "#2563EB",
+            badgeIcon: "flame",
+            benefits: ["General Admission Entry", "75 Soca Passport Credits"],
+            includedItems: ["Male General Admission Ticket"],
+            maxPerPurchase: 6,
+            isActive: false,
+            status: "off_sale",
+            salesStartDate: new Date("2026-10-16T00:00:00-04:00"),
+            salesEndDate: new Date("2026-11-20T23:59:59-05:00"),
+          },
+          {
+            eventId,
+            name: "Late Release (Female)",
+            description: "Final tier online passes for ladies before door admission.",
+            price: 4000,
+            quantity: 25,
+            remainingQuantity: 25,
+            gender: "female",
+            tierLevel: "standard",
+            badgeColor: "#D946EF",
+            badgeIcon: "zap",
+            benefits: ["Guaranteed Late Release Entry", "75 Soca Passport Credits"],
+            includedItems: ["Late Release Ticket"],
+            maxPerPurchase: 4,
+            isActive: false,
+            status: "off_sale",
+            salesStartDate: new Date("2026-11-21T00:00:00-05:00"),
+            salesEndDate: new Date("2026-11-27T20:00:00-05:00"),
+          },
+          {
+            eventId,
+            name: "Late Release (Male)",
+            description: "Final tier online passes for gentlemen before door admission.",
+            price: 4000,
+            quantity: 25,
+            remainingQuantity: 25,
+            gender: "male",
+            tierLevel: "standard",
+            badgeColor: "#1D4ED8",
+            badgeIcon: "zap",
+            benefits: ["Guaranteed Late Release Entry", "75 Soca Passport Credits"],
+            includedItems: ["Late Release Ticket"],
+            maxPerPurchase: 4,
+            isActive: false,
+            status: "off_sale",
+            salesStartDate: new Date("2026-11-21T00:00:00-05:00"),
+            salesEndDate: new Date("2026-11-27T20:00:00-05:00"),
+          },
+          {
+            eventId,
+            name: "Door Admission (Female)",
+            description: "Door rate for ladies subject to venue capacity.",
+            price: 5000,
+            quantity: 15,
+            remainingQuantity: 15,
+            gender: "female",
+            tierLevel: "standard",
+            badgeColor: "#6B7280",
+            badgeIcon: "ticket",
+            benefits: ["At-the-Door Entry", "75 Soca Passport Credits"],
+            includedItems: ["Door Entry Pass"],
+            maxPerPurchase: 2,
+            isActive: false,
+            status: "off_sale",
+            salesStartDate: new Date("2026-11-27T22:00:00-05:00"),
+            salesEndDate: new Date("2026-11-28T02:00:00-05:00"),
+          },
+          {
+            eventId,
+            name: "Door Admission (Male)",
+            description: "Door rate for gentlemen subject to venue capacity.",
+            price: 5000,
+            quantity: 15,
+            remainingQuantity: 15,
+            gender: "male",
+            tierLevel: "standard",
+            badgeColor: "#4B5563",
+            badgeIcon: "ticket",
+            benefits: ["At-the-Door Entry", "75 Soca Passport Credits"],
+            includedItems: ["Door Entry Pass"],
+            maxPerPurchase: 2,
+            isActive: false,
+            status: "off_sale",
+            salesStartDate: new Date("2026-11-27T22:00:00-05:00"),
+            salesEndDate: new Date("2026-11-28T02:00:00-05:00"),
+          },
+          {
+            eventId,
+            name: "Solo Table Package (1 Bottle + 2 Tickets)",
+            description: "Includes reserved lounge table, 1 premium bottle of your choice, and 2 admission tickets.",
+            price: 25000,
+            quantity: 6,
+            remainingQuantity: 6,
+            gender: "unisex",
+            tierLevel: "vip",
+            badgeColor: "#8B5CF6",
+            badgeIcon: "glass",
+            benefits: [
+              "Reserved Lounge Table",
+              "1 Premium Bottle (Hennessy, Ciroc, Casamigos, or D'Ussé)",
+              "2 VIP Admission Tickets Included",
+              "VIP Skip-the-Line Entry",
+              "Dedicated Cocktail Server",
+              "150 Soca Passport Credits"
+            ],
+            includedItems: ["1 Premium Bottle", "Reserved Table", "2 VIP Tickets"],
+            maxPerPurchase: 2,
+            isActive: true,
+            status: "on_sale",
+            salesStartDate: new Date("2026-10-16T00:00:00-04:00"),
+            salesEndDate: new Date("2026-11-27T23:00:00-05:00"),
+          },
+          {
+            eventId,
+            name: "Duo Table Package (2 Bottles + 4 Tickets)",
+            description: "Ultimate VIP experience. Includes prime reserved table, 2 premium bottles, and 4 admission tickets.",
+            price: 40000,
+            quantity: 6,
+            remainingQuantity: 6,
+            gender: "unisex",
+            tierLevel: "ultra_vip",
+            badgeColor: "#D4AF37",
+            badgeIcon: "crown",
+            benefits: [
+              "Prime Placement Reserved Table",
+              "2 Premium Bottles of your choice",
+              "4 VIP Admission Tickets Included",
+              "VIP Priority Skip-the-Line Entry",
+              "Dedicated Cocktail Server & Mixers",
+              "Sparkler Bottle Presentation",
+              "250 Soca Passport Credits"
+            ],
+            includedItems: ["2 Premium Bottles", "Reserved VIP Table", "4 VIP Tickets", "Mixers"],
+            maxPerPurchase: 2,
+            isActive: true,
+            status: "on_sale",
+            salesStartDate: new Date("2026-10-16T00:00:00-04:00"),
+            salesEndDate: new Date("2026-11-27T23:00:00-05:00"),
+          },
+        ];
+
+        for (const tier of stagedTiers) {
+          await db.insert(tickets).values(tier as any);
+        }
+        console.log(`[DBInit] ✅ Successfully seeded ${stagedTiers.length} ticket tiers for Event ID ${eventId}.`);
+      }
+    } catch (eventHealErr: any) {
+      console.error("[DBInit] Event auto-healing note:", eventHealErr.message);
     }
 
     // 9. Initialize and start the Autonomous Event Coordinator & Connoisseur Engine

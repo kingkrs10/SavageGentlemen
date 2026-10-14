@@ -84,9 +84,12 @@ const Events = () => {
         ) : featuredEvent ? (
           <>
             <img
-              src={getNormalizedImageUrl(featuredEvent.imageUrl)}
+              src={getNormalizedImageUrl(featuredEvent.imageUrl) || "/images/early_bird_official_9x16.jpg"}
               alt={featuredEvent.title}
               className="w-full h-64 object-cover"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = "/images/early_bird_official_9x16.jpg";
+              }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
             <div className="absolute bottom-0 left-0 p-6">

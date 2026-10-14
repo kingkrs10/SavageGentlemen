@@ -4,6 +4,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { securityHeaders, auditLogger, sanitizeInput } from './security/middleware';
 import { syncUsersFromFirebase } from './services/user-sync';
 import { initializeDatabaseTables } from './services/db-init';
@@ -58,7 +59,33 @@ app.use((req, res, next) => {
 });
 app.use(express.urlencoded({ extended: false }));
 
-// Dedicated HTTP 206 Byte-Range Video Streaming for WebKit (Safari, iOS Safari, DuckDuckGo Mac) & Cloudflare
+// Dedicated Universal HTTP 206 Byte-Range Video Streaming for WebKit (Safari, iOS Safari, DuckDuckGo Mac) & Cloudflare
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const ext = path.extname(req.path).toLowerCase();
+  if (ext === '.mp4' || ext === '.webm' || ext === '.mov' || ext === '.m4v') {
+    const filename = path.basename(req.path);
+    const candidatePaths = [
+      path.join(process.cwd(), 'dist', 'public', req.path),
+      path.join(process.cwd(), 'dist', 'public', 'assets', filename),
+      path.join(process.cwd(), 'client', 'src', 'assets', 'videos', filename),
+      path.join(process.cwd(), 'client', 'public', 'videos', filename),
+      path.join(process.cwd(), 'client', 'public', req.path),
+      path.join(process.cwd(), 'public', 'videos', filename),
+      path.join(process.cwd(), 'public', req.path),
+      path.join(process.cwd(), 'uploads', 'videos', filename),
+      path.join(process.cwd(), 'uploads', req.path.replace(/^\/uploads\//, '')),
+    ];
+
+    for (const p of candidatePaths) {
+      if (fs.existsSync(p) && fs.statSync(p).isFile()) {
+        return streamVideoFile(p, req, res);
+      }
+    }
+  }
+  next();
+});
+
+// Explicit API routes for video streaming compatibility
 app.get([
   '/uploads/videos/:filename',
   '/api/video-stream/:filename',

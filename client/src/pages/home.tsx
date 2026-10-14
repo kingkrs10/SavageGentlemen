@@ -80,6 +80,8 @@ const Home = () => {
   });
 
   const heroVideoRef = useRef<HTMLVideoElement>(null);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
 
   const resolveStreamingUrl = (url?: string) => {
     if (!url) return "";
@@ -91,6 +93,7 @@ const Home = () => {
   };
 
   const heroVideoSource = resolveStreamingUrl(videoConfig?.videoUrl) || BrandVideo;
+  const heroPoster = videoConfig?.posterUrl || "/images/anim3d_twilight_waterfront_final.jpg";
 
   useEffect(() => {
     const video = heroVideoRef.current;
@@ -98,12 +101,17 @@ const Home = () => {
     video.muted = true;
     video.defaultMuted = true;
     video.playsInline = true;
-    video.load();
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch((err) => {
-        console.warn("[HeroVideo] Autoplay prevented by browser:", err);
-      });
+
+    // Graceful autoplay handling without abortive .load() call
+    if (video.paused) {
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          setVideoLoaded(true);
+        }).catch((err) => {
+          console.warn("[HeroVideo] Autoplay deferred or restricted by browser:", err);
+        });
+      }
     }
   }, [heroVideoSource]);
 
@@ -186,28 +194,41 @@ const Home = () => {
       <section className="relative w-full min-h-[90vh] md:min-h-screen rounded-3xl overflow-hidden border border-gold-500/20 shadow-2xl bg-obsidian flex flex-col justify-between p-6 md:p-12">
         {/* Background Cinematic Video with Obsidian & Amber Gradient */}
         <div className="absolute inset-0 z-0">
-          <video
-            ref={heroVideoRef}
-            key={heroVideoSource}
-            src={heroVideoSource}
-            className="w-full h-full object-cover transition-opacity duration-700"
+          {/* Fallback poster background layer (always rendered to eliminate black voids) */}
+          <div
+            className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
             style={{
-              opacity: videoConfig?.opacity ?? 0.45,
+              backgroundImage: `url(${heroPoster})`,
+              opacity: videoLoaded && !videoFailed ? 0 : 0.45,
               filter: `brightness(${videoConfig?.brightness ?? 90}%) contrast(${videoConfig?.contrast ?? 125}%)`,
-              mixBlendMode: videoConfig?.blendMode || "normal",
-            }}
-            autoPlay
-            muted
-            loop
-            playsInline
-            poster={videoConfig?.posterUrl || undefined}
-            onLoadedMetadata={(e) => {
-              const v = e.target as HTMLVideoElement;
-              v.muted = true;
-              v.defaultMuted = true;
-              v.play().catch(() => {});
             }}
           />
+
+          {!videoFailed && (
+            <video
+              ref={heroVideoRef}
+              key={heroVideoSource}
+              src={heroVideoSource}
+              className={`w-full h-full object-cover transition-opacity duration-700 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
+              style={{
+                opacity: videoLoaded ? (videoConfig?.opacity ?? 0.45) : 0,
+                filter: `brightness(${videoConfig?.brightness ?? 90}%) contrast(${videoConfig?.contrast ?? 125}%)`,
+                mixBlendMode: videoConfig?.blendMode || "normal",
+              }}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              poster={heroPoster}
+              onPlaying={() => setVideoLoaded(true)}
+              onLoadedData={() => setVideoLoaded(true)}
+              onError={(e) => {
+                console.warn("[HeroVideo] Video stream loading issue, showing cinematic poster:", e);
+                setVideoFailed(true);
+              }}
+            />
+          )}
           {/* Cyber Gradients & Radial Warm Glows */}
           <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/70 to-transparent" />
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-gold-500/15 rounded-full blur-[120px] pointer-events-none" />
@@ -394,6 +415,9 @@ const Home = () => {
                       src={art.featuredImage || "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&h=500&fit=crop"}
                       alt={art.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&h=500&fit=crop";
+                      }}
                     />
                     <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
                       <span className="px-2.5 py-0.5 rounded-full bg-obsidian/90 text-[10px] font-mono font-bold uppercase tracking-wider text-gold-300 border border-gold-500/30 flex items-center gap-1">
@@ -457,9 +481,12 @@ const Home = () => {
               >
                 <div className="relative w-full h-64 rounded-xl overflow-hidden bg-obsidian-dark">
                   <img
-                    src={item.images[0]}
+                    src={item.images?.[0] || "/images/flux_full_realism_flyer.jpg"}
                     alt={item.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = "/images/flux_full_realism_flyer.jpg";
+                    }}
                   />
                   <div className="absolute bottom-2 right-2 bg-obsidian/90 px-3 py-1 rounded-full border border-gold-500/30 font-mono text-sm font-bold text-gold-400">
                     ${(item.price / 100).toFixed(2)}

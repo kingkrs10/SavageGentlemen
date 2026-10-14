@@ -67,6 +67,8 @@ COPY --from=builder /app/dist ./dist
 # Copy static assets and sub-apps
 COPY client/public/ ./client/public/
 COPY public/ ./public/
+COPY scripts/ ./scripts/
+COPY shared/ ./shared/
 
 # Create runtime directories for samples and uploads
 RUN mkdir -p /app/samples /app/uploads/videos /app/uploads/mixes /app/uploads/lyric-videos

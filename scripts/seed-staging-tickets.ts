@@ -43,6 +43,41 @@ async function main() {
       checkinRadiusMeters: 250,
       updatedAt: new Date(),
     }).where(eq(events.id, eventId));
+  } else {
+    console.log('✨ Creating new MOVE YUH RASS event in database...');
+    const [newEvent] = await db.insert(events).values({
+      title: 'MOVE YUH RASS',
+      description: 'When de bass rumble and de riddim take over, yuh have no choice but to move. Savage Gentlemen presents MOVE YUH RASS — an unapologetic explosion of authentic Caribbean energy, sound, and culture. We bringing pure carnival vibes with non-stop Soca, raw Dancehall heat, and infectious Afrobeats commanded by top-tier selectors. Grab yuh team, rep yuh island, hoist yuh flag high, and prepare for high-octane waistline pressure all night long. Premium bottle service tables available. Lock in and stay ready — official tickets dropping soon. Don\'t stick!',
+      date: new Date('2026-11-27T22:00:00-05:00'),
+      time: '22:00',
+      endTime: '02:30',
+      duration: 270,
+      location: 'The Ainsworth, 310 Sinatra Dr, Hoboken, NJ 07030',
+      price: 2000,
+      currency: 'USD',
+      imageUrl: '/images/early_bird_official_9x16.jpg',
+      additionalImages: [
+        '/images/sexy_waterfront_fete_square.jpg',
+        '/images/sexy_waterfront_fete_story.jpg',
+        '/images/vip_bottle_service_flyer_1790806993340.jpg',
+        '/images/cyber_carnival_poster_9x16.jpg'
+      ],
+      category: 'Nightlife & Caribbean Fete',
+      featured: true,
+      organizerName: 'Savage Gentlemen',
+      organizerEmail: 'info@savgent.com',
+      isSocaPassportEnabled: true,
+      stampPointsDefault: 75,
+      isPremiumPassport: true,
+      countryCode: 'US',
+      carnivalCircuit: 'Hoboken / NYC Caribbean Circuit',
+      venueLatitude: '40.7408',
+      venueLongitude: '-74.0270',
+      checkinRadiusMeters: 250,
+      updatedAt: new Date(),
+    }).returning({ id: events.id });
+    eventId = newEvent.id;
+    console.log(`✨ Successfully created MOVE YUH RASS with ID: ${eventId}`);
   }
 
   // 2. Clear any existing tickets to ensure clean staging
