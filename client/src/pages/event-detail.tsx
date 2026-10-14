@@ -674,67 +674,82 @@ const EventDetail = () => {
                                 <p className="text-sm text-white/70 mb-3">{ticket.description}</p>
                               )}
 
-                              {/* Advanced Features Display */}
-                              {(ticket.benefits?.length > 0 || ticket.includedItems?.length > 0 || ticket.earlyAccess || ticket.meetGreet || ticket.backstageAccess) && (
-                                <div className="mb-3 p-3 bg-gray-50 rounded-md">
-                                  <h5 className="font-medium text-sm mb-2">What's Included:</h5>
-                                  <div className="grid grid-cols-1 gap-1 text-sm">
-                                    {ticket.benefits?.map((benefit, index) => (
-                                      <div key={index} className="flex items-center gap-1">
-                                        <span className="text-green-600">✓</span>
-                                        <span>{benefit}</span>
-                                      </div>
-                                    ))}
-                                    {ticket.includedItems?.map((item, index) => (
-                                      <div key={index} className="flex items-center gap-1">
-                                        <span className="text-blue-600">•</span>
-                                        <span>{item}</span>
-                                      </div>
-                                    ))}
-                                    {ticket.earlyAccess && (
-                                      <div className="flex items-center gap-1">
-                                        <span className="text-purple-600">⚡</span>
-                                        <span>Early Access Entry</span>
-                                      </div>
-                                    )}
-                                    {ticket.meetGreet && (
-                                      <div className="flex items-center gap-1">
-                                        <span className="text-pink-600">🤝</span>
-                                        <span>Meet & Greet Access</span>
-                                      </div>
-                                    )}
-                                    {ticket.backstageAccess && (
-                                      <div className="flex items-center gap-1">
-                                        <span className="text-orange-600">🎭</span>
-                                        <span>Backstage Access</span>
-                                      </div>
-                                    )}
-                                    {ticket.prioritySupport && (
-                                      <div className="flex items-center gap-1">
-                                        <span className="text-red-600">🚨</span>
-                                        <span>Priority Support</span>
-                                      </div>
-                                    )}
-                                    {ticket.exclusiveContent && (
-                                      <div className="flex items-center gap-1">
-                                        <span className="text-indigo-600">📱</span>
-                                        <span>Exclusive Content Access</span>
-                                      </div>
+                              {/* Compact Dark-Glass Features Display */}
+                              {(() => {
+                                const perksList: { icon: string; text: string; color: string }[] = [];
+                                if (Array.isArray(ticket.benefits)) {
+                                  ticket.benefits.forEach((b: string) => {
+                                    if (b && typeof b === 'string') {
+                                      perksList.push({ icon: '✓', text: b, color: 'text-emerald-400' });
+                                    }
+                                  });
+                                }
+                                if (Array.isArray(ticket.includedItems)) {
+                                  ticket.includedItems.forEach((item: string) => {
+                                    if (item && typeof item === 'string') {
+                                      // Avoid duplicating if already present in benefits
+                                      if (!perksList.some(p => p.text.toLowerCase() === item.toLowerCase())) {
+                                        perksList.push({ icon: '•', text: item, color: 'text-gold-400' });
+                                      }
+                                    }
+                                  });
+                                }
+                                if (ticket.earlyAccess) perksList.push({ icon: '⚡', text: 'Early Access Entry', color: 'text-amber-400' });
+                                if (ticket.meetGreet) perksList.push({ icon: '🤝', text: 'Meet & Greet Access', color: 'text-pink-400' });
+                                if (ticket.backstageAccess) perksList.push({ icon: '🎭', text: 'Backstage Access', color: 'text-orange-400' });
+                                if (ticket.prioritySupport) perksList.push({ icon: '🚨', text: 'Priority Support', color: 'text-red-400' });
+                                if (ticket.exclusiveContent) perksList.push({ icon: '📱', text: 'Exclusive Content Access', color: 'text-indigo-400' });
+
+                                if (perksList.length === 0) return null;
+
+                                const initialPerks = perksList.slice(0, 2);
+                                const remainingPerks = perksList.slice(2);
+
+                                return (
+                                  <div className="mb-3 p-2.5 bg-black/40 border border-white/10 rounded-lg">
+                                    <div className="space-y-1">
+                                      {initialPerks.map((p, idx) => (
+                                        <div key={idx} className="flex items-start gap-1.5 text-xs text-zinc-300 leading-tight">
+                                          <span className={`${p.color} flex-shrink-0 font-bold`}>{p.icon}</span>
+                                          <span className="line-clamp-1">{p.text}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+
+                                    {remainingPerks.length > 0 && (
+                                      <details className="group mt-1.5 pt-1.5 border-t border-white/5">
+                                        <summary className="cursor-pointer text-[11px] font-semibold text-gold-400/90 hover:text-gold-300 flex items-center justify-between list-none select-none transition-colors">
+                                          <span>+{remainingPerks.length} more included</span>
+                                          <span className="text-[10px] group-open:rotate-180 transition-transform duration-200">▼</span>
+                                        </summary>
+                                        <div className="space-y-1 mt-1.5">
+                                          {remainingPerks.map((p, idx) => (
+                                            <div key={idx} className="flex items-start gap-1.5 text-xs text-zinc-300/90 leading-tight">
+                                              <span className={`${p.color} flex-shrink-0 font-bold`}>{p.icon}</span>
+                                              <span>{p.text}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </details>
                                     )}
                                   </div>
-                                </div>
-                              )}
+                                );
+                              })()}
 
-                              {/* Transfer and Refund Policy */}
-                              <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
-                                <span className={`flex items-center gap-1 ${ticket.transferable ? 'text-green-600' : 'text-red-600'}`}>
+                              {/* Transfer and Refund Policy (Compact) */}
+                              <div className="flex items-center gap-3 text-[11px] text-zinc-400 mb-3">
+                                <span className={`flex items-center gap-1 ${ticket.transferable ? 'text-emerald-400' : 'text-rose-400'}`}>
                                   {ticket.transferable ? '✓' : '✗'} {ticket.transferable ? 'Transferable' : 'Non-transferable'}
                                 </span>
-                                <span className={`flex items-center gap-1 ${ticket.refundable ? 'text-green-600' : 'text-red-600'}`}>
+                                <span className="text-white/20">•</span>
+                                <span className={`flex items-center gap-1 ${ticket.refundable ? 'text-emerald-400' : 'text-rose-400'}`}>
                                   {ticket.refundable ? '✓' : '✗'} {ticket.refundable ? 'Refundable' : 'Non-refundable'}
                                 </span>
                                 {ticket.seatingPriority && ticket.seatingPriority !== 'general' && (
-                                  <span className="text-blue-600">🪑 {ticket.seatingPriority} seating</span>
+                                  <>
+                                    <span className="text-white/20">•</span>
+                                    <span className="text-amber-400 font-mono text-[10px] uppercase">🪑 {ticket.seatingPriority}</span>
+                                  </>
                                 )}
                               </div>
 
