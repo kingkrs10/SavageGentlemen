@@ -2,8 +2,10 @@ export interface RestoredCommunityMember {
   username: string;
   email: string;
   displayName: string;
+  role?: string;
   firebaseId: string | null;
   source: string;
+  createdAt?: string | null;
 }
 
 export const RESTORED_COMMUNITY_MEMBERS: RestoredCommunityMember[] = [
@@ -11,371 +13,684 @@ export const RESTORED_COMMUNITY_MEMBERS: RestoredCommunityMember[] = [
     "username": "k_w",
     "email": "djkrss1@gmail.com",
     "displayName": "K W",
+    "role": "user",
     "firebaseId": "0TZysyhYlZN0hVLcTPTxgAwOYQM2",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
     "username": "semoy_de_four",
     "email": "defoursemoy@gmail.com",
     "displayName": "Semoy De Four",
+    "role": "user",
     "firebaseId": "0a53n5cQxgax0scH3z8vo9sF1gL2",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
     "username": "osvaldoriveradej",
     "email": "osvaldoriveradejesus@gmail.com",
     "displayName": "osvaldoriveradejesus",
+    "role": "user",
     "firebaseId": "2J8arb8s4bYXlgIDl8GtsGEQYRD3",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
     "username": "testuser28117",
     "email": "testuser28117@example.com",
     "displayName": "testuser28117",
+    "role": "user",
     "firebaseId": "3M1Unjl12uNOKzwagGOXO7T932g2",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
     "username": "semoy_de_fou_1",
     "email": "semoy2024@gmail.com",
     "displayName": "Semoy De Four",
+    "role": "user",
     "firebaseId": "4qGPOqbrzJRNPpn0tLQO5gabfzU2",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
     "username": "rochelle_mcsween",
     "email": "rmcsween4@gmail.com",
     "displayName": "Rochelle Mcsween",
+    "role": "user",
     "firebaseId": "4ySzFUckJ4a1bz0KFlV4TZyw2Zt1",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
     "username": "hello_tenika",
     "email": "hello.tenika@gmail.com",
     "displayName": "hello.tenika",
+    "role": "user",
     "firebaseId": "8el8gKHyF6YYoriwvmw7vjTfp5w1",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
     "username": "maika_cooke",
     "email": "maikacooke2@gmail.com",
     "displayName": "Maika Cooke",
+    "role": "user",
     "firebaseId": "AxZjQPMbKOQEBEytqenMuS9h3Nr1",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
     "username": "poly_demo",
     "email": "heuristix@hotmail.com",
     "displayName": "Poly Demo",
+    "role": "user",
     "firebaseId": "CcUYBr897aQiUZRYMkHZM1Am3HB3",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
     "username": "christinalynch83",
     "email": "christinalynch833@gmail.com",
     "displayName": "christinalynch833",
+    "role": "user",
     "firebaseId": "GEibLAbKZRZQ3TkoJvGoD1ByR7A2",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
-    "username": "vee_wash",
+    "username": "VWASHI12",
     "email": "viannawashington@gmail.com",
-    "displayName": "Vee Wash",
+    "displayName": "VWASHI12",
+    "role": "user",
     "firebaseId": "GT9uX3Ikc8drVkocpzXoOE6IQFp2",
-    "source": "Firebase Auth"
+    "source": "Verified Registered Member",
+    "createdAt": "2026-05-15T21:34:30.799Z"
   },
   {
     "username": "kris_washington",
     "email": "kris.washington@me.com",
     "displayName": "kris.washington",
+    "role": "user",
     "firebaseId": "Kr2TUbPiOYUCoDxyOhodpq6818H3",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
-    "username": "shauntel_pierre",
+    "username": "Shauntelp9210",
     "email": "shaunteljunk@gmail.com",
-    "displayName": "Shauntel Pierre",
+    "displayName": "Shauntel",
+    "role": "user",
     "firebaseId": "RIyOk1vvP1gRVk05PyUzksWiO8I2",
-    "source": "Firebase Auth"
+    "source": "Verified Registered Member",
+    "createdAt": "2026-05-10T04:59:07.947Z"
   },
   {
     "username": "cmentore",
     "email": "cmentore36@gmail.com",
     "displayName": "cmentore",
+    "role": "user",
     "firebaseId": "VNAeLJ7mNsYxhhWsujoTluC3JHm2",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
     "username": "daniella_m_adoni",
     "email": "daniellaadonis@gmail.com",
     "displayName": "Daniella M. Adonis",
+    "role": "user",
     "firebaseId": "XOzdUNzerPbJMNacmdB3nt3oCqN2",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
     "username": "b_edwards",
     "email": "bedwards0711@gmail.com",
     "displayName": "B Edwards",
+    "role": "user",
     "firebaseId": "XWijhIeZxoP2FU6o3qWtHqijwfu1",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
     "username": "ednah_s",
     "email": "ednah.t.c.sibanda@gmail.com",
     "displayName": "Ednah S",
+    "role": "user",
     "firebaseId": "YFqkE8bteKcogQGrOXooListIWr1",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
     "username": "test",
     "email": "test@test.com",
     "displayName": "test",
+    "role": "user",
     "firebaseId": "YlmUusxiAYXOEIqJB8mSWUkxOzO2",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
     "username": "reyanna_m",
     "email": "reyrey6300@gmail.com",
     "displayName": "Reyanna M",
+    "role": "user",
     "firebaseId": "g4cuMgIIInOtIk5ylp1D0Fv6SWD3",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
-    "username": "rodney",
+    "username": "Rodney_SG",
     "email": "zorosasuke201@gmail.com",
-    "displayName": "Rodney",
+    "displayName": "HotRod",
+    "role": "admin",
     "firebaseId": "oAuKMl3Eg5QSNzoY5qwspnE0ImH2",
-    "source": "Firebase Auth"
+    "source": "Platform Administrator",
+    "createdAt": "2026-04-02T21:42:28.083Z"
   },
   {
     "username": "maika_cooke_1",
     "email": "maikacooke@gmail.com",
     "displayName": "Maika Cooke",
+    "role": "user",
     "firebaseId": "q3xmpdLR2jasGBnSmQSDEUKfxR02",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
     "username": "carolyn_franklin",
     "email": "stylistblossom@gmail.com",
     "displayName": "Carolyn Franklin",
+    "role": "user",
     "firebaseId": "rmUq7QdgBDabiz3684RElsXLgBr2",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
     "username": "smooth_drea",
     "email": "andreabaptiste21@gmail.com",
     "displayName": "Smooth Drea",
+    "role": "user",
     "firebaseId": "vgAx4MTAGHgAu0E8cjUH1MlWooF2",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
     "username": "la_e_greene",
     "email": "la.e.greene@gmail.com",
     "displayName": "la.e.greene",
+    "role": "user",
     "firebaseId": "zba2sOUwGJbTDCV4fBLeieXUFU03",
-    "source": "Firebase Auth"
+    "source": "Firebase Auth",
+    "createdAt": null
   },
   {
     "username": "michael_hilliman",
     "email": "luga.ea@gmail.com",
     "displayName": "Michael Hilliman",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "brandon_parrish",
     "email": "bdparrish@live.com",
     "displayName": "Brandon Parrish",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "jumoke_charles",
     "email": "jumoke.charles1@gmail.com",
     "displayName": "Jumoke Charles",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "jordan_tapia",
     "email": "jordan.tapia133@gmail.com",
     "displayName": "Jordan Tapia",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "samantha_marchan",
     "email": "smarchan1892@gmail.com",
     "displayName": "Samantha Marchan",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "lawrence_campbel",
     "email": "lcampbell973@gmail.com",
     "displayName": "Lawrence Campbell",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "brandon_white",
     "email": "brandonwhite2020@gmail.com",
     "displayName": "Brandon White",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "jeff_gee",
     "email": "jeffvisualarts@gmail.com",
     "displayName": "Jeff Gee",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "jeff_campbell",
     "email": "campbelljeff18@gmail.com",
     "displayName": "JEFF CAMPBELL",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "janelle_clayton",
     "email": "clayton7j@gmail.com",
     "displayName": "Janelle Clayton",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "indira_singh",
     "email": "empressinde@icloud.com",
     "displayName": "Indira Singh",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "jaye_dee",
     "email": "queenj101@gmail.com",
     "displayName": "Jaye Dee",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "janaye_williams",
     "email": "janayeimani@gmail.com",
     "displayName": "Janaye Williams",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "ruben_jean-bapti",
     "email": "ianess550@gmail.com",
     "displayName": "Ruben Jean-Baptiste",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "nadialine_moody",
     "email": "nadialine.moody@yahoo.com",
     "displayName": "Nadialine Moody",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "carlton_carty_jr",
     "email": "carlton.cartyjr@gmail.com",
     "displayName": "Carlton Carty Jr",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "jasmine_moore",
     "email": "jazzybrown35@gmail.com",
     "displayName": "Jasmine Moore",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "wanda_morose",
     "email": "wandamorose12@gmail.com",
     "displayName": "Wanda Morose",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "paulette_marks",
     "email": "paulettemarks@gmail.com",
     "displayName": "Paulette Marks",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "denise_williams",
     "email": "d.mindful1@gmail.com",
     "displayName": "Denise Williams",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "kea_coleman",
     "email": "xolove0711xo@gmail.com",
     "displayName": "Kea Coleman",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "shauntel_pie_1",
     "email": "shauntelp90210@gmail.com",
     "displayName": "Shauntel Pierre",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
-    "username": "tiffany_sobers",
+    "username": "sober_t",
     "email": "sobers34@gmail.com",
-    "displayName": "Tiffany Sobers",
+    "displayName": "sobers_t",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "Verified Registered Member",
+    "createdAt": "2026-04-13T18:39:55.093Z"
   },
   {
     "username": "jeremy_parchment",
     "email": "jparch77@gmail.com",
     "displayName": "Jeremy Parchment",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "gerrie_cummings",
     "email": "gerriemcummings@gmail.com",
     "displayName": "Gerrie Cummings",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "zaratu_umar",
     "email": "zaratuu@gmail.com",
     "displayName": "Zaratu Umar",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "odetta_arthur",
     "email": "samath8975@aol.com",
     "displayName": "ODETTA ARTHUR",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
     "username": "emmanuela_jean-b",
     "email": "ejeanbaptiste92@yahoo.com",
     "displayName": "Emmanuela Jean-Baptiste",
+    "role": "user",
     "firebaseId": null,
-    "source": "RIR Attendee"
+    "source": "RIR Attendee",
+    "createdAt": null
   },
   {
-    "username": "greene_e_lati",
+    "username": "LaG",
     "email": "greene.e.lati@gmail.com",
-    "displayName": "greene.e.lati",
+    "displayName": "LaG",
+    "role": "user",
     "firebaseId": null,
-    "source": "Ticket Purchaser"
+    "source": "Verified Registered Member",
+    "createdAt": "2026-05-15T22:05:23.862Z"
+  },
+  {
+    "username": "krsone12",
+    "email": "savgmen@gmail.com",
+    "displayName": "KingKrs",
+    "role": "admin",
+    "firebaseId": null,
+    "source": "Platform Administrator",
+    "createdAt": "2026-03-30T21:46:51.894Z"
+  },
+  {
+    "username": "SavGent",
+    "email": "info@savgent.com",
+    "displayName": "SavGent",
+    "role": "admin",
+    "firebaseId": null,
+    "source": "Platform Administrator",
+    "createdAt": "2026-03-30T23:46:12.574Z"
+  },
+  {
+    "username": "s2nice",
+    "email": "shanices814@gmail.com",
+    "displayName": "Shay",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-04-03T07:22:49.353Z"
+  },
+  {
+    "username": "Grimreapa01",
+    "email": "bill11225@yahoo.com",
+    "displayName": "Grim",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-04-09T02:17:39.307Z"
+  },
+  {
+    "username": "Npeters",
+    "email": "natashapeters65@yahoo.com",
+    "displayName": "Ms. IamGT",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-04-10T18:03:30.233Z"
+  },
+  {
+    "username": "Asian_Trini",
+    "email": "karishmaa_@hotmail.com",
+    "displayName": "Karishma",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-04-12T20:02:17.889Z"
+  },
+  {
+    "username": "Karishma",
+    "email": "twentytwokapparel@hotmail.com",
+    "displayName": "Karishma",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-04-13T17:02:02.994Z"
+  },
+  {
+    "username": "Jess_Singh",
+    "email": "jessie.m.singh@gmail.com",
+    "displayName": "Jess",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-04-14T00:22:48.610Z"
+  },
+  {
+    "username": "Onicka3",
+    "email": "pemonemo3@gmail.com",
+    "displayName": "Pemo jones",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-04-15T09:25:55.302Z"
+  },
+  {
+    "username": "patriciaassanah",
+    "email": "passanah@jcboe.org",
+    "displayName": "Patricia",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-04-19T23:49:31.850Z"
+  },
+  {
+    "username": "Siarrah__",
+    "email": "siarrah.rajpaul@icloud.com",
+    "displayName": "Siarrah",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-04-22T20:51:40.407Z"
+  },
+  {
+    "username": "Gmilligan",
+    "email": "gmilligan4@gmail.com",
+    "displayName": "Gmilly",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-04-27T04:31:34.635Z"
+  },
+  {
+    "username": "ChunLi",
+    "email": "malika.springer23@gmail.com",
+    "displayName": "ChunLi",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-04-27T04:39:56.816Z"
+  },
+  {
+    "username": "Browneyes83",
+    "email": "melissamohan0802@yahoo.com",
+    "displayName": "08/02/1983",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-05-02T20:57:00.006Z"
+  },
+  {
+    "username": "JussBuss",
+    "email": "justbus38@yahoo.com",
+    "displayName": "Jussbuss",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-05-07T01:08:33.590Z"
+  },
+  {
+    "username": "Myrilla",
+    "email": "myrilla85.m@gmail.com",
+    "displayName": "Myrilla",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-05-09T23:02:45.141Z"
+  },
+  {
+    "username": "Kellythompson73",
+    "email": "kellythompson73@gmail.com",
+    "displayName": "Kelly",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-05-16T02:41:46.375Z"
+  },
+  {
+    "username": "Vicki",
+    "email": "vickisaidit@gmail.com",
+    "displayName": "VickiJ",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-05-16T10:24:05.250Z"
+  },
+  {
+    "username": "Lbradsh4",
+    "email": "gt2jersey@yahoo.com",
+    "displayName": "Lloyd",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-05-16T20:40:20.335Z"
+  },
+  {
+    "username": "Kay",
+    "email": "kandralakhan3@gmail.com",
+    "displayName": "Kandra Lakhan",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-05-17T04:09:06.065Z"
+  },
+  {
+    "username": "Kyle_Coonjah",
+    "email": "kyle1coonjah@gmail.com",
+    "displayName": "KyleC",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-05-17T15:20:53.715Z"
+  },
+  {
+    "username": "idreamofjeanna",
+    "email": "jeannadorval@yahoo.com",
+    "displayName": "Jeanna Dorval",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-05-17T19:27:20.274Z"
+  },
+  {
+    "username": "arylexx5",
+    "email": "aryelalex@aol.com",
+    "displayName": "Aryel Alexis",
+    "role": "user",
+    "firebaseId": null,
+    "source": "Verified Registered Member",
+    "createdAt": "2026-05-20T18:22:45.574Z"
   }
 ];
