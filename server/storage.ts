@@ -175,7 +175,7 @@ import {
   InsertSiteSetting
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gt, gte, sql, lte, lt, isNotNull, not, inArray, or } from "drizzle-orm";
+import { eq, desc, asc, and, gt, gte, sql, lte, lt, isNotNull, not, inArray, or } from "drizzle-orm";
 import crypto from "crypto";
 
 // Interface for storage operations
@@ -318,6 +318,7 @@ export interface IStorage {
   getPublicTicketsByEventId(eventId: number): Promise<Ticket[]>;
   updateTicket(id: number, ticketData: Partial<InsertTicket>): Promise<Ticket | undefined>;
   updateTicketDirect(id: number, data: Record<string, any>): Promise<Ticket | undefined>;
+  updateTicketStatus(id: number, isActive: boolean, status?: string): Promise<boolean>;
 
   // Ticket purchase operations
   createTicketPurchase(ticketPurchase: InsertTicketPurchase): Promise<TicketPurchase>;
@@ -1459,6 +1460,16 @@ export class MemStorage implements IStorage {
     
     this.tickets.set(id, updatedTicket);
     return updatedTicket;
+  }
+
+  async updateTicketStatus(id: number, isActive: boolean, status?: string): Promise<boolean> {
+    const ticket = this.tickets.get(id);
+    if (!ticket) return false;
+    ticket.isActive = isActive;
+    ticket.status = status || (isActive ? 'on_sale' : 'off_sale');
+    ticket.updatedAt = new Date();
+    this.tickets.set(id, ticket);
+    return true;
   }
 
   async createTicket(ticketData: InsertTicket): Promise<Ticket> {
@@ -3901,10 +3912,25 @@ export class DatabaseStorage implements IStorage {
       // Create a clean update record by removing the id if it exists
       const { id: _, updatedAt, ...restOfData } = data;
       
-      const dataToUpdate = {
+      const dataToUpdate: any = {
         ...restOfData,
         updatedAt: updatedAt || new Date()
       };
+
+      // Sanitize timestamp fields so postgres doesn't fail on empty strings
+      if (dataToUpdate.salesStartDate === "" || dataToUpdate.salesStartDate === undefined) {
+        dataToUpdate.salesStartDate = null;
+      } else if (typeof dataToUpdate.salesStartDate === 'string') {
+        const d = new Date(dataToUpdate.salesStartDate);
+        dataToUpdate.salesStartDate = isNaN(d.getTime()) ? null : d;
+      }
+
+      if (dataToUpdate.salesEndDate === "" || dataToUpdate.salesEndDate === undefined) {
+        dataToUpdate.salesEndDate = null;
+      } else if (typeof dataToUpdate.salesEndDate === 'string') {
+        const d = new Date(dataToUpdate.salesEndDate);
+        dataToUpdate.salesEndDate = isNaN(d.getTime()) ? null : d;
+      }
 
       const [updatedTicket] = await db
         .update(tickets)
@@ -3940,11 +3966,22 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateTicketStatus(id: number, isActive: boolean): Promise<boolean> {
+  async updateTicketStatus(id: number, isActive: boolean, status?: string): Promise<boolean> {
     try {
+      const updateData: any = {
+        isActive,
+        updatedAt: new Date()
+      };
+      if (status) {
+        updateData.status = status;
+      } else {
+        // Automatically sync status with isActive if not explicitly given
+        updateData.status = isActive ? 'on_sale' : 'off_sale';
+      }
+
       const [updated] = await db
         .update(tickets)
-        .set({ isActive, updatedAt: new Date() })
+        .set(updateData)
         .where(eq(tickets.id, id))
         .returning();
       
@@ -3978,7 +4015,8 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(tickets)
-      .where(eq(tickets.eventId, eventId));
+      .where(eq(tickets.eventId, eventId))
+      .orderBy(asc(tickets.price), asc(tickets.id));
   }
 
   async getPublicTicketsByEventId(eventId: number): Promise<Ticket[]> {
@@ -3991,7 +4029,8 @@ export class DatabaseStorage implements IStorage {
           eq(tickets.isActive, true),
           not(eq(tickets.status, 'hidden'))
         )
-      );
+      )
+      .orderBy(asc(tickets.price), asc(tickets.id));
   }
 
   // Ticket purchase operations

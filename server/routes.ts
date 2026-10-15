@@ -3931,11 +3931,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ errors: parseResult.error.errors });
       }
 
-      const finalData = parseResult.data;
+      const finalData = parseResult.data as any;
 
       // Ensure remainingQuantity is set to quantity on creation if not provided
       if (finalData.quantity !== undefined && finalData.remainingQuantity === undefined) {
-        (finalData as any).remainingQuantity = finalData.quantity;
+        finalData.remainingQuantity = finalData.quantity;
+      }
+
+      if (finalData.status === 'on_sale' && finalData.isActive === undefined) {
+        finalData.isActive = true;
       }
 
       console.log("Storage layer call: createTicket with data:", JSON.stringify(finalData, null, 2));
@@ -4018,6 +4022,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (parsedData[key] !== undefined) {
           finalData[key] = parsedData[key];
         }
+      }
+
+      if (finalData.status === 'on_sale' && finalData.isActive === undefined) {
+        finalData.isActive = true;
       }
 
       console.log("Direct update call: storage.updateTicketDirect with data:", JSON.stringify(finalData, null, 2));
@@ -4462,11 +4470,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   router.patch("/admin/tickets/:id/status", authenticateUser, authorizeAdmin, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const { isActive } = req.body;
+      const { isActive, status } = req.body;
       
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ticket ID" });
       
-      const success = await storage.updateTicketStatus(id, isActive);
+      const success = await storage.updateTicketStatus(id, isActive, status);
       if (!success) return res.status(404).json({ message: "Ticket not found" });
       
       return res.status(200).json({ success: true });

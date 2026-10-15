@@ -172,13 +172,20 @@ export const invalidateEventQueries = (eventId?: number | string) => {
   
   // If we have a specific event ID, invalidate that specific event's queries
   if (eventId) {
+    const numId = Number(eventId);
+    const strId = String(eventId);
+    queryClient.invalidateQueries({ queryKey: ['/api/events', numId] });
+    queryClient.invalidateQueries({ queryKey: ['/api/events', strId] });
     queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}`] });
     queryClient.invalidateQueries({ queryKey: [`/api/events/detail/${eventId}`] });
     queryClient.invalidateQueries({ queryKey: [`/api/tickets/event/${eventId}`] });
+    queryClient.invalidateQueries({ queryKey: ['/api/admin/tickets/event', numId] });
+    queryClient.invalidateQueries({ queryKey: ['/api/admin/tickets/event', strId] });
   }
   
   // Also invalidate related data that might be affected
   queryClient.invalidateQueries({ queryKey: ['/api/tickets'] });
+  queryClient.invalidateQueries({ queryKey: ['/api/admin/tickets'] });
   
   console.log(`Event queries invalidated${eventId ? ` for event ${eventId}` : ''}`);
 };

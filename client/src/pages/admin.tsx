@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, invalidateEventQueries } from "@/lib/queryClient";
 import { getNormalizedImageUrl } from "@/lib/utils/image-utils";
 import {
   Select,
@@ -317,7 +317,17 @@ export default function AdminPage() {
   const [adUploadedImage, setAdUploadedImage] = useState<File | null>(null);
   const [adVideoPreview, setAdVideoPreview] = useState<string | null>(null);
   const [adUploadedVideo, setAdUploadedVideo] = useState<File | null>(null);
-  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const evParam = params.get("eventId");
+      if (evParam) {
+        const parsed = parseInt(evParam, 10);
+        if (!isNaN(parsed)) return parsed;
+      }
+    }
+    return null;
+  });
   const [ticketForm, setTicketForm] = useState<any>({
     name: '',
     price: 0,
@@ -786,6 +796,16 @@ export default function AdminPage() {
     }
   };
 
+  // Auto-select active or first event when events load if none is selected
+  useEffect(() => {
+    if (events && events.length > 0) {
+      if (!selectedEventId || !events.some(e => e.id === selectedEventId)) {
+        const activeEvent = events.find((e: any) => e.isActive) || events[0];
+        setSelectedEventId(activeEvent.id);
+      }
+    }
+  }, [events, selectedEventId]);
+
   // Fetch tickets when an event is selected
   useEffect(() => {
     if (selectedEventId) {
@@ -893,8 +913,12 @@ export default function AdminPage() {
 
   const handleToggleTicketStatus = async (ticket: Ticket) => {
     try {
+      const newActive = !ticket.isActive;
+      const newStatus = newActive ? 'on_sale' : 'off_sale';
+
       const response = await apiRequest('PATCH', `/api/admin/tickets/${ticket.id}/status`, {
-        isActive: !ticket.isActive
+        isActive: newActive,
+        status: newStatus
       });
 
       if (!response.ok) {
@@ -903,10 +927,15 @@ export default function AdminPage() {
 
       toast({
         title: "Status Updated",
-        description: `Ticket status ${!ticket.isActive ? 'activated' : 'deactivated'} successfully`,
+        description: `Ticket "${ticket.name}" is now ${newActive ? 'Active (On Sale)' : 'Inactive (Off Sale)'}`,
       });
 
-      // Refresh the tickets list
+      // Refresh the tickets list in admin
+      const targetEventId = selectedEventId || ticket.eventId;
+      if (targetEventId) {
+        await fetchTicketsForEvent(targetEventId);
+      }
+      invalidateEventQueries(targetEventId);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/tickets"] });
     } catch (error) {
       console.error("Failed to update ticket status:", error);
@@ -933,7 +962,11 @@ export default function AdminPage() {
         description: "The ticket has been successfully removed.",
       });
 
-      // Refresh the tickets list
+      // Refresh the tickets list in admin
+      if (selectedEventId) {
+        await fetchTicketsForEvent(selectedEventId);
+      }
+      invalidateEventQueries(selectedEventId);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/tickets"] });
     } catch (error) {
       console.error("Failed to delete ticket:", error);
@@ -1565,9 +1598,9 @@ export default function AdminPage() {
       // Reset the ticket being edited
       setCurrentTicket(null);
 
-      // Refresh the tickets list
+      // Refresh the tickets list in admin
       if (selectedEventId) {
-        fetchTicketsForEvent(selectedEventId);
+        await fetchTicketsForEvent(selectedEventId);
       }
 
       // Reset the form to defaults
@@ -1598,7 +1631,8 @@ export default function AdminPage() {
       // Reset to Essential tab
       setActiveTab("essential");
 
-      // Invalidate tickets queries
+      // Invalidate tickets and public event queries so frontend updates immediately
+      invalidateEventQueries(selectedEventId);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/tickets"] });
     } catch (error: any) {
       console.error("Failed to save ticket:", error);
@@ -2783,10 +2817,14 @@ export default function AdminPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Select
-                    value={selectedEventId?.toString() || ""}
-                    onValueChange={(value) => setSelectedEventId(Number(value))}
+                    value={selectedEventId?.toString() || (events && events.length > 0 ? events[0].id.toString() : "")}
+                    onValueChange={(value) => {
+                      const newId = Number(value);
+                      setSelectedEventId(newId);
+                      fetchTicketsForEvent(newId);
+                    }}
                   >
-                    <SelectTrigger className="w-[220px] bg-obsidian-card/90 border border-white/15 text-white rounded-xl">
+                    <SelectTrigger className="w-[260px] bg-obsidian-card/90 border border-white/15 text-white rounded-xl">
                       <SelectValue placeholder="Select an event" />
                     </SelectTrigger>
                     <SelectContent className="bg-obsidian-card border border-gold-500/30 text-white rounded-xl shadow-2xl">
@@ -2945,6 +2983,29 @@ export default function AdminPage() {
                               onChange={(e) => setTicketForm({ ...ticketForm, description: e.target.value })}
                             ></textarea>
                           </div>
+
+                          <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/80 border border-slate-600 mt-2">
+                            <div>
+                              <Label htmlFor="ticketIsActive" className="text-white text-sm font-semibold flex items-center gap-2">
+                                Published & Active on Website
+                              </Label>
+                              <p className="text-xs text-slate-400">When enabled, this ticket tier appears on the event page for attendees.</p>
+                            </div>
+                            <input
+                              id="ticketIsActive"
+                              type="checkbox"
+                              checked={ticketForm.isActive}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setTicketForm({
+                                  ...ticketForm,
+                                  isActive: checked,
+                                  status: checked && ticketForm.status === 'off_sale' ? 'on_sale' : (!checked ? 'off_sale' : ticketForm.status)
+                                });
+                              }}
+                              className="h-5 w-5 rounded border-slate-500 accent-gold-500 cursor-pointer"
+                            />
+                          </div>
                         </div>
                       ) : (
                         <div className="space-y-4">
@@ -3029,7 +3090,7 @@ export default function AdminPage() {
                                   type="radio"
                                   id="status-on_sale"
                                   checked={ticketForm.status === "on_sale"}
-                                  onChange={() => setTicketForm({ ...ticketForm, status: "on_sale" })}
+                                  onChange={() => setTicketForm({ ...ticketForm, status: "on_sale", isActive: true })}
                                   className="h-4 w-4 accent-slate-400"
                                 />
                                 <label htmlFor="status-on_sale">
@@ -3043,7 +3104,7 @@ export default function AdminPage() {
                                   type="radio"
                                   id="status-off_sale"
                                   checked={ticketForm.status === "off_sale"}
-                                  onChange={() => setTicketForm({ ...ticketForm, status: "off_sale" })}
+                                  onChange={() => setTicketForm({ ...ticketForm, status: "off_sale", isActive: false })}
                                   className="h-4 w-4"
                                 />
                                 <label htmlFor="status-off_sale">
@@ -3294,11 +3355,15 @@ export default function AdminPage() {
                               <TableCell className="font-mono text-xs text-white/70">{soldTickets} / {ticket.quantity}</TableCell>
                               <TableCell className="font-mono text-xs text-white/70">{ticket.remainingQuantity || ticket.quantity}</TableCell>
                               <TableCell>
-                                <span className={`px-2.5 py-1 rounded-full text-[11px] font-mono uppercase font-bold tracking-wider ${ticket.isActive
-                                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                                  : "bg-white/5 text-white/40 border border-white/10"
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono uppercase font-bold tracking-wider ${
+                                  ticket.isActive && ticket.status === 'on_sale'
+                                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                                    : ticket.status === 'sold_out'
+                                    ? "bg-red-500/10 text-red-400 border border-red-500/30"
+                                    : "bg-white/5 text-white/40 border border-white/10"
                                   }`}>
-                                  {ticket.isActive ? "Active" : "Inactive"}
+                                  {ticket.isActive && ticket.status === 'on_sale' && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+                                  {ticket.isActive ? (ticket.status === 'on_sale' ? "On Sale" : ticket.status.replace('_', ' ')) : "Inactive"}
                                 </span>
                               </TableCell>
                               <TableCell className="text-right">
@@ -3338,9 +3403,13 @@ export default function AdminPage() {
                 ) : (
                   <div className="py-12 text-center border border-dashed border-white/10 rounded-2xl">
                     <TicketIcon className="h-12 w-12 mx-auto text-gray-500 mb-4" />
-                    <h3 className="text-lg font-medium text-white">No tickets found</h3>
+                    <h3 className="text-lg font-medium text-white">
+                      {selectedEventId ? "No tickets found for this event" : "Select an event to view ticket tiers"}
+                    </h3>
                     <p className="text-sm text-gray-400 font-mono mt-1">
-                      Create your first ticket type by clicking the "Create Ticket Type" button above.
+                      {selectedEventId
+                        ? "Create your first ticket type by clicking the 'Create Ticket Type' button above."
+                        : "Choose an event from the dropdown above to manage tickets."}
                     </p>
                   </div>
                 )}

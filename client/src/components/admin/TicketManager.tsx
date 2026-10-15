@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { queryClient, apiRequest } from '@/lib/queryClient';
+import { queryClient, apiRequest, invalidateEventQueries } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -108,6 +108,14 @@ const TicketManager: React.FC = () => {
   } = useQuery<Event[]>({
     queryKey: ['/api/events'],
   });
+
+  // Auto-select active or first event when events load if none is selected
+  useEffect(() => {
+    if (events && events.length > 0 && !selectedEvent) {
+      const activeEvent = events.find(e => (e as any).isActive) || events[0];
+      setSelectedEvent(activeEvent);
+    }
+  }, [events, selectedEvent]);
   
   // Fetch tickets when an event is selected
   const { 
@@ -181,6 +189,9 @@ const TicketManager: React.FC = () => {
       setIsNewTicketDialogOpen(false);
       resetTicketForm();
       refetchTickets();
+      if (selectedEvent?.id) {
+        invalidateEventQueries(selectedEvent.id);
+      }
     },
     onError: (error: any) => {
       toast({
@@ -205,6 +216,9 @@ const TicketManager: React.FC = () => {
       setIsEditTicketDialogOpen(false);
       resetTicketForm();
       refetchTickets();
+      if (selectedEvent?.id) {
+        invalidateEventQueries(selectedEvent.id);
+      }
     },
     onError: (error: any) => {
       toast({
@@ -227,6 +241,9 @@ const TicketManager: React.FC = () => {
         description: 'Ticket deleted successfully',
       });
       refetchTickets();
+      if (selectedEvent?.id) {
+        invalidateEventQueries(selectedEvent.id);
+      }
     },
     onError: (error: any) => {
       toast({
