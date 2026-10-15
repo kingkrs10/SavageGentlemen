@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getAuthHeaders } from "@/lib/auth-utils";
+import { useLiveTicketSync } from "@/hooks/use-live-ticket-sync";
 
 // Define types for the admin dashboard
 interface User {
@@ -767,10 +768,12 @@ export default function AdminPage() {
   const [currentTicket, setCurrentTicket] = useState<Ticket | null>(null);
 
   // Function to fetch tickets for a selected event
-  const fetchTicketsForEvent = async (eventId: number) => {
+  const fetchTicketsForEvent = async (eventId: number, silent: boolean = false) => {
     if (!eventId) return;
 
-    setTicketsLoading(true);
+    if (!silent) {
+      setTicketsLoading(true);
+    }
     setTicketsError(null);
 
     try {
@@ -790,11 +793,26 @@ export default function AdminPage() {
       setTickets(data);
     } catch (error) {
       console.error('Error fetching tickets:', error);
-      setTicketsError(error instanceof Error ? error : new Error('Failed to fetch tickets'));
+      if (!silent) {
+        setTicketsError(error instanceof Error ? error : new Error('Failed to fetch tickets'));
+      }
     } finally {
-      setTicketsLoading(false);
+      if (!silent) {
+        setTicketsLoading(false);
+      }
     }
   };
+
+  // Real-time WebSocket sync for live ticket inventory
+  useLiveTicketSync({
+    eventId: selectedEventId,
+    onTicketUpdate: () => {
+      if (selectedEventId && activeDashboardTab === 'tickets') {
+        fetchTicketsForEvent(selectedEventId, true);
+      }
+    },
+    enabled: activeDashboardTab === 'tickets'
+  });
 
   // Auto-select active or first event when events load if none is selected
   useEffect(() => {
@@ -806,12 +824,20 @@ export default function AdminPage() {
     }
   }, [events, selectedEventId]);
 
-  // Fetch tickets when an event is selected
+  // Fetch tickets when an event is selected, and poll silently every 10s while on tickets tab
   useEffect(() => {
-    if (selectedEventId) {
-      fetchTicketsForEvent(selectedEventId);
-    }
-  }, [selectedEventId]);
+    if (!selectedEventId) return;
+
+    fetchTicketsForEvent(selectedEventId);
+
+    const pollInterval = setInterval(() => {
+      if (document.visibilityState === 'visible' && activeDashboardTab === 'tickets') {
+        fetchTicketsForEvent(selectedEventId, true);
+      }
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
+  }, [selectedEventId, activeDashboardTab]);
 
   const handleEditTicket = (ticket: Ticket) => {
     // Set the current ticket being edited
@@ -2809,11 +2835,15 @@ export default function AdminPage() {
             <Card className="glass-obsidian-strong border border-gold-500/20 rounded-3xl p-6 shadow-2xl backdrop-blur-xl text-white">
               <CardHeader className="flex flex-row items-center justify-between pb-6 border-b border-white/10 px-0 pt-0">
                 <div>
-                  <CardTitle className="text-xl font-heading font-extrabold uppercase text-white tracking-wider flex items-center gap-2">
+                  <CardTitle className="text-xl font-heading font-extrabold uppercase text-white tracking-wider flex items-center gap-2.5">
                     <TicketIcon className="h-5 w-5 text-gold-400" />
-                    Ticket Tiers & Inventory
+                    <span>Ticket Tiers & Inventory</span>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      LIVE SYNC
+                    </span>
                   </CardTitle>
-                  <CardDescription className="text-white/60 text-xs font-mono">Manage admission tiers, pricing, sales windows, and capacity</CardDescription>
+                  <CardDescription className="text-white/60 text-xs font-mono">Manage admission tiers, pricing, sales windows, and capacity with real-time stock sync</CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
                   <Select

@@ -14,6 +14,35 @@ declare global {
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import WebSocket from "ws";
+
+// Real-time WebSocket server reference for live ticket inventory synchronization
+let globalWss: WebSocketServer | null = null;
+
+export function broadcastTicketInventoryUpdate(update: {
+  ticketId: number;
+  eventId?: number | null;
+  remainingQuantity?: number | null;
+  status?: string | null;
+  isActive?: boolean;
+}) {
+  if (!globalWss) return;
+  const payload = JSON.stringify({
+    type: 'ticket-inventory-update',
+    ...update,
+    timestamp: Date.now()
+  });
+
+  globalWss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      try {
+        client.send(payload);
+      } catch (err) {
+        console.error('Error sending ticket update via WebSocket:', err);
+      }
+    }
+  });
+}
+
 import { storage } from "./storage";
 import { syncUsersFromFirebase } from "./services/user-sync";
 import {
@@ -4037,6 +4066,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!updatedTicket) {
           return res.status(404).json({ message: "Ticket not found" });
         }
+
+        broadcastTicketInventoryUpdate({
+          ticketId: updatedTicket.id,
+          eventId: updatedTicket.eventId,
+          remainingQuantity: updatedTicket.remainingQuantity,
+          status: updatedTicket.status,
+          isActive: updatedTicket.isActive
+        });
         
         return res.status(200).json(updatedTicket);
       } catch (dbErr) {
@@ -4476,6 +4513,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const success = await storage.updateTicketStatus(id, isActive, status);
       if (!success) return res.status(404).json({ message: "Ticket not found" });
+
+      const updatedTicket = await storage.getTicket(id);
+      broadcastTicketInventoryUpdate({
+        ticketId: id,
+        eventId: updatedTicket?.eventId,
+        remainingQuantity: updatedTicket?.remainingQuantity,
+        status: updatedTicket?.status,
+        isActive: updatedTicket?.isActive
+      });
       
       return res.status(200).json({ success: true });
     } catch (err) {
@@ -4488,9 +4534,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ticket ID" });
-      
+
+      const existingTicket = await storage.getTicket(id);
       const success = await storage.deleteTicket(id);
       if (!success) return res.status(404).json({ message: "Ticket not found" });
+
+      broadcastTicketInventoryUpdate({
+        ticketId: id,
+        eventId: existingTicket?.eventId,
+        remainingQuantity: 0,
+        status: 'deleted',
+        isActive: false
+      });
       
       return res.status(200).json({ success: true });
     } catch (err) {
@@ -6167,6 +6222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Setup WebSocket Server on the same HTTP server
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  globalWss = wss;
 
   // WebSocket connection event handler
   wss.on('connection', (ws) => {
@@ -6175,7 +6231,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ws.on('message', async (message) => {
       try {
         const data = JSON.parse(message.toString());
-        console.log('Received message:', data);
+        
+        if (data.type === 'ping') {
+          ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
+          return;
+        }
 
         if (data.type === 'chat-message') {
           const messageData = {

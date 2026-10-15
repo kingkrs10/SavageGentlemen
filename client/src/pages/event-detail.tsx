@@ -35,6 +35,7 @@ import { FaGoogle, FaMicrosoft, FaYahoo, FaApple, FaCalendarAlt } from "react-ic
 import { formatPriceFromCents, getCurrencyFromLocation } from "@/lib/currency";
 import EventReviews from "@/components/social/EventReviews";
 import { useUser } from "@/context/UserContext";
+import { useLiveTicketSync } from "@/hooks/use-live-ticket-sync";
 import {
   Carousel,
   CarouselContent,
@@ -54,6 +55,9 @@ const EventDetail = () => {
   // Get the event ID from either URL format
   const eventIdParam = matchWithSlug ? paramsWithSlug?.id : paramsSimple?.id;
   const eventId = eventIdParam ? parseEventId(eventIdParam) : null;
+
+  // Real-time WebSocket ticket inventory sync
+  useLiveTicketSync({ eventId: eventId ? Number(eventId) : undefined });
 
   // Secret code gating for comp/hidden tickets
   const [unlockedTicketIds, setUnlockedTicketIds] = useState<Set<number>>(new Set());
@@ -84,7 +88,7 @@ const EventDetail = () => {
     }
   }, [eventId]);
 
-  // Query to fetch event details
+  // Query to fetch event details with live 10-second polling
   const {
     data: event,
     isLoading,
@@ -101,6 +105,8 @@ const EventDetail = () => {
       return response.json() as Promise<Event>;
     },
     enabled: !!eventId,
+    refetchInterval: 10000, // Live inventory refresh every 10 seconds
+    refetchIntervalInBackground: false, // Pause when browser tab is inactive
   });
 
   // If we have the event data and user arrived via the simple URL (/events/id),
@@ -494,19 +500,24 @@ const EventDetail = () => {
                   const now = new Date();
                   const isEventPast = now > eventEndTime;
 
-                  const availableTickets = event.tickets?.filter(ticket =>
-                    ticket.isActive &&
-                    ticket.status !== 'sold_out' &&
-                    ticket.status !== 'soldout' &&
-                    ticket.status !== 'off_sale' &&
-                    ticket.status !== 'staff_only' &&
-                    ticket.status !== 'hidden'
-                  ) || [];
+                  const availableTickets = event.tickets?.filter(ticket => {
+                    if (!ticket.isActive) return false;
+                    if (ticket.status === 'off_sale' || ticket.status === 'staff_only' || ticket.status === 'hidden') return false;
+                    const isSoldOut = ticket.status === 'sold_out' || ticket.status === 'soldout' || (ticket.remainingQuantity !== null && ticket.remainingQuantity !== undefined && ticket.remainingQuantity <= 0);
+                    if (isSoldOut && ticket.hideIfSoldOut) return false;
+                    return true;
+                  }) || [];
 
                   if (availableTickets.length > 0) {
                     return (
                       <>
-                         <h3 className="text-xl font-bold mb-3">Available Tickets</h3>
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-xl font-bold">Available Tickets</h3>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            LIVE SYNC
+                          </span>
+                        </div>
 
                         {/* Global secret code entry for hidden comp tickets */}
                         {(() => {
@@ -627,8 +638,13 @@ const EventDetail = () => {
                             'ultra_vip': '💎'
                           };
 
+                          const remaining = ticket.remainingQuantity !== undefined && ticket.remainingQuantity !== null ? ticket.remainingQuantity : ticket.quantity;
+                          const totalQuantity = ticket.quantity || 1;
+                          const isSoldOut = ticket.status === 'sold_out' || ticket.status === 'soldout' || (ticket.remainingQuantity !== null && ticket.remainingQuantity !== undefined && ticket.remainingQuantity <= 0);
+                          const isLowStock = !isSoldOut && remaining !== null && remaining !== undefined && (remaining <= 5 || (totalQuantity > 10 && (remaining / totalQuantity) <= 0.25));
+
                           return (
-                            <div key={ticket.id} className={`ticket-pass p-5 mb-4 relative ${ticket.tierLevel !== 'standard' ? 'ticket-pass-active' : ''}`}>
+                            <div key={ticket.id} className={`ticket-pass p-5 mb-4 relative ${ticket.tierLevel !== 'standard' ? 'ticket-pass-active' : ''} ${isSoldOut ? 'opacity-80' : ''}`}>
                               <div className="ticket-cutout-l" />
                               <div className="ticket-cutout-r" />
 
@@ -655,15 +671,35 @@ const EventDetail = () => {
                                       {tierIcons[ticket.tierLevel]} {ticket.tierLevel.toUpperCase()}
                                     </span>
                                   )}
+
+                                  {/* Live stock & urgency badges */}
+                                  {isSoldOut ? (
+                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                                      SOLD OUT
+                                    </span>
+                                  ) : isLowStock ? (
+                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse flex items-center gap-1.5">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                                      ⚡ ONLY {remaining} LEFT
+                                    </span>
+                                  ) : (ticket.displayRemainingQuantity && remaining !== null && remaining <= 20) ? (
+                                    <span className="px-2 py-0.5 rounded-full text-[11px] font-mono text-zinc-300 bg-white/5 border border-white/10">
+                                      {remaining} available
+                                    </span>
+                                  ) : null}
                                 </div>
                                 <div className="text-right">
                                   {ticket.price > 0 && (
-                                    <p className="font-extrabold text-gold-400 text-xl font-mono">
+                                    <p className={`font-extrabold text-xl font-mono ${isSoldOut ? 'text-zinc-500 line-through' : 'text-gold-400'}`}>
                                       {formatPriceFromCents(ticket.price, getCurrencyFromLocation(event.location))}
                                     </p>
                                   )}
                                   {ticket.price === 0 && (
-                                    <span className="px-3 py-1 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-full text-xs font-bold font-mono">
+                                    <span className={`px-3 py-1 border rounded-full text-xs font-bold font-mono ${
+                                      isSoldOut
+                                        ? 'bg-zinc-800 text-zinc-500 border-white/10 line-through'
+                                        : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+                                    }`}>
                                       FREE COMP
                                     </span>
                                   )}
@@ -672,6 +708,28 @@ const EventDetail = () => {
 
                               {ticket.description && (
                                 <p className="text-sm text-white/70 mb-3">{ticket.description}</p>
+                              )}
+
+                              {/* Mini Live Stock Meter for Low Stock / Remaining */}
+                              {!isSoldOut && remaining !== null && remaining !== undefined && (isLowStock || (ticket.displayRemainingQuantity && remaining <= 20)) && (
+                                <div className="mb-3 p-2.5 bg-black/40 border border-white/10 rounded-lg">
+                                  <div className="flex justify-between items-center text-[11px] font-mono mb-1.5">
+                                    <span className={`font-semibold flex items-center gap-1 ${isLowStock ? 'text-amber-400' : 'text-zinc-400'}`}>
+                                      {isLowStock ? '🔥 Selling Fast' : 'Live Availability'}
+                                    </span>
+                                    <span className="text-zinc-300 font-bold">{remaining} of {totalQuantity} remaining</span>
+                                  </div>
+                                  <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                                    <div 
+                                      className={`h-full rounded-full transition-all duration-700 ease-out ${
+                                        isLowStock 
+                                          ? 'bg-gradient-to-r from-amber-500 to-rose-500' 
+                                          : 'bg-emerald-500'
+                                      }`}
+                                      style={{ width: `${Math.max(5, Math.min(100, (remaining / totalQuantity) * 100))}%` }}
+                                    />
+                                  </div>
+                                </div>
                               )}
 
                               {/* Compact Dark-Glass Features Display */}
@@ -754,9 +812,14 @@ const EventDetail = () => {
                               </div>
 
                               <Button
-                                className="w-full mt-2"
-                                disabled={isEventPast || claimingTicketId === ticket.id}
+                                className={`w-full mt-2 font-bold ${
+                                  isSoldOut
+                                    ? 'bg-zinc-800/80 text-zinc-400 border border-white/10 hover:bg-zinc-800/80 cursor-not-allowed'
+                                    : ''
+                                }`}
+                                disabled={isEventPast || isSoldOut || claimingTicketId === ticket.id}
                                 onClick={async () => {
+                                  if (isSoldOut) return;
                                   // Check if event is past
                                   if (isEventPast) {
                                     toast({
@@ -972,7 +1035,7 @@ const EventDetail = () => {
                                     <span className="animate-pulse">Claiming...</span>
                                     <span className="ml-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
                                   </>
-                                ) : isEventPast ? 'Event Ended' : (ticket.price === 0 ? 'Claim Free Ticket' : 'Purchase Ticket')}
+                                ) : isEventPast ? 'Event Ended' : isSoldOut ? 'Sold Out' : (ticket.price === 0 ? 'Claim Free Ticket' : 'Purchase Ticket')}
                               </Button>
                             </div>
                           )

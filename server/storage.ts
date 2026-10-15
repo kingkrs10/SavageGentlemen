@@ -6600,6 +6600,26 @@ export class TicketDatabaseSync {
         .catch(err => {
           console.warn('[TicketInventory] Could not load event-coordinator:', err.message);
         });
+
+      // Broadcast live ticket inventory update over WebSocket
+      import('./routes').then(({ broadcastTicketInventoryUpdate }) => {
+        db.select()
+          .from(tickets)
+          .where(eq(tickets.id, ticketId))
+          .limit(1)
+          .then(([t]) => {
+            if (t && broadcastTicketInventoryUpdate) {
+              broadcastTicketInventoryUpdate({
+                ticketId: t.id,
+                eventId: t.eventId,
+                remainingQuantity: t.remainingQuantity,
+                status: t.status,
+                isActive: t.isActive
+              });
+            }
+          })
+          .catch(() => {});
+      }).catch(() => {});
     } catch (error) {
       console.error('Error updating ticket inventory:', error);
       throw error;
